@@ -1,149 +1,224 @@
-import React, { useState } from 'react';
-import data from '../data/municipalities-detailed.json';
-
-export const InvestmentDetails = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGroup, setSelectedGroup] = useState('ALL');
-  const [selectedId, setSelectedId] = useState(data.municipalities[0].id);
-
-  // Фильтрация по группе и поисковому запросу
-  const filteredMunicipalities = data.municipalities.filter((m) => {
-    const matchesGroup = selectedGroup === 'ALL' || m.group2024 === selectedGroup;
-    const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesGroup && matchesSearch;
-  });
-
-  const currentItem = data.municipalities.find((m) => m.id === selectedId) || data.municipalities[0];
-
-  return (
-    <div className="bg-slate-50 min-h-screen p-4 md:p-8 font-sans text-slate-900">
-      <div className="max-w-5xl mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
-        <h1 className="text-2xl font-black text-slate-900 mb-2">
-          Инвестиционный портал Югры 2024
-        </h1>
-        <p className="text-sm text-slate-500 mb-6">
-          Выберите муниципалитет для просмотра детальных показателей инвестиционного климата
-        </p>
-
-        {/* Удобный поиск и фильтры групп */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              placeholder="🔍 Быстрый поиск муниципалитета (например, Сургут, Урай...)"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-4 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div className="flex gap-1 bg-slate-100 p-1 rounded-xl self-start">
-            <button
-              onClick={() => setSelectedGroup('ALL')}
-              className={`px-3 py-2 text-xs font-bold rounded-lg transition-all ${
-                selectedGroup === 'ALL' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600'
-              }`}
-            >
-              Все
-            </button>
-            <button
-              onClick={() => setSelectedGroup('A')}
-              className={`px-3 py-2 text-xs font-bold rounded-lg transition-all ${
-                selectedGroup === 'A' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-600'
-              }`}
-            >
-              Группа А
-            </button>
-            <button
-              onClick={() => setSelectedGroup('B')}
-              className={`px-3 py-2 text-xs font-bold rounded-lg transition-all ${
-                selectedGroup === 'B' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600'
-              }`}
-            >
-              Группа B
-            </button>
-          </div>
-        </div>
-
-        {/* Быстрые кнопки-чипсы для переключения между муниципалитетами без неудобных селектов */}
-        <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1 border-t border-slate-100 pt-4">
-          {filteredMunicipalities.length > 0 ? (
-            filteredMunicipalities.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setSelectedId(m.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  selectedId === m.id
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-              >
-                #{m.rank2024} {m.name}
-              </button>
-            ))
-          ) : (
-            <p className="text-xs text-slate-400 py-2">Муниципалитеты не найдены</p>
-          )}
-        </div>
-      </div>
-
-      {/* Карточка детальной информации выбранного региона */}
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-3xl font-extrabold text-blue-600">#{currentItem.rank2024}</span>
-            <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-full">
-              Группа {currentItem.group2024}
-            </span>
-          </div>
-          <h2 className="text-xl font-bold text-slate-800">{currentItem.name}</h2>
-          <div className="mt-4 pt-4 border-t border-slate-100">
-            <p className="text-xs text-slate-400 font-bold uppercase">Рейтинговый балл</p>
-            <p className="text-3xl font-black text-slate-900 mt-1">{currentItem.score}</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
-            Инвестиционная активность
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-slate-400">Объем инвестиций (без добычи)</p>
-              <p className="text-xl font-bold text-slate-800">
-                {currentItem.investments.volumeBillion} млрд руб.
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400">Динамика роста</p>
-              <p className="text-lg font-extrabold text-emerald-600">
-                {currentItem.investments.growthPercent}%
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
-            Малый и средний бизнес (МСП)
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-slate-400">Субъекты МСП</p>
-              <p className="text-xl font-bold text-slate-800">
-                {currentItem.smeCount.toLocaleString()} ед.
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400">Оценка климата бизнесом</p>
-              <p className="text-lg font-extrabold text-blue-600">
-                {currentItem.assessmentScore} / 5.00
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default InvestmentDetails;
+{
+  "municipalities": [
+    {
+      "id": "surgut-region",
+      "name": "Сургутский район",
+      "rank2024": 1,
+      "group2024": "A",
+      "score": 332.1,
+      "investments": { "volumeBillion": 1.66, "growthPercent": 108.7 },
+      "smeCount": 2950,
+      "assessmentScore": 4.74
+    },
+    {
+      "id": "khanty-mansiysk",
+      "name": "Ханты-Мансийск",
+      "rank2024": 2,
+      "group2024": "A",
+      "score": 291.3,
+      "investments": { "volumeBillion": 2.63, "growthPercent": 107.9 },
+      "smeCount": 4170,
+      "assessmentScore": 4.56
+    },
+    {
+      "id": "beloyarskiy-region",
+      "name": "Белоярский район",
+      "rank2024": 3,
+      "group2024": "A",
+      "score": 287.6,
+      "investments": { "volumeBillion": 0.76, "growthPercent": 138.7 },
+      "smeCount": 577,
+      "assessmentScore": 4.86
+    },
+    {
+      "id": "nizhnevartovsk-region",
+      "name": "Нижневартовский район",
+      "rank2024": 4,
+      "group2024": "B",
+      "score": 282.1,
+      "investments": { "volumeBillion": 5.07, "growthPercent": 201.5 },
+      "smeCount": 872,
+      "assessmentScore": 4.79
+    },
+    {
+      "id": "uray",
+      "name": "Урай",
+      "rank2024": 5,
+      "group2024": "B",
+      "score": 279.5,
+      "investments": { "volumeBillion": 3.09, "growthPercent": 276.1 },
+      "smeCount": 1233,
+      "assessmentScore": 4.83
+    },
+    {
+      "id": "nizhnevartovsk",
+      "name": "Нижневартовск",
+      "rank2024": 6,
+      "group2024": "B",
+      "score": 276.7,
+      "investments": { "volumeBillion": 12.50, "growthPercent": 139.4 },
+      "smeCount": 13200,
+      "assessmentScore": 4.18
+    },
+    {
+      "id": "kondinskiy-region",
+      "name": "Кондинский район",
+      "rank2024": 7,
+      "group2024": "B",
+      "score": 273.8,
+      "investments": { "volumeBillion": 2.88, "growthPercent": 147.0 },
+      "smeCount": 715,
+      "assessmentScore": 4.93
+    },
+    {
+      "id": "langepas",
+      "name": "Лангепас",
+      "rank2024": 8,
+      "group2024": "B",
+      "score": 272.4,
+      "investments": { "volumeBillion": 0.68, "growthPercent": 187.6 },
+      "smeCount": 1030,
+      "assessmentScore": 4.00
+    },
+    {
+      "id": "oktyabrskiy-region",
+      "name": "Октябрьский район",
+      "rank2024": 9,
+      "group2024": "B",
+      "score": 268.0,
+      "investments": { "volumeBillion": 0.68, "growthPercent": 131.5 },
+      "smeCount": 720,
+      "assessmentScore": 4.91
+    },
+    {
+      "id": "berezovskiy-region",
+      "name": "Берёзовский район",
+      "rank2024": 10,
+      "group2024": "B",
+      "score": 264.9,
+      "investments": { "volumeBillion": -1.05, "growthPercent": 45.6 },
+      "smeCount": 508,
+      "assessmentScore": 4.84
+    },
+    {
+      "id": "pyt-yakh",
+      "name": "Пыть-Ях",
+      "rank2024": 11,
+      "group2024": "B",
+      "score": 265.2,
+      "investments": { "volumeBillion": -0.38, "growthPercent": 87.1 },
+      "smeCount": 1580,
+      "assessmentScore": 4.65
+    },
+    {
+      "id": "raduzhnyy",
+      "name": "Радужный",
+      "rank2024": 12,
+      "group2024": "B",
+      "score": 264.1,
+      "investments": { "volumeBillion": 0.29, "growthPercent": 129.7 },
+      "smeCount": 1160,
+      "assessmentScore": 4.74
+    },
+    {
+      "id": "megion",
+      "name": "Мегион",
+      "rank2024": 13,
+      "group2024": "B",
+      "score": 263.0,
+      "investments": { "volumeBillion": -0.95, "growthPercent": 62.3 },
+      "smeCount": 1660,
+      "assessmentScore": 4.23
+    },
+    {
+      "id": "pokachi",
+      "name": "Покачи",
+      "rank2024": 14,
+      "group2024": "B",
+      "score": 261.5,
+      "investments": { "volumeBillion": 0.44, "growthPercent": 254.7 },
+      "smeCount": 380,
+      "assessmentScore": 4.38
+    },
+    {
+      "id": "yugorsk",
+      "name": "Югорск",
+      "rank2024": 15,
+      "group2024": "B",
+      "score": 260.4,
+      "investments": { "volumeBillion": -0.79, "growthPercent": 76.1 },
+      "smeCount": 1200,
+      "assessmentScore": 4.66
+    },
+    {
+      "id": "surgut",
+      "name": "Сургут",
+      "rank2024": 16,
+      "group2024": "B",
+      "score": 259.8,
+      "investments": { "volumeBillion": 17.30, "growthPercent": 139.5 },
+      "smeCount": 20543,
+      "assessmentScore": 4.58
+    },
+    {
+      "id": "nefteyugansk",
+      "name": "Нефтеюганск",
+      "rank2024": 17,
+      "group2024": "B",
+      "score": 259.1,
+      "investments": { "volumeBillion": 0.81, "growthPercent": 106.3 },
+      "smeCount": 4502,
+      "assessmentScore": 4.23
+    },
+    {
+      "id": "kogalym",
+      "name": "Когалым",
+      "rank2024": 18,
+      "group2024": "B",
+      "score": 258.9,
+      "investments": { "volumeBillion": -6.71, "growthPercent": 61.6 },
+      "smeCount": 1860,
+      "assessmentScore": 4.67
+    },
+    {
+      "id": "nefteyuganskiy-region",
+      "name": "Нефтеюганский район",
+      "rank2024": 19,
+      "group2024": "B",
+      "score": 257.6,
+      "investments": { "volumeBillion": 0.53, "growthPercent": 103.3 },
+      "smeCount": 1050,
+      "assessmentScore": 3.95
+    },
+    {
+      "id": "nyagan",
+      "name": "Нягань",
+      "rank2024": 20,
+      "group2024": "B",
+      "score": 256.2,
+      "investments": { "volumeBillion": -0.97, "growthPercent": 67.9 },
+      "smeCount": 2480,
+      "assessmentScore": 3.87
+    },
+    {
+      "id": "khanty-mansiyskiy-region",
+      "name": "Ханты-Мансийский район",
+      "rank2024": 21,
+      "group2024": "B",
+      "score": 255.4,
+      "investments": { "volumeBillion": -1.80, "growthPercent": 70.8 },
+      "smeCount": 420,
+      "assessmentScore": 4.13
+    },
+    {
+      "id": "sovetskiy-region",
+      "name": "Советский район",
+      "rank2024": 22,
+      "group2024": "B",
+      "score": 252.1,
+      "investments": { "volumeBillion": -12.09, "growthPercent": 4.0 },
+      "smeCount": 1490,
+      "assessmentScore": 4.87
+    }
+  ]
+}
