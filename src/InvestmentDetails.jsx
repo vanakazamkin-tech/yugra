@@ -6,13 +6,13 @@ export const InvestmentDetails = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('ALL');
   
-  // Модальное окно подробного паспорта объекта
+  // Модальное окно паспорта объекта
   const [activeModalItem, setActiveModalItem] = useState(null);
 
   // Сортировка для сводной таблицы
-  const [sortConfig, setSortConfig] = useState({ key: 'rank2024', direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'desc' });
 
-  const [notification, setNotification] = useState('Портал инвестиционного климата Югры успешно загружен.');
+  const [notification, setNotification] = useState('Интерактивная карта Югры и каталог готовы к работе.');
   
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark' || window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -29,23 +29,19 @@ export const InvestmentDetails = () => {
     }
   }, [isDarkMode]);
 
-  // Фильтрация муниципалитетов
   const filteredMunicipalities = data.municipalities.filter((m) => {
     const matchesGroup = selectedGroup === 'ALL' || m.group2024 === selectedGroup;
     const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesGroup && matchesSearch;
   });
 
-  // Логика сортировки для сводной таблицы
   const sortedMunicipalities = [...filteredMunicipalities].sort((a, b) => {
     let aVal = a[sortConfig.key];
     let bVal = b[sortConfig.key];
-    
     if (sortConfig.key === 'investments') {
       aVal = a.investments.volumeBillion;
       bVal = b.investments.volumeBillion;
     }
-
     if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
     if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
     return 0;
@@ -60,27 +56,24 @@ export const InvestmentDetails = () => {
   };
 
   const handleExportPDF = () => {
-    setNotification('Формирование официального отчета для печати / PDF...');
+    setNotification('Формирование отчета для печати / PDF...');
     setTimeout(() => window.print(), 300);
   };
 
   return (
     <div className="bg-slate-100 dark:bg-slate-950 min-h-screen p-4 md:p-8 font-sans text-slate-900 dark:text-slate-100 transition-colors">
       
-      {/* ----------------- ПЕЧАТНАЯ ВЕРСИЯ (PDF) ----------------- */}
+      {/* ПЕЧАТЬ (PDF) */}
       <div className="hidden print:block p-8 bg-white text-slate-900 font-sans">
         <h1 className="text-2xl font-black uppercase mb-2">Аналитический отчет — ХМАО — Югра (2024)</h1>
-        <p className="text-xs text-slate-500 mb-6">Официальные данные инвестиционного рейтинга муниципальных образований.</p>
-        
-        <table className="w-full border-collapse border border-slate-300 text-xs">
+        <table className="w-full border-collapse border border-slate-300 text-xs mt-4">
           <thead>
             <tr className="bg-slate-100 text-left">
               <th className="border border-slate-300 p-2">Муниципальное образование</th>
               <th className="border border-slate-300 p-2 text-center">Группа</th>
               <th className="border border-slate-300 p-2 text-center">Балл</th>
               <th className="border border-slate-300 p-2 text-center">Инвестиции (млрд ₽)</th>
-              <th className="border border-slate-300 p-2 text-center">Динамика</th>
-              <th className="border border-slate-300 p-2 text-center">Субъекты МСП</th>
+              <th className="border border-slate-300 p-2 text-center">МСП (ед.)</th>
             </tr>
           </thead>
           <tbody>
@@ -90,7 +83,6 @@ export const InvestmentDetails = () => {
                 <td className="border border-slate-300 p-2 text-center">{m.group2024}</td>
                 <td className="border border-slate-300 p-2 text-center">{m.score}</td>
                 <td className="border border-slate-300 p-2 text-center">{m.investments.volumeBillion}</td>
-                <td className="border border-slate-300 p-2 text-center">{m.investments.growthPercent}%</td>
                 <td className="border border-slate-300 p-2 text-center">{m.smeCount.toLocaleString()}</td>
               </tr>
             ))}
@@ -98,21 +90,20 @@ export const InvestmentDetails = () => {
         </table>
       </div>
 
-      {/* ----------------- ЭКРАННЫЙ ИНТЕРФЕЙС ----------------- */}
+      {/* ИНТЕРФЕЙС */}
       <div className="print:hidden max-w-7xl mx-auto">
         
-        {/* Шапка портала */}
+        {/* Шапка */}
         <header className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm mb-6">
           <div className="flex items-center gap-3">
             <span className="bg-blue-600 text-white p-2.5 rounded-xl text-xl">🗺️</span>
             <div>
               <h1 className="text-base font-black tracking-tight">Муниципальные образования</h1>
-              <p className="text-xs text-slate-500">Инвестиционный климат и рейтинг развития</p>
+              <p className="text-xs text-slate-500">Инвестиционный климат и рейтинг развития Югры</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Переключатель вкладок */}
             <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold">
               <button
                 onClick={() => setActiveTab('catalog')}
@@ -124,7 +115,7 @@ export const InvestmentDetails = () => {
                 onClick={() => setActiveTab('map')}
                 className={`px-3 py-2 rounded-lg transition ${activeTab === 'map' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
               >
-                🗺️ Карта Югры
+                🗺️ Интерактивная карта
               </button>
               <button
                 onClick={() => setActiveTab('compare')}
@@ -137,7 +128,6 @@ export const InvestmentDetails = () => {
             <button
               onClick={handleExportPDF}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-sm transition"
-              title="Печать или сохранение отчета в PDF"
             >
               📥 PDF
             </button>
@@ -151,18 +141,18 @@ export const InvestmentDetails = () => {
           </div>
         </header>
 
-        {/* Уведомление системы */}
+        {/* Уведомление */}
         <div className="mb-6 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300 px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-sm">
           <span>💡</span> {notification}
         </div>
 
-        {/* ================= РЕЖИМ 1: КАТАЛОГ (ПЛИТКИ С ПОИСКОМ) ================= */}
+        {/* ================= РЕЖИМ 1: КАТАЛОГ ================= */}
         {activeTab === 'catalog' && (
           <div>
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm mb-6 flex flex-col md:flex-row gap-4">
               <input
                 type="text"
-                placeholder="🔍 Поиск муниципалитета (например: Сургут, Ханты-Мансийск, Урай)..."
+                placeholder="🔍 Поиск муниципалитета (Сургут, Нижневартовск, Ханты-Мансийск)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -214,35 +204,57 @@ export const InvestmentDetails = () => {
         {/* ================= РЕЖИМ 2: ИНТЕРАКТИВНАЯ КАРТА ЮГРЫ ================= */}
         {activeTab === 'map' && (
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
-            <h2 className="text-xl font-black mb-2">Интерактивная карта муниципальных образований ХМАО — Югры</h2>
-            <p className="text-xs text-slate-400 mb-6">Нажмите на любой район или город из списка ниже, чтобы мгновенно вызвать его подробный паспорт[cite: 14]:</p>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+              <div>
+                <h2 className="text-xl font-black">Интерактивная карта окружных образований</h2>
+                <p className="text-xs text-slate-400">Кликните на интерактивный регион для просмотра детального паспорта:</p>
+              </div>
+              <span className="text-xs bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-bold px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-900">
+                Всего субъектов: {data.municipalities.length}
+              </span>
+            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {/* Визуальная интерактивная карта-сетка по аналогии с официальными геопорталами */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
               {data.municipalities.map((m) => (
-                <button
+                <div
                   key={m.id}
                   onClick={() => setActiveModalItem(m)}
-                  className="p-3 bg-slate-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/50 border border-slate-200 dark:border-slate-700 rounded-xl text-left transition group"
+                  className={`p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between ${
+                    m.group2024 === 'A' 
+                      ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900 hover:border-emerald-500' 
+                      : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-500'
+                  }`}
                 >
-                  <span className="text-xs text-blue-600 dark:text-blue-400 font-bold block mb-1">Группа {m.group2024}</span>
-                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-600">{m.name}</span>
-                </button>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                      Группа {m.group2024}
+                    </span>
+                    <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 mb-2">
+                      {m.name}
+                    </h3>
+                  </div>
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-blue-600 dark:text-blue-400 font-bold flex justify-between items-center">
+                    <span>Паспорт</span>
+                    <span>→</span>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* ================= РЕЖИМ 3: СВОДНАЯ АНАЛИТИЧЕСКАЯ ТАБЛИЦА ================= */}
+        {/* ================= РЕЖИМ 3: СВОДНАЯ ТАБЛИЦА ================= */}
         {activeTab === 'compare' && (
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm overflow-x-auto">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
               <div>
                 <h2 className="text-xl font-black">Сводная аналитическая таблица</h2>
-                <p className="text-xs text-slate-400">Нажимайте на заголовки столбцов для сортировки показателей</p>
+                <p className="text-xs text-slate-400">Нажимайте на заголовки столбцов для быстрой сортировки</p>
               </div>
               <input
                 type="text"
-                placeholder="Фильтр в таблице..."
+                placeholder="Фильтр показателей..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
