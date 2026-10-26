@@ -10,11 +10,11 @@ export const InvestmentDetails = () => {
   const [hoveredRegionId, setHoveredRegionId] = useState(null);
 
   const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'desc' });
-  const [notification, setNotification] = useState('Интерактивная карта ХМАО полностью загружена.');
+  const [notification, setNotification] = useState('Интерактивная карта Югры и каталог готовы к работе.');
   
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') === 'dark' || window.matchMedia('(prefers-color-scheme: dark)`.matches);
+      return localStorage.getItem('theme') === 'dark' || window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
     return false;
   });
@@ -61,7 +61,6 @@ export const InvestmentDetails = () => {
     setTimeout(() => window.print(), 300);
   };
 
-  // Полная карта контуров ХМАО по всем 22 муниципалитетам
   const mapPaths = [
     { id: 'berezovsky-raion', name: 'Берёзовский район', d: 'M 60,30 L 160,20 L 190,100 L 140,180 L 60,150 Z' },
     { id: 'beloyarsky-raion', name: 'Белоярский район', d: 'M 160,20 L 300,30 L 320,120 L 190,100 Z' },
@@ -243,7 +242,6 @@ export const InvestmentDetails = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
-              {/* ЛЕВАЯ КОЛОНКА: Полноценная SVG-карта Югры */}
               <div className="lg:col-span-7 bg-slate-950 p-6 rounded-2xl border border-slate-800 flex items-center justify-center min-h-[500px] relative overflow-hidden">
                 <svg viewBox="0 0 750 380" className="w-full h-auto max-h-[460px] drop-shadow-2xl">
                   {mapPaths.map((region) => {
@@ -274,7 +272,6 @@ export const InvestmentDetails = () => {
                 </svg>
               </div>
 
-              {/* ПРАВАЯ КОЛОНКА: Список с синхронизированной подсветкой */}
               <div className="lg:col-span-5 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 max-h-[500px] overflow-y-auto">
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 px-2">
                   Муниципальные районы и округа
