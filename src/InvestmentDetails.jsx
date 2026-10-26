@@ -82,10 +82,10 @@ export const InvestmentDetails = () => {
         {/* Шапка */}
         <header className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm mb-6">
           <div className="flex items-center gap-3">
-            <span className="brand-mark" aria-hidden="true"><span>✳</span></span>
+            <span className="brand-mark" aria-hidden="true"><span>ᛉ</span></span>
             <div>
-              <h1 className="text-base font-black tracking-tight">Югра · территория возможностей</h1>
-              <p className="text-xs text-slate-500">Муниципалитеты, инвестиции и культурное наследие</p>
+              <h1 className="text-2xl font-black tracking-tight">ЮГРА</h1>
+              <p className="text-xs text-slate-500">Земля традиций · территория возможностей</p>
             </div>
           </div>
 
@@ -121,15 +121,21 @@ export const InvestmentDetails = () => {
           </div>
         </header>
 
+        <div className="heritage-band mb-5" aria-label="Традиционный геометрический орнамент ханты и манси">
+          <div className="heritage-band__pattern" aria-hidden="true" />
+          <span>НАСЛЕДИЕ ХАНТЫ И МАНСИ</span>
+          <span className="heritage-band__caption">ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</span>
+        </div>
+
         {/* Уведомление */}
-        <div className="mb-6 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300 px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-sm">
-          <span>💡</span> {notification}
+        <div className="notice-strip mb-5 px-4 py-3 rounded-xl text-xs flex items-center gap-2 shadow-sm">
+          <span aria-hidden="true">◇</span> {notification}
         </div>
 
         {/* ================= РЕЖИМ 1: КАТАЛОГ ================= */}
         {activeTab === 'catalog' && (
           <div>
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm mb-6 flex flex-col md:flex-row gap-4">
+            <div className="catalog-toolbar bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm mb-6 flex flex-col md:flex-row gap-4">
               <input
                 type="text"
                 placeholder="🔍 Поиск муниципалитета..."

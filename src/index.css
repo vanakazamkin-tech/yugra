@@ -4,67 +4,113 @@
 
 :root {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #26372e;
-  background: #f5f3ec;
+  color: #203d32;
+  background: #f5f0e5;
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
 }
-
 * { box-sizing: border-box; }
-html { background: #f5f3ec; }
-body { margin: 0; background: #f5f3ec; color: #26372e; }
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #f5f0e5;
+  color: #203d32;
+  background-image: radial-gradient(circle at 12% 15%, rgba(193,166,117,.10), transparent 24%), radial-gradient(circle at 88% 78%, rgba(36,76,62,.055), transparent 25%);
+}
+button, input { font: inherit; }
+button { cursor: pointer; transition: background-color .18s ease, color .18s ease, border-color .18s ease, transform .18s ease; }
 
-/* Единая светлая палитра: береста, хвоя и спокойный терракотовый акцент. */
-.bg-slate-100 { background-color: #f5f3ec !important; }
-.bg-white { background-color: #fffefa !important; }
-.bg-slate-900, .bg-slate-950 { background-color: #fffefa !important; }
-.bg-slate-800 { background-color: #eeeee5 !important; }
-.border-slate-200, .border-slate-800 { border-color: #dedfd3 !important; }
-.border-slate-100 { border-color: #e9e8dd !important; }
-.text-slate-900, .text-slate-100 { color: #26372e !important; }
-.text-slate-600, .text-slate-400, .text-slate-500 { color: #68736a !important; }
-.text-blue-600, .text-blue-500 { color: #8d4d35 !important; }
-.bg-blue-600, .bg-emerald-600 { background-color: #315b48 !important; }
-.hover\:bg-blue-700:hover, .hover\:bg-emerald-700:hover { background-color: #244736 !important; }
-.hover\:border-blue-500:hover { border-color: #a66a4b !important; }
-.focus\:ring-blue-500:focus { --tw-ring-color: #b77a56 !important; }
-.bg-blue-50 { background-color: #f4eee3 !important; }
-.border-blue-200 { border-color: #e2d3bc !important; }
-.text-blue-800 { color: #69432f !important; }
-.text-emerald-600 { color: #426b4b !important; }
-.rounded-2xl { border-radius: 16px !important; }
-.shadow-sm { box-shadow: 0 3px 14px rgba(37, 54, 43, .06) !important; }
+/* Warm birch-bark paper and deep taiga green palette */
+.bg-slate-100 { background-color: #f5f0e5 !important; }
+.bg-white { background-color: #fffaf1 !important; }
+.bg-slate-50 { background-color: #f8f3e9 !important; }
+.border-slate-200 { border-color: #ded5c3 !important; }
+.border-slate-100 { border-color: #ece4d5 !important; }
+.text-slate-900, .text-slate-800 { color: #203d32 !important; }
+.text-slate-600 { color: #586b5e !important; }
+.text-slate-500, .text-slate-400 { color: #7e887b !important; }
+.text-blue-600, .text-blue-500 { color: #285542 !important; }
+.bg-blue-600, .bg-emerald-600 { background-color: #214a39 !important; }
+.hover\:bg-blue-700:hover, .hover\:bg-emerald-700:hover { background-color: #17382b !important; }
+.hover\:border-blue-500:hover { border-color: #b8754b !important; }
+.focus\:ring-blue-500:focus { --tw-ring-color: #b8754b !important; }
+.bg-blue-50 { background-color: #f4ead8 !important; }
+.border-blue-200 { border-color: #d9c39e !important; }
+.text-blue-800 { color: #674b2e !important; }
+.text-emerald-600 { color: #315e43 !important; }
+.rounded-2xl { border-radius: 18px !important; }
+.shadow-sm { box-shadow: 0 4px 18px rgba(35, 49, 39, .065) !important; }
 
 header.flex {
-  border-radius: 16px !important;
-  border-top: 3px solid #315b48 !important;
+  position: relative;
+  border-radius: 18px !important;
+  border: 1px solid #ded5c3 !important;
+  border-top: 4px solid #244c3e !important;
+  padding: 17px 22px !important;
+  margin-bottom: 12px !important;
+  background: rgba(255,250,241,.96) !important;
+  box-shadow: 0 5px 20px rgba(42,57,44,.06) !important;
 }
 header button { letter-spacing: .01em; }
-header button:hover { color: #8d4d35; }
+header button:hover { color: #a35f3e; }
 .brand-mark {
-  display: flex; align-items: center; justify-content: center;
-  width: 46px; height: 46px; border-radius: 13px 13px 13px 4px;
-  color: #f8f3e7; background: #315b48; position: relative; overflow: hidden;
+  display:flex; align-items:center; justify-content:center; width:52px; height:52px;
+  border-radius:50%; color:#f8f2e5; background:#214a39; position:relative; overflow:hidden;
+  border: 2px solid #d6bd8d; box-shadow: inset 0 0 0 3px #214a39, inset 0 0 0 4px #d6bd8d;
 }
-.brand-mark:before, .brand-mark:after {
-  content: ""; position: absolute; width: 29px; height: 29px;
-  border: 1px solid #d9bd8d; transform: rotate(45deg);
-}
-.brand-mark:after { width: 17px; height: 17px; }
-.brand-mark span { position: relative; z-index: 1; font-size: 21px; color: #e5c28b; }
+.brand-mark:before,.brand-mark:after { content:""; position:absolute; width:27px; height:27px; border:2px solid #e8d6ad; transform:rotate(45deg); }
+.brand-mark:after { width:15px; height:15px; }
+.brand-mark span { position:relative; z-index:1; font-size:18px; color:#fff7e5; text-shadow:0 1px 2px #17382b; }
 
-/* Карточки и элементы управления */
-input, button, select { font: inherit; }
-input, select { color: #26372e; }
-input::placeholder { color: #858b80; }
-button { transition: background-color .18s ease, color .18s ease, border-color .18s ease; }
-.grid > div, .grid > div > div { transition: transform .2s ease, box-shadow .2s ease; }
-.grid > div:hover { transform: translateY(-2px); box-shadow: 0 9px 20px rgba(32, 59, 49, .08); }
-table tbody tr:hover { background-color: #f6f1e7 !important; }
+/* Geometric band inspired by the selected Khanty/Mansi birch-branch motifs.
+   It is a decorative border, not a literal claim that all regional ornaments are interchangeable. */
+.heritage-band {
+  height: 44px; display:flex; align-items:center; gap:14px; position:relative; overflow:hidden;
+  padding: 0 18px; border-radius: 7px; color:#f8f0df; background:#214a39;
+  box-shadow: 0 3px 0 #d1b77f, 0 7px 16px rgba(35,49,39,.08);
+  letter-spacing:.13em; font-size:10px; font-weight:800;
+}
+.heritage-band:before, .heritage-band:after {
+  content:""; position:absolute; top:0; bottom:0; width:100%; pointer-events:none;
+  background-image: repeating-linear-gradient(45deg, transparent 0 10px, rgba(247,239,220,.95) 10px 13px, transparent 13px 22px), repeating-linear-gradient(-45deg, transparent 0 10px, rgba(247,239,220,.95) 10px 13px, transparent 13px 22px);
+  background-size:22px 22px; opacity:.75;
+  mask-image: linear-gradient(to bottom, black 0 22%, transparent 22% 78%, black 78% 100%);
+}
+.heritage-band:before { left:0; }
+.heritage-band:after { right:0; transform:scaleX(-1); }
+.heritage-band__pattern { position:absolute; inset:0; opacity:.18; background:repeating-linear-gradient(90deg, transparent 0 36px, #d8c49c 36px 38px, transparent 38px 72px); }
+.heritage-band > span { position:relative; z-index:1; background:#214a39; padding:5px 9px; border:1px solid rgba(226,205,158,.35); }
+.heritage-band__caption { margin-left:auto; }
+.notice-strip { background:#f4ead8; border:1px solid #ddc9a5; color:#674b2e; }
+.catalog-toolbar { position:relative; overflow:hidden; }
+.catalog-toolbar:after { content:"◇  ◇  ◇"; position:absolute; right:22px; bottom:-13px; font-size:40px; letter-spacing:7px; color:rgba(36,76,62,.075); pointer-events:none; }
+.catalog-toolbar input { border-color:#d9cfbb !important; background:#fffdf7 !important; }
+.catalog-toolbar input:focus { outline:none; border-color:#315e43 !important; box-shadow:0 0 0 3px rgba(49,94,67,.12); }
+
+/* Cards, maps, and tables */
+.grid > div, .grid > div > div { transition:transform .2s ease, box-shadow .2s ease; }
+.grid > div:hover { transform:translateY(-3px); box-shadow:0 12px 24px rgba(32,59,49,.1); }
+.grid > div[class*="rounded-2xl"] { position:relative; overflow:hidden; }
+.grid > div[class*="rounded-2xl"]:before { content:""; position:absolute; right:-17px; top:-17px; width:44px; height:44px; border:1px solid rgba(36,76,62,.15); transform:rotate(45deg); pointer-events:none; }
+table { color:#273b30; }
+table thead { background:#eee6d8; color:#536457; }
+table tbody tr { border-color:#e7dece !important; }
+table tbody tr:hover { background-color:#f3eadb !important; }
+
+/* Remove remnants of the previous optional dark theme; the interface is intentionally light. */
+.dark body, .dark .bg-slate-100 { background-color:#f5f0e5 !important; }
+.dark .bg-slate-900, .dark .bg-slate-950, .dark .bg-slate-800 { background-color:#fffaf1 !important; }
+.dark .text-slate-100, .dark .text-slate-200 { color:#203d32 !important; }
+.dark .text-slate-300, .dark .text-slate-400 { color:#7e887b !important; }
+.dark .border-slate-800, .dark .border-slate-700 { border-color:#ded5c3 !important; }
 
 @media (max-width: 760px) {
-  header.flex { align-items: stretch; }
+  header.flex { align-items:flex-start !important; padding:15px !important; }
+  header .flex.bg-slate-100 { width:100%; overflow-x:auto; }
+  header .flex.bg-slate-100 button { white-space:nowrap; }
+  .heritage-band { height:38px; padding:0 8px; font-size:8px; letter-spacing:.06em; }
+  .heritage-band__caption { display:none; }
 }
 @media print {
-  body, html { background: #fff !important; }
+  .heritage-band { display:none !important; }
+  body { background:#fff !important; }
 }
