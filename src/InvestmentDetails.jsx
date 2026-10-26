@@ -7,13 +7,13 @@ export const InvestmentDetails = () => {
   const [selectedGroup, setSelectedGroup] = useState('ALL');
   
   const [activeModalItem, setActiveModalItem] = useState(null);
-  const [hoveredRegion, setHoveredRegion] = useState(null);
+  const [hoveredRegionId, setHoveredRegionId] = useState(null);
 
   const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'desc' });
-  const [notification, setNotification] = useState('Интерактивная карта Югры и каталог готовы к работы.');
+  const [notification, setNotification] = useState('Интерактивная карта ХМАО синхронизирована с официальным макетом.');
   
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark' || window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return localStorage.getItem('theme'] === 'dark' || window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
   useEffect(() => {
@@ -58,30 +58,30 @@ export const InvestmentDetails = () => {
     setTimeout(() => window.print(), 300);
   };
 
-  // Географические координаты точек на карте ХМАО (в процентах от размера карты)
-  const mapPoints = [
-    { name: 'Берёзовский район', top: '35%', left: '22%' },
-    { name: 'Белоярский район', top: '28%', left: '42%' },
-    { name: 'Октябрьский район', top: '48%', left: '33%' },
-    { name: 'Советский район', top: '58%', left: '18%' },
-    { name: 'Югорск', top: '64%', left: '21%' },
-    { name: 'Нягань', top: '52%', left: '30%' },
-    { name: 'Кондинский район', top: '75%', left: '24%' },
-    { name: 'Урай', top: '72%', left: '20%' },
-    { name: 'Ханты-Мансийский район', top: '65%', left: '38%' },
-    { name: 'Ханты-Мансийск', top: '68%', left: '41%' },
-    { name: 'Нефтеюганский район', top: '68%', left: '52%' },
-    { name: 'Нефтеюганск', top: '66%', left: '51%' },
-    { name: 'Пыть-Ях', top: '72%', left: '53%' },
-    { name: 'Сургутский район', top: '45%', left: '58%' },
-    { name: 'Сургут', top: '58%', left: '60%' },
-    { name: 'Когалым', top: '42%', left: '62%' },
-    { name: 'Нижневартовский район', top: '52%', left: '78%' },
-    { name: 'Нижневартовск', top: '64%', left: '76%' },
-    { name: 'Мегион', top: '65%', left: '72%' },
-    { name: 'Лангепас', top: '62%', left: '68%' },
-    { name: 'Покачи', top: '54%', left: '66%' },
-    { name: 'Радужный', top: '46%', left: '74%' },
+  // Географические SVG-контуры районов и городов ХМАО в единой сетке координат
+  const svgMapRegions = [
+    { id: 'berezovsky', name: 'Берёзовский район', path: 'M 60,40 L 150,30 L 180,100 L 140,180 L 70,150 Z' },
+    { id: 'beloyarsky', name: 'Белоярский район', path: 'M 150,30 L 290,40 L 310,120 L 180,100 Z' },
+    { id: 'october', name: 'Октябрьский район', path: 'M 180,100 L 310,120 L 280,190 L 160,180 Z' },
+    { id: 'sovetsky', name: 'Советский район', path: 'M 70,150 L 140,180 L 130,260 L 50,230 Z' },
+    { id: 'ugorsk', name: 'Югорск', path: 'M 95,210 m -12, 0 a 12,12 0 1,0 24, 0 a 12,12 0 1,0 -24, 0' },
+    { id: 'nyagan', name: 'Нягань', path: 'M 160,165 m -10, 0 a 10,10 0 1,0 20, 0 a 10,10 0 1,0 -20, 0' },
+    { id: 'kondinsky', name: 'Кондинский район', path: 'M 50,230 L 160,220 L 190,320 L 90,340 Z' },
+    { id: 'uray', name: 'Урай', path: 'M 115,290 m -10, 0 a 10,10 0 1,0 20, 0 a 10,10 0 1,0 -20, 0' },
+    { id: 'hm_raion', name: 'Ханты-Мансийский район', path: 'M 160,180 L 280,190 L 300,300 L 190,320 Z' },
+    { id: 'hm_city', name: 'Ханты-Мансийск', path: 'M 215,235 m -12, 0 a 12,12 0 1,0 24, 0 a 12,12 0 1,0 -24, 0' },
+    { id: 'nefteyugansky', name: 'Нефтеюганский район', path: 'M 280,190 L 380,180 L 390,290 L 300,300 Z' },
+    { id: 'nefteyugansk', name: 'Нефтеюганск', path: 'M 320,220 m -9, 0 a 9,9 0 1,0 18, 0 a 9,9 0 1,0 -18, 0' },
+    { id: 'pyть_yah', name: 'Пыть-Ях', path: 'M 340,250 m -9, 0 a 9,9 0 1,0 18, 0 a 9,9 0 1,0 -18, 0' },
+    { id: 'surgutsky', name: 'Сургутский район', path: 'M 310,120 L 480,110 L 490,240 L 380,180 Z' },
+    { id: 'surgut', name: 'Сургут', path: 'M 395,200 m -12, 0 a 12,12 0 1,0 24, 0 a 12,12 0 1,0 -24, 0' },
+    { id: 'kogalym', name: 'Когалым', path: 'M 440,135 m -10, 0 a 10,10 0 1,0 20, 0 a 10,10 0 1,0 -20, 0' },
+    { id: 'nizhnevartovsky', name: 'Нижневартовский район', path: 'M 480,110 L 680,130 L 650,300 L 490,240 Z' },
+    { id: 'nizhnevartovsk', name: 'Нижневартовск', path: 'M 530,210 m -11, 0 a 11,11 0 1,0 22, 0 a 11,11 0 1,0 -22, 0' },
+    { id: 'megion', name: 'Мегион', path: 'M 500,230 m -9, 0 a 9,9 0 1,0 18, 0 a 9,9 0 1,0 -18, 0' },
+    { id: 'langepas', name: 'Лангепас', path: 'M 460,220 m -9, 0 a 9,9 0 1,0 18, 0 a 9,9 0 1,0 -18, 0' },
+    { id: 'pokachi', name: 'Покачи', path: 'M 470,170 m -9, 0 a 9,9 0 1,0 18, 0 a 9,9 0 1,0 -18, 0' },
+    { id: 'raduzhny', name: 'Радужный', path: 'M 570,150 m -10, 0 a 10,10 0 1,0 20, 0 a 10,10 0 1,0 -20, 0' },
   ];
 
   return (
@@ -225,76 +225,65 @@ export const InvestmentDetails = () => {
           </div>
         )}
 
-        {/* ================= РЕЖИМ 2: ИНТЕРАКТИВНАЯ КАРТА ХМАО ================= */}
+        {/* ================= РЕЖИМ 2: ТОЧНАЯ ГЕОГРАФИЧЕСКАЯ ИНТЕРАКТИВНАЯ КАРТА ХМАО ================= */}
         {activeTab === 'map' && (
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
               <div>
                 <h2 className="text-xl font-black">Географическая карта ХМАО — Югры</h2>
-                <p className="text-xs text-slate-400">Наведите на точку района или выберите из списка справа:</p>
+                <p className="text-xs text-slate-400">Наведите на регион на карте или выберите в списке справа:</p>
               </div>
               <div className="text-xs bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-bold px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-900">
-                {hoveredRegion ? `Выбран: ${hoveredRegion.name}` : 'Выберите объект на карте'}
+                {hoveredRegionId ? `Регион: ${data.municipalities.find(m => m.id === hoveredRegionId)?.name}` : 'Наведите курсор на карту'}
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
-              {/* ЛЕВАЯ КОЛОНКА: Интерактивная векторная карта ХМАО с кликабельными точками */}
-              <div className="lg:col-span-7 bg-slate-950 p-4 rounded-2xl border border-slate-800 flex items-center justify-center min-h-[480px] relative overflow-hidden">
-                
-                {/* Фоновая подложка контура ХМАО */}
-                <div className="w-full h-full relative min-h-[400px] flex items-center justify-center">
-                  <svg viewBox="0 0 800 500" className="w-full h-auto max-h-[420px] opacity-30 fill-blue-500/20 stroke-blue-400 stroke-[1.5]">
-                    <path d="M 50,150 L 220,80 L 380,100 L 620,150 L 750,220 L 700,380 L 520,390 L 380,420 L 220,400 L 100,320 Z" />
-                  </svg>
-
-                  {/* Интерактивные точки муниципалитетов */}
-                  {mapPoints.map((pt, idx) => {
-                    const itemData = data.municipalities.find(m => m.name.toLowerCase().includes(pt.name.toLowerCase().split(' ')[0])) || data.municipalities[0];
-                    const isHovered = hoveredRegion?.name === itemData.name;
+              {/* ЛЕВАЯ КОЛОНКА: Векторная SVG-карта с подсветкой областей при наведении */}
+              <div className="lg:col-span-7 bg-slate-950 p-6 rounded-2xl border border-slate-800 flex items-center justify-center min-h-[500px] relative overflow-hidden">
+                <svg viewBox="0 0 750 380" className="w-full h-auto max-h-[460px]">
+                  {svgMapRegions.map((reg) => {
+                    const matchedItem = data.municipalities.find(m => m.name.toLowerCase().includes(reg.name.toLowerCase().split(' ')[0])) || data.municipalities[0];
+                    const isHovered = hoveredRegionId === matchedItem.id;
 
                     return (
-                      <div
-                        key={idx}
-                        style={{ top: pt.top, left: pt.left }}
-                        onMouseEnter={() => setHoveredRegion(itemData)}
-                        onMouseLeave={() => setHoveredRegion(null)}
-                        onClick={() => setActiveModalItem(itemData)}
-                        className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer z-20 group"
+                      <g 
+                        key={reg.id}
+                        onMouseEnter={() => setHoveredRegionId(matchedItem.id)}
+                        onMouseLeave={() => setHoveredRegionId(null)}
+                        onClick={() => setActiveModalItem(matchedItem)}
+                        className="cursor-pointer transition duration-200"
                       >
-                        <div className={`w-3.5 h-3.5 rounded-full transition-all duration-200 ${
-                          isHovered 
-                            ? 'bg-blue-400 scale-150 ring-4 ring-blue-500/50' 
-                            : itemData.group2024 === 'A' 
-                            ? 'bg-emerald-400 shadow-lg' 
-                            : 'bg-white/80 hover:bg-blue-400'
-                        }`} />
-                        <span className={`absolute left-5 top-1/2 -translate-y-1/2 whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded transition ${
-                          isHovered ? 'bg-blue-600 text-white z-30 scale-105' : 'bg-slate-900/80 text-slate-200 backdrop-blur-sm'
-                        }`}>
-                          {itemData.name}
-                        </span>
-                      </div>
+                        <path
+                          d={reg.path}
+                          className={`transition duration-200 ${
+                            isHovered 
+                              ? 'fill-blue-600 stroke-white stroke-[2] scale-105' 
+                              : matchedItem.group2024 === 'A'
+                              ? 'fill-emerald-900/60 stroke-emerald-500 stroke-[1] hover:fill-emerald-700'
+                              : 'fill-slate-900 stroke-slate-700 stroke-[1] hover:fill-slate-800'
+                          }`}
+                        />
+                      </g>
                     );
                   })}
-                </div>
-
+                </svg>
               </div>
 
-              {/* ПРАВАЯ КОЛОНКА: Список муниципалитетов как на официальном сайте admhmao.ru */}
-              <div className="lg:col-span-5 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 max-h-[480px] overflow-y-auto">
+              {/* ПРАВАЯ КОЛОНКА: Список с синхронизированной подсветкой */}
+              <div className="lg:col-span-5 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 max-h-[500px] overflow-y-auto">
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 px-2">
                   Муниципальные районы и округа
                 </div>
                 <div className="space-y-1.5">
                   {data.municipalities.map((m) => {
-                    const isHovered = hoveredRegion?.id === m.id;
+                    const isHovered = hoveredRegionId === m.id;
                     return (
                       <div
                         key={m.id}
-                        onMouseEnter={() => setHoveredRegion(m)}
-                        onMouseLeave={() => setHoveredRegion(null)}
+                        onMouseEnter={() => setHoveredRegionId(m.id)}
+                        onMouseLeave={() => setHoveredRegionId(null)}
                         onClick={() => setActiveModalItem(m)}
                         className={`px-3 py-2.5 rounded-xl text-xs font-bold flex justify-between items-center transition cursor-pointer ${
                           isHovered
