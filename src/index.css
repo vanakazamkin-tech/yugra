@@ -46,3 +46,34 @@
 .full-panel{overflow:hidden}
 .full-panel:after{content:"";position:absolute;right:-13px;bottom:-14px;width:128px;height:128px;opacity:.09;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%231d4938' stroke-width='5'%3E%3Cpath d='M48 0 L64 16 L48 32 L32 16 Z M48 32 L64 48 L48 64 L32 48 Z M48 64 L64 80 L48 96 L32 80 Z M0 48 L16 32 L32 48 L16 64 Z M64 48 L80 32 L96 48 L80 64 Z'/%3E%3C/g%3E%3C/svg%3E");background-repeat:repeat}
 @media(max-width:640px){.header-ornament{width:105px;opacity:.35}.panel:before{width:52px;height:52px;background-size:52px 52px}.catalog-hero{padding-left:22px}.catalog-hero:before{width:10px}.site-footer{padding-top:24px}}
+
+/* Authentic-inspired Khanty birch-branch border: stepped branching zigzags and a solid lower rail. */
+.ornament-divider{
+  height:42px;
+  margin-bottom:22px;
+  background-color:#1d4938;
+  border-top:3px solid #b28a50;
+  border-bottom:3px solid #b28a50;
+  overflow:hidden;
+}
+.ornament-repeat{
+  width:100%;height:100%;font-size:0;opacity:1;transform:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='144' height='36' viewBox='0 0 144 36'%3E%3Cpath fill='%23f7f0e3' d='M0 0h12l12 12L36 0h12l12 12L72 0h12l12 12L108 0h12l12 12L144 0v11L132 23l-12-12-12 12-12-12-12 12-12-12-12 12-12-12-12 12L12 11 0 23Z'/%3E%3Cpath fill='%23f7f0e3' d='M0 36V25l12-12 12 12 12-12 12 12 12-12 12 12 12-12 12 12 12-12 12 12 12-12 12 12v11H0Z'/%3E%3Cpath fill='%231d4938' d='M0 9 12 21 24 9 36 21 48 9 60 21 72 9 84 21 96 9 108 21 120 9 132 21 144 9v7l-12 12-12-12-12 12-12-12-12 12-12-12-12 12-12-12-12 12-12-12L0 16Z'/%3E%3Cpath fill='%231d4938' d='M0 27 12 15 24 27 36 15 48 27 60 15 72 27 84 15 96 27 108 15 120 27 132 15 144 27v9H0Z'/%3E%3C/svg%3E");
+  background-repeat:repeat-x;background-position:center;background-size:144px 36px;
+}
+/* The side motif uses the same stepped branch rhythm, not generic diamonds. */
+.header-ornament{
+  width:235px;right:-2px;top:0;height:100%;font-size:0;transform:none;opacity:.42;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%231d4938' stroke-width='5' stroke-linejoin='miter'%3E%3Cpath d='M0 18 9 9 18 18 27 9 36 18 45 9 54 18 63 9 72 18M0 36 9 27 18 36 27 27 36 36 45 27 54 36 63 27 72 36M0 54 9 45 18 54 27 45 36 54 45 45 54 54 63 45 72 54'/%3E%3Cpath d='M9 9 18 18 9 27 18 36 9 45 18 54M27 9 36 18 27 27 36 36 27 45 36 54M45 9 54 18 45 27 54 36 45 45 54 54M63 9 72 18 63 27 72 36 63 45 72 54'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat:repeat;background-position:right center;pointer-events:none;
+}
+/* Remove previous diamond/triangle placeholder textures from cards and replace with a woven branch motif. */
+.panel:before,.map-stage:after,.catalog-hero:after,.full-panel:after{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='60' viewBox='0 0 84 60'%3E%3Cg fill='none' stroke='%231d4938' stroke-width='5' stroke-linejoin='miter'%3E%3Cpath d='M0 12 10 2 20 12 30 2 40 12 50 2 60 12 70 2 80 12M0 30 10 20 20 30 30 20 40 30 50 20 60 30 70 20 80 30M0 48 10 38 20 48 30 38 40 48 50 38 60 48 70 38 80 48'/%3E%3Cpath d='M10 2 20 12 10 20 20 30 10 38 20 48M30 2 40 12 30 20 40 30 30 38 40 48M50 2 60 12 50 20 60 30 50 38 60 48M70 2 80 12 70 20 80 30 70 38 80 48'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat:repeat;background-size:84px 60px;
+}
+.catalog-hero:before{background:repeating-linear-gradient(0deg,rgba(29,73,56,.25) 0 4px,transparent 4px 10px)!important;}
+.section-heading:after{height:5px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='8' viewBox='0 0 52 8'%3E%3Cpath d='M0 4 4 0 8 4 12 0 16 4 20 0 24 4 28 0 32 4 36 0 40 4 44 0 48 4 52 0M0 4 4 8 8 4 12 8 16 4 20 8 24 4 28 8 32 4 36 8 40 4 44 8 48 4 52 8' fill='none' stroke='%231d4938' stroke-width='1.8'/%3E%3C/svg%3E");background-repeat:repeat-x;background-size:52px 8px;}
+.site-footer:before{height:18px;background-color:#1d4938;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='14' viewBox='0 0 96 14'%3E%3Cpath d='M0 7 7 0 14 7 21 0 28 7 35 0 42 7 49 0 56 7 63 0 70 7 77 0 84 7 91 0 98 7M0 7 7 14 14 7 21 14 28 7 35 14 42 7 49 14 56 7 63 14 70 7 77 14 84 7 91 14 98 7' fill='none' stroke='%23f7f0e3' stroke-width='2'/%3E%3C/svg%3E");background-repeat:repeat-x;background-size:96px 14px;}
+.site-footer:after{content:"";}
+@media(max-width:640px){.header-ornament{width:95px;opacity:.18}.ornament-divider{height:32px}.ornament-repeat{background-size:128px 26px}}

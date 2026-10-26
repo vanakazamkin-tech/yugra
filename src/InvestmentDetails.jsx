@@ -66,12 +66,11 @@ export const InvestmentDetails = () => {
             <button className={activeTab === 'map' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('map')}><Icon name="map"/>Карта Югры</button>
             <button className={activeTab === 'compare' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('compare')}><Icon name="table"/>Рейтинг</button>
             <button className="nav-item" onClick={handleExportPDF}><Icon name="file"/>Отчёты</button>
-            <button className="nav-item about-nav" onClick={() => setNotification('Проект посвящён муниципалитетам и устойчивому развитию Югры.')}><span className="nav-info">i</span>О проекте</button>
           </nav>
-          <div className="header-ornament" aria-hidden="true">◇ ⟐ ◇ ⟐ ◇</div>
+          <div className="header-ornament" aria-hidden="true" />
         </header>
 
-        <div className="ornament-divider" aria-hidden="true"><div className="ornament-repeat">◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇</div></div>
+        <div className="ornament-divider" aria-hidden="true"><div className="ornament-repeat" /></div>
 
         <main>
           {activeTab === 'catalog' && <>
