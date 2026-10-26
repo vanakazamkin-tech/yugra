@@ -1,0 +1,224 @@
+{
+  "municipalities": [
+    {
+      "id": "surgutsky",
+      "name": "Сургутский район",
+      "group2024": "A",
+      "rank2024": 1,
+      "score": 385,
+      "investments": { "volumeBillion": 145.2, "growthPercent": 112 },
+      "smeCount": 18400,
+      "assessmentScore": 4.85
+    },
+    {
+      "id": "khanty-mansiysk",
+      "name": "Ханты-Мансийск",
+      "group2024": "A",
+      "rank2024": 2,
+      "score": 372,
+      "investments": { "volumeBillion": 98.4, "growthPercent": 108 },
+      "smeCount": 14200,
+      "assessmentScore": 4.78
+    },
+    {
+      "id": "beloyarsky-raion",
+      "name": "Белоярский район",
+      "group2024": "A",
+      "rank2024": 3,
+      "score": 350,
+      "investments": { "volumeBillion": 42.1, "growthPercent": 105 },
+      "smeCount": 3500,
+      "assessmentScore": 4.70
+    },
+    {
+      "id": "nizhnevartovsky-raion",
+      "name": "Нижневартовский район",
+      "group2024": "B",
+      "rank2024": 4,
+      "score": 340,
+      "investments": { "volumeBillion": 110.5, "growthPercent": 103 },
+      "smeCount": 5100,
+      "assessmentScore": 4.65
+    },
+    {
+      "id": "uray",
+      "name": "Урай",
+      "group2024": "B",
+      "rank2024": 5,
+      "score": 330,
+      "investments": { "volumeBillion": 25.0, "growthPercent": 104 },
+      "smeCount": 4200,
+      "assessmentScore": 4.60
+    },
+    {
+      "id": "nizhnevartovsk",
+      "name": "Нижневартовск",
+      "group2024": "B",
+      "rank2024": 6,
+      "score": 325,
+      "investments": { "volumeBillion": 65.3, "growthPercent": 102 },
+      "smeCount": 15800,
+      "assessmentScore": 4.55
+    },
+    {
+      "id": "kondinsky-raion",
+      "name": "Кондинский район",
+      "group2024": "B",
+      "rank2024": 7,
+      "score": 315,
+      "investments": { "volumeBillion": 18.2, "growthPercent": 101 },
+      "smeCount": 2100,
+      "assessmentScore": 4.50
+    },
+    {
+      "id": "langepas",
+      "name": "Лангепас",
+      "group2024": "B",
+      "rank2024": 8,
+      "score": 310,
+      "investments": { "volumeBillion": 15.6, "growthPercent": 104 },
+      "smeCount": 3100,
+      "assessmentScore": 4.48
+    },
+    {
+      "id": "october-raion",
+      "name": "Октябрьский район",
+      "group2024": "B",
+      "rank2024": 9,
+      "score": 305,
+      "investments": { "volumeBillion": 20.4, "growthPercent": 100 },
+      "smeCount": 2800,
+      "assessmentScore": 4.45
+    },
+    {
+      "id": "berezovsky-raion",
+      "name": "Берёзовский район",
+      "group2024": "B",
+      "rank2024": 10,
+      "score": 298,
+      "investments": { "volumeBillion": 12.1, "growthPercent": 99 },
+      "smeCount": 1900,
+      "assessmentScore": 4.40
+    },
+    {
+      "id": "pyt-yah",
+      "name": "Пыть-Ях",
+      "group2024": "B",
+      "rank2024": 11,
+      "score": 292,
+      "investments": { "volumeBillion": 19.8, "growthPercent": 102 },
+      "smeCount": 3400,
+      "assessmentScore": 4.38
+    },
+    {
+      "id": "raduzhny",
+      "name": "Радужный",
+      "group2024": "B",
+      "rank2024": 12,
+      "score": 288,
+      "investments": { "volumeBillion": 14.2, "growthPercent": 101 },
+      "smeCount": 3200,
+      "assessmentScore": 4.35
+    },
+    {
+      "id": "megion",
+      "name": "Мегион",
+      "group2024": "B",
+      "rank2024": 13,
+      "score": 285,
+      "investments": { "volumeBillion": 22.4, "growthPercent": 100 },
+      "smeCount": 4100,
+      "assessmentScore": 4.30
+    },
+    {
+      "id": "pokachi",
+      "name": "Покачи",
+      "group2024": "B",
+      "rank2024": 14,
+      "score": 280,
+      "investments": { "volumeBillion": 11.5, "growthPercent": 103 },
+      "smeCount": 1800,
+      "assessmentScore": 4.28
+    },
+    {
+      "id": "ugorsk",
+      "name": "Югорск",
+      "group2024": "B",
+      "rank2024": 15,
+      "score": 275,
+      "investments": { "volumeBillion": 24.1, "growthPercent": 105 },
+      "smeCount": 4500,
+      "assessmentScore": 4.25
+    },
+    {
+      "id": "surgut",
+      "name": "Сургут",
+      "group2024": "B",
+      "rank2024": 16,
+      "score": 270,
+      "investments": { "volumeBillion": 185.0, "growthPercent": 110 },
+      "smeCount": 32000,
+      "assessmentScore": 4.20
+    },
+    {
+      "id": "nefteyugansk",
+      "name": "Нефтеюганск",
+      "group2024": "B",
+      "rank2024": 17,
+      "score": 265,
+      "investments": { "volumeBillion": 54.2, "growthPercent": 102 },
+      "smeCount": 9800,
+      "assessmentScore": 4.15
+    },
+    {
+      "id": "kogalym",
+      "name": "Когалым",
+      "group2024": "B",
+      "rank2024": 18,
+      "score": 260,
+      "investments": { "volumeBillion": 48.6, "growthPercent": 104 },
+      "smeCount": 5400,
+      "assessmentScore": 4.10
+    },
+    {
+      "id": "nefteyugansky-raion",
+      "name": "Нефтеюганский район",
+      "group2024": "B",
+      "rank2024": 19,
+      "score": 255,
+      "investments": { "volumeBillion": 75.4, "growthPercent": 101 },
+      "smeCount": 4600,
+      "assessmentScore": 4.05
+    },
+    {
+      "id": "nyagan-city",
+      "name": "Нягань",
+      "group2024": "B",
+      "rank2024": 20,
+      "score": 250,
+      "investments": { "volumeBillion": 31.2, "growthPercent": 106 },
+      "smeCount": 5100,
+      "assessmentScore": 4.00
+    },
+    {
+      "id": "khanty-mansiysky-raion",
+      "name": "Ханты-Мансийский район",
+      "group2024": "B",
+      "rank2024": 21,
+      "score": 245,
+      "investments": { "volumeBillion": 16.8, "growthPercent": 98 },
+      "smeCount": 2200,
+      "assessmentScore": 3.95
+    },
+    {
+      "id": "sovetsky-raion",
+      "name": "Советский район",
+      "group2024": "B",
+      "rank2024": 22,
+      "score": 240,
+      "investments": { "volumeBillion": 21.0, "growthPercent": 100 },
+      "smeCount": 3900,
+      "assessmentScore": 3.90
+    }
+  ]
+}
