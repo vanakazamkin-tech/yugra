@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { MAP_VIEWBOX, districts, cities } from '../ugraMapGeo';
 
-const BLUE = '#4285f4';
+const BLUE = '#526b4c';
 
 /**
  * Интерактивная карта ХМАО — Югры.
- * Районы — белые полигоны с синей обводкой и тенью, города — синие точки с подписями.
+ * Районы — светлые полигоны с лесной обводкой и тенью, города — охристые точки с подписями.
  * Наведение подсвечивает объект (в том числе синхронно со списком справа), клик — открывает паспорт.
  */
 export const UgraMap = ({ municipalities, hoveredId, onHover, onSelect }) => {

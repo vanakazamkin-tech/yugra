@@ -2,7 +2,123 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  background-color: #f8fafc;
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #20372e;
+  background: #f4f1e8;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --forest: #1e352b;
+  --forest-deep: #14251e;
+  --moss: #526b4c;
+  --ochre: #b58a48;
+  --paper: #f8f6ef;
+  --ink: #20372e;
+  --muted: #7b857b;
+  --line: #e3e0d5;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; background: var(--paper); }
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+::selection { background: #d9c28d; color: #14251e; }
+
+/* Югорский визуальный стиль: лесной зелёный, бумажный фон, охристые акценты */
+.App { min-height: 100vh; }
+.bg-slate-100 { background-color: #f4f1e8 !important; }
+.bg-white { background-color: #fffdf7 !important; }
+.text-slate-900 { color: #20372e !important; }
+.text-slate-600 { color: #5e6b60 !important; }
+.text-slate-500 { color: #788176 !important; }
+.border-slate-200 { border-color: #e3e0d5 !important; }
+.rounded-2xl { border-radius: 1.25rem; }
+.shadow-sm { box-shadow: 0 8px 24px rgba(32, 55, 46, .055) !important; }
+
+/* Верхняя панель */
+header.flex {
+  position: relative;
+  overflow: hidden;
+  background: var(--forest) !important;
+  color: #fffdf7 !important;
+  border: 1px solid #314a3c !important;
+  border-radius: 22px !important;
+  box-shadow: 0 14px 32px rgba(20, 37, 30, .14) !important;
+}
+header.flex::after {
+  content: "";
+  position: absolute;
+  right: -24px;
+  top: -54px;
+  width: 210px;
+  height: 210px;
+  opacity: .14;
+  pointer-events: none;
+  background: repeating-conic-gradient(from 45deg, transparent 0deg 12deg, #d9c28d 12deg 15deg, transparent 15deg 30deg);
+  mask-image: radial-gradient(circle, #000 0 48%, transparent 70%);
+}
+header h1 { color: #fffdf7 !important; letter-spacing: -.025em !important; font-size: 1.05rem !important; }
+header p { color: #c5d0c5 !important; }
+header .bg-blue-600 { background: var(--ochre) !important; color: var(--forest-deep) !important; }
+header .bg-slate-100, header .dark\:bg-slate-800 { background: rgba(255,255,255,.09) !important; }
+header button { position: relative; z-index: 1; }
+header .text-blue-600 { color: var(--forest) !important; }
+header .bg-white { background: #f8f4e8 !important; }
+
+/* Навигация и действия */
+button.bg-blue-600, .bg-blue-600 { background-color: var(--forest) !important; }
+button.bg-blue-600:hover, .hover\:bg-blue-700:hover { background-color: #304c3c !important; }
+.bg-emerald-600 { background-color: #657b50 !important; }
+.hover\:bg-emerald-700:hover { background-color: #506540 !important; }
+.text-blue-600 { color: #526b4c !important; }
+.text-emerald-600 { color: #657b50 !important; }
+.bg-blue-50 { background-color: #edf0e6 !important; }
+.border-blue-200 { border-color: #d7dfcd !important; }
+.text-blue-800 { color: #344d38 !important; }
+
+/* Карточки и таблицы */
+.max-w-7xl > div:not(.hidden) { transition: background-color .2s ease; }
+.max-w-7xl .bg-white {
+  border-color: var(--line) !important;
+  box-shadow: 0 7px 24px rgba(32,55,46,.045);
+}
+input, select {
+  border-color: #d8d9cc !important;
+  background-color: #fffdf7 !important;
+  color: var(--ink) !important;
+  border-radius: 12px !important;
+}
+input:focus, select:focus { outline: 2px solid #b8c4a7; outline-offset: 1px; }
+
+/* Орнаментальная полоса — геометрический мотив, не имитация сакрального символа */
+.max-w-7xl.mx-auto::before {
+  content: "";
+  display: block;
+  height: 7px;
+  margin: 0 0 16px;
+  border-radius: 8px;
+  background: repeating-linear-gradient(135deg, #b58a48 0 2px, transparent 2px 11px), repeating-linear-gradient(45deg, #526b4c 0 2px, transparent 2px 11px);
+  opacity: .7;
+}
+
+/* Поддержка тёмного режима, который уже есть в приложении */
+.dark body { background: #14251e; }
+.dark .bg-slate-950 { background-color: #14251e !important; }
+.dark .bg-slate-900 { background-color: #1e352b !important; }
+.dark .border-slate-800 { border-color: #354a3b !important; }
+.dark .text-slate-100 { color: #f3f0e6 !important; }
+.dark .bg-slate-800 { background-color: #263d30 !important; }
+.dark input, .dark select { background-color: #1e352b !important; color: #f3f0e6 !important; border-color: #405544 !important; }
+
+@media (max-width: 640px) {
+  .max-w-7xl.mx-auto { padding-left: 0; padding-right: 0; }
+  header.flex { align-items: stretch; padding: 1rem !important; }
+  header .flex-wrap { justify-content: flex-start; }
+  header .rounded-xl { border-radius: 10px !important; }
+}
+
+@media print {
+  body { background: white !important; }
+  .max-w-7xl.mx-auto::before { display: none; }
 }
