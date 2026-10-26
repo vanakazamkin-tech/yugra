@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import data from '../data/municipalities-detailed.json';
+import { UgraMap, UgraMapList } from './components/UgraMap';
 
 export const InvestmentDetails = () => {
   const [activeTab, setActiveTab] = useState('catalog');
@@ -8,6 +9,7 @@ export const InvestmentDetails = () => {
   
   const [activeModalItem, setActiveModalItem] = useState(null);
   const [hoveredRegionId, setHoveredRegionId] = useState(null);
+  const [isMapListOpen, setIsMapListOpen] = useState(true);
 
   const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'desc' });
   const [notification, setNotification] = useState('Точная географическая карта Югры загружена.');
@@ -65,19 +67,6 @@ export const InvestmentDetails = () => {
     setNotification('Формирование отчета для печати / PDF...');
     setTimeout(() => window.print(), 300);
   };
-
-  // Детальные географические контуры ХМАО с плавными кривыми (Bezier curves)
-  const detailedUgraMap = [
-    { id: 'berezovsky-raion', name: 'Берёзовский район', d: 'M 70,70 C 50,90 40,130 60,170 C 80,200 120,210 140,180 C 160,150 170,100 140,60 C 110,30 90,50 70,70 Z' },
-    { id: 'beloyarsky-raion', name: 'Белоярский район', d: 'M 140,60 C 170,40 220,30 270,50 C 310,70 330,120 290,150 C 250,180 180,160 140,60 Z' },
-    { id: 'october-raion', name: 'Октябрьский район', d: 'M 140,180 C 180,160 250,180 280,210 C 250,250 180,230 140,180 Z' },
-    { id: 'sovetsky-raion', name: 'Советский район', d: 'M 60,170 C 90,170 120,200 130,240 C 100,270 70,250 60,170 Z' },
-    { id: 'kondinsky-raion', name: 'Кондинский район', d: 'M 70,250 C 110,260 160,290 180,340 C 140,380 90,360 70,250 Z' },
-    { id: 'khanty-mansiysky-raion', name: 'Ханты-Мансийский район', d: 'M 140,180 C 180,230 250,250 270,290 C 230,340 180,340 140,180 Z' },
-    { id: 'surgutsky', name: 'Сургутский район', d: 'M 290,150 C 350,110 440,100 480,160 C 520,220 400,270 290,150 Z' },
-    { id: 'nizhnevartovsky-raion', name: 'Нижневартовский район', d: 'M 480,160 C 540,120 620,150 640,230 C 600,320 480,310 480,160 Z' },
-    { id: 'nefteyugansky-raion', name: 'Нефтеюганский район', d: 'M 270,290 C 350,270 420,270 400,330 C 330,360 270,330 270,290 Z' }
-  ];
 
   return (
     <div className="bg-slate-100 dark:bg-slate-950 min-h-screen p-4 md:p-8 font-sans text-slate-900 dark:text-slate-100 transition-colors">
@@ -220,82 +209,47 @@ export const InvestmentDetails = () => {
           </div>
         )}
 
-        {/* ================= РЕЖИМ 2: ГЕОГРАФИЧЕСКАЯ ИНТЕРАКТИВНАЯ КАРТА ХМАО ================= */}
+        {/* ================= РЕЖИМ 2: ИНТЕРАКТИВНАЯ КАРТА ХМАО ================= */}
         {activeTab === 'map' && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-              <div>
-                <h2 className="text-xl font-black">Географическая карта ХМАО — Югры</h2>
-                <p className="text-xs text-slate-400">Наведите на регион на карте или выберите в списке справа:</p>
-              </div>
-              <div className="text-xs bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-bold px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-900">
-                {hoveredRegionId ? `Регион: ${data.municipalities.find(m => m.id === hoveredRegionId)?.name}` : 'Наведите на карту'}
+          <div className="bg-[#f4f4f5] dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
+              <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Муниципальные образования</h2>
+              <div className="flex items-center gap-3">
+                <div className="text-xs bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 font-bold px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-900 min-w-[180px] text-center">
+                  {hoveredRegionId ? data.municipalities.find((m) => m.id === hoveredRegionId)?.name : 'Наведите на карту'}
+                </div>
+                <button
+                  onClick={() => setIsMapListOpen(!isMapListOpen)}
+                  aria-label="Показать или скрыть список"
+                  className="w-11 h-9 flex flex-col items-center justify-center gap-1 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                >
+                  <span className="block w-5 h-0.5 bg-slate-700 dark:bg-slate-300" />
+                  <span className="block w-5 h-0.5 bg-slate-700 dark:bg-slate-300" />
+                  <span className="block w-5 h-0.5 bg-slate-700 dark:bg-slate-300" />
+                </button>
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              
-              {/* РЕАЛЬНАЯ ПЛАВНАЯ ГЕОГРАФИЧЕСКАЯ КАРТА */}
-              <div className="lg:col-span-7 bg-slate-950 p-6 rounded-2xl border border-slate-800 flex items-center justify-center min-h-[500px] relative overflow-hidden shadow-inner">
-                <svg viewBox="0 0 700 420" className="w-full h-auto max-h-[460px] drop-shadow-2xl">
-                  {detailedUgraMap.map((reg) => {
-                    const matchedItem = data.municipalities.find(m => m.id === reg.id) || data.municipalities[0];
-                    const isHovered = hoveredRegionId === reg.id;
-
-                    return (
-                      <g 
-                        key={reg.id}
-                        onMouseEnter={() => setHoveredRegionId(reg.id)}
-                        onMouseLeave={() => setHoveredRegionId(null)}
-                        onClick={() => setActiveModalItem(matchedItem)}
-                        className="cursor-pointer transition-all duration-200"
-                      >
-                        <path
-                          d={reg.d}
-                          className={`transition-all duration-300 ${
-                            isHovered 
-                              ? 'fill-blue-600 stroke-white stroke-[2.5] scale-[1.02]' 
-                              : matchedItem.group2024 === 'A'
-                              ? 'fill-emerald-950/85 stroke-emerald-400 stroke-[1.5] hover:fill-emerald-800'
-                              : 'fill-slate-900 stroke-slate-600 stroke-[1.5] hover:fill-slate-800'
-                          }`}
-                        />
-                      </g>
-                    );
-                  })}
-                </svg>
+              <div className={isMapListOpen ? 'lg:col-span-8' : 'lg:col-span-12'}>
+                <UgraMap
+                  municipalities={data.municipalities}
+                  hoveredId={hoveredRegionId}
+                  onHover={setHoveredRegionId}
+                  onSelect={setActiveModalItem}
+                />
               </div>
 
-              {/* СПИСОК СПРАВА */}
-              <div className="lg:col-span-5 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 max-h-[500px] overflow-y-auto">
-                <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 px-2">
-                  Муниципальные районы и округа
+              {isMapListOpen && (
+                <div className="lg:col-span-4 max-h-[560px] overflow-y-auto pr-2">
+                  <UgraMapList
+                    municipalities={data.municipalities}
+                    hoveredId={hoveredRegionId}
+                    onHover={setHoveredRegionId}
+                    onSelect={setActiveModalItem}
+                  />
                 </div>
-                <div className="space-y-1.5">
-                  {data.municipalities.map((m) => {
-                    const isHovered = hoveredRegionId === m.id;
-                    return (
-                      <div
-                        key={m.id}
-                        onMouseEnter={() => setHoveredRegionId(m.id)}
-                        onMouseLeave={() => setHoveredRegionId(null)}
-                        onClick={() => setActiveModalItem(m)}
-                        className={`px-3 py-2.5 rounded-xl text-xs font-bold flex justify-between items-center transition cursor-pointer ${
-                          isHovered
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-blue-500'
-                        }`}
-                      >
-                        <span>{m.name}</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded ${isHovered ? 'bg-blue-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-                          Гр. {m.group2024}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
+              )}
             </div>
           </div>
         )}
@@ -391,7 +345,7 @@ export const InvestmentDetails = () => {
                   <span className="font-bold">{activeModalItem.smeCount.toLocaleString()} ед.</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-4005">Оценка предпринимателей:</span>
+                  <span className="text-slate-400">Оценка предпринимателей:</span>
                   <span className="font-bold text-blue-600">{activeModalItem.assessmentScore} / 5.0</span>
                 </div>
               </div>
