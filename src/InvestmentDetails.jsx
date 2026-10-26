@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import data from '../data/municipalities-detailed.json';
-import { UgraMap } from './UgraMap';
 
 export const InvestmentDetails = () => {
-  const [activeTab, setActiveTab] = useState('catalog');
+  const [activeTab, setActiveTab] = useState('catalog'); // 'catalog', 'map', 'compare'
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('ALL');
   
@@ -11,10 +10,14 @@ export const InvestmentDetails = () => {
   const [hoveredRegionId, setHoveredRegionId] = useState(null);
 
   const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'desc' });
-  const [notification, setNotification] = useState('Географическая интерактивная карта ХМАО активирована.');
+  const [notification, setNotification] = useState('Интерактивная карта Югры и каталог готовы к работе.');
   
+  // Безопасная инициализация темы без ошибок SSR (для Vercel)
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem('theme'] === 'dark' || window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') === 'dark' || window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
   });
 
   useEffect(() => {
@@ -58,6 +61,32 @@ export const InvestmentDetails = () => {
     setNotification('Формирование отчета для печати / PDF...');
     setTimeout(() => window.print(), 300);
   };
+
+  // Географические SVG-контуры районов и городов ХМАО для интерактивной карты
+  const svgMapRegions = [
+    { id: 'berezovsky', name: 'Берёзовский район', path: 'M 60,40 L 150,30 L 180,100 L 140,180 L 70,150 Z' },
+    { id: 'beloyarsky', name: 'Белоярский район', path: 'M 150,30 L 290,40 L 310,120 L 180,100 Z' },
+    { id: 'october', name: 'Октябрьский район', path: 'M 180,100 L 310,120 L 280,190 L 160,180 Z' },
+    { id: 'sovetsky', name: 'Советский район', path: 'M 70,150 L 140,180 L 130,260 L 50,230 Z' },
+    { id: 'ugorsk', name: 'Югорск', path: 'M 95,210 m -12, 0 a 12,12 0 1,0 24, 0 a 12,12 0 1,0 -24, 0' },
+    { id: 'nyagan', name: 'Нягань', path: 'M 160,165 m -10, 0 a 10,10 0 1,0 20, 0 a 10,10 0 1,0 -20, 0' },
+    { id: 'kondinsky', name: 'Кондинский район', path: 'M 50,230 L 160,220 L 190,320 L 90,340 Z' },
+    { id: 'uray', name: 'Урай', path: 'M 115,290 m -10, 0 a 10,10 0 1,0 20, 0 a 10,10 0 1,0 -20, 0' },
+    { id: 'hm_raion', name: 'Ханты-Мансийский район', path: 'M 160,180 L 280,190 L 300,300 L 190,320 Z' },
+    { id: 'hm_city', name: 'Ханты-Мансийск', path: 'M 215,235 m -12, 0 a 12,12 0 1,0 24, 0 a 12,12 0 1,0 -24, 0' },
+    { id: 'nefteyugansky', name: 'Нефтеюганский район', path: 'M 280,190 L 380,180 L 390,290 L 300,300 Z' },
+    { id: 'nefteyugansk', name: 'Нефтеюганск', path: 'M 320,220 m -9, 0 a 9,9 0 1,0 18, 0 a 9,9 0 1,0 -18, 0' },
+    { id: 'pyть_yah', name: 'Пыть-Ях', path: 'M 340,250 m -9, 0 a 9,9 0 1,0 18, 0 a 9,9 0 1,0 -18, 0' },
+    { id: 'surgutsky', name: 'Сургутский район', path: 'M 310,120 L 480,110 L 490,240 L 380,180 Z' },
+    { id: 'surgut', name: 'Сургут', path: 'M 395,200 m -12, 0 a 12,12 0 1,0 24, 0 a 12,12 0 1,0 -24, 0' },
+    { id: 'kogalym', name: 'Когалым', path: 'M 440,135 m -10, 0 a 10,10 0 1,0 20, 0 a 10,10 0 1,0 -20, 0' },
+    { id: 'nizhnevartovsky', name: 'Нижневартовский район', path: 'M 480,110 L 680,130 L 650,300 L 490,240 Z' },
+    { id: 'nizhnevartovsk', name: 'Нижневартовск', path: 'M 530,210 m -11, 0 a 11,11 0 1,0 22, 0 a 11,11 0 1,0 -22, 0' },
+    { id: 'megion', name: 'Мегион', path: 'M 500,230 m -9, 0 a 9,9 0 1,0 18, 0 a 9,9 0 1,0 -18, 0' },
+    { id: 'langepas', name: 'Лангепас', path: 'M 460,220 m -9, 0 a 9,9 0 1,0 18, 0 a 9,9 0 1,0 -18, 0' },
+    { id: 'pokachi', name: 'Покачи', path: 'M 470,170 m -9, 0 a 9,9 0 1,0 18, 0 a 9,9 0 1,0 -18, 0' },
+    { id: 'raduzhny', name: 'Радужный', path: 'M 570,150 m -10, 0 a 10,10 0 1,0 20, 0 a 10,10 0 1,0 -20, 0' },
+  ];
 
   return (
     <div className="bg-slate-100 dark:bg-slate-950 min-h-screen p-4 md:p-8 font-sans text-slate-900 dark:text-slate-100 transition-colors">
@@ -215,18 +244,39 @@ export const InvestmentDetails = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
-              {/* ЛЕВАЯ КОЛОНКА: Векторная SVG-карта */}
-              <div className="lg:col-span-7">
-                <UgraMap 
-                  municipalities={data.municipalities}
-                  activeRegionId={hoveredRegionId}
-                  onSelectRegion={(m) => setActiveModalItem(m)}
-                  onHoverRegion={(id) => setHoveredRegionId(id)}
-                />
+              {/* ЛЕВАЯ КОЛОНКА: Векторная SVG-карта с подсветкой */}
+              <div className="lg:col-span-7 bg-slate-950 p-6 rounded-2xl border border-slate-800 flex items-center justify-center min-h-[500px] relative overflow-hidden">
+                <svg viewBox="0 0 750 380" className="w-full h-auto max-h-[460px]">
+                  {svgMapRegions.map((reg) => {
+                    const matchedItem = data.municipalities.find(m => m.name.toLowerCase().includes(reg.name.toLowerCase().split(' ')[0])) || data.municipalities[0];
+                    const isHovered = hoveredRegionId === matchedItem.id;
+
+                    return (
+                      <g 
+                        key={reg.id}
+                        onMouseEnter={() => setHoveredRegionId(matchedItem.id)}
+                        onMouseLeave={() => setHoveredRegionId(null)}
+                        onClick={() => setActiveModalItem(matchedItem)}
+                        className="cursor-pointer transition duration-200"
+                      >
+                        <path
+                          d={reg.path}
+                          className={`transition duration-200 ${
+                            isHovered 
+                              ? 'fill-blue-600 stroke-white stroke-[2] scale-105' 
+                              : matchedItem.group2024 === 'A'
+                              ? 'fill-emerald-900/60 stroke-emerald-500 stroke-[1] hover:fill-emerald-700'
+                              : 'fill-slate-900 stroke-slate-700 stroke-[1] hover:fill-slate-800'
+                          }`}
+                        />
+                      </g>
+                    );
+                  })}
+                </svg>
               </div>
 
               {/* ПРАВАЯ КОЛОНКА: Список с синхронизированной подсветкой */}
-              <div className="lg:col-span-5 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 max-h-[480px] overflow-y-auto">
+              <div className="lg:col-span-5 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 max-h-[500px] overflow-y-auto">
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 px-2">
                   Муниципальные районы и округа
                 </div>
