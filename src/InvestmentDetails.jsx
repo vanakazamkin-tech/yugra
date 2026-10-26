@@ -10,7 +10,7 @@ export const InvestmentDetails = () => {
   const [hoveredRegionId, setHoveredRegionId] = useState(null);
 
   const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'desc' });
-  const [notification, setNotification] = useState('Официальная географическая карта ХМАО-Югры загружена.');
+  const [notification, setNotification] = useState('Интерактивная карта ХМАО-Югры загружена.');
   
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -66,17 +66,29 @@ export const InvestmentDetails = () => {
     setTimeout(() => window.print(), 300);
   };
 
-  // Точные векторные контуры муниципалитетов ХМАО для идеальной географической SVG-карты
-  const ugraGeoMap = [
-    { id: 'berezovsky-raion', name: 'Берёзовский район', path: 'M 120,40 Q 150,20 180,60 Q 170,120 140,160 Q 100,150 120,40 Z' },
-    { id: 'beloyarsky-raion', name: 'Белоярский район', path: 'M 180,60 Q 230,30 280,50 Q 300,100 240,140 Q 190,120 180,60 Z' },
-    { id: 'october-raion', name: 'Октябрьский район', path: 'M 190,120 Q 240,120 250,170 Q 200,200 170,160 Z' },
-    { id: 'sovetsky-raion', name: 'Советский район', path: 'M 100,150 Q 140,160 150,210 Q 110,240 90,190 Z' },
-    { id: 'kondinsky-raion', name: 'Кондинский район', path: 'M 90,240 Q 150,230 180,280 Q 160,350 100,320 Q 70,280 90,240 Z' },
-    { id: 'khanty-mansiysky-raion', name: 'Ханты-Мансийский район', path: 'M 170,160 Q 250,170 270,240 Q 200,290 180,220 Z' },
-    { id: 'surgutsky', name: 'Сургутский район', path: 'M 250,70 Q 350,60 420,130 Q 400,220 280,200 Q 270,140 250,70 Z' },
-    { id: 'nizhnevartovsky-raion', name: 'Нижневартовский район', path: 'M 420,130 Q 520,100 580,180 Q 550,280 430,260 Q 410,200 420,130 Z' },
-    { id: 'nefteyugansky-raion', name: 'Нефтеюганский район', path: 'M 280,200 Q 360,210 380,270 Q 310,310 270,240 Z' }
+  const mapPaths = [
+    { id: 'berezovsky-raion', name: 'Берёзовский район', d: 'M 70,80 Q 80,40 130,30 Q 170,40 180,90 Q 170,150 130,170 Q 80,150 70,80 Z' },
+    { id: 'beloyarsky-raion', name: 'Белоярский район', d: 'M 180,90 Q 220,30 290,40 Q 320,90 290,140 Q 230,150 180,90 Z' },
+    { id: 'october-raion', name: 'Октябрьский район', d: 'M 180,140 Q 230,140 280,160 Q 270,210 200,200 Q 170,180 180,140 Z' },
+    { id: 'sovetsky-raion', name: 'Советский район', d: 'M 80,170 Q 130,160 160,200 Q 150,260 90,250 Q 60,210 80,170 Z' },
+    { id: 'ugorsk', name: 'Югорск', d: 'M 110,210 m -7,0 a 7,7 0 1,0 14,0 a 7,7 0 1,0 -14,0' },
+    { id: 'nyagan-city', name: 'Нягань', d: 'M 185,185 m -7,0 a 7,7 0 1,0 14,0 a 7,7 0 1,0 -14,0' },
+    { id: 'kondinsky-raion', name: 'Кондинский район', d: 'M 90,260 Q 160,250 200,310 Q 170,370 100,350 Q 60,300 90,260 Z' },
+    { id: 'uray', name: 'Урай', d: 'M 130,310 m -7,0 a 7,7 0 1,0 14,0 a 7,7 0 1,0 -14,0' },
+    { id: 'khanty-mansiysky-raion', name: 'Ханты-Мансийский район', d: 'M 200,200 Q 270,210 300,260 Q 260,330 190,300 Q 180,240 200,200 Z' },
+    { id: 'khanty-mansiysk', name: 'Ханты-Мансийск', d: 'M 235,250 m -8,0 a 8,8 0 1,0 16,0 a 8,8 0 1,0 -16,0' },
+    { id: 'nefteyugansky-raion', name: 'Нефтеюганский район', d: 'M 300,210 Q 380,200 400,270 Q 350,320 300,260 Z' },
+    { id: 'nefteyugansk', name: 'Нефтеюганск', d: 'M 340,240 m -7,0 a 7,7 0 1,0 14,0 a 7,7 0 1,0 -14,0' },
+    { id: 'pyt-yah', name: 'Пыть-Ях', d: 'M 360,275 m -7,0 a 7,7 0 1,0 14,0 a 7,7 0 1,0 -14,0' },
+    { id: 'surgutsky', name: 'Сургутский район', d: 'M 290,130 Q 380,100 480,120 Q 490,220 400,210 Q 300,200 290,130 Z' },
+    { id: 'surgut', name: 'Сургут', d: 'M 410,175 m -9,0 a 9,9 0 1,0 18,0 a 9,9 0 1,0 -18,0' },
+    { id: 'kogalym', name: 'Когалым', d: 'M 460,110 m -8,0 a 8,8 0 1,0 16,0 a 8,8 0 1,0 -16,0' },
+    { id: 'nizhnevartovsky-raion', name: 'Нижневартовский район', d: 'M 480,120 Q 580,130 630,220 Q 580,310 480,270 Q 470,180 480,120 Z' },
+    { id: 'nizhnevartovsk', name: 'Нижневартовск', d: 'M 530,210 m -8,0 a 8,8 0 1,0 16,0 a 8,8 0 1,0 -16,0' },
+    { id: 'megion', name: 'Мегион', d: 'M 500,235 m -7,0 a 7,7 0 1,0 14,0 a 7,7 0 1,0 -14,0' },
+    { id: 'langepas', name: 'Лангепас', d: 'M 460,220 m -7,0 a 7,7 0 1,0 14,0 a 7,7 0 1,0 -14,0' },
+    { id: 'pokachi', name: 'Покачи', d: 'M 470,165 m -7,0 a 7,7 0 1,0 14,0 a 7,7 0 1,0 -14,0' },
+    { id: 'raduzhny', name: 'Радужный', d: 'M 560,150 m -8,0 a 8,8 0 1,0 16,0 a 8,8 0 1,0 -16,0' }
   ];
 
   return (
@@ -220,7 +232,7 @@ export const InvestmentDetails = () => {
           </div>
         )}
 
-        {/* ================= РЕЖИМ 2: ОФИЦИАЛЬНАЯ ГЕОГРАФИЧЕСКАЯ SVG-КАРТА ХМАО ================= */}
+        {/* ================= РЕЖИМ 2: ГЕОГРАФИЧЕСКАЯ SVG-КАРТА ХМАО ================= */}
         {activeTab === 'map' && (
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -235,10 +247,9 @@ export const InvestmentDetails = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
-              {/* ГЕОГРАФИЧЕСКАЯ SVG КАРТА */}
-              <div className="lg:col-span-7 bg-slate-950 p-6 rounded-2xl border border-slate-800 flex items-center justify-center min-h-[480px] relative overflow-hidden shadow-inner">
-                <svg viewBox="0 0 650 380" className="w-full h-auto max-h-[440px] drop-shadow-2xl">
-                  {ugraGeoMap.map((reg) => {
+              <div className="lg:col-span-7 bg-slate-950 p-6 rounded-2xl border border-slate-800 flex items-center justify-center min-h-[500px] relative overflow-hidden shadow-inner">
+                <svg viewBox="0 0 700 400" className="w-full h-auto max-h-[460px] drop-shadow-2xl">
+                  {mapPaths.map((reg) => {
                     const matchedItem = data.municipalities.find(m => m.id === reg.id) || data.municipalities[0];
                     const isHovered = hoveredRegionId === reg.id;
 
@@ -248,15 +259,15 @@ export const InvestmentDetails = () => {
                         onMouseEnter={() => setHoveredRegionId(reg.id)}
                         onMouseLeave={() => setHoveredRegionId(null)}
                         onClick={() => setActiveModalItem(matchedItem)}
-                        className="cursor-pointer transition-all duration-300"
+                        className="cursor-pointer transition-all duration-200"
                       >
                         <path
-                          d={reg.path}
+                          d={reg.d}
                           className={`transition-all duration-200 ${
                             isHovered 
-                              ? 'fill-blue-600 stroke-white stroke-[2.5] scale-[1.01]' 
+                              ? 'fill-blue-600 stroke-white stroke-[2.5] scale-[1.02]' 
                               : matchedItem.group2024 === 'A'
-                              ? 'fill-emerald-950/90 stroke-emerald-400 stroke-[1.5] hover:fill-emerald-800'
+                              ? 'fill-emerald-950/80 stroke-emerald-400 stroke-[1.5] hover:fill-emerald-800'
                               : 'fill-slate-900 stroke-slate-600 stroke-[1.5] hover:fill-slate-800'
                           }`}
                         />
@@ -266,8 +277,7 @@ export const InvestmentDetails = () => {
                 </svg>
               </div>
 
-              {/* СПИСОК СПРАВА */}
-              <div className="lg:col-span-5 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 max-h-[480px] overflow-y-auto">
+              <div className="lg:col-span-5 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 max-h-[500px] overflow-y-auto">
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 px-2">
                   Муниципальные районы и округа
                 </div>
