@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import data from '../data/municipalities-detailed.json';
 import { UgraMap, UgraMapList } from './components/UgraMap';
 
@@ -14,28 +14,6 @@ export const InvestmentDetails = () => {
   const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'desc' });
   const [notification, setNotification] = useState('Точная географическая карта Югры загружена.');
   
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme') === 'dark';
-      setIsDarkMode(savedTheme);
-      if (savedTheme) {
-        document.documentElement.classList.add('dark');
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (isDarkMode) {
-      root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
 
   const filteredMunicipalities = data.municipalities.filter((m) => {
     const matchesGroup = selectedGroup === 'ALL' || m.group2024 === selectedGroup;
@@ -140,29 +118,8 @@ export const InvestmentDetails = () => {
               📥 PDF
             </button>
 
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-bold transition"
-            >
-              {isDarkMode ? '☀️' : '🌙'}
-            </button>
           </div>
         </header>
-
-        {/* Культурная шапка: визуальный язык вдохновлён орнаментами Югры */}
-        <section className="culture-hero mb-6" aria-label="Югра — земля ханты и манси">
-          <div className="culture-hero__copy">
-            <span className="culture-eyebrow"><span className="culture-diamond" /> СЕВЕР · ЮГРА · ТРАДИЦИИ</span>
-            <h2>Земля, где живут<br /><em>традиции</em></h2>
-            <p>Ханты и манси — культура тайги, рек и северного гостеприимства. Изучайте территории Югры и возможности для устойчивого развития региона.</p>
-            <div className="culture-hero__tags"><span>Наследие</span><span>Природа</span><span>Будущее</span></div>
-          </div>
-          <div className="culture-hero__art">
-            <img src="/images/khanty-mansi-engraving.jpg" alt="Графическая иллюстрация северных жителей в традиционной одежде среди животных" />
-            <span className="art-caption">Люди · Земля · Природа</span>
-          </div>
-          <div className="hero-ornament" aria-hidden="true"><span>◇</span><span>⌁</span><span>◇</span><span>⌁</span><span>◇</span></div>
-        </section>
 
         {/* Уведомление */}
         <div className="mb-6 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300 px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-sm">
