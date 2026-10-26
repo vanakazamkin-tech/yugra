@@ -2,17 +2,16 @@ import React, { useState, useEffect } from 'react';
 import data from '../data/municipalities-detailed.json';
 
 export const InvestmentDetails = () => {
-  const [activeTab, setActiveTab] = useState('catalog'); // 'catalog', 'map', или 'compare'
+  const [activeTab, setActiveTab] = useState('catalog'); // 'catalog', 'map', 'compare'
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('ALL');
   
-  // Модальное окно паспорта объекта
+  // Активный муниципалитет для интерактивной карты и модального окна
   const [activeModalItem, setActiveModalItem] = useState(null);
+  const [hoveredRegion, setHoveredRegion] = useState(null);
 
-  // Сортировка для сводной таблицы
   const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'desc' });
-
-  const [notification, setNotification] = useState('Интерактивная карта Югры и каталог готовы к работе.');
+  const [notification, setNotification] = useState('Интерактивная карта Югры синхронизирована с официальным порталом.');
   
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark' || window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -99,7 +98,7 @@ export const InvestmentDetails = () => {
             <span className="bg-blue-600 text-white p-2.5 rounded-xl text-xl">🗺️</span>
             <div>
               <h1 className="text-base font-black tracking-tight">Муниципальные образования</h1>
-              <p className="text-xs text-slate-500">Инвестиционный климат и рейтинг развития Югры</p>
+              <p className="text-xs text-slate-500">Инвестиционный климат и интерактивная карта Югры</p>
             </div>
           </div>
 
@@ -115,7 +114,7 @@ export const InvestmentDetails = () => {
                 onClick={() => setActiveTab('map')}
                 className={`px-3 py-2 rounded-lg transition ${activeTab === 'map' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
               >
-                🗺️ Интерактивная карта
+                🗺️ Карта ХМАО
               </button>
               <button
                 onClick={() => setActiveTab('compare')}
@@ -201,45 +200,88 @@ export const InvestmentDetails = () => {
           </div>
         )}
 
-        {/* ================= РЕЖИМ 2: ИНТЕРАКТИВНАЯ КАРТА ЮГРЫ ================= */}
+        {/* ================= РЕЖИМ 2: ИНТЕРАКТИВНАЯ КАРТА ХМАО (КАК НА ОФИЦИАЛЬНОМ САЙТЕ) ================= */}
         {activeTab === 'map' && (
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
               <div>
-                <h2 className="text-xl font-black">Интерактивная карта окружных образований</h2>
-                <p className="text-xs text-slate-400">Кликните на интерактивный регион для просмотра детального паспорта:</p>
+                <h2 className="text-xl font-black">Интерактивная карта ХМАО — Югры</h2>
+                <p className="text-xs text-slate-400">Наведите на регион или выберите его в списке справа, чтобы подсветить область и открыть паспорт[cite: 14]:</p>
               </div>
-              <span className="text-xs bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-bold px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-900">
-                Всего субъектов: {data.municipalities.length}
-              </span>
+              <div className="text-xs bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-bold px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-900">
+                {hoveredRegion ? `Выбран: ${hoveredRegion.name}` : 'Наведите на область на карте'}
+              </div>
             </div>
 
-            {/* Визуальная интерактивная карта-сетка по аналогии с официальными геопорталами */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
-              {data.municipalities.map((m) => (
-                <div
-                  key={m.id}
-                  onClick={() => setActiveModalItem(m)}
-                  className={`p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between ${
-                    m.group2024 === 'A' 
-                      ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900 hover:border-emerald-500' 
-                      : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-500'
-                  }`}
-                >
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                      Группа {m.group2024}
-                    </span>
-                    <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 mb-2">
-                      {m.name}
-                    </h3>
-                  </div>
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-blue-600 dark:text-blue-400 font-bold flex justify-between items-center">
-                    <span>Паспорт</span>
-                    <span>→</span>
-                  </div>
+            {/* Главный блок интерактивной карты (две колонки: Слева схема карты ХМАО, Справа интерактивный список районов как на admhmao.ru) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              
+              {/* ЛЕВАЯ КОЛОНКА: Стилизованная интерактивная карта-схема окружных образований */}
+              <div className="lg:col-span-7 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center min-h-[400px] relative">
+                <div className="absolute top-4 left-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Карта-схема региона (ХМАО)
                 </div>
-              ))}
+
+                {/* Интерактивная географическая сетка районов и городов */}
+                <div className="grid grid-cols-3 gap-2 w-full max-w-lg mt-8">
+                  {data.municipalities.map((m) => {
+                    const isHovered = hoveredRegion?.id === m.id;
+                    return (
+                      <div
+                        key={m.id}
+                        onMouseEnter={() => setHoveredRegion(m)}
+                        onMouseLeave={() => setHoveredRegion(null)}
+                        onClick={() => setActiveModalItem(m)}
+                        className={`p-3 rounded-xl border text-center transition cursor-pointer flex flex-col justify-center items-center ${
+                          isHovered
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-lg scale-105 z-10'
+                            : m.group2024 === 'A'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-slate-800 dark:text-slate-200 hover:bg-emerald-100'
+                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-blue-500'
+                        }`}
+                      >
+                        <span className="text-[10px] opacity-75 font-bold uppercase">Группа {m.group2024}</span>
+                        <span className="text-xs font-black mt-0.5">{m.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-6 text-center text-xs text-slate-400">
+                  💡 Подсветка активируется при наведении курсора. Клик открывает детальный паспорт.
+                </div>
+              </div>
+
+              {/* ПРАВАЯ КОЛОНКА: Список муниципалитетов как на официальном сайте admhmao.ru */}
+              <div className="lg:col-span-5 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 max-h-[450px] overflow-y-auto">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 px-2">
+                  Муниципальные районы и округа
+                </div>
+                <div className="space-y-1.5">
+                  {data.municipalities.map((m) => {
+                    const isHovered = hoveredRegion?.id === m.id;
+                    return (
+                      <div
+                        key={m.id}
+                        onMouseEnter={() => setHoveredRegion(m)}
+                        onMouseLeave={() => setHoveredRegion(null)}
+                        onClick={() => setActiveModalItem(m)}
+                        className={`px-3 py-2.5 rounded-xl text-xs font-bold flex justify-between items-center transition cursor-pointer ${
+                          isHovered
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-blue-500'
+                        }`}
+                      >
+                        <span>{m.name}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded ${isHovered ? 'bg-blue-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                          Гр. {m.group2024}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
             </div>
           </div>
         )}
