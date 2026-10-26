@@ -104,10 +104,10 @@ export const InvestmentDetails = () => {
         {/* Шапка */}
         <header className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm mb-6">
           <div className="flex items-center gap-3">
-            <span className="bg-blue-600 text-white p-2.5 rounded-xl text-xl">🗺️</span>
+            <span className="brand-mark" aria-hidden="true"><span>✳</span></span>
             <div>
-              <h1 className="text-base font-black tracking-tight">Муниципальные образования</h1>
-              <p className="text-xs text-slate-500">Инвестиционный климат и интерактивная карта Югры</p>
+              <h1 className="text-base font-black tracking-tight">Югра · территория возможностей</h1>
+              <p className="text-xs text-slate-500">Муниципалитеты, инвестиции и культурное наследие</p>
             </div>
           </div>
 
@@ -117,19 +117,19 @@ export const InvestmentDetails = () => {
                 onClick={() => setActiveTab('catalog')}
                 className={`px-3 py-2 rounded-lg transition ${activeTab === 'catalog' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
               >
-                🗂️ Каталог
+                Каталог
               </button>
               <button
                 onClick={() => setActiveTab('map')}
                 className={`px-3 py-2 rounded-lg transition ${activeTab === 'map' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
               >
-                🗺️ Карта ХМАО
+                Карта Югры
               </button>
               <button
                 onClick={() => setActiveTab('compare')}
                 className={`px-3 py-2 rounded-lg transition ${activeTab === 'compare' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
               >
-                📊 Сводная таблица
+                Сводная таблица
               </button>
             </div>
 
@@ -148,6 +148,21 @@ export const InvestmentDetails = () => {
             </button>
           </div>
         </header>
+
+        {/* Культурная шапка: визуальный язык вдохновлён орнаментами Югры */}
+        <section className="culture-hero mb-6" aria-label="Югра — земля ханты и манси">
+          <div className="culture-hero__copy">
+            <span className="culture-eyebrow"><span className="culture-diamond" /> СЕВЕР · ЮГРА · ТРАДИЦИИ</span>
+            <h2>Земля, где живут<br /><em>традиции</em></h2>
+            <p>Ханты и манси — культура тайги, рек и северного гостеприимства. Изучайте территории Югры и возможности для устойчивого развития региона.</p>
+            <div className="culture-hero__tags"><span>Наследие</span><span>Природа</span><span>Будущее</span></div>
+          </div>
+          <div className="culture-hero__art">
+            <img src="/images/khanty-mansi-engraving.jpg" alt="Графическая иллюстрация северных жителей в традиционной одежде среди животных" />
+            <span className="art-caption">Люди · Земля · Природа</span>
+          </div>
+          <div className="hero-ornament" aria-hidden="true"><span>◇</span><span>⌁</span><span>◇</span><span>⌁</span><span>◇</span></div>
+        </section>
 
         {/* Уведомление */}
         <div className="mb-6 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300 px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-sm">
