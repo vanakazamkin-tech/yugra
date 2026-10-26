@@ -2,21 +2,17 @@ import React, { useState, useEffect } from 'react';
 import data from '../data/municipalities-detailed.json';
 
 export const InvestmentDetails = () => {
-  const [activeTab, setActiveTab] = useState('catalog'); // 'catalog' или 'compare'
+  const [activeTab, setActiveTab] = useState('catalog'); // 'catalog', 'map', или 'compare'
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('ALL');
   
-  // Модальное окно детального просмотра
+  // Модальное окно подробного паспорта объекта
   const [activeModalItem, setActiveModalItem] = useState(null);
 
-  // Для режима сравнения (теперь можно выбрать сколько угодно / все через мультивыбор или список)
-  const [compareIds, setCompareIds] = useState([
-    data.municipalities[0].id,
-    data.municipalities[1] ? data.municipalities[1].id : data.municipalities[0].id,
-    data.municipalities[2] ? data.municipalities[2].id : data.municipalities[0].id
-  ]);
+  // Сортировка для сводной таблицы
+  const [sortConfig, setSortConfig] = useState({ key: 'rank2024', direction: 'asc' });
 
-  const [notification, setNotification] = useState('Интерфейс обновлен: каталог и расширенное сравнение.');
+  const [notification, setNotification] = useState('Портал инвестиционного климата Югры успешно загружен.');
   
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark' || window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -33,101 +29,140 @@ export const InvestmentDetails = () => {
     }
   }, [isDarkMode]);
 
+  // Фильтрация муниципалитетов
   const filteredMunicipalities = data.municipalities.filter((m) => {
     const matchesGroup = selectedGroup === 'ALL' || m.group2024 === selectedGroup;
     const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesGroup && matchesSearch;
   });
 
-  const handleExportPDF = () => {
-    setNotification('Подготовка отчета к печати...');
-    setTimeout(() => window.print(), 300);
+  // Логика сортировки для сводной таблицы
+  const sortedMunicipalities = [...filteredMunicipalities].sort((a, b) => {
+    let aVal = a[sortConfig.key];
+    let bVal = b[sortConfig.key];
+    
+    if (sortConfig.key === 'investments') {
+      aVal = a.investments.volumeBillion;
+      bVal = b.investments.volumeBillion;
+    }
+
+    if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const requestSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
   };
 
-  const toggleCompareId = (id) => {
-    if (compareIds.includes(id)) {
-      if (compareIds.length > 1) {
-        setCompareIds(compareIds.filter(item => item !== id));
-      }
-    } else {
-      setCompareIds([...compareIds, id]);
-    }
+  const handleExportPDF = () => {
+    setNotification('Формирование официального отчета для печати / PDF...');
+    setTimeout(() => window.print(), 300);
   };
 
   return (
     <div className="bg-slate-100 dark:bg-slate-950 min-h-screen p-4 md:p-8 font-sans text-slate-900 dark:text-slate-100 transition-colors">
       
-      {/* ПЕЧАТЬ / PDF */}
+      {/* ----------------- ПЕЧАТНАЯ ВЕРСИЯ (PDF) ----------------- */}
       <div className="hidden print:block p-8 bg-white text-slate-900 font-sans">
-        <h1 className="text-2xl font-black uppercase mb-4">Аналитический отчет (2024)</h1>
-        <p className="text-sm mb-6">Официальный выгруженный отчет по муниципалитетам.</p>
-        <div className="grid grid-cols-2 gap-4">
-          {filteredMunicipalities.map((m) => (
-            <div key={m.id} className="border p-4 rounded mb-2">
-              <h3 className="font-bold">#{m.rank2024} {m.name} (Группа {m.group2024})</h3>
-              <p className="text-xs">Балл: {m.score} | Инвестиции: {m.investments.volumeBillion} млрд руб.</p>
-            </div>
-          ))}
-        </div>
+        <h1 className="text-2xl font-black uppercase mb-2">Аналитический отчет — ХМАО — Югра (2024)</h1>
+        <p className="text-xs text-slate-500 mb-6">Официальные данные инвестиционного рейтинга муниципальных образований.</p>
+        
+        <table className="w-full border-collapse border border-slate-300 text-xs">
+          <thead>
+            <tr className="bg-slate-100 text-left">
+              <th className="border border-slate-300 p-2">Муниципальное образование</th>
+              <th className="border border-slate-300 p-2 text-center">Группа</th>
+              <th className="border border-slate-300 p-2 text-center">Балл</th>
+              <th className="border border-slate-300 p-2 text-center">Инвестиции (млрд ₽)</th>
+              <th className="border border-slate-300 p-2 text-center">Динамика</th>
+              <th className="border border-slate-300 p-2 text-center">Субъекты МСП</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedMunicipalities.map(m => (
+              <tr key={m.id}>
+                <td className="border border-slate-300 p-2 font-bold">{m.name}</td>
+                <td className="border border-slate-300 p-2 text-center">{m.group2024}</td>
+                <td className="border border-slate-300 p-2 text-center">{m.score}</td>
+                <td className="border border-slate-300 p-2 text-center">{m.investments.volumeBillion}</td>
+                <td className="border border-slate-300 p-2 text-center">{m.investments.growthPercent}%</td>
+                <td className="border border-slate-300 p-2 text-center">{m.smeCount.toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
+      {/* ----------------- ЭКРАННЫЙ ИНТЕРФЕЙС ----------------- */}
       <div className="print:hidden max-w-7xl mx-auto">
         
-        {/* Шапка-навигация */}
+        {/* Шапка портала */}
         <header className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm mb-6">
           <div className="flex items-center gap-3">
-            <span className="bg-blue-600 text-white p-2 rounded-xl text-lg">📊</span>
+            <span className="bg-blue-600 text-white p-2.5 rounded-xl text-xl">🗺️</span>
             <div>
-              <h1 className="text-lg font-black">Аналитический портал</h1>
-              <p className="text-xs text-slate-500">Муниципальные образования</p>
+              <h1 className="text-base font-black tracking-tight">Муниципальные образования</h1>
+              <p className="text-xs text-slate-500">Инвестиционный климат и рейтинг развития</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Переключатель вкладок */}
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold">
               <button
                 onClick={() => setActiveTab('catalog')}
-                className={`px-4 py-2 text-xs font-bold rounded-lg transition ${activeTab === 'catalog' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                className={`px-3 py-2 rounded-lg transition ${activeTab === 'catalog' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
               >
-                🗂️ Каталог объектов
+                🗂️ Каталог
+              </button>
+              <button
+                onClick={() => setActiveTab('map')}
+                className={`px-3 py-2 rounded-lg transition ${activeTab === 'map' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+              >
+                🗺️ Карта Югры
               </button>
               <button
                 onClick={() => setActiveTab('compare')}
-                className={`px-4 py-2 text-xs font-bold rounded-lg transition ${activeTab === 'compare' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                className={`px-3 py-2 rounded-lg transition ${activeTab === 'compare' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
               >
-                ⚖️ Сравнение (Все объекты)
+                📊 Сводная таблица
               </button>
             </div>
 
             <button
               onClick={handleExportPDF}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-sm transition"
-              title="Печать / Сохранить PDF"
+              title="Печать или сохранение отчета в PDF"
             >
               📥 PDF
             </button>
 
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl text-xs font-bold transition"
+              className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-bold transition"
             >
               {isDarkMode ? '☀️' : '🌙'}
             </button>
           </div>
         </header>
 
-        {/* Уведомление */}
-        <div className="mb-6 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300 px-4 py-2.5 rounded-xl text-xs flex items-center gap-2">
+        {/* Уведомление системы */}
+        <div className="mb-6 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300 px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-sm">
           <span>💡</span> {notification}
         </div>
 
-        {/* ================= РЕЖИМ 1: КАТАЛОГ ПЛИТКОЙ ================= */}
+        {/* ================= РЕЖИМ 1: КАТАЛОГ (ПЛИТКИ С ПОИСКОМ) ================= */}
         {activeTab === 'catalog' && (
           <div>
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm mb-6 flex flex-col md:flex-row gap-4">
               <input
                 type="text"
-                placeholder="🔍 Найти муниципалитет (например: Сургут, Урай, Нижневартовск)..."
+                placeholder="🔍 Поиск муниципалитета (например: Сургут, Ханты-Мансийск, Урай)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -148,13 +183,12 @@ export const InvestmentDetails = () => {
                 >
                   <div>
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-2xl font-black text-blue-600">#{m.rank2024}</span>
+                      <span className="text-xs font-bold text-slate-400 uppercase">Рейтинг: {m.score} балл.</span>
                       <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${m.group2024 === 'A' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-400'}`}>
                         Группа {m.group2024}
                       </span>
                     </div>
-                    <h3 className="text-lg font-bold mb-1">{m.name}</h3>
-                    <p className="text-xs text-slate-400 mb-4">Рейтинг: <strong className="text-slate-700 dark:text-slate-200">{m.score} балл.</strong></p>
+                    <h3 className="text-lg font-bold mb-2 text-slate-900 dark:text-slate-100">{m.name}</h3>
                     
                     <div className="space-y-2 text-xs border-t border-slate-100 dark:border-slate-800 pt-3">
                       <div className="flex justify-between">
@@ -169,7 +203,7 @@ export const InvestmentDetails = () => {
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs font-bold text-blue-600">
-                    <span>Подробный паспорт →</span>
+                    <span>Открыть паспорт →</span>
                   </div>
                 </div>
               ))}
@@ -177,75 +211,87 @@ export const InvestmentDetails = () => {
           </div>
         )}
 
-        {/* ================= РЕЖИМ 2: СРАВНЕНИЕ ВСЕХ МУНИЦИПАЛИТЕТОВ ================= */}
-        {activeTab === 'compare' && (
-          <div>
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-6">
-              <h2 className="text-xl font-black mb-2">Сравнение муниципалитетов</h2>
-              <p className="text-xs text-slate-400 mb-4">Выберите галочками объекты, которые хотите сопоставить друг с другом:</p>
-              
-              <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                {data.municipalities.map((m) => {
-                  const isSelected = compareIds.includes(m.id);
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => toggleCompareId(m.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                        isSelected 
-                          ? 'bg-blue-600 text-white shadow-sm' 
-                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
-                      }`}
-                    >
-                      {isSelected ? '✓ ' : '+ '} {m.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+        {/* ================= РЕЖИМ 2: ИНТЕРАКТИВНАЯ КАРТА ЮГРЫ ================= */}
+        {activeTab === 'map' && (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+            <h2 className="text-xl font-black mb-2">Интерактивная карта муниципальных образований ХМАО — Югры</h2>
+            <p className="text-xs text-slate-400 mb-6">Нажмите на любой район или город из списка ниже, чтобы мгновенно вызвать его подробный паспорт[cite: 14]:</p>
 
-            {/* Карточки сравнения выбранных объектов */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {compareIds.map((id) => {
-                const item = data.municipalities.find(m => m.id === id);
-                if (!item) return null;
-                return (
-                  <div key={item.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col justify-between">
-                    <div>
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-3xl font-extrabold text-blue-600">#{item.rank2024}</span>
-                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-xs font-bold rounded-full">Группа {item.group2024}</span>
-                      </div>
-                      <h3 className="text-xl font-bold mb-4">{item.name}</h3>
-                      <div className="space-y-3 text-sm border-t border-slate-100 dark:border-slate-800 pt-4">
-                        <p><strong>Балл:</strong> {item.score}</p>
-                        <p><strong>Инвестиции:</strong> {item.investments.volumeBillion} млрд руб.</p>
-                        <p><strong>Рост:</strong> {item.investments.growthPercent}%</p>
-                        <p><strong>МСП:</strong> {item.smeCount.toLocaleString()} ед.</p>
-                        <p><strong>Оценка бизнеса:</strong> {item.assessmentScore} / 5.0</p>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => toggleCompareId(item.id)}
-                      className="mt-6 bg-slate-100 dark:bg-slate-800 hover:bg-red-100 dark:hover:bg-red-950/40 text-slate-600 dark:text-slate-300 hover:text-red-600 py-2 rounded-xl text-xs font-bold transition"
-                    >
-                      Убрать из сравнения
-                    </button>
-                  </div>
-                );
-              })}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {data.municipalities.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => setActiveModalItem(m)}
+                  className="p-3 bg-slate-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/50 border border-slate-200 dark:border-slate-700 rounded-xl text-left transition group"
+                >
+                  <span className="text-xs text-blue-600 dark:text-blue-400 font-bold block mb-1">Группа {m.group2024}</span>
+                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-600">{m.name}</span>
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* МОДАЛЬНОЕ ОКНО ПАСПОРТА */}
+        {/* ================= РЕЖИМ 3: СВОДНАЯ АНАЛИТИЧЕСКАЯ ТАБЛИЦА ================= */}
+        {activeTab === 'compare' && (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm overflow-x-auto">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+              <div>
+                <h2 className="text-xl font-black">Сводная аналитическая таблица</h2>
+                <p className="text-xs text-slate-400">Нажимайте на заголовки столбцов для сортировки показателей</p>
+              </div>
+              <input
+                type="text"
+                placeholder="Фильтр в таблице..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+              />
+            </div>
+
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase">
+                  <th className="p-3 cursor-pointer hover:text-blue-600" onClick={() => requestSort('name')}>Муниципальное образование ↕</th>
+                  <th className="p-3 text-center cursor-pointer hover:text-blue-600" onClick={() => requestSort('group2024')}>Группа ↕</th>
+                  <th className="p-3 text-center cursor-pointer hover:text-blue-600" onClick={() => requestSort('score')}>Балл ↕</th>
+                  <th className="p-3 text-center cursor-pointer hover:text-blue-600" onClick={() => requestSort('investments')}>Инвестиции (млрд ₽) ↕</th>
+                  <th className="p-3 text-center cursor-pointer hover:text-blue-600" onClick={() => requestSort('smeCount')}>МСП (ед.) ↕</th>
+                  <th className="p-3 text-center">Оценка бизнеса</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {sortedMunicipalities.map((m) => (
+                  <tr 
+                    key={m.id} 
+                    onClick={() => setActiveModalItem(m)}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition"
+                  >
+                    <td className="p-3 font-bold text-slate-800 dark:text-slate-200">{m.name}</td>
+                    <td className="p-3 text-center font-bold">
+                      <span className={`px-2 py-0.5 rounded text-[10px] ${m.group2024 === 'A' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-400'}`}>
+                        {m.group2024}
+                      </span>
+                    </td>
+                    <td className="p-3 text-center font-black text-blue-600 dark:text-blue-400">{m.score}</td>
+                    <td className="p-3 text-center">{m.investments.volumeBillion}</td>
+                    <td className="p-3 text-center">{m.smeCount.toLocaleString()}</td>
+                    <td className="p-3 text-center font-semibold">{m.assessmentScore} / 5.0</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* ================= МОДАЛЬНОЕ ОКНО ПАСПОРТА ================= */}
         {activeModalItem && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-w-lg w-full p-6 rounded-2xl shadow-2xl">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <span className="text-xs font-bold uppercase text-blue-600">Паспорт муниципалитета</span>
-                  <h2 className="text-2xl font-black mt-1">#{activeModalItem.rank2024} {activeModalItem.name}</h2>
+                  <span className="text-xs font-bold uppercase text-blue-600">Паспорт объекта</span>
+                  <h2 className="text-2xl font-black mt-1">{activeModalItem.name}</h2>
                 </div>
                 <button 
                   onClick={() => setActiveModalItem(null)}
