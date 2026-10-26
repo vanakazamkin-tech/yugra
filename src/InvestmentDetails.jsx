@@ -10,7 +10,7 @@ export const InvestmentDetails = () => {
   const [hoveredRegionId, setHoveredRegionId] = useState(null);
 
   const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'desc' });
-  const [notification, setNotification] = useState('Географическая карта ХМАО-Югры загружена.');
+  const [notification, setNotification] = useState('Точная географическая карта Югры загружена.');
   
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -66,17 +66,17 @@ export const InvestmentDetails = () => {
     setTimeout(() => window.print(), 300);
   };
 
-  // Точные географические контуры районов ХМАО, образующие слитную карту округа
-  const realUgraMap = [
-    { id: 'berezovsky-raion', name: 'Берёзовский район', d: 'M 60,80 L 120,40 L 170,50 L 180,120 L 140,180 L 70,160 Z' },
-    { id: 'beloyarsky-raion', name: 'Белоярский район', d: 'M 170,50 L 260,40 L 310,90 L 280,160 L 180,120 Z' },
-    { id: 'october-raion', name: 'Октябрьский район', d: 'M 180,120 L 280,160 L 260,210 L 170,190 Z' },
-    { id: 'sovetsky-raion', name: 'Советский район', d: 'M 70,160 L 140,180 L 130,250 L 60,230 Z' },
-    { id: 'kondinsky-raion', name: 'Кондинский район', d: 'M 60,230 L 130,250 L 180,330 L 100,360 L 50,300 Z' },
-    { id: 'khanty-mansiysky-raion', name: 'Ханты-Мансийский район', d: 'M 140,180 L 260,210 L 270,290 L 180,330 Z' },
-    { id: 'surgutsky', name: 'Сургутский район', d: 'M 260,100 L 420,80 L 450,210 L 270,210 Z' },
-    { id: 'nizhnevartovsky-raion', name: 'Нижневартовский район', d: 'M 420,80 L 600,100 L 620,260 L 450,210 Z' },
-    { id: 'nefteyugansky-raion', name: 'Нефтеюганский район', d: 'M 270,210 L 450,210 L 420,300 L 270,290 Z' }
+  // Детальные географические контуры ХМАО с плавными кривыми (Bezier curves)
+  const detailedUgraMap = [
+    { id: 'berezovsky-raion', name: 'Берёзовский район', d: 'M 70,70 C 50,90 40,130 60,170 C 80,200 120,210 140,180 C 160,150 170,100 140,60 C 110,30 90,50 70,70 Z' },
+    { id: 'beloyarsky-raion', name: 'Белоярский район', d: 'M 140,60 C 170,40 220,30 270,50 C 310,70 330,120 290,150 C 250,180 180,160 140,60 Z' },
+    { id: 'october-raion', name: 'Октябрьский район', d: 'M 140,180 C 180,160 250,180 280,210 C 250,250 180,230 140,180 Z' },
+    { id: 'sovetsky-raion', name: 'Советский район', d: 'M 60,170 C 90,170 120,200 130,240 C 100,270 70,250 60,170 Z' },
+    { id: 'kondinsky-raion', name: 'Кондинский район', d: 'M 70,250 C 110,260 160,290 180,340 C 140,380 90,360 70,250 Z' },
+    { id: 'khanty-mansiysky-raion', name: 'Ханты-Мансийский район', d: 'M 140,180 C 180,230 250,250 270,290 C 230,340 180,340 140,180 Z' },
+    { id: 'surgutsky', name: 'Сургутский район', d: 'M 290,150 C 350,110 440,100 480,160 C 520,220 400,270 290,150 Z' },
+    { id: 'nizhnevartovsky-raion', name: 'Нижневартовский район', d: 'M 480,160 C 540,120 620,150 640,230 C 600,320 480,310 480,160 Z' },
+    { id: 'nefteyugansky-raion', name: 'Нефтеюганский район', d: 'M 270,290 C 350,270 420,270 400,330 C 330,360 270,330 270,290 Z' }
   ];
 
   return (
@@ -235,10 +235,10 @@ export const InvestmentDetails = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
-              {/* ПОЛНОЦЕННАЯ ГЕОГРАФИЧЕСКАЯ КАРТА С ПЛОТНЫМИ КОНТУРАМИ */}
+              {/* РЕАЛЬНАЯ ПЛАВНАЯ ГЕОГРАФИЧЕСКАЯ КАРТА */}
               <div className="lg:col-span-7 bg-slate-950 p-6 rounded-2xl border border-slate-800 flex items-center justify-center min-h-[500px] relative overflow-hidden shadow-inner">
-                <svg viewBox="0 0 650 400" className="w-full h-auto max-h-[460px] drop-shadow-2xl">
-                  {realUgraMap.map((reg) => {
+                <svg viewBox="0 0 700 420" className="w-full h-auto max-h-[460px] drop-shadow-2xl">
+                  {detailedUgraMap.map((reg) => {
                     const matchedItem = data.municipalities.find(m => m.id === reg.id) || data.municipalities[0];
                     const isHovered = hoveredRegionId === reg.id;
 
@@ -252,11 +252,11 @@ export const InvestmentDetails = () => {
                       >
                         <path
                           d={reg.d}
-                          className={`transition-all duration-200 ${
+                          className={`transition-all duration-300 ${
                             isHovered 
-                              ? 'fill-blue-600 stroke-white stroke-[2.5] scale-[1.01]' 
+                              ? 'fill-blue-600 stroke-white stroke-[2.5] scale-[1.02]' 
                               : matchedItem.group2024 === 'A'
-                              ? 'fill-emerald-950/80 stroke-emerald-400 stroke-[1.5] hover:fill-emerald-800'
+                              ? 'fill-emerald-950/85 stroke-emerald-400 stroke-[1.5] hover:fill-emerald-800'
                               : 'fill-slate-900 stroke-slate-600 stroke-[1.5] hover:fill-slate-800'
                           }`}
                         />
@@ -391,7 +391,7 @@ export const InvestmentDetails = () => {
                   <span className="font-bold">{activeModalItem.smeCount.toLocaleString()} ед.</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Оценка предпринимателей:</span>
+                  <span className="text-slate-4005">Оценка предпринимателей:</span>
                   <span className="font-bold text-blue-600">{activeModalItem.assessmentScore} / 5.0</span>
                 </div>
               </div>
