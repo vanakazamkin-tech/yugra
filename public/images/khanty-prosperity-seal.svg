@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">Геометрический знак благополучия</title>
+<g fill="none" stroke="#173e30" stroke-width="3.3" stroke-linecap="square" stroke-linejoin="miter">
+  <path d="M64 7 75 18 64 29 53 18Z M64 99 75 110 64 121 53 110Z M7 64 18 53 29 64 18 75Z M99 64 110 53 121 64 110 75Z"/>
+  <path d="M64 29 80 45 64 61 48 45Z M64 67 80 83 64 99 48 83Z M29 64 45 48 61 64 45 80Z M67 64 83 48 99 64 83 80Z"/>
+  <path d="M18 18 36 18 36 36 18 36Z M92 18 110 18 110 36 92 36Z M18 92 36 92 36 110 18 110Z M92 92 110 92 110 110 92 110Z"/>
+  <path d="M18 18 48 48 M110 18 80 48 M18 110 48 80 M110 110 80 80" stroke-width="2.4"/>
+  <path d="M64 38V90 M38 64H90" stroke-width="2.2"/>
+</g>
+<path d="M64 48 80 64 64 80 48 64Z" fill="#c29556"/>
+<path d="M64 57 71 64 64 71 57 64Z" fill="#f7efdf"/>
+</svg>
