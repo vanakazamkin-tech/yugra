@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { MAP_VIEWBOX, districts, cities } from '../ugraMapGeo';
 
-const BLUE = '#4285f4';
+const BLUE = '#b47e43';
 
 /**
  * Интерактивная карта ХМАО — Югры.
@@ -55,9 +55,9 @@ export const UgraMap = ({ municipalities, hoveredId, onHover, onSelect }) => {
               strokeWidth="1.4"
               strokeLinejoin="round"
               {...bind(r.id)}
-              className={`cursor-pointer outline-none transition-colors duration-150 stroke-[#4285f4] ${
-                hovered ? 'fill-[#4285f4]' : 'fill-white dark:fill-slate-800 hover:fill-[#eaf1fe] dark:hover:fill-slate-700'
-              }`}
+              className={`cursor-pointer outline-none transition-colors duration-150 ${hovered ? 'map-region-hover' : 'map-region'}`}
+              fill={hovered ? '#244f3b' : '#d7dfcc'}
+              stroke="#fffaf1"
             />
           );
         })}
@@ -70,7 +70,7 @@ export const UgraMap = ({ municipalities, hoveredId, onHover, onSelect }) => {
           return (
             <text
               key={r.id}
-              className={hovered ? 'fill-white' : 'fill-slate-500 dark:fill-slate-400'}
+              className={hovered ? 'map-label-hover' : 'map-label'}
               fontWeight={hovered ? 700 : 400}
             >
               {r.label.lines.map((line, i) => (
@@ -102,7 +102,7 @@ export const UgraMap = ({ municipalities, hoveredId, onHover, onSelect }) => {
               fontSize="12"
               fontWeight={hovered ? 700 : 400}
               pointerEvents="none"
-              className={hovered ? 'fill-[#1a5fd8] dark:fill-blue-400' : 'fill-slate-500 dark:fill-slate-400'}
+              className={hovered ? 'map-label-hover' : 'map-label'}
             >
               {c.name}
             </text>
@@ -136,7 +136,7 @@ export const UgraMapList = ({ municipalities, hoveredId, onHover, onSelect }) =>
               onMouseLeave={() => onHover(null)}
               onClick={() => onSelect(m)}
               className={`flex items-center gap-3 px-2 py-2 rounded-lg cursor-pointer transition ${
-                hovered ? 'bg-[#4285f4] text-white' : 'text-slate-800 dark:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800'
+                hovered ? 'map-list-hover' : 'map-list-item'
               }`}
             >
               <span

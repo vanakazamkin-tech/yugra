@@ -1,344 +1,131 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import data from '../data/municipalities-detailed.json';
 import { UgraMap, UgraMapList } from './components/UgraMap';
+
+const Icon = ({ name }) => {
+  const paths = {
+    home: <><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-7h6v7"/></>,
+    map: <><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></>,
+    table: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16M15 10v10"/></>,
+    file: <><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></>,
+    search: <><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></>,
+    download: <><path d="M12 3v12m-5-5 5 5 5-5"/><path d="M4 17v4h16v-4"/></>,
+    pin: <><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></>,
+    chart: <><path d="M4 20V11h4v9M10 20V5h4v15M16 20v-8h4v8"/></>,
+    close: <><path d="m6 6 12 12M18 6 6 18"/></>
+  };
+  return <svg aria-hidden="true" viewBox="0 0 24 24" className="ui-icon" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[name] || paths.file}</svg>;
+};
 
 export const InvestmentDetails = () => {
   const [activeTab, setActiveTab] = useState('catalog');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('ALL');
-  
   const [activeModalItem, setActiveModalItem] = useState(null);
   const [hoveredRegionId, setHoveredRegionId] = useState(null);
   const [isMapListOpen, setIsMapListOpen] = useState(true);
-
   const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'desc' });
-  const [notification, setNotification] = useState('Точная географическая карта Югры загружена.');
-  
+  const [notification, setNotification] = useState('Данные муниципальных образований Югры');
 
-  const filteredMunicipalities = data.municipalities.filter((m) => {
+  const filteredMunicipalities = useMemo(() => data.municipalities.filter((m) => {
     const matchesGroup = selectedGroup === 'ALL' || m.group2024 === selectedGroup;
     const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesGroup && matchesSearch;
-  });
+  }), [selectedGroup, searchTerm]);
 
-  const sortedMunicipalities = [...filteredMunicipalities].sort((a, b) => {
+  const sortedMunicipalities = useMemo(() => [...filteredMunicipalities].sort((a, b) => {
     let aVal = a[sortConfig.key];
     let bVal = b[sortConfig.key];
-    if (sortConfig.key === 'investments') {
-      aVal = a.investments.volumeBillion;
-      bVal = b.investments.volumeBillion;
-    }
+    if (sortConfig.key === 'investments') { aVal = a.investments.volumeBillion; bVal = b.investments.volumeBillion; }
     if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
     if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
     return 0;
-  });
+  }), [filteredMunicipalities, sortConfig]);
 
-  const requestSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const handleExportPDF = () => {
-    setNotification('Формирование отчета для печати / PDF...');
-    setTimeout(() => window.print(), 300);
-  };
+  const requestSort = (key) => setSortConfig((current) => ({ key, direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc' }));
+  const handleExportPDF = () => { setNotification('Откройте печать и выберите «Сохранить как PDF».'); setTimeout(() => window.print(), 250); };
 
   return (
-    <div className="bg-slate-100 dark:bg-slate-950 min-h-screen p-4 md:p-8 font-sans text-slate-900 dark:text-slate-100 transition-colors">
-      
-      {/* ПЕЧАТЬ (PDF) */}
-      <div className="hidden print:block p-8 bg-white text-slate-900 font-sans">
-        <h1 className="text-2xl font-black uppercase mb-2">Аналитический отчет — ХМАО — Югра (2024)</h1>
-        <table className="w-full border-collapse border border-slate-300 text-xs mt-4">
-          <thead>
-            <tr className="bg-slate-100 text-left">
-              <th className="border border-slate-300 p-2">Муниципальное образование</th>
-              <th className="border border-slate-300 p-2 text-center">Группа</th>
-              <th className="border border-slate-300 p-2 text-center">Балл</th>
-              <th className="border border-slate-300 p-2 text-center">Инвестиции (млрд ₽)</th>
-              <th className="border border-slate-300 p-2 text-center">МСП (ед.)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedMunicipalities.map(m => (
-              <tr key={m.id}>
-                <td className="border border-slate-300 p-2 font-bold">{m.name}</td>
-                <td className="border border-slate-300 p-2 text-center">{m.group2024}</td>
-                <td className="border border-slate-300 p-2 text-center">{m.score}</td>
-                <td className="border border-slate-300 p-2 text-center">{m.investments.volumeBillion}</td>
-                <td className="border border-slate-300 p-2 text-center">{m.smeCount.toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="yugra-app">
+      <div className="print-report">
+        <h1>Аналитический отчёт — ХМАО — Югра</h1>
+        <p>Каталог муниципальных образований · показатели и рейтинг</p>
+        <table><thead><tr><th>Муниципальное образование</th><th>Группа</th><th>Балл</th><th>Инвестиции, млрд ₽</th><th>МСП, ед.</th></tr></thead><tbody>
+          {sortedMunicipalities.map((m) => <tr key={m.id}><td>{m.name}</td><td>{m.group2024}</td><td>{m.score}</td><td>{m.investments.volumeBillion}</td><td>{m.smeCount.toLocaleString('ru-RU')}</td></tr>)}
+        </tbody></table>
       </div>
 
-      {/* ИНТЕРФЕЙС */}
-      <div className="print:hidden max-w-7xl mx-auto">
-        
-        {/* Шапка */}
-        <header className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm mb-6">
-          <div className="flex items-center gap-3">
-            <span className="brand-mark" aria-hidden="true"><span>ᛉ</span></span>
-            <div>
-              <h1 className="text-2xl font-black tracking-tight">ЮГРА</h1>
-              <p className="text-xs text-slate-500">Земля традиций · территория возможностей</p>
-            </div>
+      <div className="site-shell print:hidden">
+        <header className="site-header">
+          <div className="brand-lockup">
+            <div className="brand-emblem" aria-hidden="true"><span>✣</span></div>
+            <div><div className="brand-title">ЮГРА</div><div className="brand-subtitle">Земля традиций</div></div>
           </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold">
-              <button
-                onClick={() => setActiveTab('catalog')}
-                className={`px-3 py-2 rounded-lg transition ${activeTab === 'catalog' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
-              >
-                Каталог
-              </button>
-              <button
-                onClick={() => setActiveTab('map')}
-                className={`px-3 py-2 rounded-lg transition ${activeTab === 'map' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
-              >
-                Карта Югры
-              </button>
-              <button
-                onClick={() => setActiveTab('compare')}
-                className={`px-3 py-2 rounded-lg transition ${activeTab === 'compare' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
-              >
-                Сводная таблица
-              </button>
-            </div>
-
-            <button
-              onClick={handleExportPDF}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-sm transition"
-            >
-              📥 PDF
-            </button>
-
-          </div>
+          <nav className="main-nav" aria-label="Основная навигация">
+            <button className={activeTab === 'catalog' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('catalog')}><Icon name="home"/>Главная</button>
+            <button className={activeTab === 'map' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('map')}><Icon name="map"/>Карта Югры</button>
+            <button className={activeTab === 'compare' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('compare')}><Icon name="table"/>Рейтинг</button>
+            <button className="nav-item" onClick={handleExportPDF}><Icon name="file"/>Отчёты</button>
+            <button className="nav-item about-nav" onClick={() => setNotification('Проект посвящён муниципалитетам и устойчивому развитию Югры.')}><span className="nav-info">i</span>О проекте</button>
+          </nav>
+          <div className="header-ornament" aria-hidden="true">◇ ⟐ ◇ ⟐ ◇</div>
         </header>
 
-        <div className="heritage-band mb-5" aria-label="Традиционный геометрический орнамент ханты и манси">
-          <div className="heritage-band__pattern" aria-hidden="true" />
-          <span>НАСЛЕДИЕ ХАНТЫ И МАНСИ</span>
-          <span className="heritage-band__caption">ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</span>
-        </div>
+        <div className="ornament-divider" aria-hidden="true"><div className="ornament-repeat">◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇</div></div>
 
-        {/* Уведомление */}
-        <div className="notice-strip mb-5 px-4 py-3 rounded-xl text-xs flex items-center gap-2 shadow-sm">
-          <span aria-hidden="true">◇</span> {notification}
-        </div>
-
-        {/* ================= РЕЖИМ 1: КАТАЛОГ ================= */}
-        {activeTab === 'catalog' && (
-          <div>
-            <div className="catalog-toolbar bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm mb-6 flex flex-col md:flex-row gap-4">
-              <input
-                type="text"
-                placeholder="🔍 Поиск муниципалитета..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-                <button onClick={() => setSelectedGroup('ALL')} className={`px-4 py-2 text-xs font-bold rounded-lg transition ${selectedGroup === 'ALL' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}>Все</button>
-                <button onClick={() => setSelectedGroup('A')} className={`px-4 py-2 text-xs font-bold rounded-lg transition ${selectedGroup === 'A' ? 'bg-white dark:bg-slate-900 text-emerald-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}>Группа А</button>
-                <button onClick={() => setSelectedGroup('B')} className={`px-4 py-2 text-xs font-bold rounded-lg transition ${selectedGroup === 'B' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}>Группа B</button>
+        <main>
+          {activeTab === 'catalog' && <>
+            <section className="catalog-hero panel">
+              <div className="catalog-hero-copy">
+                <div className="eyebrow">СЕВЕР · ЮГРА · ТРАДИЦИИ</div>
+                <h1>Каталог муниципальных <span>образований</span></h1>
+                <p>Изучайте территории Югры, сравнивайте показатели и открывайте паспорта муниципалитетов.</p>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredMunicipalities.map((m) => (
-                <div 
-                  key={m.id} 
-                  onClick={() => setActiveModalItem(m)}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-500 transition cursor-pointer flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-xs font-bold text-slate-400 uppercase">Рейтинг: {m.score} балл.</span>
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${m.group2024 === 'A' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-400'}`}>
-                        Группа {m.group2024}
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-bold mb-2 text-slate-900 dark:text-slate-100">{m.name}</h3>
-                    
-                    <div className="space-y-2 text-xs border-t border-slate-100 dark:border-slate-800 pt-3">
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Инвестиции (без добычи):</span>
-                        <span className="font-bold">{m.investments.volumeBillion} млрд ₽</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Субъекты МСП:</span>
-                        <span className="font-bold">{m.smeCount.toLocaleString()} ед.</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs font-bold text-blue-600">
-                    <span>Открыть паспорт →</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ================= РЕЖИМ 2: ИНТЕРАКТИВНАЯ КАРТА ХМАО ================= */}
-        {activeTab === 'map' && (
-          <div className="bg-[#f4f4f5] dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
-              <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Муниципальные образования</h2>
-              <div className="flex items-center gap-3">
-                <div className="text-xs bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 font-bold px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-900 min-w-[180px] text-center">
-                  {hoveredRegionId ? data.municipalities.find((m) => m.id === hoveredRegionId)?.name : 'Наведите на карту'}
-                </div>
-                <button
-                  onClick={() => setIsMapListOpen(!isMapListOpen)}
-                  aria-label="Показать или скрыть список"
-                  className="w-11 h-9 flex flex-col items-center justify-center gap-1 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                >
-                  <span className="block w-5 h-0.5 bg-slate-700 dark:bg-slate-300" />
-                  <span className="block w-5 h-0.5 bg-slate-700 dark:bg-slate-300" />
-                  <span className="block w-5 h-0.5 bg-slate-700 dark:bg-slate-300" />
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              <div className={isMapListOpen ? 'lg:col-span-8' : 'lg:col-span-12'}>
-                <UgraMap
-                  municipalities={data.municipalities}
-                  hoveredId={hoveredRegionId}
-                  onHover={setHoveredRegionId}
-                  onSelect={setActiveModalItem}
-                />
-              </div>
-
-              {isMapListOpen && (
-                <div className="lg:col-span-4 max-h-[560px] overflow-y-auto pr-2">
-                  <UgraMapList
-                    municipalities={data.municipalities}
-                    hoveredId={hoveredRegionId}
-                    onHover={setHoveredRegionId}
-                    onSelect={setActiveModalItem}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ================= РЕЖИМ 3: СВОДНАЯ ТАБЛИЦА ================= */}
-        {activeTab === 'compare' && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm overflow-x-auto">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-              <div>
-                <h2 className="text-xl font-black">Сводная аналитическая таблица</h2>
-                <p className="text-xs text-slate-400">Нажимайте на заголовки столбцов для быстрой сортировки</p>
-              </div>
-              <input
-                type="text"
-                placeholder="Фильтр показателей..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
-              />
-            </div>
-
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase">
-                  <th className="p-3 cursor-pointer hover:text-blue-600" onClick={() => requestSort('name')}>Муниципальное образование ↕</th>
-                  <th className="p-3 text-center cursor-pointer hover:text-blue-600" onClick={() => requestSort('group2024')}>Группа ↕</th>
-                  <th className="p-3 text-center cursor-pointer hover:text-blue-600" onClick={() => requestSort('score')}>Балл ↕</th>
-                  <th className="p-3 text-center cursor-pointer hover:text-blue-600" onClick={() => requestSort('investments')}>Инвестиции (млрд ₽) ↕</th>
-                  <th className="p-3 text-center cursor-pointer hover:text-blue-600" onClick={() => requestSort('smeCount')}>МСП (ед.) ↕</th>
-                  <th className="p-3 text-center">Оценка бизнеса</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {sortedMunicipalities.map((m) => (
-                  <tr 
-                    key={m.id} 
-                    onClick={() => setActiveModalItem(m)}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition"
-                  >
-                    <td className="p-3 font-bold text-slate-800 dark:text-slate-200">{m.name}</td>
-                    <td className="p-3 text-center font-bold">
-                      <span className={`px-2 py-0.5 rounded text-[10px] ${m.group2024 === 'A' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-400'}`}>
-                        {m.group2024}
-                      </span>
-                    </td>
-                    <td className="p-3 text-center font-black text-blue-600 dark:text-blue-400">{m.score}</td>
-                    <td className="p-3 text-center">{m.investments.volumeBillion}</td>
-                    <td className="p-3 text-center">{m.smeCount.toLocaleString()}</td>
-                    <td className="p-3 text-center font-semibold">{m.assessmentScore} / 5.0</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* ================= МОДАЛЬНОЕ ОКНО ПАСПОРТА ================= */}
-        {activeModalItem && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-w-lg w-full p-6 rounded-2xl shadow-2xl">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <span className="text-xs font-bold uppercase text-blue-600">Паспорт объекта</span>
-                  <h2 className="text-2xl font-black mt-1">{activeModalItem.name}</h2>
-                </div>
-                <button 
-                  onClick={() => setActiveModalItem(null)}
-                  className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 px-3 py-1.5 rounded-xl text-xs font-bold"
-                >
-                  ✕ Закрыть
-                </button>
-              </div>
-
-              <div className="space-y-4 text-sm border-t border-b border-slate-100 dark:border-slate-800 py-4 my-4">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Группа рейтинга:</span>
-                  <span className="font-bold">Группа {activeModalItem.group2024}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Итоговый балл:</span>
-                  <span className="font-bold">{activeModalItem.score}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Объем инвестиций (без добычи):</span>
-                  <span className="font-bold">{activeModalItem.investments.volumeBillion} млрд руб.</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Динамика инвестиций:</span>
-                  <span className="font-bold text-emerald-600">{activeModalItem.investments.growthPercent}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Субъекты МСП:</span>
-                  <span className="font-bold">{activeModalItem.smeCount.toLocaleString()} ед.</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Оценка предпринимателей:</span>
-                  <span className="font-bold text-blue-600">{activeModalItem.assessmentScore} / 5.0</span>
+              <div className="search-filter-area">
+                <label className="search-box"><Icon name="search"/><input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Поиск по названию муниципалитета…" aria-label="Поиск по названию муниципалитета"/></label>
+                <div className="filter-row" aria-label="Фильтр по группе">
+                  {[['ALL','Все группы'],['A','Группа А'],['B','Группа B']].map(([value,label]) => <button key={value} className={`filter-pill ${selectedGroup === value ? 'selected' : ''}`} onClick={() => setSelectedGroup(value)}>{label}{selectedGroup === value && <span>⌄</span>}</button>)}
                 </div>
               </div>
+              <div className="hero-watermark" aria-hidden="true">✣</div>
+            </section>
 
-              <button
-                onClick={() => window.print()}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-xs font-bold transition"
-              >
-                🖨️ Распечатать / Сохранить PDF по этому объекту
-              </button>
+            <div className="dashboard-grid">
+              <section className="map-panel panel">
+                <div className="section-heading"><div className="heading-label"><Icon name="pin"/><h2>Карта Югры</h2></div><span className="subtle-label">ИНТЕРАКТИВНАЯ</span></div>
+                <div className="map-stage"><UgraMap municipalities={data.municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/></div>
+                <div className="map-legend"><span><i className="legend-dot high"/>Группа А</span><span><i className="legend-dot mid"/>Группа B</span><span className="legend-hint">Нажмите на район, чтобы открыть паспорт</span></div>
+              </section>
+
+              <section className="ranking-panel panel">
+                <div className="section-heading ranking-heading"><div className="heading-label"><Icon name="chart"/><div><h2>Рейтинг муниципалитетов</h2><p>Сравнение по ключевым показателям</p></div></div><button className="primary-button" onClick={handleExportPDF}><Icon name="download"/>Скачать в PDF</button></div>
+                <div className="table-scroll"><table className="ranking-table"><thead><tr>
+                  <th>№</th><th><button onClick={() => requestSort('name')}>Муниципальное образование ↕</button></th><th><button onClick={() => requestSort('group2024')}>Группа ↕</button></th><th><button onClick={() => requestSort('score')}>Рейтинг ↕</button></th><th><button onClick={() => requestSort('investments')}>Инвестиции ↕</button></th><th><button onClick={() => requestSort('smeCount')}>МСП ↕</button></th><th>Паспорт</th>
+                </tr></thead><tbody>
+                  {sortedMunicipalities.map((m, index) => <tr key={m.id} onMouseEnter={() => setHoveredRegionId(m.id)} onMouseLeave={() => setHoveredRegionId(null)}>
+                    <td className="row-number">{index + 1}</td><td><button className="municipality-link" onClick={() => setActiveModalItem(m)}>{m.name}</button></td>
+                    <td><span className={`group-badge ${m.group2024 === 'A' ? 'group-a' : 'group-b'}`}>Группа {m.group2024}</span></td><td className="score-cell">{m.score}</td><td>{m.investments.volumeBillion} <small>млрд ₽</small></td><td>{m.smeCount.toLocaleString('ru-RU')}</td><td><button className="icon-button" aria-label={`Открыть паспорт: ${m.name}`} onClick={() => setActiveModalItem(m)}>↗</button></td>
+                  </tr>)}
+                </tbody></table></div>
+                <div className="table-footer"><span>Показано муниципалитетов: <strong>{sortedMunicipalities.length}</strong></span><span className="table-footer-note">Данные рейтинга · 2024</span></div>
+              </section>
             </div>
-          </div>
-        )}
+          </>}
 
+          {activeTab === 'map' && <section className="panel full-panel"><div className="section-heading"><div className="heading-label"><Icon name="map"/><div><h2>Муниципальная карта Югры</h2><p>Выберите территорию на карте или в списке</p></div></div><button className="outline-button" onClick={() => setIsMapListOpen(!isMapListOpen)}>{isMapListOpen ? 'Скрыть список' : 'Показать список'}</button></div><div className={`map-layout ${isMapListOpen ? '' : 'map-only'}`}><div className="map-stage large-map"><UgraMap municipalities={data.municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/></div>{isMapListOpen && <div className="map-list"><UgraMapList municipalities={data.municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/></div>}</div></section>}
+
+          {activeTab === 'compare' && <section className="panel full-panel"><div className="section-heading"><div className="heading-label"><Icon name="table"/><div><h2>Сводная аналитическая таблица</h2><p>Нажмите на заголовок столбца для сортировки</p></div></div><button className="primary-button" onClick={handleExportPDF}><Icon name="download"/>Скачать в PDF</button></div><div className="table-scroll"><table className="ranking-table compare-table"><thead><tr><th>№</th><th><button onClick={() => requestSort('name')}>Муниципальное образование ↕</button></th><th><button onClick={() => requestSort('group2024')}>Группа ↕</button></th><th><button onClick={() => requestSort('score')}>Рейтинг ↕</button></th><th><button onClick={() => requestSort('investments')}>Инвестиции, млрд ₽ ↕</button></th><th><button onClick={() => requestSort('smeCount')}>МСП, ед. ↕</button></th><th>Оценка бизнеса</th></tr></thead><tbody>{sortedMunicipalities.map((m,i) => <tr key={m.id} onClick={() => setActiveModalItem(m)}><td className="row-number">{i+1}</td><td><button className="municipality-link">{m.name}</button></td><td><span className={`group-badge ${m.group2024 === 'A' ? 'group-a' : 'group-b'}`}>Группа {m.group2024}</span></td><td className="score-cell">{m.score}</td><td>{m.investments.volumeBillion}</td><td>{m.smeCount.toLocaleString('ru-RU')}</td><td>{m.assessmentScore} / 5.0</td></tr>)}</tbody></table></div></section>}
+          <div className="status-line"><span className="status-mark"/> {notification}<span className="status-right">ХАНТЫ · МАНСИ · ЮГРА</span></div>
+        </main>
+        <footer className="site-footer"><span>ЮГРА <i>—</i> Земля традиций</span><span>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</span><span>⌁</span></footer>
       </div>
+
+      {activeModalItem && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setActiveModalItem(null); }}><section className="municipality-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div className="modal-topline"><span className="eyebrow">ПАСПОРТ ТЕРРИТОРИИ</span><button className="close-button" onClick={() => setActiveModalItem(null)} aria-label="Закрыть"><Icon name="close"/></button></div>
+        <h2 id="modal-title">{activeModalItem.name}</h2><p className="modal-intro">Ключевые показатели муниципального образования</p>
+        <div className="modal-stats"><div><span>Группа рейтинга</span><strong>Группа {activeModalItem.group2024}</strong></div><div><span>Итоговый балл</span><strong>{activeModalItem.score}</strong></div><div><span>Инвестиции без добычи</span><strong>{activeModalItem.investments.volumeBillion} млрд ₽</strong></div><div><span>Динамика инвестиций</span><strong className="growth-value">{activeModalItem.investments.growthPercent}%</strong></div><div><span>Субъекты МСП</span><strong>{activeModalItem.smeCount.toLocaleString('ru-RU')}</strong></div><div><span>Оценка предпринимателей</span><strong>{activeModalItem.assessmentScore} / 5.0</strong></div></div>
+        <button className="primary-button modal-print" onClick={() => window.print()}><Icon name="file"/>Распечатать / сохранить PDF</button>
+      </section></div>}
     </div>
   );
 };
