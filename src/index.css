@@ -77,3 +77,45 @@
 .site-footer:before{height:18px;background-color:#1d4938;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='14' viewBox='0 0 96 14'%3E%3Cpath d='M0 7 7 0 14 7 21 0 28 7 35 0 42 7 49 0 56 7 63 0 70 7 77 0 84 7 91 0 98 7M0 7 7 14 14 7 21 14 28 7 35 14 42 7 49 14 56 7 63 14 70 7 77 14 84 7 91 14 98 7' fill='none' stroke='%23f7f0e3' stroke-width='2'/%3E%3C/svg%3E");background-repeat:repeat-x;background-size:96px 14px;}
 .site-footer:after{content:"";}
 @media(max-width:640px){.header-ornament{width:95px;opacity:.18}.ornament-divider{height:32px}.ornament-repeat{background-size:128px 26px}}
+
+/* Refined birch-branch ornament system: use a dedicated vector motif instead of generic triangles. */
+:root { --khanty-green: #1d4938; --birch-paper: #f7f0e3; --ochre: #b28a50; }
+.ornament-divider {
+  height: 52px;
+  margin: 0 -30px 24px;
+  border: 0;
+  border-top: 3px solid var(--ochre);
+  border-bottom: 3px solid var(--ochre);
+  background-color: var(--khanty-green);
+  background-image: url('/images/khanty-birch-branch.svg');
+  background-repeat: repeat-x;
+  background-position: center;
+  background-size: 240px 46px;
+}
+.ornament-repeat { display: none; }
+.site-header { background-image: linear-gradient(90deg, transparent 0%, rgba(247,240,227,.96) 65%, rgba(247,240,227,.5) 100%), url('/images/khanty-birch-branch.svg'); background-repeat: no-repeat; background-position: right center; background-size: auto, 245px 78px; }
+.header-ornament { display: none; }
+.brand-emblem { border: 0; border-radius: 0; background: url('/images/khanty-emblem.svg') center / contain no-repeat; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.brand-emblem span { display: none; }
+.brand-emblem:before, .brand-emblem:after { display: none; }
+.panel:before, .map-stage:after, .catalog-hero:after, .full-panel:after {
+  background-image: url('/images/khanty-birch-branch.svg');
+  background-repeat: repeat;
+  background-size: 120px 38px;
+  opacity: .075;
+}
+.panel:before { width: 180px; height: 72px; top: 0; right: 0; mask-image: linear-gradient(135deg, #000, transparent 90%); }
+.catalog-hero:before { background: url('/images/khanty-birch-branch.svg') left center / 150px 48px repeat-y !important; opacity: .28; width: 22px; }
+.catalog-hero { padding-left: 34px; }
+.catalog-hero:after { width: 220px; height: 90px; opacity: .09; }
+.section-heading:after { height: 8px; width: 116px; background-image: url('/images/khanty-birch-branch.svg'); background-size: 116px 37px; background-position: center 46%; }
+.map-stage:before { background-image: url('/images/khanty-birch-branch.svg'); background-size: 170px 42px; height: 14px; opacity: .2; }
+.ranking-table thead { background-image: linear-gradient(rgba(238,229,213,.92), rgba(238,229,213,.92)), url('/images/khanty-birch-branch.svg'); background-size: auto, 130px 42px; }
+.site-footer { padding-top: 35px; }
+.site-footer:before { height: 28px; border: 0; background-color: var(--khanty-green); background-image: url('/images/khanty-birch-branch.svg'); background-repeat: repeat-x; background-size: 180px 28px; }
+.site-footer:after { content: ''; }
+@media (max-width: 640px) {
+  .ornament-divider { height: 38px; margin-left: -18px; margin-right: -18px; background-size: 190px 32px; }
+  .site-header { background-size: auto, 140px 45px; }
+  .catalog-hero { padding-left: 24px; }
+}
