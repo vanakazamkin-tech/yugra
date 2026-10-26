@@ -12,7 +12,7 @@ export const InvestmentDetails = () => {
   const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'desc' });
   const [notification, setNotification] = useState('Интерактивная карта Югры и каталог готовы к работе.');
   
-  // Безопасная инициализация темы без ошибок SSR (для Vercel)
+  // Безопасная инициализация темы для Vercel (SSR)
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('theme') === 'dark' || window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -76,7 +76,7 @@ export const InvestmentDetails = () => {
     { id: 'hm_city', name: 'Ханты-Мансийск', path: 'M 215,235 m -12, 0 a 12,12 0 1,0 24, 0 a 12,12 0 1,0 -24, 0' },
     { id: 'nefteyugansky', name: 'Нефтеюганский район', path: 'M 280,190 L 380,180 L 390,290 L 300,300 Z' },
     { id: 'nefteyugansk', name: 'Нефтеюганск', path: 'M 320,220 m -9, 0 a 9,9 0 1,0 18, 0 a 9,9 0 1,0 -18, 0' },
-    { id: 'pyть_yah', name: 'Пыть-Ях', path: 'M 340,250 m -9, 0 a 9,9 0 1,0 18, 0 a 9,9 0 1,0 -18, 0' },
+    { id: 'pyt-yah', name: 'Пыть-Ях', path: 'M 340,250 m -9, 0 a 9,9 0 1,0 18, 0 a 9,9 0 1,0 -18, 0' },
     { id: 'surgutsky', name: 'Сургутский район', path: 'M 310,120 L 480,110 L 490,240 L 380,180 Z' },
     { id: 'surgut', name: 'Сургут', path: 'M 395,200 m -12, 0 a 12,12 0 1,0 24, 0 a 12,12 0 1,0 -24, 0' },
     { id: 'kogalym', name: 'Когалым', path: 'M 440,135 m -10, 0 a 10,10 0 1,0 20, 0 a 10,10 0 1,0 -20, 0' },
