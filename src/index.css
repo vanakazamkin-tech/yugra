@@ -1757,3 +1757,29 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .population-composition-footer i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
 .population-composition-footer p { flex-basis: 100%; margin: 0; }
 .population-composition-footer a { color: var(--forest); text-decoration: underline; text-underline-offset: 2px; }
+
+
+/* Forecast: transparent coverage of verified municipal data */
+.forecast-coverage-panel { margin: 18px 0 22px; padding: 20px; border: 1px solid #e1ddcf; border-radius: 16px; background: rgba(255, 255, 255, .58); }
+.forecast-coverage-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; margin-bottom: 15px; }
+.forecast-coverage-heading h3 { margin: 0; color: var(--ink, #34382f); font-size: 17px; }
+.forecast-coverage-heading p { max-width: 780px; margin: 6px 0 0; color: #737b70; font-size: 11px; line-height: 1.6; }
+.forecast-coverage-status { flex: 0 0 auto; padding: 6px 9px; border: 1px solid #ded8c8; border-radius: 99px; color: #7b796c; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.forecast-coverage-status.is-connected { border-color: #c4d4c2; color: #3d7050; background: rgba(61, 112, 80, .06); }
+.forecast-coverage-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.forecast-coverage-card { min-width: 0; padding: 13px 12px 12px; border: 1px solid #e9e4d8; border-radius: 12px; background: #fbfaf6; }
+.forecast-coverage-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; color: #4d594b; font-size: 11px; font-weight: 800; }
+.forecast-coverage-card-top strong { color: var(--forest, #315d42); font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.forecast-coverage-track { height: 5px; margin: 11px 0 10px; overflow: hidden; border-radius: 99px; background: #e9e6dc; }
+.forecast-coverage-track i { display: block; height: 100%; border-radius: inherit; background: #628568; transition: width .2s ease; }
+.forecast-coverage-card p { min-height: 49px; margin: 0 0 9px; color: #7a8076; font-size: 10px; line-height: 1.5; }
+.forecast-coverage-card small { color: #686f65; font-size: 9px; line-height: 1.5; }
+.forecast-coverage-footnote { margin: 13px 0 0; color: #7a8076; font-size: 10px; line-height: 1.6; }
+@media (max-width: 1100px) { .forecast-coverage-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 680px) {
+  .forecast-coverage-panel { padding: 14px; }
+  .forecast-coverage-heading { flex-direction: column; gap: 9px; }
+  .forecast-coverage-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .forecast-coverage-card p { min-height: 0; }
+}
+@media (max-width: 420px) { .forecast-coverage-grid { grid-template-columns: minmax(0, 1fr); } }
