@@ -90,6 +90,13 @@ const SURGUT_EMPLOYMENT_SECTORS = [
   { code: 'employees_education', name: 'Образование' },
   { code: 'employees_healthcare', name: 'Здравоохранение и социальные услуги' },
 ];
+const OFFICIAL_RISK_SIGNAL_SERIES = [
+  { code: 'average_employees_q1', label: 'Занятость · I квартал', unit: 'человек', period: 'Q1', definition: 'Среднесписочная численность работников организаций без субъектов малого предпринимательства. Это оценка численности за период, не число уникальных работников, прошедших через рынок труда.' },
+  { code: 'own_production_shipments_q1', label: 'Отгрузка продукции · I квартал', unit: 'тыс. руб.', period: 'Q1', definition: 'Накопительный номинальный объём отгрузки собственной продукции, работ и услуг за январь–март, без субъектов малого предпринимательства. Не скорректирован на инфляцию.' },
+  { code: 'resale_goods_q1', label: 'Продажа перепроданных товаров · I квартал', unit: 'тыс. руб.', period: 'Q1', definition: 'Накопительный номинальный объём продажи товаров несобственного производства за январь–март, без субъектов малого предпринимательства. Не скорректирован на инфляцию.' },
+  { code: 'fixed_capital_investment_enterprises_non_sme', label: 'Инвестиции организаций без субъектов МСП · год', unit: 'тыс. руб.', period: 'annual', definition: 'Годовой объём инвестиций организаций на территории Сургута, без субъектов малого предпринимательства. Это не только бюджетные средства и не реальный объём после инфляции.' },
+  { code: 'fixed_capital_investment_local_budget', label: 'Инвестиции за счёт местного бюджета · год', unit: 'тыс. руб.', period: 'annual', definition: 'Годовой объём инвестиций за счёт местного бюджета. Это отдельная бюджетная составляющая, не общая сумма всех инвестиций.' },
+];
 const OFFICIAL_TREND_SERIES = [
   { code: 'average_employees_q1', title: 'Среднесписочная численность работников', periodLabel: 'I квартал', unit: 'человек', definition: 'Организации без субъектов малого предпринимательства; январь–март каждого года.' },
   { code: 'average_employees_h1', title: 'Среднесписочная численность работников', periodLabel: 'Первое полугодие', unit: 'человек', definition: 'Организации без субъектов малого предпринимательства; январь–июнь каждого года.' },
@@ -273,6 +280,7 @@ export const InvestmentDetails = () => {
   const [riskYellowThreshold, setRiskYellowThreshold] = useState(285);
   const [riskGreenThreshold, setRiskGreenThreshold] = useState(330);
   const [riskSearch, setRiskSearch] = useState('');
+  const [selectedRiskSignalCode, setSelectedRiskSignalCode] = useState('average_employees_q1');
   const [selectedTrendSeries, setSelectedTrendSeries] = useState('average_employees_h1');
   const [selectedSectorYear, setSelectedSectorYear] = useState('2026');
   const [selectedSectorPeriod, setSelectedSectorPeriod] = useState('Q1');
@@ -691,6 +699,37 @@ export const InvestmentDetails = () => {
         : municipalities.find((m) => m.id === item.municipality_id)?.name || item.geographic_name || item.municipality_id,
     })).sort((a,b) => b.numericValue-a.numericValue);
   }, [officialIndicators, effectiveOfficialComparisonCode, effectiveOfficialComparisonPeriod, officialComparisonConfig, municipalities]);
+
+  const selectedRiskSignalConfig = OFFICIAL_RISK_SIGNAL_SERIES.find((series) => series.code === selectedRiskSignalCode) || OFFICIAL_RISK_SIGNAL_SERIES[0];
+  const officialRiskSignal = useMemo(() => {
+    const rows = officialIndicators.filter((item) =>
+      item.municipality_id === 'surgut'
+      && item.indicator_code === selectedRiskSignalConfig.code
+      && numericValue(item.value) != null
+      && (selectedRiskSignalConfig.period === 'annual'
+        ? String(item.reference_period || 'annual') === 'annual'
+        : String(item.reference_period || '').endsWith('-' + selectedRiskSignalConfig.period))
+    ).slice().sort((a,b) => Number(a.reference_year)-Number(b.reference_year));
+    const points = rows.map((item,index) => ({
+      ...item,
+      numericValue: numericValue(item.value),
+      changePercent: index > 0 && numericValue(rows[index-1].value) !== 0
+        ? (numericValue(item.value)/numericValue(rows[index-1].value)-1)*100
+        : null,
+    }));
+    const max = points.length ? Math.max(...points.map((item)=>item.numericValue)) : 1;
+    return {
+      config: selectedRiskSignalConfig,
+      rows: points,
+      previous: points.length > 1 ? points[points.length-2] : null,
+      latest: points[points.length-1] || null,
+      max: Math.max(1,max),
+      changePercent: points.length > 1 && points[points.length-2].numericValue !== 0
+        ? (points[points.length-1].numericValue/points[points.length-2].numericValue-1)*100
+        : null,
+      periodText: selectedRiskSignalConfig.period === 'annual' ? 'год к году' : 'одинаковый квартальный период год к году',
+    };
+  }, [officialIndicators, selectedRiskSignalConfig]);
 
   const riskRows = useMemo(() => {
     const query = riskSearch.trim().toLocaleLowerCase('ru-RU');
@@ -1483,6 +1522,28 @@ export const InvestmentDetails = () => {
               <article className="risk-kpi risk-kpi-green"><span className="risk-dot"/><div><small>ЗЕЛЁНАЯ ЗОНА</small><strong>{riskCounts.green}</strong><span>выше зелёного порога</span></div></article>
               <article className="risk-kpi risk-kpi-neutral"><span className="risk-dot"/><div><small>НЕТ ДАННЫХ</small><strong>{riskCounts.missing}</strong><span>балл не задан</span></div></article>
             </div>
+            <section className="risk-signal-panel panel" aria-labelledby="risk-signal-title">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="risk-signal-title">Пилотные сигналы по официальным данным</h2><p>Фактическая динамика Сургута за одинаковые периоды · не общий рейтинг всех муниципалитетов</p></div></div>
+                <span className="section-tag">РОССТАТ</span>
+              </div>
+              <label className="official-trend-select"><span>Выбрать показатель для наблюдения</span><select value={selectedRiskSignalCode} onChange={(event)=>setSelectedRiskSignalCode(event.target.value)}>{OFFICIAL_RISK_SIGNAL_SERIES.map((series)=><option value={series.code} key={series.code}>{series.label}</option>)}</select></label>
+              <p className="official-trend-definition">{officialRiskSignal.config.definition}</p>
+              {officialRiskSignal.rows.length ? <>
+                <div className="risk-signal-kpis">
+                  <article><span>Последнее наблюдение</span><strong>{formatNumber(officialRiskSignal.latest.numericValue,1)} <small>{officialRiskSignal.config.unit}</small></strong><em>{formatReferencePeriod(officialRiskSignal.latest)}</em></article>
+                  <article><span>Изменение к предыдущему году</span><strong className={officialRiskSignal.changePercent == null ? '' : officialRiskSignal.changePercent < 0 ? 'trend-negative' : officialRiskSignal.changePercent > 0 ? 'trend-positive' : ''}>{officialRiskSignal.changePercent == null ? '—' : `${officialRiskSignal.changePercent > 0 ? '+' : ''}${formatNumber(officialRiskSignal.changePercent,1)}%`}</strong><em>{officialRiskSignal.periodText}</em></article>
+                  <article><span>Покрытие ряда</span><strong>{officialRiskSignal.rows.length} периода</strong><em>официальные наблюдения</em></article>
+                </div>
+                <div className="risk-signal-chart">{officialRiskSignal.rows.map((item,index)=><div className="risk-signal-row" key={item.id}>
+                  <div className="risk-signal-row-heading"><strong>{formatReferencePeriod(item)}</strong><span>{item.changePercent == null ? 'первое наблюдение' : `${item.changePercent > 0 ? '+' : ''}${formatNumber(item.changePercent,1)}% к предыдущему периоду`}</span></div>
+                  <div className="risk-signal-track"><i style={{width:Math.max(1,item.numericValue/officialRiskSignal.max*100)+'%'}}/></div>
+                  <strong className="risk-signal-value">{formatNumber(item.numericValue,1)} <small>{officialRiskSignal.config.unit}</small></strong>
+                </div>)}</div>
+                <div className="risk-signal-footer"><span>Сигнал показывает направление изменения, а не доказанную причину или вероятность кризиса. Снижение одного показателя само по себе не определяет зону устойчивости.</span><a href={officialRiskSignal.latest.source_url} target="_blank" rel="noreferrer">Открыть первоисточник Росстата ↗</a></div>
+              </> : <div className="empty-state"><span>Нет достаточных официальных наблюдений</span><p>Выбери другой показатель. Отсутствующие периоды не подменяются нулями.</p></div>}
+            </section>
+
             <section className="risk-thresholds panel">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="sliders"/></span><div><h2>Настройка порогов</h2><p>Пример настройки будущего светофора риска</p></div></div><button className="outline-button" onClick={() => {setRiskYellowThreshold(285);setRiskGreenThreshold(330);}}><Icon name="refresh"/>Сбросить пороги</button></div>
               <div className="risk-threshold-controls">
