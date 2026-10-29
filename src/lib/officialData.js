@@ -325,10 +325,10 @@ export const FALLBACK_DATA_SOURCES = [
 
 export async function fetchOfficialData(client) {
   if (!client) {
-    return { sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [] };
+    return { sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [], programExecution: [], fuelPrices: [] };
   }
 
-  const [sourcesResult, indicatorsResult, sitesResult, programsResult] = await Promise.all([
+  const [sourcesResult, indicatorsResult, sitesResult, programsResult, fuelPricesResult] = await Promise.all([
     client.from('data_sources')
       .select('id,name,category,url,description,format,coverage,update_frequency,import_status,last_checked_at,notes')
       .order('category', { ascending: true })
@@ -345,6 +345,11 @@ export async function fetchOfficialData(client) {
       .select('id,municipality_id,source_id,program_code,program_name,report_date,approved_budget_thousand,revised_budget_thousand,executed_budget_thousand,execution_percent,source_url,source_published_at,retrieved_at,verification_status,notes')
       .eq('verification_status', 'verified')
       .order('report_date', { ascending: false }),
+    client.from('fuel_price_observations')
+      .select('id,municipality_id,source_id,source_row,observed_at,station_name,company_name,address,latitude,longitude,gasoline_80,gasoline_92,gasoline_95,gasoline_98,gasoline_100,butane,propane,diesel,methane,value_unit,source_url,source_payload,verification_status,retrieved_at')
+      .eq('verification_status', 'verified')
+      .order('observed_at', { ascending: false })
+      .order('source_row', { ascending: true }),
   ]);
 
   // A failed query is surfaced rather than being silently treated as an empty official dataset.
@@ -352,6 +357,7 @@ export async function fetchOfficialData(client) {
   if (indicatorsResult.error) throw indicatorsResult.error;
   if (sitesResult.error) throw sitesResult.error;
   if (programsResult.error) throw programsResult.error;
+  if (fuelPricesResult.error) throw fuelPricesResult.error;
 
   return {
     sources: Array.isArray(sourcesResult.data) && sourcesResult.data.length
@@ -360,6 +366,7 @@ export async function fetchOfficialData(client) {
     indicators: Array.isArray(indicatorsResult.data) ? indicatorsResult.data : [],
     investmentSites: Array.isArray(sitesResult.data) ? sitesResult.data : [],
     programExecution: Array.isArray(programsResult.data) ? programsResult.data : [],
+    fuelPrices: Array.isArray(fuelPricesResult.data) ? fuelPricesResult.data : [],
   };
 }
 
