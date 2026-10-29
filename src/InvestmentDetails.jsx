@@ -460,6 +460,32 @@ export const InvestmentDetails = () => {
             </section>
             <p className="data-quality-note">Дополнительные показатели рассчитываются автоматически из текущего набора данных. Перед использованием как официальной статистики необходимо сверить исходные значения, год наблюдения и методику с первоисточником.</p>
 
+            <section className="source-panel panel" aria-labelledby="source-panel-title">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2 id="source-panel-title">Источники для расширения аналитики</h2><p>Официальные данные и инвестиционные площадки</p></div></div>
+                <span className="section-tag">ВНЕШНИЕ ИСТОЧНИКИ</span>
+              </div>
+              <div className="source-grid">
+                <a className="source-item" href="https://72.rosstat.gov.ru/main_indicators" target="_blank" rel="noreferrer">
+                  <span className="source-item-type">ОФИЦИАЛЬНАЯ СТАТИСТИКА</span><strong>Тюменьстат / Росстат</strong>
+                  <span>Муниципальные показатели, население и социально-экономическая динамика</span><span className="source-item-link">Открыть источник ↗</span>
+                </a>
+                <a className="source-item" href="https://investugra.ru/" target="_blank" rel="noreferrer">
+                  <span className="source-item-type">ИНВЕСТИЦИИ</span><strong>Инвестиционный портал Югры</strong>
+                  <span>Инвестпроекты, меры поддержки, инвестиционные предложения</span><span className="source-item-link">Открыть источник ↗</span>
+                </a>
+                <a className="source-item" href="https://map.investugra.ru/" target="_blank" rel="noreferrer">
+                  <span className="source-item-type">ИНВЕСТКАРТА</span><strong>Площадки и инфраструктура</strong>
+                  <span>Потенциальные площадки и возможности размещения проектов</span><span className="source-item-link">Открыть источник ↗</span>
+                </a>
+                <a className="source-item" href="https://opendata.admmegion.ru/datasets/" target="_blank" rel="noreferrer">
+                  <span className="source-item-type">ОТКРЫТЫЕ ДАННЫЕ</span><strong>Портал Мегиона</strong>
+                  <span>Наборы по инвестиционным площадкам, программам и городскому хозяйству</span><span className="source-item-link">Открыть источник ↗</span>
+                </a>
+              </div>
+              <p className="source-panel-note">Ссылки ведут к первоисточникам. Данные из них пока не загружены автоматически в этот интерфейс; показатели выше рассчитаны из подключённого набора проекта.</p>
+            </section>
+
             <div className="dashboard-grid">
               <section className="map-panel panel">
                 <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="pin"/></span><div><h2>Карта Югры</h2><p>Нажмите на территорию для подробностей</p></div></div><span className="section-tag">ИНТЕРАКТИВНАЯ</span></div>
