@@ -172,3 +172,10 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Названия и описания трёх сценариев обновлены в Supabase `forecast_scenarios`; ставки сценариев сохранены. RLS и production не менялись.
 - GitHub Actions run 216 (`40964106631`) завершился `success` на коммите `a7fdfb1`: установка зависимостей и production build прошли.
 - Vercel не использовался. Актуальный preview пока не создан; production остаётся без изменений.
+
+
+### 2026-10-30 — фиксация сценариев в истории миграций
+- Обновление трёх сценариев оформлено миграцией `20261029221406_align_forecast_scenarios_with_project_brief.sql` и зарегистрировано в истории миграций Supabase.
+- Изменены только заголовки и пояснения сценариев; числовые ставки и политика доступа не менялись.
+- GitHub Actions run 220 завершился `success` на коммите `fc954a1`; установка зависимостей и production build прошли.
+- Vercel не использовался; production не менялся.
