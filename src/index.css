@@ -1714,3 +1714,20 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .data-page-hero { align-items: flex-start; flex-direction: column; padding: 17px; }
   .data-page-hero-actions { align-items: flex-start; flex-direction: row; flex-wrap: wrap; width: 100%; }
 }
+
+
+/* Municipality-level official-data coverage matrix */
+.municipality-coverage-table { min-width: 930px; }
+.municipality-coverage-table thead th:not(:first-child) { min-width: 138px; white-space: normal; }
+.municipality-coverage-table thead th small.cell-subnote { display: block; margin-top: 5px; color: #7e8978; font-size: 8px; font-weight: 700; line-height: 1.35; white-space: normal; }
+.municipality-coverage-table tbody td { min-width: 138px; vertical-align: top; }
+.municipality-coverage-table tbody td:first-child { min-width: 185px; }
+.municipality-coverage-table .municipality-coverage-status { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; line-height: 1.4; white-space: normal; }
+.municipality-coverage-table .municipality-coverage-status::before { content: ""; display: inline-block; flex: 0 0 6px; width: 6px; height: 6px; border-radius: 50%; background: #9aa29a; }
+.municipality-coverage-table .municipality-coverage-status--covered { color: #315d42; }
+.municipality-coverage-table .municipality-coverage-status--covered::before { background: #3d7050; }
+.municipality-coverage-table .municipality-coverage-status--settlement-only { color: #8a642f; }
+.municipality-coverage-table .municipality-coverage-status--settlement-only::before { background: #b78a49; }
+.municipality-coverage-table .municipality-coverage-status--missing { color: #777e77; }
+.municipality-coverage-table .municipality-coverage-cell--settlement-only { background: rgba(183, 138, 73, .045); }
+.municipality-coverage-table .municipality-coverage-cell--missing { background: rgba(120, 126, 120, .025); }
