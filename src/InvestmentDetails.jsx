@@ -631,7 +631,7 @@ export const InvestmentDetails = () => {
                 <span className="section-tag">ВНЕШНИЕ ИСТОЧНИКИ</span>
               </div>
               <div className="source-grid">
-                {officialDataSources.map((source) => <a className="source-item" key={source.id} href={source.url} target="_blank" rel="noreferrer">
+                {officialDataSources.slice(0, 8).map((source) => <a className="source-item" key={source.id} href={source.url} target="_blank" rel="noreferrer">
                   <span className="source-item-type">{DATA_CATEGORY_LABELS[source.category] || 'ИСТОЧНИК ДАННЫХ'}</span>
                   <strong>{source.name}</strong>
                   <span>{source.description}</span>
@@ -639,7 +639,7 @@ export const InvestmentDetails = () => {
                   <span className="source-item-link">{DATA_STATUS_LABELS[source.import_status] || 'Статус проверяется'} ↗</span>
                 </a>)}
               </div>
-              <p className="source-panel-note">Каталог хранится в Supabase. Статус каждого набора показывает, найден ли источник, подготовлен ли импорт или уже загружена только часть данных.</p>
+              <p className="source-panel-note">Показаны 8 приоритетных источников из каталога ({officialDataSources.length} всего). В разделе «О проекте» доступен полный реестр. Статус показывает, найден ли источник, подготовлен ли импорт или данные уже загружены.</p>
             </section>
 
             <div className="dashboard-grid">
