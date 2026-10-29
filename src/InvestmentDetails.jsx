@@ -45,6 +45,8 @@ const formatReferencePeriod = (item) => {
   const quarterLabels = { Q1: 'I квартал', Q2: 'II квартал', Q3: 'III квартал', Q4: 'IV квартал' };
   const quarter = String(period).match(/^(\d{4})-(Q[1-4])$/);
   if (quarter) return `${quarter[1]} · ${quarterLabels[quarter[2]]}`;
+  const half = String(period).match(/^(\d{4})-H([12])$/);
+  if (half) return `${half[1]} · ${half[2] === '1' ? 'I' : 'II'} полугодие`;
   const date = String(period).match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (date) return `на ${new Intl.DateTimeFormat('ru-RU').format(new Date(`${period}T00:00:00`))}`;
   return `${item?.reference_year ?? ''} · ${period}`.trim();
@@ -662,7 +664,7 @@ export const InvestmentDetails = () => {
                   const geographyLabel = item.geographic_level === 'settlement' ? 'населённый пункт' : item.geographic_level === 'region' ? 'регион' : 'муниципалитет';
                   return <article key={item.id}><span>{item.geographic_name || municipality?.name || item.municipality_id} · {geographyLabel}</span><strong>{item.indicator_name}</strong><b>{formatNumber(item.value, 1)} <i>{item.unit}</i></b><small>{formatReferencePeriod(item)} · <a href={item.source_url} target="_blank" rel="noreferrer">первоисточник ↗</a></small></article>;
                 })}</div>
-              </div> : <p className="official-data-empty">Слой готов к загрузке. Сейчас в базе нет других проверенных рядов кроме показателей, которые были отдельно подтверждены и внесены. Для остальных источников идёт подготовка сопоставимых наборов; пустые значения намеренно не заполняются догадками.</p>}
+              </div> : <p className="official-data-empty">Проверенные наблюдения ещё не получены. Проверьте соединение с Supabase и статус импорта у источников; пустые значения намеренно не заполняются догадками.</p>}
               {officialDataStatus === 'error' && officialDataError && <p className="official-data-error">Не удалось обновить официальный слой: {officialDataError}</p>}
             </section>
 
@@ -684,7 +686,7 @@ export const InvestmentDetails = () => {
                     const geography = item.geographic_level === 'settlement' ? 'Населённый пункт' : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
                     return <tr key={item.id}>
                       <td><strong>{item.geographic_name || municipality?.name || item.municipality_id}</strong><small>{geography}</small></td>
-                      <td><strong>{item.indicator_name}</strong><small>{item.notes || 'Методическое примечание не указано'}</small></td>
+                      <td><strong>{item.indicator_name}</strong></td>
                       <td className="official-indicator-value">{formatNumber(item.value, 2)}<small>{item.unit}</small></td>
                       <td>{formatReferencePeriod(item)}</td>
                       <td>{item.notes || '—'}</td>
