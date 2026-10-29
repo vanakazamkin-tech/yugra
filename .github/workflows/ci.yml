@@ -25,5 +25,7 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Check migration staging script syntax
+        run: node --check scripts/prepare-rosstat-migration-import.mjs
       - name: Build production bundle
         run: npm run build
