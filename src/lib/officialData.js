@@ -354,7 +354,7 @@ export async function fetchOfficialData(client) {
       .order('category', { ascending: true })
       .order('name', { ascending: true }),
     client.from('municipality_indicators')
-      .select('id,municipality_id,indicator_code,indicator_name,reference_year,value,unit,source_id,source_url,source_published_at,retrieved_at,verification_status,notes,geographic_level,geographic_name')
+      .select('id,municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,source_published_at,retrieved_at,verification_status,notes,geographic_level,geographic_name')
       .eq('verification_status', 'verified')
       .order('reference_year', { ascending: false }),
     client.from('investment_sites')
