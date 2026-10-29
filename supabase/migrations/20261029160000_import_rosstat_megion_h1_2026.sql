@@ -1,0 +1,35 @@
+insert into public.data_sources
+ (id,name,category,url,description,format,coverage,update_frequency,import_status,notes,last_checked_at)
+values
+ ('rosstat_passport_megion','Росстат — паспорт Мегиона, экономика и социальная сфера 2026','official_statistics',
+  'https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718730002026',
+  'Официальная база показателей муниципальных образований Росстата. Импортированы накопительные итоги за январь–март и январь–июнь 2026 года, а также число ярмарок за I и II кварталы.',
+  'HTML, база показателей муниципальных образований',
+  'Городской округ Мегион; I квартал и первое полугодие 2026 года','Квартальная/по показателю','partially_imported',
+  'Показатели оборота и отгрузки за январь–июнь являются накопительными с начала года, не значениями только за II квартал. Розничный и ресторанный оборот и отгрузка исключают субъекты малого предпринимательства согласно названиям показателей источника.',
+  now())
+on conflict (id) do update set
+ name=excluded.name,category=excluded.category,url=excluded.url,description=excluded.description,
+ format=excluded.format,coverage=excluded.coverage,update_frequency=excluded.update_frequency,
+ import_status=excluded.import_status,notes=excluded.notes,last_checked_at=now(),updated_at=now();
+
+insert into public.municipality_indicators
+ (municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,verification_status,notes,geographic_level,geographic_name)
+values
+ ('megion','retail_turnover_q1','Оборот розничной торговли, без субъектов малого предпринимательства',2026,'2026-Q1',1946921.3,'тыс. руб.','rosstat_passport_megion','https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718730002026','verified','Росстат, городской округ Мегион; накопительный итог за январь–март 2026 года; без субъектов малого предпринимательства.','municipality','Мегион'),
+ ('megion','retail_turnover_h1','Оборот розничной торговли, без субъектов малого предпринимательства',2026,'2026-H1',3973946.4,'тыс. руб.','rosstat_passport_megion','https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718730002026','verified','Росстат, городской округ Мегион; накопительный итог за январь–июнь 2026 года; без субъектов малого предпринимательства.','municipality','Мегион'),
+ ('megion','retail_specialized_food_q1','Розничная торговля пищевыми продуктами, напитками и табачными изделиями в специализированных магазинах',2026,'2026-Q1',332143.6,'тыс. руб.','rosstat_passport_megion','https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718730002026','verified','Росстат, городской округ Мегион; накопительный итог за январь–март 2026 года; без субъектов малого предпринимательства.','municipality','Мегион'),
+ ('megion','retail_specialized_food_h1','Розничная торговля пищевыми продуктами, напитками и табачными изделиями в специализированных магазинах',2026,'2026-H1',699654.0,'тыс. руб.','rosstat_passport_megion','https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718730002026','verified','Росстат, городской округ Мегион; накопительный итог за январь–июнь 2026 года; без субъектов малого предпринимательства.','municipality','Мегион'),
+ ('megion','food_service_turnover_q1','Оборот общественного питания, без субъектов малого предпринимательства',2026,'2026-Q1',126858.0,'тыс. руб.','rosstat_passport_megion','https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718730002026','verified','Росстат, городской округ Мегион; накопительный итог за январь–март 2026 года.','municipality','Мегион'),
+ ('megion','food_service_turnover_h1','Оборот общественного питания, без субъектов малого предпринимательства',2026,'2026-H1',254588.3,'тыс. руб.','rosstat_passport_megion','https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718730002026','verified','Росстат, городской округ Мегион; накопительный итог за январь–июнь 2026 года.','municipality','Мегион'),
+ ('megion','own_production_shipments_q1','Отгружено товаров собственного производства, выполнено работ и услуг собственными силами, без субъектов малого предпринимательства',2026,'2026-Q1',11377559.5,'тыс. руб.','rosstat_passport_megion','https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718730002026','verified','Росстат, городской округ Мегион; накопительный итог за январь–март 2026 года.','municipality','Мегион'),
+ ('megion','own_production_shipments_h1','Отгружено товаров собственного производства, выполнено работ и услуг собственными силами, без субъектов малого предпринимательства',2026,'2026-H1',24183395.2,'тыс. руб.','rosstat_passport_megion','https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718730002026','verified','Росстат, городской округ Мегион; накопительный итог за январь–июнь 2026 года.','municipality','Мегион'),
+ ('megion','resale_goods_q1','Продано товаров несобственного производства, без субъектов малого предпринимательства',2026,'2026-Q1',3370747.2,'тыс. руб.','rosstat_passport_megion','https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718730002026','verified','Росстат, городской округ Мегион; накопительный итог за январь–март 2026 года.','municipality','Мегион'),
+ ('megion','resale_goods_h1','Продано товаров несобственного производства, без субъектов малого предпринимательства',2026,'2026-H1',6645772.2,'тыс. руб.','rosstat_passport_megion','https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718730002026','verified','Росстат, городской округ Мегион; накопительный итог за январь–июнь 2026 года.','municipality','Мегион'),
+ ('megion','fairs_count_q1','Количество ярмарок, всего',2026,'2026-Q1',5,'единиц','rosstat_passport_megion','https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718730002026','verified','Росстат, городской округ Мегион; число ярмарок за I квартал 2026 года.','municipality','Мегион'),
+ ('megion','fairs_count_q2','Количество ярмарок, всего',2026,'2026-Q2',10,'единиц','rosstat_passport_megion','https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718730002026','verified','Росстат, городской округ Мегион; число ярмарок во II квартале 2026 года (не накопительный итог).','municipality','Мегион'),
+ ('megion','registered_corporate_businesses_2026_07','Хозяйственные общества по данным государственной регистрации на 1 июля',2026,'2026-07-01',387,'единиц','rosstat_passport_megion','https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718730002026','verified','Росстат, городской округ Мегион; 387 хозяйственных обществ на 01.07.2026. Это подкатегория зарегистрированных организаций, не общее количество организаций и не количество субъектов МСП.','municipality','Мегион')
+on conflict (municipality_id,indicator_code,reference_year,reference_period,source_id) do update set
+ indicator_name=excluded.indicator_name,value=excluded.value,unit=excluded.unit,source_url=excluded.source_url,
+ retrieved_at=now(),verification_status=excluded.verification_status,notes=excluded.notes,
+ geographic_level=excluded.geographic_level,geographic_name=excluded.geographic_name,updated_at=now();
