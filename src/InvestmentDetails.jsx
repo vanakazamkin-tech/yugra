@@ -640,6 +640,41 @@ export const InvestmentDetails = () => {
     URL.revokeObjectURL(url);
   };
 
+  const downloadSurgutComparableTrendCsv = () => {
+    const headers = [
+      'Территория',
+      'Показатель',
+      'Значение',
+      'Единица измерения',
+      'Период',
+      'Изменение к предыдущему периоду, %',
+      'Источник данных',
+      'URL источника',
+      'Примечание',
+    ];
+    const rows = surgutComparableTrend.rows.map((item) => [
+      item.geographic_name || 'Сургут',
+      surgutComparableTrend.title,
+      item.numericValue,
+      surgutComparableTrend.unit,
+      formatReferencePeriod(item),
+      item.changePercent == null ? '' : item.changePercent,
+      item.source_id,
+      item.source_url,
+      item.notes || '',
+    ]);
+    const escape = (value) => '"' + String(value == null ? '' : value).replaceAll('"', '""') + '"';
+    const csv = '\uFEFF' + [headers, ...rows].map((row) => row.map(escape).join(';')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'yugra-surgut-' + surgutComparableTrend.code + '.csv';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const downloadOfficialComparisonCsv = () => {
     const headers = ['Муниципальное образование', 'Показатель', 'Значение', 'Единица измерения', 'Период', 'Источник'];
     const rows = officialComparisonRows.map((item) => [
@@ -935,7 +970,7 @@ export const InvestmentDetails = () => {
               <p className="source-panel-note">Источник: <a href={surgutPopulationTrend.latest.source_url} target="_blank" rel="noreferrer">муниципальный паспорт Росстата ↗</a>. Ряд относится к численности городского округа на 1 января. Это историческое наблюдение, не прогноз.</p>
             </section>}
             <section className="population-trend-panel panel" aria-labelledby="economic-trend-title">
-              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="economic-trend-title">Сопоставимая динамика экономики Сургута</h2><p>Одинаковые периоды за 2024–2026 годы · официальный муниципальный паспорт</p></div></div><span className="section-tag">{surgutComparableTrend.rows.length} НАБЛЮДЕНИЙ</span></div>
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="economic-trend-title">Сопоставимая динамика экономики Сургута</h2><p>Одинаковые периоды за 2024–2026 годы · официальный муниципальный паспорт</p></div></div><div className="toolbar-actions"><span className="section-tag">{surgutComparableTrend.rows.length} НАБЛЮДЕНИЙ</span><button className="outline-button" onClick={downloadSurgutComparableTrendCsv} disabled={surgutComparableTrend.rows.length===0}><Icon name="download"/>CSV</button></div></div>
               <label className="official-trend-select"><span>Показатель и период сравнения</span><select value={selectedTrendSeries} onChange={(event)=>setSelectedTrendSeries(event.target.value)}>{OFFICIAL_TREND_SERIES.map((series)=><option value={series.code} key={series.code}>{series.title} — {series.periodLabel}</option>)}</select></label>
               <p className="official-trend-definition">{surgutComparableTrend.definition}</p>
               {surgutComparableTrend.rows.length > 1 ? <>
