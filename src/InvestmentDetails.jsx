@@ -62,6 +62,15 @@ const METRICS = [
   { key: 'assessmentScore', label: 'Оценка бизнеса', short: 'Бизнес', unit: 'из 5', get: (m) => numericValue(m.assessmentScore), format: (m) => numericValue(m.assessmentScore) == null ? '—' : `${formatNumber(m.assessmentScore, 2)} / 5` },
 ];
 const METRIC_BY_KEY = Object.fromEntries(METRICS.map((metric) => [metric.key, metric]));
+const OFFICIAL_TREND_SERIES = [
+  { code: 'average_employees_q1', title: 'Среднесписочная численность работников', periodLabel: 'I квартал', unit: 'человек', definition: 'Организации без субъектов малого предпринимательства; январь–март каждого года.' },
+  { code: 'average_employees_h1', title: 'Среднесписочная численность работников', periodLabel: 'Первое полугодие', unit: 'человек', definition: 'Организации без субъектов малого предпринимательства; январь–июнь каждого года.' },
+  { code: 'own_production_shipments_q1', title: 'Отгрузка собственной продукции и услуг', periodLabel: 'I квартал', unit: 'тыс. руб.', definition: 'Накопительный итог за январь–март, без субъектов малого предпринимательства.' },
+  { code: 'own_production_shipments_h1', title: 'Отгрузка собственной продукции и услуг', periodLabel: 'Первое полугодие', unit: 'тыс. руб.', definition: 'Накопительный итог за январь–июнь, без субъектов малого предпринимательства.' },
+  { code: 'resale_goods_q1', title: 'Продажа товаров несобственного производства', periodLabel: 'I квартал', unit: 'тыс. руб.', definition: 'Накопительный итог за январь–март, без субъектов малого предпринимательства.' },
+  { code: 'resale_goods_h1', title: 'Продажа товаров несобственного производства', periodLabel: 'Первое полугодие', unit: 'тыс. руб.', definition: 'Накопительный итог за январь–июнь, без субъектов малого предпринимательства.' },
+  { code: 'fixed_capital_investment_local_budget', title: 'Инвестиции за счёт средств местного бюджета', periodLabel: 'За год', unit: 'тыс. руб.', definition: 'Отдельная статья муниципальных бюджетных вложений; не общий объём всех инвестиций.' },
+];
 const DEFAULT_COMPARE_IDS = ['surgutsky', 'khanty-mansiysk', 'surgut'];
 const DEFAULT_REPORT_FIELDS = ['score', 'rank2024', 'investments', 'growthPercent', 'smeCount', 'assessmentScore'];
 
@@ -205,6 +214,7 @@ export const InvestmentDetails = () => {
   const [riskYellowThreshold, setRiskYellowThreshold] = useState(285);
   const [riskGreenThreshold, setRiskGreenThreshold] = useState(330);
   const [riskSearch, setRiskSearch] = useState('');
+  const [selectedTrendSeries, setSelectedTrendSeries] = useState('average_employees_h1');
   const [supportMunicipalityId, setSupportMunicipalityId] = useState('megion');
   const [supportInvestmentChange, setSupportInvestmentChange] = useState(8);
   const [supportSmeChange, setSupportSmeChange] = useState(5);
@@ -404,6 +414,25 @@ export const InvestmentDetails = () => {
     }));
     return { rows: points, min, max, latest: points[points.length - 1] || null, first: points[0] || null };
   }, [officialIndicators]);
+
+  const surgutComparableTrend = useMemo(() => {
+    const config = OFFICIAL_TREND_SERIES.find((series) => series.code === selectedTrendSeries) || OFFICIAL_TREND_SERIES[0];
+    const rows = officialIndicators
+      .filter((item) => item.municipality_id === 'surgut' && item.indicator_code === config.code && numericValue(item.value) != null)
+      .slice()
+      .sort((a,b) => Number(a.reference_year)-Number(b.reference_year));
+    const values = rows.map((item) => numericValue(item.value));
+    const min = values.length ? Math.min(...values) : 0;
+    const max = values.length ? Math.max(...values) : 1;
+    const points = rows.map((item,index) => ({
+      ...item,
+      numericValue: numericValue(item.value),
+      x: rows.length < 2 ? 400 : 44 + index / (rows.length - 1) * 712,
+      y: 168 - ((numericValue(item.value) - min) / Math.max(1, max - min)) * 112,
+      changePercent: index > 0 && values[index - 1] !== 0 ? (values[index] / values[index - 1] - 1) * 100 : null,
+    }));
+    return { ...config, rows: points, first: points[0] || null, latest: points[points.length - 1] || null };
+  }, [officialIndicators, selectedTrendSeries]);
 
   const riskRows = useMemo(() => {
     const query = riskSearch.trim().toLocaleLowerCase('ru-RU');
@@ -717,6 +746,28 @@ export const InvestmentDetails = () => {
               </div>
               <p className="source-panel-note">Источник: <a href={surgutPopulationTrend.latest.source_url} target="_blank" rel="noreferrer">муниципальный паспорт Росстата ↗</a>. Ряд относится к численности городского округа на 1 января. Это историческое наблюдение, не прогноз.</p>
             </section>}
+            <section className="population-trend-panel panel" aria-labelledby="economic-trend-title">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="economic-trend-title">Сопоставимая динамика экономики Сургута</h2><p>Одинаковые периоды за 2024–2026 годы · официальный муниципальный паспорт</p></div></div><span className="section-tag">{surgutComparableTrend.rows.length} НАБЛЮДЕНИЙ</span></div>
+              <label className="official-trend-select"><span>Показатель и период сравнения</span><select value={selectedTrendSeries} onChange={(event)=>setSelectedTrendSeries(event.target.value)}>{OFFICIAL_TREND_SERIES.map((series)=><option value={series.code} key={series.code}>{series.title} — {series.periodLabel}</option>)}</select></label>
+              <p className="official-trend-definition">{surgutComparableTrend.definition}</p>
+              {surgutComparableTrend.rows.length > 1 ? <>
+                <div className="population-trend-kpis">
+                  <article><span>Первый период</span><strong>{formatNumber(surgutComparableTrend.first.numericValue,1)} {surgutComparableTrend.unit}</strong><small>{surgutComparableTrend.first.reference_year} год</small></article>
+                  <article><span>Последний период</span><strong>{formatNumber(surgutComparableTrend.latest.numericValue,1)} {surgutComparableTrend.unit}</strong><small>{surgutComparableTrend.latest.reference_year} год</small></article>
+                  <article><span>Изменение к первому периоду</span><strong className={surgutComparableTrend.latest.numericValue>=surgutComparableTrend.first.numericValue?'trend-positive':'trend-negative'}>{formatNumber((surgutComparableTrend.latest.numericValue/surgutComparableTrend.first.numericValue-1)*100,1)}%</strong><small>между первым и последним доступным периодом</small></article>
+                </div>
+                <div className="population-trend-chart-wrap">
+                  <svg className="population-trend-chart" viewBox="0 0 800 220" role="img" aria-label={`Динамика показателя «${surgutComparableTrend.title}», ${surgutComparableTrend.periodLabel}, 2024–2026`}>
+                    <line x1="44" y1="168" x2="756" y2="168" stroke="#d9d9ca" strokeWidth="1"/>
+                    <line x1="44" y1="112" x2="756" y2="112" stroke="#e5e3d7" strokeWidth="1" strokeDasharray="4 5"/>
+                    <line x1="44" y1="56" x2="756" y2="56" stroke="#e5e3d7" strokeWidth="1" strokeDasharray="4 5"/>
+                    <polyline points={surgutComparableTrend.rows.map((item)=>`${item.x},${item.y}`).join(' ')} fill="none" stroke="#3d7050" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                    {surgutComparableTrend.rows.map((item,index)=><g key={item.id}><circle cx={item.x} cy={item.y} r="5" fill={index===surgutComparableTrend.rows.length-1?'#b78a49':'#3d7050'} stroke="#fffdf8" strokeWidth="1.5"/><text x={item.x} y={Math.max(23,item.y-12)} textAnchor="middle" fill="#46614b" fontSize="12" fontWeight="700">{formatNumber(item.numericValue,0)}</text><text x={item.x} y="194" textAnchor="middle" fill="#7c8979" fontSize="12">{item.reference_year}</text></g>)}
+                  </svg>
+                </div>
+                <div className="table-scroll official-trend-table-wrap"><table className="ranking-table"><thead><tr><th>Период</th><th>Значение, {surgutComparableTrend.unit}</th><th>Изменение к предыдущему</th><th>Источник</th></tr></thead><tbody>{surgutComparableTrend.rows.map((item)=><tr key={item.id}><td>{formatReferencePeriod(item)}</td><td className="score-cell">{formatNumber(item.numericValue,1)}</td><td>{item.changePercent==null?'—':`${item.changePercent>0?'+':''}${formatNumber(item.changePercent,1)}%`}</td><td><a href={item.source_url} target="_blank" rel="noreferrer">Росстат ↗</a></td></tr>)}</tbody></table></div>
+              </> : <div className="empty-state"><span>Для выбранного показателя пока недостаточно наблюдений</span><p>Выберите другой показатель или проверьте заполненность источника.</p></div>}
+            </section>
             <section className="official-data-panel panel" aria-labelledby="official-data-heading">
               <div className="section-heading">
                 <div className="heading-label"><span className="heading-icon"><Icon name="check"/></span><div><h2 id="official-data-heading">Слой проверенных официальных данных</h2><p>Отдельно от демонстрационных показателей концепта</p></div></div>
