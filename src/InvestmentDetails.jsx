@@ -290,6 +290,31 @@ export const InvestmentDetails = () => {
     };
   }, [officialIndicators, officialDataSources, investmentSites]);
 
+  const populationByMunicipality = useMemo(() => {
+    const chosen = new Map();
+    const candidates = officialIndicators.filter((item) =>
+      ['population_municipality', 'population_settlement'].includes(item.indicator_code)
+      && numericValue(item.value) != null
+    );
+    const scopePriority = (item) => (
+      item.geographic_level === 'municipality' || item.indicator_code === 'population_municipality' ? 0 : 1
+    );
+    candidates.sort((a, b) =>
+      scopePriority(a) - scopePriority(b) || Number(b.reference_year) - Number(a.reference_year)
+    );
+    candidates.forEach((item) => {
+      if (!chosen.has(item.municipality_id)) chosen.set(item.municipality_id, item);
+    });
+    return chosen;
+  }, [officialIndicators]);
+
+  const formatPopulationIndicator = (item) => {
+    if (!item) return '—';
+    if (item.unit === 'тыс. человек') return `${formatNumber(item.value, 1)} тыс. чел.`;
+    if (item.unit === 'человек') return `${formatNumber(item.value)} чел.`;
+    return `${formatNumber(item.value, 1)} ${item.unit}`;
+  };
+
   const programExecutionSummary = useMemo(() => ({
     count: programExecution.length,
     latest: programExecution.length ? programExecution[0] : null,
@@ -377,17 +402,24 @@ export const InvestmentDetails = () => {
   };
   const exportReportCsv = () => downloadCsv(reportItems, reportPrintFields, 'yugra-analytical-report');
 
-  const renderTableRows = (items) => items.map((m, index) => (
-    <tr key={m.id} onMouseEnter={() => setHoveredRegionId(m.id)} onMouseLeave={() => setHoveredRegionId(null)}>
+  const renderTableRows = (items) => items.map((m, index) => {
+    const population = populationByMunicipality.get(m.id);
+    return <tr key={m.id} onMouseEnter={() => setHoveredRegionId(m.id)} onMouseLeave={() => setHoveredRegionId(null)}>
       <td className="row-number">{String(index + 1).padStart(2, '0')}</td>
       <td className="municipality-cell"><button className="municipality-link" onClick={() => setActiveModalItem(m)}>{m.name}</button></td>
       <td><span className={`group-badge ${m.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i />Группа {m.group2024}</span></td>
-      <td className="score-cell">{formatNumber(m.score, 1)}</td>
-      <td className="number-cell">{numericValue(m.investments?.volumeBillion) == null ? '—' : <>{formatNumber(m.investments.volumeBillion, 1)} <small>млрд ₽</small></>}</td>
-      <td className="number-cell">{formatNumber(m.smeCount)}</td>
+      <td className="score-cell"><span className="demo-value">{formatNumber(m.score, 1)}</span><small className="cell-subnote">демо</small></td>
+      <td className="number-cell"><span className="demo-value">{numericValue(m.investments?.volumeBillion) == null ? '—' : formatNumber(m.investments.volumeBillion, 1)}</span>{numericValue(m.investments?.volumeBillion) != null && <small className="cell-subnote">млрд ₽ · демо</small>}</td>
+      <td className="number-cell"><span className="demo-value">{numericValue(m.investments?.growthPercent) == null ? '—' : `${formatNumber(m.investments.growthPercent, 1)}%`}</span><small className="cell-subnote">демо</small></td>
+      <td className="number-cell"><span className="demo-value">{formatNumber(m.smeCount)}</span><small className="cell-subnote">демо</small></td>
+      <td className="number-cell"><span className="demo-value">{numericValue(m.assessmentScore) == null ? '—' : `${formatNumber(m.assessmentScore, 2)} / 5`}</span><small className="cell-subnote">демо</small></td>
+      <td className="official-population-cell">
+        <strong>{formatPopulationIndicator(population)}</strong>
+        {population && <small className="cell-subnote">{population.geographic_level === 'settlement' ? (population.geographic_name || 'населённый пункт') : 'муниципальное образование'} · {population.reference_year}</small>}
+      </td>
       <td><button className="icon-button" aria-label={`Открыть паспорт: ${m.name}`} onClick={() => setActiveModalItem(m)}><Icon name="arrow"/></button></td>
-    </tr>
-  ));
+    </tr>;
+  });
 
   const SortButton = ({ label, column }) => (
     <button
@@ -455,6 +487,7 @@ export const InvestmentDetails = () => {
             <button aria-current={activeTab === 'compare' ? 'page' : undefined} className={activeTab === 'compare' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('compare')}><Icon name="compare"/>Сравнение</button>
             <button aria-current={activeTab === 'reports' ? 'page' : undefined} className={activeTab === 'reports' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('reports')}><Icon name="file"/>Отчёты</button>
             <button title="Режим прогнозирования" aria-label="Режим прогнозирования" aria-current={activeTab === 'forecast' ? 'page' : undefined} className={activeTab === 'forecast' ? 'nav-item active nav-item-forecast' : 'nav-item nav-item-forecast'} onClick={() => navigateToTab('forecast')}><Icon name="chart"/>Прогноз</button>
+            <button aria-current={activeTab === 'data' ? 'page' : undefined} className={activeTab === 'data' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('data')}><Icon name="table"/>Данные</button>
             <button aria-current={activeTab === 'about' ? 'page' : undefined} className={activeTab === 'about' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('about')}><Icon name="info"/>О проекте</button>
           </nav>
           <div className="header-motto"><span className="concept-corner">КОНЦЕПТ</span><span className="motto-mark"/>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</div>
@@ -513,6 +546,26 @@ export const InvestmentDetails = () => {
               <article className="metric-card"><span className="metric-icon"><Icon name="people"/></span><div className="metric-copy"><span className="metric-label">Субъекты МСП</span><strong>{formatNumber(totals.sme)}</strong><small>значения по {totals.smeCount} из {totals.count} территорий</small></div><span className="metric-index">04</span></article>
             </section>
 
+            <div className="dashboard-grid dashboard-grid-home">
+              <section className="map-panel panel">
+                <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="pin"/></span><div><h2>Карта Югры</h2><p>Нажмите на территорию для подробностей</p></div></div><span className="section-tag">ИНТЕРАКТИВНАЯ</span></div>
+                <div className="map-stage"><UgraMap municipalities={municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/><div className="map-watermark" aria-hidden="true"><img src="/images/khanty-prosperity-seal.svg" alt=""/></div></div>
+                <div className="map-legend"><span><i className="legend-dot high"/>Группа A</span><span><i className="legend-dot mid"/>Группа B</span><span className="legend-hint">Выберите район на карте</span></div>
+                <div className="map-card-footer"><span><Icon name="leaf"/> Территория тайги и рек</span><button onClick={() => navigateToTab('map')}>Открыть карту <Icon name="arrow"/></button></div>
+              </section>
+
+              <section className="ranking-panel panel">
+                <div className="section-heading ranking-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Сводная таблица муниципалитетов</h2><p>Демо-показатели помечены; население — с годом и географическим уровнем</p></div></div><button className="primary-button" onClick={() => navigateToTab('rating')}>Полный рейтинг <Icon name="arrow"/></button></div>
+                <div className="table-meta"><span>НАЙДЕНО <strong>{sortedMunicipalities.length}</strong> ИЗ {municipalities.length}</span><span className="table-sort-hint"><Icon name="sort"/> Сортировка · значения «демо» не официальная статистика</span></div>
+                <div className="table-scroll"><table className="ranking-table"><thead><tr><th className="num-col">№</th><th><SortButton label="Муниципальное образование" column="name"/></th><th><SortButton label="Группа" column="group2024"/></th><th><SortButton label="Балл · демо" column="score"/></th><th><SortButton label="Инвестиции · демо" column="investments"/></th><th><SortButton label="Динамика · демо" column="growthPercent"/></th><th><SortButton label="МСП · демо" column="smeCount"/></th><th><SortButton label="Оценка бизнеса · демо" column="assessmentScore"/></th><th><span className="action-heading">Население · источник</span></th><th><span className="action-heading">Паспорт</span></th></tr></thead><tbody>{renderTableRows(sortedMunicipalities)}</tbody></table>
+                  {sortedMunicipalities.length === 0 && <div className="empty-state"><span>Ничего не найдено</span><p>Измените фильтры или сбросьте текущий срез.</p><button className="outline-button" onClick={resetFilters}>Сбросить фильтры</button></div>}
+                </div>
+                <div className="table-footer"><span>Данные муниципальных образований</span><button className="text-action" onClick={() => downloadCsv(sortedMunicipalities, DEFAULT_REPORT_FIELDS, 'yugra-current-slice')}><Icon name="download"/>Выгрузить срез CSV</button></div>
+              </section>
+            </div>
+
+
+
             <section className="insight-grid" aria-label="Дополнительные аналитические показатели">
               <article className="insight-card">
                 <span className="insight-card-kicker">ИНВЕСТИЦИОННАЯ ДИНАМИКА</span>
@@ -541,6 +594,16 @@ export const InvestmentDetails = () => {
             </section>
             <p className="data-quality-note">Все сводные карточки выше — демонстрационные расчёты из концептуального набора и не являются официальной статистикой. Проверенные значения и охват источников показаны отдельно ниже.</p>
 
+
+
+
+
+          {activeTab === 'data' && <section className="data-page">
+            <section className="data-page-hero panel">
+              <div><span className="eyebrow"><span className="eyebrow-diamond"/> ЦЕНТР ДАННЫХ</span><h1>Источники и проверенные показатели</h1><p>Официальные наблюдения отделены от демонстрационного набора. Здесь видно покрытие, происхождение данных и наборы, подготовленные к импорту.</p></div>
+              <span className={`official-status-chip official-status--${officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
+            </section>
+            <div className="data-page-summary"><article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong></article><article><span>Проверенных наблюдений</span><strong>{officialDataSummary.recordCount}</strong></article><article><span>Уникальных инвестплощадок</span><strong>{officialDataSummary.investmentSiteCount}</strong></article><article><span>Отчётов по программам</span><strong>{programExecution.length}</strong></article></div>
             <section className="official-data-panel panel" aria-labelledby="official-data-heading">
               <div className="section-heading">
                 <div className="heading-label"><span className="heading-icon"><Icon name="check"/></span><div><h2 id="official-data-heading">Слой проверенных официальных данных</h2><p>Отдельно от демонстрационных показателей концепта</p></div></div>
@@ -642,24 +705,8 @@ export const InvestmentDetails = () => {
               <p className="source-panel-note">Показаны 8 приоритетных источников из каталога ({officialDataSources.length} всего). В разделе «О проекте» доступен полный реестр. Статус показывает, найден ли источник, подготовлен ли импорт или данные уже загружены.</p>
             </section>
 
-            <div className="dashboard-grid">
-              <section className="map-panel panel">
-                <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="pin"/></span><div><h2>Карта Югры</h2><p>Нажмите на территорию для подробностей</p></div></div><span className="section-tag">ИНТЕРАКТИВНАЯ</span></div>
-                <div className="map-stage"><UgraMap municipalities={municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/><div className="map-watermark" aria-hidden="true"><img src="/images/khanty-prosperity-seal.svg" alt=""/></div></div>
-                <div className="map-legend"><span><i className="legend-dot high"/>Группа A</span><span><i className="legend-dot mid"/>Группа B</span><span className="legend-hint">Выберите район на карте</span></div>
-                <div className="map-card-footer"><span><Icon name="leaf"/> Территория тайги и рек</span><button onClick={() => navigateToTab('map')}>Открыть карту <Icon name="arrow"/></button></div>
-              </section>
 
-              <section className="ranking-panel panel">
-                <div className="section-heading ranking-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Рейтинг муниципалитетов</h2><p>С учётом текущего набора фильтров</p></div></div><button className="primary-button" onClick={() => navigateToTab('rating')}>Полный рейтинг <Icon name="arrow"/></button></div>
-                <div className="table-meta"><span>НАЙДЕНО <strong>{sortedMunicipalities.length}</strong> ИЗ {municipalities.length}</span><span className="table-sort-hint"><Icon name="sort"/> Сортировка по заголовкам</span></div>
-                <div className="table-scroll"><table className="ranking-table"><thead><tr><th className="num-col">№</th><th><SortButton label="Муниципальное образование" column="name"/></th><th><SortButton label="Группа" column="group2024"/></th><th><SortButton label="Балл" column="score"/></th><th><SortButton label="Инвестиции" column="investments"/></th><th><SortButton label="МСП" column="smeCount"/></th><th><span className="action-heading">Паспорт</span></th></tr></thead><tbody>{renderTableRows(sortedMunicipalities)}</tbody></table>
-                  {sortedMunicipalities.length === 0 && <div className="empty-state"><span>Ничего не найдено</span><p>Измените фильтры или сбросьте текущий срез.</p><button className="outline-button" onClick={resetFilters}>Сбросить фильтры</button></div>}
-                </div>
-                <div className="table-footer"><span>Данные муниципальных образований</span><button className="text-action" onClick={() => downloadCsv(sortedMunicipalities, DEFAULT_REPORT_FIELDS, 'yugra-current-slice')}><Icon name="download"/>Выгрузить срез CSV</button></div>
-              </section>
-            </div>
-          </>}
+          </section>}
 
           {activeTab === 'forecast' && <Forecasting municipalities={municipalities} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} />}
 
@@ -813,6 +860,22 @@ export const InvestmentDetails = () => {
             </article>)}
           </div> : <p className="modal-no-official">Для этой территории пока нет проверенных официальных показателей в базе. Новые значения будут добавляться только после проверки источника, периода и территориальной привязки.</p>}
         </section>
+        {investmentSites.filter((site) => site.municipality_id === activeModalItem.id).length > 0 && <section className="modal-official-data" aria-labelledby="modal-sites-heading">
+          <div className="modal-official-heading"><h3 id="modal-sites-heading">Инвестиционные площадки</h3><span>{investmentSites.filter((site) => site.municipality_id === activeModalItem.id).length} объектов</span></div>
+          <div className="modal-official-list">{investmentSites.filter((site) => site.municipality_id === activeModalItem.id).map((site) => <article key={site.id} className="modal-official-row modal-site-row">
+            <div><strong>{site.name}</strong><span>{site.location_text || 'Адрес указан в первоисточнике'} · {site.site_type || 'тип не указан'}</span><span>Использование: {site.permitted_use || 'не указано'} · {site.offer_type || 'условия уточняются'}</span></div>
+            <b>{site.area_hectares == null ? '—' : `${formatNumber(site.area_hectares, 2)} га`}</b>
+            <a href={site.source_url} target="_blank" rel="noreferrer">Первоисточник ↗</a>
+          </article>)}</div>
+        </section>}
+        {programExecution.filter((item) => item.municipality_id === activeModalItem.id).length > 0 && <section className="modal-official-data" aria-labelledby="modal-programs-heading">
+          <div className="modal-official-heading"><h3 id="modal-programs-heading">Исполнение муниципальных программ</h3><span>{programExecution.filter((item) => item.municipality_id === activeModalItem.id).length} отчёта</span></div>
+          <div className="modal-official-list">{programExecution.filter((item) => item.municipality_id === activeModalItem.id).map((item) => <article key={item.id} className="modal-official-row">
+            <div><strong>{item.program_name}</strong><span>Отчёт на {new Intl.DateTimeFormat('ru-RU').format(new Date(item.report_date + 'T00:00:00'))} · уточнённый бюджет {formatNumber(item.revised_budget_thousand / 1000, 2)} млн ₽</span></div>
+            <b>{formatNumber(item.execution_percent, 1)}%</b>
+            <a href={item.source_url} target="_blank" rel="noreferrer">Первоисточник ↗</a>
+          </article>)}</div>
+        </section>}
         <button className="primary-button modal-print" onClick={() => { setReportScope('selected'); setReportSelectedIds([activeModalItem.id]); setActiveModalItem(null); navigateToTab('reports'); }}><Icon name="file"/>Создать отчёт по территории</button>
       </section></div>}
     </div>
