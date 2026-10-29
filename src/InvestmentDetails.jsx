@@ -96,6 +96,8 @@ export const InvestmentDetails = () => {
   const [facilities, setFacilities] = useState([]);
   const [facilityFilter, setFacilityFilter] = useState('all');
   const [facilitySearch, setFacilitySearch] = useState('');
+  const [indicatorSearch, setIndicatorSearch] = useState('');
+  const [indicatorMunicipalityFilter, setIndicatorMunicipalityFilter] = useState('all');
   const [officialDataStatus, setOfficialDataStatus] = useState(isSupabaseConfigured ? 'loading' : 'offline');
   const [officialDataError, setOfficialDataError] = useState('');
 
@@ -340,6 +342,20 @@ export const InvestmentDetails = () => {
       return matchesType && (!query || searchText.includes(query));
     });
   }, [facilities, facilityFilter, facilitySearch]);
+
+  const filteredOfficialIndicators = useMemo(() => {
+    const query = indicatorSearch.trim().toLocaleLowerCase('ru-RU');
+    return [...officialIndicators]
+      .filter((item) => indicatorMunicipalityFilter === 'all' || item.municipality_id === indicatorMunicipalityFilter)
+      .filter((item) => {
+        const text = [item.geographic_name, item.indicator_name, item.municipality_id, item.unit, item.notes]
+          .filter(Boolean).join(' ').toLocaleLowerCase('ru-RU');
+        return !query || text.includes(query);
+      })
+      .sort((a, b) => Number(b.reference_year) - Number(a.reference_year)
+        || String(b.reference_period || '').localeCompare(String(a.reference_period || ''))
+        || String(a.geographic_name || '').localeCompare(String(b.geographic_name || ''), 'ru-RU'));
+  }, [officialIndicators, indicatorSearch, indicatorMunicipalityFilter]);
 
   const programExecutionSummary = useMemo(() => ({
     count: programExecution.length,
@@ -648,6 +664,37 @@ export const InvestmentDetails = () => {
                 })}</div>
               </div> : <p className="official-data-empty">Слой готов к загрузке. Сейчас в базе нет других проверенных рядов кроме показателей, которые были отдельно подтверждены и внесены. Для остальных источников идёт подготовка сопоставимых наборов; пустые значения намеренно не заполняются догадками.</p>}
               {officialDataStatus === 'error' && officialDataError && <p className="official-data-error">Не удалось обновить официальный слой: {officialDataError}</p>}
+            </section>
+
+            <section className="official-indicators-table-panel panel" aria-labelledby="all-official-indicators-heading">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="table"/></span><div><h2 id="all-official-indicators-heading">Все загруженные официальные показатели</h2><p>По всем источникам в базе, с отдельными периодами, единицами и первоисточниками</p></div></div>
+                <span className="section-tag">{filteredOfficialIndicators.length} ИЗ {officialIndicators.length}</span>
+              </div>
+              <div className="official-indicator-toolbar">
+                <label className="search-box"><Icon name="search"/><input value={indicatorSearch} onChange={(event) => setIndicatorSearch(event.target.value)} placeholder="Поиск показателя, города или единицы…" aria-label="Поиск официальных показателей"/></label>
+                <label className="select-field"><span>Муниципалитет</span><select value={indicatorMunicipalityFilter} onChange={(event) => setIndicatorMunicipalityFilter(event.target.value)}><option value="all">Все территории</option>{municipalities.slice().sort((a,b) => a.name.localeCompare(b.name,'ru-RU')).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
+                <button type="button" className="outline-button" onClick={() => {setIndicatorSearch('');setIndicatorMunicipalityFilter('all');}}><Icon name="refresh"/>Сбросить</button>
+              </div>
+              <div className="official-indicator-table-wrap">
+                <table className="fuel-prices-table official-indicator-table">
+                  <thead><tr><th>Территория / уровень</th><th>Показатель</th><th>Значение</th><th>Период наблюдения</th><th>Примечание</th><th>Источник</th></tr></thead>
+                  <tbody>{filteredOfficialIndicators.map((item) => {
+                    const municipality = municipalities.find((m) => m.id === item.municipality_id);
+                    const geography = item.geographic_level === 'settlement' ? 'Населённый пункт' : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
+                    return <tr key={item.id}>
+                      <td><strong>{item.geographic_name || municipality?.name || item.municipality_id}</strong><small>{geography}</small></td>
+                      <td><strong>{item.indicator_name}</strong><small>{item.notes || 'Методическое примечание не указано'}</small></td>
+                      <td className="official-indicator-value">{formatNumber(item.value, 2)}<small>{item.unit}</small></td>
+                      <td>{formatReferencePeriod(item)}</td>
+                      <td>{item.notes || '—'}</td>
+                      <td><a href={item.source_url} target="_blank" rel="noreferrer">Открыть ↗</a></td>
+                    </tr>;
+                  })}</tbody>
+                </table>
+                {filteredOfficialIndicators.length === 0 && <div className="empty-state"><span>Показатели не найдены</span><p>Попробуйте изменить поисковый запрос или территорию.</p><button className="outline-button" onClick={() => {setIndicatorSearch('');setIndicatorMunicipalityFilter('all');}}>Сбросить фильтры</button></div>}
+              </div>
+              <p className="source-panel-note">В таблице отображаются только записи с проверенным статусом. Годовые, квартальные и моментные показатели не объединяются в один период; примечания помогают отличать показатель муниципального образования от данных по населённому пункту.</p>
             </section>
 
             {investmentSites.length > 0 && <section className="investment-sites-panel panel" aria-labelledby="investment-sites-heading">
