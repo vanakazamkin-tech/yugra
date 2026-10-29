@@ -338,6 +338,7 @@ export const InvestmentDetails = () => {
         {reportIncludeMethodology && <p className="print-methodology">Источник данных: {syncStatus === 'connected' ? 'Supabase' : 'резервный локальный набор'}. Отчёт отражает выбранную выборку и настройки конструктора. Перед официальным использованием проверьте первоисточники, период наблюдения и методику расчёта.</p>}
       </section>
 
+      <a className="skip-link" href="#main-content">Перейти к содержимому</a>
       <div className="site-shell print:hidden">
         <header className="site-header">
           <button className="brand-lockup" onClick={() => navigateToTab('catalog')} aria-label="Югра — на главную">
@@ -365,7 +366,7 @@ export const InvestmentDetails = () => {
           {syncStatus === 'error' && <button className="sync-retry" onClick={() => setSyncAttempt((attempt) => attempt + 1)}><Icon name="refresh"/>Повторить</button>}
         </div>
 
-        <main>
+        <main id="main-content">
           {activeTab === 'catalog' && <>
             <section className="intro-panel panel">
               <div className="intro-top">
