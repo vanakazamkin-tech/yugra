@@ -852,7 +852,7 @@ export const InvestmentDetails = () => {
           {modalOfficialIndicators.length > 0 ? <div className="modal-official-list">
             {modalOfficialIndicators.map((item) => <article key={item.id} className="modal-official-row">
               <div><strong>{item.indicator_name}</strong><span>{item.geographic_name || activeModalItem.name} · {item.geographic_level === 'settlement' ? 'населённый пункт' : item.geographic_level === 'region' ? 'регион' : 'муниципалитет'} · {item.reference_year} · {item.unit}</span></div>
-              <b>{formatNumber(item.value, 1)}</b>
+              <b>{formatPopulationIndicator(item)}</b>
               <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a>
             </article>)}
           </div> : <p className="modal-no-official">Для этой территории пока нет проверенных официальных показателей в базе. Новые значения будут добавляться только после проверки источника, периода и территориальной привязки.</p>}
