@@ -439,6 +439,8 @@ export async function fetchOfficialData(client) {
 
 export const DATA_CATEGORY_LABELS = {
   official_statistics: 'ОФИЦИАЛЬНАЯ СТАТИСТИКА',
+  municipal_programs: 'МУНИЦИПАЛЬНЫЕ ПРОГРАММЫ',
+  municipal_budget: 'МУНИЦИПАЛЬНЫЙ БЮДЖЕТ',
   demography: 'ДЕМОГРАФИЯ',
   business: 'БИЗНЕС И МСП',
   investments: 'ИНВЕСТИЦИИ',
