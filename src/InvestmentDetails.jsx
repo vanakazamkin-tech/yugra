@@ -70,6 +70,7 @@ const OFFICIAL_TREND_SERIES = [
   { code: 'resale_goods_q1', title: 'Продажа товаров несобственного производства', periodLabel: 'I квартал', unit: 'тыс. руб.', definition: 'Накопительный итог за январь–март, без субъектов малого предпринимательства.' },
   { code: 'resale_goods_h1', title: 'Продажа товаров несобственного производства', periodLabel: 'Первое полугодие', unit: 'тыс. руб.', definition: 'Накопительный итог за январь–июнь, без субъектов малого предпринимательства.' },
   { code: 'fixed_capital_investment_local_budget', title: 'Инвестиции за счёт средств местного бюджета', periodLabel: 'За год', unit: 'тыс. руб.', definition: 'Отдельная статья муниципальных бюджетных вложений; не общий объём всех инвестиций.' },
+  { code: 'fixed_capital_investment_enterprises_non_sme', title: 'Инвестиции организаций без субъектов малого предпринимательства', periodLabel: 'За год', unit: 'тыс. руб.', definition: 'Общий объём инвестиций организаций на территории муниципалитета, без субъектов малого предпринимательства; не смешивать с вложениями местного бюджета.' },
 ];
 const DEFAULT_COMPARE_IDS = ['surgutsky', 'khanty-mansiysk', 'surgut'];
 const DEFAULT_REPORT_FIELDS = ['score', 'rank2024', 'investments', 'growthPercent', 'smeCount', 'assessmentScore'];
