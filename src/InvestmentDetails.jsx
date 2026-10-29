@@ -863,6 +863,31 @@ export const InvestmentDetails = () => {
     URL.revokeObjectURL(url);
   };
 
+  const downloadOfficialRiskSignalCsv = () => {
+    const headers = ['Территория','Показатель','Значение','Единица измерения','Период','Изменение к предыдущему году, %','Источник','URL источника','Примечание'];
+    const rows = officialRiskSignal.rows.map((item) => [
+      item.geographic_name || 'Сургут',
+      officialRiskSignal.config.label,
+      item.numericValue,
+      officialRiskSignal.config.unit,
+      formatReferencePeriod(item),
+      item.changePercent == null ? '' : item.changePercent,
+      item.source_id || '',
+      item.source_url || '',
+      item.notes || '',
+    ]);
+    const escape = (value) => '"' + String(value == null ? '' : value).replaceAll('"','""') + '"';
+    const csv = '\uFEFF' + [headers, ...rows].map((row)=>row.map(escape).join(';')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+    const anchor = document.createElement('a');
+    anchor.href=url;
+    anchor.download=`yugra-surgut-risk-signal-${officialRiskSignal.config.code}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const downloadSurgutComparableTrendCsv = () => {
     const headers = [
       'Территория',
@@ -1525,7 +1550,7 @@ export const InvestmentDetails = () => {
             <section className="risk-signal-panel panel" aria-labelledby="risk-signal-title">
               <div className="section-heading">
                 <div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="risk-signal-title">Пилотные сигналы по официальным данным</h2><p>Фактическая динамика Сургута за одинаковые периоды · не общий рейтинг всех муниципалитетов</p></div></div>
-                <span className="section-tag">РОССТАТ</span>
+                <div className="toolbar-actions"><span className="section-tag">РОССТАТ</span><button className="outline-button" onClick={downloadOfficialRiskSignalCsv} disabled={!officialRiskSignal.rows.length}><Icon name="download"/>CSV</button></div>
               </div>
               <label className="official-trend-select"><span>Выбрать показатель для наблюдения</span><select value={selectedRiskSignalCode} onChange={(event)=>setSelectedRiskSignalCode(event.target.value)}>{OFFICIAL_RISK_SIGNAL_SERIES.map((series)=><option value={series.code} key={series.code}>{series.label}</option>)}</select></label>
               <p className="official-trend-definition">{officialRiskSignal.config.definition}</p>
