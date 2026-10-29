@@ -495,84 +495,65 @@ export const FALLBACK_DATA_SOURCES = [
   },
 ];
 
+async function fetchAllRows(buildQuery, pageSize = 500) {
+  const rows = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await buildQuery().range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    const page = Array.isArray(data) ? data : [];
+    rows.push(...page);
+    if (page.length < pageSize) return rows;
+  }
+}
+
 export async function fetchOfficialData(client) {
   if (!client) {
     return { sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [], programExecution: [], fuelPrices: [], facilities: [] };
   }
 
-  const [sourcesResult, indicatorsResult, sitesResult, programsResult, fuelPricesResult, facilitiesResult] = await Promise.all([
-    client.from('data_sources')
+  // Supabase/PostgREST may cap each response (commonly at 1,000 rows).
+  // Fetch deterministic pages so a growing official-data catalogue is never silently truncated.
+  const [sources, indicators, investmentSites, programExecution, fuelPrices, facilities] = await Promise.all([
+    fetchAllRows(() => client.from('data_sources')
       .select('id,name,category,url,description,format,coverage,update_frequency,import_status,last_checked_at,notes')
       .order('category', { ascending: true })
-      .order('name', { ascending: true }),
-    client.from('municipality_indicators')
+      .order('name', { ascending: true })
+      .order('id', { ascending: true })),
+    fetchAllRows(() => client.from('municipality_indicators')
       .select('id,municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,source_published_at,retrieved_at,verification_status,notes,geographic_level,geographic_name')
       .eq('verification_status', 'verified')
-      .order('reference_year', { ascending: false }),
-    client.from('investment_sites')
+      .order('reference_year', { ascending: false })
+      .order('id', { ascending: true })),
+    fetchAllRows(() => client.from('investment_sites')
       .select('id,municipality_id,source_id,external_id,name,site_type,location_text,area_hectares,land_status,offer_type,permitted_use,source_url,source_updated_at,verification_status,retrieved_at')
       .eq('verification_status', 'verified')
-      .order('name', { ascending: true }),
-    client.from('municipal_program_execution')
+      .order('name', { ascending: true })
+      .order('id', { ascending: true })),
+    fetchAllRows(() => client.from('municipal_program_execution')
       .select('id,municipality_id,source_id,program_code,program_name,report_date,approved_budget_thousand,revised_budget_thousand,executed_budget_thousand,execution_percent,source_url,source_published_at,retrieved_at,verification_status,notes')
       .eq('verification_status', 'verified')
-      .order('report_date', { ascending: false }),
-    client.from('fuel_price_observations')
+      .order('report_date', { ascending: false })
+      .order('id', { ascending: true })),
+    fetchAllRows(() => client.from('fuel_price_observations')
       .select('id,municipality_id,source_id,source_row,observed_at,station_name,company_name,address,latitude,longitude,gasoline_80,gasoline_92,gasoline_95,gasoline_98,gasoline_100,butane,propane,diesel,methane,value_unit,source_url,source_payload,verification_status,retrieved_at')
       .eq('verification_status', 'verified')
       .order('observed_at', { ascending: false })
-      .order('source_row', { ascending: true }),
-    client.from('municipal_facilities')
+      .order('source_row', { ascending: true })
+      .order('id', { ascending: true })),
+    fetchAllRows(() => client.from('municipal_facilities')
       .select('id,municipality_id,source_id,external_id,facility_category,name_full,name_short,address,postal_code,latitude,longitude,phone,working_hours,license_info,ownership,staffing_percent,annual_attendance,source_updated_at,source_url,source_payload,verification_status,retrieved_at')
       .eq('verification_status', 'verified')
       .order('facility_category', { ascending: true })
-      .order('name_short', { ascending: true }),
+      .order('name_short', { ascending: true })
+      .order('id', { ascending: true })),
   ]);
 
-  // A failed query is surfaced rather than being silently treated as an empty official dataset.
-  if (sourcesResult.error) throw sourcesResult.error;
-  if (indicatorsResult.error) throw indicatorsResult.error;
-  if (sitesResult.error) throw sitesResult.error;
-  if (programsResult.error) throw programsResult.error;
-  if (fuelPricesResult.error) throw fuelPricesResult.error;
-  if (facilitiesResult.error) throw facilitiesResult.error;
-
   return {
-    sources: Array.isArray(sourcesResult.data) && sourcesResult.data.length
-      ? sourcesResult.data
-      : FALLBACK_DATA_SOURCES,
-    indicators: Array.isArray(indicatorsResult.data) ? indicatorsResult.data : [],
-    investmentSites: Array.isArray(sitesResult.data) ? sitesResult.data : [],
-    programExecution: Array.isArray(programsResult.data) ? programsResult.data : [],
-    fuelPrices: Array.isArray(fuelPricesResult.data) ? fuelPricesResult.data : [],
-    facilities: Array.isArray(facilitiesResult.data) ? facilitiesResult.data : [],
+    sources: sources.length ? sources : FALLBACK_DATA_SOURCES,
+    indicators,
+    investmentSites,
+    programExecution,
+    fuelPrices,
+    facilities,
   };
 }
-
-export const DATA_CATEGORY_LABELS = {
-  official_statistics: 'ОФИЦИАЛЬНАЯ СТАТИСТИКА',
-  municipal_programs: 'МУНИЦИПАЛЬНЫЕ ПРОГРАММЫ',
-  municipal_budget: 'МУНИЦИПАЛЬНЫЙ БЮДЖЕТ',
-  demography: 'ДЕМОГРАФИЯ',
-  business: 'БИЗНЕС И МСП',
-  investments: 'ИНВЕСТИЦИИ',
-  investment_sites: 'ИНВЕСТПЛОЩАДКИ',
-  municipal_open_data: 'МУНИЦИПАЛЬНЫЕ ДАННЫЕ',
-  transport: 'ТРАНСПОРТ',
-  education: 'ОБРАЗОВАНИЕ',
-  culture: 'КУЛЬТУРА',
-  sports: 'СПОРТ',
-  fuel_prices: 'ТОПЛИВО',
-  utilities: 'КОММУНАЛЬНЫЕ УСЛУГИ',
-  construction: 'СТРОИТЕЛЬСТВО',
-  business_locations: 'ТОРГОВЛЯ И УСЛУГИ',
-  business_support: 'ПОДДЕРЖКА БИЗНЕСА',
-};
-
-export const DATA_STATUS_LABELS = {
-  identified: 'Источник найден · данные ещё не импортированы',
-  ready_for_import: 'Подготовлен к загрузке',
-  partially_imported: 'Загружен частично',
-  imported: 'Данные импортированы',
-  access_issue: 'Требуется проверить доступ к данным',
-};
