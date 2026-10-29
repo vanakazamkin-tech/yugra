@@ -238,7 +238,7 @@ export const InvestmentDetails = () => {
     const loadOfficialData = async () => {
       if (cancelled || officialRequestInFlight) return;
       officialRequestInFlight = true;
-      setOfficialDataStatus((status) => status === 'connected' ? 'connected' : 'loading');
+      setOfficialDataStatus('loading');
       try {
         const result = await fetchOfficialData(supabase);
         if (cancelled) return;
