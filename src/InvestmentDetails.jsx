@@ -44,7 +44,17 @@ const formatReferencePeriod = (item) => {
   if (!period || period === 'annual') return String(item?.reference_year ?? '—');
   const quarterLabels = { Q1: 'I квартал', Q2: 'II квартал', Q3: 'III квартал', Q4: 'IV квартал' };
   const quarter = String(period).match(/^(\d{4})-(Q[1-4])$/);
-  if (quarter) return `${quarter[1]} · ${quarterLabels[quarter[2]]}`;
+  if (quarter) {
+    const note = String(item?.notes || '').toLocaleLowerCase('ru-RU');
+    const indicatorCode = String(item?.indicator_code || '');
+    const isNineMonthCumulative = quarter[2] === 'Q3'
+      && (indicatorCode.endsWith('_q3')
+        || indicatorCode.startsWith('employees_')
+        || note.includes('январь–сентябрь')
+        || note.includes('январь-сентябрь'));
+    if (isNineMonthCumulative) return `${quarter[1]} · 9 месяцев (январь–сентябрь)`;
+    return `${quarter[1]} · ${quarterLabels[quarter[2]]}`;
+  }
   const half = String(period).match(/^(\d{4})-H([12])$/);
   if (half) return `${half[1]} · ${half[2] === '1' ? 'I' : 'II'} полугодие`;
   const date = String(period).match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -646,7 +656,7 @@ export const InvestmentDetails = () => {
       seen.get(key).municipalityIds.add(item.municipality_id);
     });
     const periodRank = (period) => {
-      if (period === 'annual') return 0;
+      if (period === 'annual') return 50;
       const quarter = String(period).match(/Q([1-4])$/);
       if (quarter) return Number(quarter[1]) * 10;
       const half = String(period).match(/H([12])$/);
