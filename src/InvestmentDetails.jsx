@@ -142,7 +142,13 @@ const DEFAULT_REPORT_FIELDS = ['score', 'rank2024', 'investments', 'growthPercen
 
 const metricValue = (municipality, key) => METRIC_BY_KEY[key]?.get(municipality) ?? '';
 const metricText = (municipality, key) => METRIC_BY_KEY[key]?.format(municipality) ?? '';
-const csvEscape = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+const csvEscape = (value) => {
+  let text = String(value ?? '');
+  // Prefix risky text values so spreadsheet applications do not execute them as formulas.
+  const first = text.trimStart()[0];
+  if (typeof value === 'string' && ['=', '+', '-', '@', '\t', '\r'].includes(first)) text = "'" + text;
+  return `"${text.replaceAll('"', '""')}"`;
+};
 const downloadCsv = (items, fields, filename) => {
   const headers = ['Муниципальное образование', 'Группа', ...fields.map((key) => METRIC_BY_KEY[key]?.label || key)];
   const rows = items.map((item) => [item.name, `Группа ${item.group2024}`, ...fields.map((key) => metricText(item, key))]);
