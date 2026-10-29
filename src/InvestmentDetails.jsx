@@ -389,6 +389,22 @@ export const InvestmentDetails = () => {
       .sort((a, b) => Number(b.reference_year) - Number(a.reference_year) || a.indicator_name.localeCompare(b.indicator_name, 'ru-RU'));
   }, [officialIndicators, activeModalItem]);
 
+  const surgutPopulationTrend = useMemo(() => {
+    const rows = officialIndicators
+      .filter((item) => item.indicator_code === 'population_municipality_history' && item.municipality_id === 'surgut')
+      .slice()
+      .sort((a,b) => Number(a.reference_year)-Number(b.reference_year));
+    const values = rows.map((item) => Number(item.value)).filter(Number.isFinite);
+    const min = values.length ? Math.min(...values) : 0;
+    const max = values.length ? Math.max(...values) : 1;
+    const points = rows.map((item,index) => ({
+      ...item,
+      x: rows.length < 2 ? 400 : 38 + index / (rows.length - 1) * 724,
+      y: 174 - ((Number(item.value) - min) / Math.max(1, max - min)) * 126,
+    }));
+    return { rows: points, min, max, latest: points[points.length - 1] || null, first: points[0] || null };
+  }, [officialIndicators]);
+
   const riskRows = useMemo(() => {
     const query = riskSearch.trim().toLocaleLowerCase('ru-RU');
     return municipalities.map((municipality) => {
@@ -684,6 +700,23 @@ export const InvestmentDetails = () => {
               <span className={`official-status-chip official-status--${officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
             </section>
             <div className="data-page-summary"><article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong></article><article><span>Проверенных наблюдений</span><strong>{officialDataSummary.recordCount}</strong></article><article><span>Инвестиционных площадок</span><strong>{officialDataSummary.investmentSiteCount}</strong></article><article><span>Отчётов по программам</span><strong>{programExecution.length}</strong></article><article><span>Записей цен на топливо</span><strong>{fuelPrices.length}</strong></article><article><span>Школ и детсадов</span><strong>{facilities.length}</strong></article></div>
+            {surgutPopulationTrend.rows.length > 1 && <section className="population-trend-panel panel" aria-labelledby="population-trend-title">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="population-trend-title">Историческая динамика населения Сургута</h2><p>Официальный годовой ряд Росстата · численность на 1 января</p></div></div><span className="section-tag">{surgutPopulationTrend.rows.length} НАБЛЮДЕНИЙ</span></div>
+              <div className="population-trend-kpis"><article><span>Начало ряда</span><strong>{formatNumber(surgutPopulationTrend.first.value)} чел.</strong><small>{surgutPopulationTrend.first.reference_year} год</small></article><article><span>Последнее значение</span><strong>{formatNumber(surgutPopulationTrend.latest.value)} чел.</strong><small>{surgutPopulationTrend.latest.reference_year} год</small></article><article><span>Изменение за период</span><strong>{formatNumber((surgutPopulationTrend.latest.value/surgutPopulationTrend.first.value-1)*100,1)}%</strong><small>за весь доступный ряд, не годовой темп</small></article></div>
+              <div className="population-trend-chart-wrap">
+                <svg className="population-trend-chart" viewBox="0 0 800 230" role="img" aria-label="График изменения численности населения Сургута с 2009 по 2025 год">
+                  <line x1="38" y1="174" x2="762" y2="174" stroke="#d9d9ca" strokeWidth="1"/>
+                  <line x1="38" y1="111" x2="762" y2="111" stroke="#e5e3d7" strokeWidth="1" strokeDasharray="4 5"/>
+                  <line x1="38" y1="48" x2="762" y2="48" stroke="#e5e3d7" strokeWidth="1" strokeDasharray="4 5"/>
+                  <polyline points={surgutPopulationTrend.rows.map((item)=>`${item.x},${item.y}`).join(' ')} fill="none" stroke="#3d7050" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                  {surgutPopulationTrend.rows.map((item,index)=><circle key={item.id} cx={item.x} cy={item.y} r={index===surgutPopulationTrend.rows.length-1?5:3} fill={index===surgutPopulationTrend.rows.length-1?'#b78a49':'#3d7050'} stroke="#fffdf8" strokeWidth="1.5"><title>{item.reference_year}: {formatNumber(item.value)} человек</title></circle>)}
+                  <text x="38" y="204" fill="#7c8979" fontSize="12">{surgutPopulationTrend.first.reference_year}</text>
+                  <text x="400" y="204" textAnchor="middle" fill="#7c8979" fontSize="12">{surgutPopulationTrend.rows[Math.floor(surgutPopulationTrend.rows.length/2)].reference_year}</text>
+                  <text x="762" y="204" textAnchor="end" fill="#7c8979" fontSize="12">{surgutPopulationTrend.latest.reference_year}</text>
+                </svg>
+              </div>
+              <p className="source-panel-note">Источник: <a href={surgutPopulationTrend.latest.source_url} target="_blank" rel="noreferrer">муниципальный паспорт Росстата ↗</a>. Ряд относится к численности городского округа на 1 января. Это историческое наблюдение, не прогноз.</p>
+            </section>}
             <section className="official-data-panel panel" aria-labelledby="official-data-heading">
               <div className="section-heading">
                 <div className="heading-label"><span className="heading-icon"><Icon name="check"/></span><div><h2 id="official-data-heading">Слой проверенных официальных данных</h2><p>Отдельно от демонстрационных показателей концепта</p></div></div>
