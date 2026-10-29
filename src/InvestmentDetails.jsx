@@ -83,6 +83,9 @@ export const InvestmentDetails = () => {
   const [investmentSites, setInvestmentSites] = useState([]);
   const [programExecution, setProgramExecution] = useState([]);
   const [fuelPrices, setFuelPrices] = useState([]);
+  const [facilities, setFacilities] = useState([]);
+  const [facilityFilter, setFacilityFilter] = useState('all');
+  const [facilitySearch, setFacilitySearch] = useState('');
   const [officialDataStatus, setOfficialDataStatus] = useState(isSupabaseConfigured ? 'loading' : 'offline');
   const [officialDataError, setOfficialDataError] = useState('');
 
@@ -144,6 +147,7 @@ export const InvestmentDetails = () => {
         setInvestmentSites(result.investmentSites);
         setProgramExecution(result.programExecution || []);
         setFuelPrices(result.fuelPrices || []);
+        setFacilities(result.facilities || []);
         setOfficialDataStatus('connected');
         setOfficialDataError('');
       } catch (error) {
@@ -316,6 +320,16 @@ export const InvestmentDetails = () => {
     if (item.unit === 'человек') return `${formatNumber(item.value)} чел.`;
     return `${formatNumber(item.value, 1)} ${item.unit}`;
   };
+
+  const filteredFacilities = useMemo(() => {
+    const query = facilitySearch.trim().toLocaleLowerCase('ru-RU');
+    return facilities.filter((facility) => {
+      const matchesType = facilityFilter === 'all' || facility.facility_category === facilityFilter;
+      const searchText = [facility.name_short, facility.name_full, facility.address]
+        .filter(Boolean).join(' ').toLocaleLowerCase('ru-RU');
+      return matchesType && (!query || searchText.includes(query));
+    });
+  }, [facilities, facilityFilter, facilitySearch]);
 
   const programExecutionSummary = useMemo(() => ({
     count: programExecution.length,
@@ -602,7 +616,7 @@ export const InvestmentDetails = () => {
               <div><span className="eyebrow"><span className="eyebrow-diamond"/> ЦЕНТР ДАННЫХ</span><h1>Источники и проверенные показатели</h1><p>Официальные наблюдения отделены от демонстрационного набора. Здесь видно покрытие, происхождение данных и наборы, подготовленные к импорту.</p></div>
               <span className={`official-status-chip official-status--${officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
             </section>
-            <div className="data-page-summary"><article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong></article><article><span>Проверенных наблюдений</span><strong>{officialDataSummary.recordCount}</strong></article><article><span>Уникальных инвестплощадок</span><strong>{officialDataSummary.investmentSiteCount}</strong></article><article><span>Отчётов по программам</span><strong>{programExecution.length}</strong></article><article><span>Записей цен на топливо</span><strong>{fuelPrices.length}</strong></article></div>
+            <div className="data-page-summary"><article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong></article><article><span>Проверенных наблюдений</span><strong>{officialDataSummary.recordCount}</strong></article><article><span>Инвестиционных площадок</span><strong>{officialDataSummary.investmentSiteCount}</strong></article><article><span>Отчётов по программам</span><strong>{programExecution.length}</strong></article><article><span>Записей цен на топливо</span><strong>{fuelPrices.length}</strong></article><article><span>Школ и детсадов</span><strong>{facilities.length}</strong></article></div>
             <section className="official-data-panel panel" aria-labelledby="official-data-heading">
               <div className="section-heading">
                 <div className="heading-label"><span className="heading-icon"><Icon name="check"/></span><div><h2 id="official-data-heading">Слой проверенных официальных данных</h2><p>Отдельно от демонстрационных показателей концепта</p></div></div>
@@ -709,6 +723,36 @@ export const InvestmentDetails = () => {
                 </table>
               </div>
               <p className="source-panel-note">Источник: официальный открытый CSV. Версия от 28.10.2026; наблюдения относятся к девяти строкам выгрузки. Нулевые цены на дизель у двух станций сохранены в исходном payload, но нормализованное ценовое поле оставлено пустым до уточнения смысла «0,00» у владельца набора.</p>
+            </section>}
+
+            {facilities.length > 0 && <section className="municipal-facilities-panel panel" aria-labelledby="municipal-facilities-heading">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="people"/></span><div><h2 id="municipal-facilities-heading">Образовательная инфраструктура</h2><p>Официальные данные по школам и дошкольным учреждениям Мегиона и посёлка Высокий</p></div></div>
+                <span className="section-tag">{facilities.length} ОБЪЕКТОВ</span>
+              </div>
+              <div className="facility-toolbar">
+                <label className="search-box"><Icon name="search"/><input value={facilitySearch} onChange={(event) => setFacilitySearch(event.target.value)} placeholder="Поиск по названию или адресу…" aria-label="Поиск образовательного объекта"/></label>
+                <div className="filter-row" aria-label="Фильтр типа образовательного объекта">
+                  {[['all','Все'],['school','Школы'],['preschool','Детские сады']].map(([value,label]) => <button type="button" key={value} className={`filter-pill ${facilityFilter === value ? 'selected' : ''}`} onClick={() => setFacilityFilter(value)}>{label}</button>)}
+                </div>
+              </div>
+              <div className="facility-list-meta">Показано <strong>{filteredFacilities.length}</strong> из {facilities.length} объектов. Численность учеников и детей — среднегодовое значение из источника, не нормативная вместимость.</div>
+              <div className="fuel-prices-table-wrap">
+                <table className="fuel-prices-table facility-table">
+                  <thead><tr><th>Учреждение</th><th>Адрес</th><th>Тип</th><th>Учеников / детей в год</th><th>Штат, %</th><th>Координаты</th><th>Версия данных</th></tr></thead>
+                  <tbody>{filteredFacilities.map((facility) => <tr key={facility.id}>
+                    <td><strong>{facility.name_short || facility.name_full}</strong><small>{facility.name_full}</small></td>
+                    <td>{facility.address || '—'}{facility.postal_code && <small>Индекс: {facility.postal_code}</small>}</td>
+                    <td>{facility.facility_category === 'preschool' ? 'Дошкольное' : 'Школа'}</td>
+                    <td>{facility.annual_attendance == null ? '—' : formatNumber(facility.annual_attendance)}</td>
+                    <td>{facility.staffing_percent == null ? '—' : `${formatNumber(facility.staffing_percent, 1)}%`}</td>
+                    <td>{facility.latitude == null || facility.longitude == null ? '—' : <a href={`https://www.openstreetmap.org/?mlat=${facility.latitude}&mlon=${facility.longitude}#map=16/${facility.latitude}/${facility.longitude}`} target="_blank" rel="noreferrer">{formatNumber(facility.latitude, 6)}, {formatNumber(facility.longitude, 6)} ↗</a>}</td>
+                    <td>{facility.source_updated_at ? new Intl.DateTimeFormat('ru-RU').format(new Date(facility.source_updated_at + 'T00:00:00')) : '—'}<small><a href={facility.source_url} target="_blank" rel="noreferrer">Первоисточник ↗</a></small></td>
+                  </tr>)}</tbody>
+                </table>
+                {filteredFacilities.length === 0 && <div className="empty-state"><span>Объекты не найдены</span><p>Измените запрос или выберите другой тип учреждения.</p><button className="outline-button" onClick={() => {setFacilitySearch('');setFacilityFilter('all');}}>Сбросить фильтры</button></div>}
+              </div>
+              <p className="source-panel-note">О дошкольных учреждениях импортированы 17 из 18 строк, доступных в поисковом представлении актуального CSV. Реестр школ содержит 7 объектов по версии от 16.12.2024. Дата обновления паспорта набора не заменяет дату фактической версии файла.</p>
             </section>}
 
             <section className="source-panel panel" aria-labelledby="source-panel-title">
