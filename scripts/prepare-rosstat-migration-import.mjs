@@ -117,7 +117,7 @@ for (const [field, candidates] of Object.entries(headerCandidates)) {
   if (found >= 0) headerIndex[field] = found;
 }
 
-for (const required of ['year', 'municipality', 'value', 'indicator']) {
+for (const required of ['year', 'municipality', 'value', 'indicator', 'region']) {
   if (headerIndex[required] == null) {
     throw new Error(`Could not identify required "${required}" column. Headers: ${headers.join(' | ')}. Pass --${required}=<exact header>.`);
   }
@@ -171,7 +171,7 @@ for (const raw of parsed.slice(1)) {
   }
 
   const region = get('region');
-  if (headerIndex.region != null && !regionNames.includes(normalize(region))) {
+  if (!regionNames.includes(normalize(region))) {
     skipped.wrongRegion += 1;
     continue;
   }
