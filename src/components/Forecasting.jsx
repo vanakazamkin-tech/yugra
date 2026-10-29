@@ -61,7 +61,7 @@ function buildForecasts(municipalities, params, horizon) {
     });
 }
 
-export default function Forecasting({ municipalities, supabase, isSupabaseConfigured, officialIndicators = [], programExecution = [], officialDataStatus = 'offline' }) {
+export default function Forecasting({ municipalities, supabase, isSupabaseConfigured, officialIndicators = [], programExecution = [], officialDataStatus = 'offline', officialDataSyncedAt = null }) {
   const [scenarios, setScenarios] = useState(FALLBACK_SCENARIOS);
   const [scenarioKey, setScenarioKey] = useState('base');
   const [horizon, setHorizon] = useState(3);
@@ -116,7 +116,11 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
   const activeScenario = scenarios.find((item) => item.key === scenarioKey) || scenarios[0];
   const forecasts = useMemo(() => buildForecasts(municipalities || [], params, horizon), [municipalities, params, horizon]);
   const officialCoverage = useMemo(() => buildForecastCoverage(officialIndicators, programExecution, (municipalities || []).length || 22), [officialIndicators, programExecution, municipalities]);
-  const officialCoverageLoaded = officialDataStatus === 'connected';
+  const officialCoverageLoaded = officialDataStatus === 'connected' || Boolean(officialDataSyncedAt);
+  const officialCoverageStale = officialDataStatus === 'error' && Boolean(officialDataSyncedAt);
+  const officialCoverageSyncedLabel = officialDataSyncedAt
+    ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(officialDataSyncedAt))
+    : null;
   const filtered = useMemo(() => {
     const searchText = search.trim().toLocaleLowerCase('ru-RU');
     return forecasts.filter((row) => (selectedId === 'ALL' || row.id === selectedId)
@@ -222,7 +226,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       <section className="forecast-coverage-panel" aria-labelledby="forecast-coverage-title">
         <div className="forecast-coverage-heading">
           <div><h3 id="forecast-coverage-title">Покрытие официальными данными</h3><p>Сколько муниципалитетов имеют хотя бы одно подтверждённое наблюдение в каждой группе. Это охват, а не полнота всех показателей и периодов.</p></div>
-          <span className={'forecast-coverage-status ' + (officialCoverageLoaded ? 'is-connected' : '')}>{officialCoverageLoaded ? 'Срез Supabase' : 'Каталог не загружен'}</span>
+          <span className={'forecast-coverage-status ' + (officialCoverageLoaded ? 'is-connected' : '')}>{officialCoverageStale ? 'Последний успешный срез' : officialCoverageLoaded ? 'Срез Supabase' : 'Каталог не загружен'}</span>
         </div>
         <div className="forecast-coverage-grid">
           {officialCoverage.map((item) => <article className="forecast-coverage-card" key={item.key}>
@@ -232,6 +236,8 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
             <small>{officialCoverageLoaded ? `${item.observationCount} записей${item.latestYear ? ` · последний год: ${item.latestYear}` : ''}` : 'Нет подтверждённого актуального среза'}</small>
           </article>)}
         </div>
+        {officialCoverageSyncedLabel && <p className="forecast-coverage-footnote">Последняя успешная загрузка каталога: {officialCoverageSyncedLabel}.</p>}
+        {officialCoverageStale && <p className="forecast-coverage-footnote">Повторное обновление не удалось. Показан последний успешно загруженный срез; он может быть неактуальным.</p>}
         <p className="forecast-coverage-footnote">Для местного бюджета отдельно учитываются подтверждённые записи исполнения муниципальных программ; они не заменяют полную бюджетную статистику. Городские/поселковые наблюдения и непроверенные записи исключены. Отсутствие записи не означает нулевое значение.</p>
       </section>
 
