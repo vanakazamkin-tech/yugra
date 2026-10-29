@@ -1358,3 +1358,32 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .municipal-facilities-panel { padding: 14px; }
   .facility-table td:first-child { min-width: 190px; }
 }
+
+
+/* Searchable registry for all imported official indicators */
+.official-indicators-table-panel { padding: 21px; }
+.official-indicator-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(210px, 300px) auto; gap: 10px; align-items: end; margin-bottom: 12px; }
+.official-indicator-toolbar .search-box { max-width: none; }
+.official-indicator-toolbar .select-field { min-width: 0; }
+.official-indicator-table-wrap { max-width: 100%; overflow: auto; border: 1px solid #e5dbc9; border-radius: 8px; }
+.official-indicator-table { min-width: 1150px; }
+.official-indicator-table td { vertical-align: top; }
+.official-indicator-table td:first-child { min-width: 160px; max-width: 210px; }
+.official-indicator-table td:nth-child(2) { min-width: 260px; max-width: 360px; white-space: normal; }
+.official-indicator-table td:nth-child(2) strong { display: block; color: var(--forest); line-height: 1.5; }
+.official-indicator-table td:nth-child(2) small { display: -webkit-box; margin-top: 4px; overflow: hidden; color: #8b9486; font-size: 8px; line-height: 1.5; white-space: normal; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.official-indicator-table td:nth-child(5) { min-width: 240px; max-width: 340px; color: #7b8678; font-size: 9px; white-space: normal; line-height: 1.65; }
+.official-indicator-table td:nth-child(1) small,
+.official-indicator-table td:nth-child(3) small { display: block; margin-top: 4px; color: #8a9484; font-size: 8px; white-space: normal; }
+.official-indicator-value { color: #224d35 !important; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.official-indicator-table td:nth-child(4) { min-width: 125px; white-space: nowrap; }
+.official-indicator-table td:last-child { white-space: nowrap; }
+.official-indicator-table a { color: var(--forest-2); font-weight: 800; text-decoration: none; }
+.official-indicator-table a:hover { text-decoration: underline; }
+@media (max-width: 850px) {
+  .official-indicator-toolbar { grid-template-columns: minmax(0, 1fr); }
+  .official-indicator-toolbar .outline-button { width: fit-content; }
+}
+@media (max-width: 640px) {
+  .official-indicators-table-panel { padding: 14px; }
+}
