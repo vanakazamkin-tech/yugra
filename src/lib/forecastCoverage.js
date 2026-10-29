@@ -34,8 +34,9 @@ function classifyIndicator(item) {
   if (/migration|migrat|arrival|departure|миграц|прибывш|выбывш/.test(text)) return 'migration';
   if (/investment|инвестици/.test(text)) return 'investment';
   if (/budget|revenue|expenditure|исполнени[ея].{0,30}программ|бюджет|расходы бюджета|доходы бюджета/.test(text)) return 'budget';
-  if (/employee|employment|employees|работник|занятост/.test(text)) return 'employment';
+  // Salary labels often also contain the word "работников"; classify income before employment.
   if (/salary|wage|income|заработн|оплат[аы] труда|доход населения/.test(text)) return 'income';
+  if (/employee|employment|employees|работник|занятост/.test(text)) return 'employment';
   return null;
 }
 
