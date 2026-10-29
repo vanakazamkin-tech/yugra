@@ -91,6 +91,7 @@ const OFFICIAL_COMPARISON_SERIES = [
   { code: 'resale_goods_h1', label: 'Продажа перепроданных товаров · полугодие', unit: 'тыс. руб.', definition: 'Продажа товаров несобственного производства без субъектов малого предпринимательства за январь–июнь.' },
   { code: 'fairs_count_q1', label: 'Количество проведённых ярмарок · I квартал', unit: 'единиц', definition: 'Количество ярмарок, проведённых в январе–марте 2026 года. Это не количество участников или торговых мест.' },
   { code: 'registered_individual_entrepreneurs_2026_04', label: 'Зарегистрированные индивидуальные предприниматели · на 1 апреля', unit: 'человек', definition: 'Моментный показатель государственного реестра на 1 апреля 2026 года. Это количество зарегистрированных ИП, не число рабочих мест.' },
+  { code: 'population_settlement', label: 'Численность населения городов · на 1 января', unit: 'тыс. человек', geographicLevel: 'settlement', definition: 'Оценка численности населения города/населённого пункта из сборника Росстата. Сравниваются города одного уровня; значения не относятся автоматически ко всему району.' },
   { code: 'population_municipality', label: 'Численность населения муниципального образования · на 1 января', unit: 'человек', definition: 'Численность населения муниципального образования или городского округа на 1 января. В сравнении учитывается только уровень муниципального образования и одинаковый год.' },
   { code: 'fixed_capital_investment_local_budget', label: 'Инвестиции за счёт местного бюджета · год', unit: 'тыс. руб.', definition: 'Отдельная статья вложений из местного бюджета; не общий объём инвестиций.' },
   { code: 'fixed_capital_investment_enterprises_non_sme', label: 'Инвестиции организаций без субъектов МСП · год', unit: 'тыс. руб.', definition: 'Общий объём инвестиций организаций на территории муниципалитета без субъектов малого предпринимательства.' },
@@ -542,10 +543,11 @@ export const InvestmentDetails = () => {
   }, [officialIndicators, selectedTrendSeries]);
 
   const officialComparisonSeriesOptions = useMemo(() => OFFICIAL_COMPARISON_SERIES.filter((series) => {
+    const geographyLevel = series.geographicLevel || 'municipality';
     const periods = new Map();
     officialIndicators.filter((item) =>
       item.indicator_code === series.code
-      && item.geographic_level === 'municipality'
+      && (item.geographic_level || 'municipality') === geographyLevel
       && numericValue(item.value) != null
     ).forEach((item) => {
       const periodKey = `${item.reference_year}|${item.reference_period || 'annual'}`;
@@ -560,10 +562,11 @@ export const InvestmentDetails = () => {
     : officialComparisonSeriesOptions[0]?.code || selectedOfficialComparisonCode;
 
   const officialComparisonPeriods = useMemo(() => {
+    const geographyLevel = OFFICIAL_COMPARISON_SERIES.find((series) => series.code === effectiveOfficialComparisonCode)?.geographicLevel || 'municipality';
     const seen = new Map();
     officialIndicators.filter((item) =>
       item.indicator_code === effectiveOfficialComparisonCode
-      && item.geographic_level === 'municipality'
+      && (item.geographic_level || 'municipality') === geographyLevel
       && numericValue(item.value) != null
     ).forEach((item) => {
       const key = String(item.reference_year) + '|' + String(item.reference_period || 'annual');
@@ -583,7 +586,7 @@ export const InvestmentDetails = () => {
       if (half) return Number(half[1]) * 10 + 5;
       return 99;
     };
-    // Offer only periods with at least two distinct municipalities in the same scope.
+    // Only offer periods with at least two distinct geographic entities of the same level.
     return [...seen.values()]
       .filter((item) => item.municipalityIds.size >= 2)
       .map(({ municipalityIds, ...item }) => item)
@@ -597,17 +600,20 @@ export const InvestmentDetails = () => {
   const officialComparisonConfig = OFFICIAL_COMPARISON_SERIES.find((series) => series.code === effectiveOfficialComparisonCode) || OFFICIAL_COMPARISON_SERIES[0];
 
   const officialComparisonRows = useMemo(() => {
+    const geographyLevel = officialComparisonConfig.geographicLevel || 'municipality';
     return officialIndicators.filter((item) =>
       item.indicator_code === effectiveOfficialComparisonCode
-      && item.geographic_level === 'municipality'
+      && (item.geographic_level || 'municipality') === geographyLevel
       && `${item.reference_year}|${item.reference_period || 'annual'}` === effectiveOfficialComparisonPeriod
       && numericValue(item.value) != null
     ).map((item) => ({
       ...item,
       numericValue: numericValue(item.value),
-      municipalityName: municipalities.find((m) => m.id === item.municipality_id)?.name || item.geographic_name || item.municipality_id,
+      municipalityName: geographyLevel === 'settlement'
+        ? item.geographic_name || municipalities.find((m) => m.id === item.municipality_id)?.name || item.municipality_id
+        : municipalities.find((m) => m.id === item.municipality_id)?.name || item.geographic_name || item.municipality_id,
     })).sort((a,b) => b.numericValue-a.numericValue);
-  }, [officialIndicators, effectiveOfficialComparisonCode, effectiveOfficialComparisonPeriod, municipalities]);
+  }, [officialIndicators, effectiveOfficialComparisonCode, effectiveOfficialComparisonPeriod, officialComparisonConfig, municipalities]);
 
   const riskRows = useMemo(() => {
     const query = riskSearch.trim().toLocaleLowerCase('ru-RU');
@@ -757,13 +763,15 @@ export const InvestmentDetails = () => {
   };
 
   const downloadOfficialComparisonCsv = () => {
-    const headers = ['Муниципальное образование', 'Показатель', 'Значение', 'Единица измерения', 'Период', 'Источник'];
+    const headers = ['Территория / населённый пункт', 'Географический уровень', 'Показатель', 'Значение', 'Единица измерения', 'Период', 'Источник', 'URL источника'];
     const rows = officialComparisonRows.map((item) => [
       item.municipalityName,
+      item.geographic_level === 'settlement' ? 'Населённый пункт' : 'Муниципальное образование',
       officialComparisonConfig.label,
       item.numericValue,
       officialComparisonConfig.unit,
       formatReferencePeriod(item),
+      item.source_id || '',
       item.source_url || '',
     ]);
     const escape = (value) => '"' + String(value == null ? '' : value).replaceAll('"', '""') + '"';
@@ -1110,7 +1118,7 @@ export const InvestmentDetails = () => {
               </> : <div className="empty-state"><span>Для выбранного показателя пока недостаточно наблюдений</span><p>Выберите другой показатель или проверьте заполненность источника.</p></div>}
             </section>
             <section className="official-municipal-comparison panel" aria-labelledby="official-municipal-comparison-title">
-              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2 id="official-municipal-comparison-title">Сравнение муниципалитетов по официальным данным</h2><p>Сравниваем только одинаковые показатель, период и территориальный уровень</p></div></div><span className="section-tag">{officialComparisonRows.length} ТЕРРИТОРИЙ</span></div>
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2 id="official-municipal-comparison-title">Сравнение территорий по официальным данным</h2><p>Сравниваем только одинаковые показатель, период и территориальный уровень</p></div></div><span className="section-tag">{officialComparisonRows.length} ТЕРРИТОРИЙ</span></div>
               <div className="official-comparison-controls">
                 <label className="official-trend-select"><span>Показатель</span><select value={effectiveOfficialComparisonCode} onChange={(event)=>{setSelectedOfficialComparisonCode(event.target.value);setSelectedOfficialComparisonPeriod('');}}>{officialComparisonSeriesOptions.map((series)=><option key={series.code} value={series.code}>{series.label}</option>)}</select></label>
                 <label className="official-trend-select"><span>Период наблюдения</span><select value={effectiveOfficialComparisonPeriod} onChange={(event)=>setSelectedOfficialComparisonPeriod(event.target.value)}>{officialComparisonPeriods.map((period)=><option key={period.key} value={period.key}>{formatReferencePeriod({reference_year:period.year,reference_period:period.period})}</option>)}</select></label>
@@ -1122,8 +1130,8 @@ export const InvestmentDetails = () => {
                   <div className="official-comparison-track"><i style={{width:Math.max(1,item.numericValue/Math.max(1,officialComparisonRows[0].numericValue)*100)+'%'}}/></div>
                   <strong className="official-comparison-value">{formatNumber(item.numericValue,1)} <small>{officialComparisonConfig.unit}</small></strong>
                 </div>)}</div>
-                <div className="official-comparison-footer"><span>Показано {officialComparisonRows.length} из {municipalities.length} муниципалитетов, по которым есть подтверждённое наблюдение в выбранном срезе.</span><button className="text-action" onClick={downloadOfficialComparisonCsv}><Icon name="download"/>Выгрузить срез CSV</button></div>
-                <div className="table-scroll official-trend-table-wrap"><table className="ranking-table"><thead><tr><th>Муниципальное образование</th><th>Значение</th><th>Период</th><th>Источник</th></tr></thead><tbody>{officialComparisonRows.map((item)=><tr key={item.id}><td>{item.municipalityName}</td><td className="score-cell">{formatNumber(item.numericValue,1)} {officialComparisonConfig.unit}</td><td>{formatReferencePeriod(item)}</td><td><a href={item.source_url} target="_blank" rel="noreferrer">Росстат ↗</a></td></tr>)}</tbody></table></div>
+                <div className="official-comparison-footer"><span>{officialComparisonConfig.geographicLevel === 'settlement' ? `Показано ${officialComparisonRows.length} городов/населённых пунктов с подтверждённым наблюдением в выбранном срезе.` : `Показано ${officialComparisonRows.length} из ${municipalities.length} муниципалитетов, по которым есть подтверждённое наблюдение в выбранном срезе.`}</span><button className="text-action" onClick={downloadOfficialComparisonCsv}><Icon name="download"/>Выгрузить срез CSV</button></div>
+                <div className="table-scroll official-trend-table-wrap"><table className="ranking-table"><thead><tr><th>{officialComparisonConfig.geographicLevel === 'settlement' ? 'Город / населённый пункт' : 'Муниципальное образование'}</th><th>Значение</th><th>Период</th><th>Источник</th></tr></thead><tbody>{officialComparisonRows.map((item)=><tr key={item.id}><td>{item.municipalityName}</td><td className="score-cell">{formatNumber(item.numericValue,1)} {officialComparisonConfig.unit}</td><td>{formatReferencePeriod(item)}</td><td><a href={item.source_url} target="_blank" rel="noreferrer">Росстат ↗</a></td></tr>)}</tbody></table></div>
               </> : <div className="empty-state"><span>Нет сопоставимых наблюдений для выбранного среза</span><p>Выберите показатель или другой период. Для корректного сравнения нужны одна единица измерения и один территориальный уровень.</p></div>}
             </section>
             <section className="official-data-panel panel" aria-labelledby="official-data-heading">
