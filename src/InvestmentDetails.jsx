@@ -992,6 +992,17 @@ export const InvestmentDetails = () => {
             <a href={site.source_url} target="_blank" rel="noreferrer">Первоисточник ↗</a>
           </article>)}</div>
         </section>}
+        {facilities.filter((facility) => facility.municipality_id === activeModalItem.id).length > 0 && <section className="modal-official-data modal-facilities-passport" aria-labelledby="modal-facilities-heading">
+          <div className="modal-official-heading"><h3 id="modal-facilities-heading">Образовательная инфраструктура</h3><span>{facilities.filter((facility) => facility.municipality_id === activeModalItem.id).length} объектов</span></div>
+          <p className="modal-no-official">В реестре доступны школы и дошкольные учреждения с адресами и координатами. Дата версии указана у каждого объекта; данные школ относятся к версии 16.12.2024.</p>
+          <details className="modal-facilities-details">
+            <summary>Показать список учреждений</summary>
+            <div className="modal-official-list">{facilities.filter((facility) => facility.municipality_id === activeModalItem.id).map((facility) => <article key={facility.id} className="modal-official-row modal-site-row">
+              <div><strong>{facility.name_short || facility.name_full}</strong><span>{facility.facility_category === 'preschool' ? 'Дошкольное учреждение' : 'Школа'} · {facility.address || 'адрес не указан'}</span><span>Среднегодовое число детей/учеников: {formatNumber(facility.annual_attendance)} · штат: {facility.staffing_percent == null ? '—' : `${formatNumber(facility.staffing_percent, 1)}%`}</span><span>Версия данных: {facility.source_updated_at ? new Intl.DateTimeFormat('ru-RU').format(new Date(facility.source_updated_at + 'T00:00:00')) : 'не указана'}</span></div>
+              <a href={facility.source_url} target="_blank" rel="noreferrer">Источник ↗</a>
+            </article>)}</div>
+          </details>
+        </section>}
         {programExecution.filter((item) => item.municipality_id === activeModalItem.id).length > 0 && <section className="modal-official-data" aria-labelledby="modal-programs-heading">
           <div className="modal-official-heading"><h3 id="modal-programs-heading">Исполнение муниципальных программ</h3><span>{programExecution.filter((item) => item.municipality_id === activeModalItem.id).length} отчёта</span></div>
           <div className="modal-official-list">{programExecution.filter((item) => item.municipality_id === activeModalItem.id).map((item) => <article key={item.id} className="modal-official-row">
