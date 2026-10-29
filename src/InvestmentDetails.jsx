@@ -540,6 +540,32 @@ export const InvestmentDetails = () => {
               {officialDataStatus === 'error' && officialDataError && <p className="official-data-error">Не удалось обновить официальный слой: {officialDataError}</p>}
             </section>
 
+            {investmentSites.length > 0 && <section className="investment-sites-panel panel" aria-labelledby="investment-sites-heading">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="pin"/></span><div><h2 id="investment-sites-heading">Инвестиционные площадки</h2><p>Реестр открытых данных города Мегиона</p></div></div>
+                <span className="section-tag">{investmentSites.length} ЗАПИСИ</span>
+              </div>
+              <div className="investment-sites-list">
+                {investmentSites.map((site) => {
+                  const municipality = municipalities.find((m) => m.id === site.municipality_id);
+                  return <article className="investment-site-row" key={site.id}>
+                    <div className="investment-site-main">
+                      <span className="investment-site-kicker">{municipality?.name || site.municipality_id} · {site.site_type || 'Тип не указан'}</span>
+                      <strong>{site.name}</strong>
+                      <span className="investment-site-location">{site.location_text || 'Адрес уточняется в первоисточнике'}</span>
+                    </div>
+                    <div className="investment-site-meta">
+                      <span><small>Площадь</small><strong>{site.area_hectares == null ? '—' : `${formatNumber(site.area_hectares, 2)} га`}</strong></span>
+                      <span><small>Разрешённое использование</small><strong>{site.permitted_use || '—'}</strong></span>
+                      <span><small>Форма сделки</small><strong>{site.offer_type || '—'}</strong></span>
+                    </div>
+                    <a className="investment-site-source" href={site.source_url} target="_blank" rel="noreferrer">Официальный источник ↗</a>
+                  </article>;
+                })}
+              </div>
+              <p className="source-panel-note">Показаны {investmentSites.length} записи, прошедшие первичную проверку, из 18 строк опубликованного каталога. Это частичный импорт одного муниципалитета; данные не экстраполируются на всю Югру.</p>
+            </section>}
+
             <section className="source-panel panel" aria-labelledby="source-panel-title">
               <div className="section-heading">
                 <div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2 id="source-panel-title">Источники для расширения аналитики</h2><p>Официальные данные и инвестиционные площадки</p></div></div>
