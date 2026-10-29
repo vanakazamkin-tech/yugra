@@ -271,7 +271,7 @@ export const InvestmentDetails = () => {
       <td className="municipality-cell"><button className="municipality-link" onClick={() => setActiveModalItem(m)}>{m.name}</button></td>
       <td><span className={`group-badge ${m.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i />Группа {m.group2024}</span></td>
       <td className="score-cell">{formatNumber(m.score, 1)}</td>
-      <td className="number-cell">{formatNumber(m.investments.volumeBillion, 1)} <small>млрд ₽</small></td>
+      <td className="number-cell">{numericValue(m.investments?.volumeBillion) == null ? '—' : <>{formatNumber(m.investments.volumeBillion, 1)} <small>млрд ₽</small></>}</td>
       <td className="number-cell">{formatNumber(m.smeCount)}</td>
       <td><button className="icon-button" aria-label={`Открыть паспорт: ${m.name}`} onClick={() => setActiveModalItem(m)}><Icon name="arrow"/></button></td>
     </tr>
@@ -285,8 +285,8 @@ export const InvestmentDetails = () => {
     <div className="report-summary-grid">
       <div><span>Муниципалитеты в отчёте</span><strong>{reportSummary.count}</strong></div>
       <div><span>Средний итоговый балл</span><strong>{formatNumber(reportSummary.avgScore, 1)}</strong></div>
-      <div><span>Объём инвестиций</span><strong>{formatNumber(reportSummary.investments, 1)} <small>млрд ₽</small></strong></div>
-      <div><span>Субъекты МСП</span><strong>{formatNumber(reportSummary.sme)}</strong></div>
+      <div><span>Объём инвестиций</span><strong>{formatNumber(reportSummary.investments, 1)} <small>млрд ₽</small></strong><small>данные по {reportSummary.investmentCoverage} из {reportSummary.count}</small></div>
+      <div><span>Субъекты МСП</span><strong>{formatNumber(reportSummary.sme)}</strong><small>данные по {reportSummary.smeCoverage} из {reportSummary.count}</small></div>
       <div><span>Средняя оценка бизнеса</span><strong>{formatNumber(reportSummary.avgAssessment, 2)} <small>/ 5</small></strong></div>
     </div>
   );
@@ -319,7 +319,7 @@ export const InvestmentDetails = () => {
         {reportIncludeSummary && <><h2>Сводка</h2>{renderReportSummary()}</>}
         {reportIncludeChart && reportItems.length > 0 && <><h2>Сравнение показателя: {reportChartMetricDef.label}</h2>{renderReportChart()}</>}
         {reportIncludeTable && <><h2>Детализация показателей</h2>{renderReportTable()}</>}
-        {reportIncludeMethodology && <p className="print-methodology">Отчёт сформирован на основе набора данных, встроенного в прототип. Фильтры, выбранные муниципалитеты и список показателей определяются настройками конструктора отчётов. Перед официальным использованием проверьте первоисточники и актуальность показателей.</p>}
+        {reportIncludeMethodology && <p className="print-methodology">Источник данных: {syncStatus === 'connected' ? 'Supabase' : 'резервный локальный набор'}. Отчёт отражает выбранную выборку и настройки конструктора. Перед официальным использованием проверьте первоисточники, период наблюдения и методику расчёта.</p>}
       </section>
 
       <div className="site-shell print:hidden">
@@ -329,23 +329,24 @@ export const InvestmentDetails = () => {
             <span className="brand-copy"><span className="brand-title">ЮГРА</span><span className="brand-subtitle">Земля традиций</span></span>
           </button>
           <nav className="main-nav" aria-label="Основная навигация">
-            <button className={activeTab === 'catalog' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('catalog')}><Icon name="home"/>Главная</button>
-            <button className={activeTab === 'map' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('map')}><Icon name="map"/>Карта Югры</button>
-            <button className={activeTab === 'rating' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('rating')}><Icon name="chart"/>Рейтинг</button>
-            <button className={activeTab === 'compare' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('compare')}><Icon name="compare"/>Сравнение</button>
-            <button className={activeTab === 'reports' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('reports')}><Icon name="file"/>Отчёты</button>
-            <button className={activeTab === 'forecast' ? 'nav-item active nav-item-forecast' : 'nav-item nav-item-forecast'} onClick={() => setActiveTab('forecast')}><Icon name="chart"/>Режим прогнозирования</button>
+            <button aria-current={activeTab === 'catalog' ? 'page' : undefined} className={activeTab === 'catalog' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('catalog')}><Icon name="home"/>Главная</button>
+            <button aria-current={activeTab === 'map' ? 'page' : undefined} className={activeTab === 'map' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('map')}><Icon name="map"/>Карта</button>
+            <button aria-current={activeTab === 'rating' ? 'page' : undefined} className={activeTab === 'rating' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('rating')}><Icon name="chart"/>Рейтинг</button>
+            <button aria-current={activeTab === 'compare' ? 'page' : undefined} className={activeTab === 'compare' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('compare')}><Icon name="compare"/>Сравнение</button>
+            <button aria-current={activeTab === 'reports' ? 'page' : undefined} className={activeTab === 'reports' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('reports')}><Icon name="file"/>Отчёты</button>
+            <button title="Режим прогнозирования" aria-label="Режим прогнозирования" aria-current={activeTab === 'forecast' ? 'page' : undefined} className={activeTab === 'forecast' ? 'nav-item active nav-item-forecast' : 'nav-item nav-item-forecast'} onClick={() => setActiveTab('forecast')}><Icon name="chart"/>Прогноз</button>
           </nav>
           <div className="header-motto"><span className="motto-mark"/>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</div>
         </header>
         <div className="ornament-divider" aria-hidden="true" />
         <div className={`sync-status sync-status--${syncStatus}`} role="status" aria-live="polite">
           <span className="sync-status-dot" aria-hidden="true" />
-          {syncStatus === 'connected' && syncTimeLabel && <span>Supabase · синхронизировано {syncTimeLabel}</span>}
-          {syncStatus === 'loading' && <span>Подключение к Supabase…</span>}
-          {syncStatus === 'unconfigured' && <span>Локальные данные · настройте ключ Supabase</span>}
-          {syncStatus === 'error' && <span>{lastSyncedAt && syncTimeLabel ? `Последняя синхронизация ${syncTimeLabel} · ошибка обновления` : 'Ошибка подключения · пока используются локальные данные'}</span>}
-          {syncStatus === 'error' && syncMessage && <span className="sync-status-detail" title={syncMessage}>{syncMessage}</span>}
+          {syncStatus === 'connected' && syncTimeLabel && <span>Данные подключены · обновлено в {syncTimeLabel}</span>}
+          {syncStatus === 'loading' && <span>Обновляем данные…</span>}
+          {syncStatus === 'unconfigured' && <span>Демонстрационные данные · подключение к базе не настроено</span>}
+          {syncStatus === 'error' && <span>{lastSyncedAt && syncTimeLabel ? `Не удалось обновить · последние данные на ${syncTimeLabel}` : 'Не удалось подключиться · показываем резервные данные'}</span>}
+          {syncStatus === 'error' && syncMessage && <span className="sync-status-detail" title={syncMessage}>Подробности: {syncMessage}</span>}
+          {syncStatus === 'error' && <button className="sync-retry" onClick={() => setSyncAttempt((attempt) => attempt + 1)}><Icon name="refresh"/>Повторить</button>}
         </div>
 
         <main>
@@ -372,6 +373,7 @@ export const InvestmentDetails = () => {
               <div className="slice-bar"><div className="slice-label"><Icon name="sliders"/> Быстрые срезы</div><div className="slice-options">
                 {[['all', 'Все территории'], ['top', 'Топ-5 рейтинга'], ['investment', 'Инвестиции ≥ 50 млрд ₽'], ['growth', 'Рост ≥ 103%'], ['business', 'Оценка бизнеса ≥ 4,5']].map(([value, label]) => <button key={value} className={`slice-chip ${activeSlice === value ? 'active' : ''}`} onClick={() => setActiveSlice(value)}>{label}</button>)}
               </div><button className={`filter-toggle ${advancedFiltersOpen ? 'open' : ''}`} onClick={() => setAdvancedFiltersOpen((open) => !open)}><Icon name="sliders"/>{advancedFiltersOpen ? 'Скрыть фильтры' : 'Расширенные фильтры'}<Icon name="chevron"/></button></div>
+              {(searchTerm.trim() || selectedGroup !== 'ALL' || activeSlice !== 'all' || Object.values(filters).some((value) => value !== '')) && <div className="active-filter-summary"><span>Активные фильтры · найдено <strong>{filteredMunicipalities.length}</strong> из {municipalities.length}</span><button className="text-action" onClick={resetFilters}><Icon name="refresh"/>Сбросить</button></div>}
               {advancedFiltersOpen && <div className="advanced-filter-grid">
                 <label><span>Балл от</span><input type="number" value={filters.minScore} onChange={(e) => setFilter('minScore', e.target.value)} placeholder="Например, 250"/></label>
                 <label><span>Балл до</span><input type="number" value={filters.maxScore} onChange={(e) => setFilter('maxScore', e.target.value)} placeholder="Без ограничения"/></label>
@@ -386,8 +388,8 @@ export const InvestmentDetails = () => {
             <section className="stats-grid" aria-label="Сводные показатели">
               <article className="metric-card"><span className="metric-icon"><Icon name="map"/></span><div className="metric-copy"><span className="metric-label">Муниципалитеты</span><strong>{totals.count}</strong><small>в текущем срезе из {municipalities.length}</small></div><span className="metric-index">01</span></article>
               <article className="metric-card"><span className="metric-icon"><Icon name="chart"/></span><div className="metric-copy"><span className="metric-label">Средний балл</span><strong>{formatNumber(totals.averageScore, 1)}</strong><small>по выбранным территориям</small></div><span className="metric-index">02</span></article>
-              <article className="metric-card"><span className="metric-icon"><Icon name="coins"/></span><div className="metric-copy"><span className="metric-label">Инвестиции</span><strong>{formatNumber(totals.investments, 1)} <i>млрд ₽</i></strong><small>сумма текущего среза</small></div><span className="metric-index">03</span></article>
-              <article className="metric-card"><span className="metric-icon"><Icon name="people"/></span><div className="metric-copy"><span className="metric-label">Субъекты МСП</span><strong>{formatNumber(totals.sme)}</strong><small>суммарно в текущем срезе</small></div><span className="metric-index">04</span></article>
+              <article className="metric-card"><span className="metric-icon"><Icon name="coins"/></span><div className="metric-copy"><span className="metric-label">Инвестиции</span><strong>{formatNumber(totals.investments, 1)} <i>млрд ₽</i></strong><small>значения по {totals.investmentCount} из {totals.count} территорий</small></div><span className="metric-index">03</span></article>
+              <article className="metric-card"><span className="metric-icon"><Icon name="people"/></span><div className="metric-copy"><span className="metric-label">Субъекты МСП</span><strong>{formatNumber(totals.sme)}</strong><small>значения по {totals.smeCount} из {totals.count} территорий</small></div><span className="metric-index">04</span></article>
             </section>
 
             <div className="dashboard-grid">
@@ -434,7 +436,7 @@ export const InvestmentDetails = () => {
                   const disabled = !checked && selectedCompareIds.length >= 4;
                   return <label key={m.id} className={`compare-option ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}`}><input type="checkbox" checked={checked} disabled={disabled} onChange={() => toggleCompare(m.id)}/><span className="compare-checkmark"><Icon name="check"/></span><span className="compare-option-copy"><strong>{m.name}</strong><small>Группа {m.group2024} · место {m.rank2024}</small></span><span className="compare-option-score">{formatNumber(m.score)}</span></label>;
                 })}</div>
-                <p className="picker-note"><Icon name="info"/> Для сравнения доступно до четырёх территорий. Значения берутся из встроенного набора данных.</p>
+                <p className="picker-note"><Icon name="info"/> Можно сравнить до четырёх территорий. Используется текущий набор данных; пропущенные показатели обозначены прочерком.</p>
               </aside>
               <div className="compare-analysis">
                 <div className="analysis-toolbar"><div><span className="micro-label">ОСНОВНОЙ СРЕЗ</span><h3>Сравнить по показателю</h3></div><label className="select-field"><span>Показатель диаграммы</span><select value={comparisonMetric} onChange={(e) => setComparisonMetric(e.target.value)}>{METRICS.map((metric) => <option key={metric.key} value={metric.key}>{metric.label}</option>)}</select></label></div>
@@ -463,7 +465,7 @@ export const InvestmentDetails = () => {
           </section>}
 
           {activeTab === 'reports' && <section className="panel full-panel reports-page">
-            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2>Конструктор аналитических отчётов</h2><p>Настройте выборку, показатели и состав документа до экспорта</p></div></div><div className="toolbar-actions"><button className="outline-button" onClick={loadReportTemplate}><Icon name="refresh"/>Загрузить шаблон</button><button className="outline-button" onClick={saveReportTemplate}><Icon name="save"/>{reportTemplateSaved ? 'Шаблон сохранён' : 'Сохранить шаблон'}</button></div></div>
+            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2>Конструктор аналитических отчётов</h2><p>Настройте выборку, показатели и состав документа до экспорта</p></div></div><div className="toolbar-actions"><button className="outline-button" onClick={loadReportTemplate}><Icon name="refresh"/>Загрузить шаблон</button><button className="outline-button" onClick={saveReportTemplate}><Icon name="save"/>{reportTemplateSaved ? 'Сохранено на устройстве' : 'Сохранить шаблон на устройстве'}</button></div></div>
             <div className="report-workspace">
               <aside className="report-config">
                 <div className="config-section"><div className="config-section-heading"><span className="config-step">01</span><div><strong>Параметры документа</strong><small>Название и источник данных</small></div></div>
@@ -492,7 +494,7 @@ export const InvestmentDetails = () => {
                   {reportIncludeSummary && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>Ключевые показатели выборки</h4><span>01 / СВОДКА</span></div>{renderReportSummary()}</section>}
                   {reportIncludeChart && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>{reportChartMetricDef.label}</h4><span>02 / СРАВНЕНИЕ</span></div><p className="chart-unit-note">{reportChartMetricDef.unit === 'место' ? 'Для места в рейтинге более длинная полоса означает более высокую позицию.' : `Значение показателя в ${reportChartMetricDef.unit}.`}</p>{reportItems.length > 0 ? renderReportChart() : <p className="report-empty-note">Нет территорий для визуализации — измените источник данных.</p>}</section>}
                   {reportIncludeTable && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>Детализация</h4><span>03 / ТАБЛИЦА</span></div>{reportPrintFields.length === 0 ? <p className="report-empty-note">Выберите хотя бы один показатель для таблицы.</p> : renderReportTable()}</section>}
-                  {reportIncludeMethodology && <div className="report-method-note"><Icon name="info"/><p>Значения взяты из встроенного набора данных прототипа. Перед официальной публикацией рекомендуется сверить источники, период наблюдения и методику расчёта.</p></div>}
+                  {reportIncludeMethodology && <div className="report-method-note"><Icon name="info"/><p>Источник данных: {syncStatus === 'connected' ? 'Supabase' : 'резервный локальный набор'}. Перед официальной публикацией сверяйте первоисточники, период наблюдения и методику расчёта.</p></div>}
                   <div className="report-doc-footer"><span>ЮГРА · ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</span><span>Сформировано {reportDate()}</span></div>
                 </article>
               </div>
