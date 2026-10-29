@@ -182,6 +182,8 @@ export const InvestmentDetails = () => {
   const [indicatorSearch, setIndicatorSearch] = useState('');
   const [indicatorMunicipalityFilter, setIndicatorMunicipalityFilter] = useState('all');
   const [indicatorYearFilter, setIndicatorYearFilter] = useState('all');
+  const [sourceSearch, setSourceSearch] = useState('');
+  const [sourceStatusFilter, setSourceStatusFilter] = useState('all');
   const [officialDataStatus, setOfficialDataStatus] = useState(isSupabaseConfigured ? 'loading' : 'offline');
   const [officialDataError, setOfficialDataError] = useState('');
   const [officialDataSyncedAt, setOfficialDataSyncedAt] = useState(null);
@@ -627,6 +629,15 @@ export const InvestmentDetails = () => {
         || String(b.reference_period || '').localeCompare(String(a.reference_period || ''))
         || String(a.geographic_name || '').localeCompare(String(b.geographic_name || ''), 'ru-RU'));
   }, [officialIndicators, indicatorSearch, indicatorMunicipalityFilter, indicatorYearFilter]);
+
+  const filteredDataSources = useMemo(() => {
+    const query = sourceSearch.trim().toLocaleLowerCase('ru-RU');
+    return [...officialDataSources]
+      .filter((source) => sourceStatusFilter === 'all' || (source.import_status || 'identified') === sourceStatusFilter)
+      .filter((source) => !query || [source.name, source.description, source.category, source.coverage, source.format]
+        .filter(Boolean).join(' ').toLocaleLowerCase('ru-RU').includes(query))
+      .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ru-RU'));
+  }, [officialDataSources, sourceSearch, sourceStatusFilter]);
 
   const programExecutionSummary = useMemo(() => ({
     count: programExecution.length,
@@ -2037,8 +2048,14 @@ export const InvestmentDetails = () => {
 
             <section className="about-section panel">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2>Источники и методика</h2><p>Приоритет — первичные, проверяемые и сопоставимые данные</p></div></div></div>
+              <div className="source-catalog-toolbar">
+                <label className="search-box"><Icon name="search"/><input value={sourceSearch} onChange={(event) => setSourceSearch(event.target.value)} placeholder="Найти источник, тему или территорию…" aria-label="Поиск по каталогу источников"/></label>
+                <label className="select-field"><span>Статус импорта</span><select value={sourceStatusFilter} onChange={(event) => setSourceStatusFilter(event.target.value)}><option value="all">Все статусы</option><option value="imported">Импортирован</option><option value="partially_imported">Частично импортирован</option><option value="ready_for_import">Готов к импорту</option><option value="identified">Выявлен</option><option value="access_issue">Проблема доступа</option></select></label>
+                <span className="section-tag">{filteredDataSources.length} ИЗ {officialDataSources.length}</span>
+                <button type="button" className="outline-button" onClick={() => { setSourceSearch(''); setSourceStatusFilter('all'); }}><Icon name="refresh"/>Сбросить</button>
+              </div>
               <div className="about-source-list">
-                {officialDataSources.map((source) => <a key={source.id} href={source.url} target="_blank" rel="noreferrer">
+                {filteredDataSources.map((source) => <a key={source.id} href={source.url} target="_blank" rel="noreferrer">
                   <strong>{source.name}</strong>
                   <span>{source.description}</span>
                   <span className="source-coverage">{source.coverage || source.format || 'Покрытие уточняется'}</span>
