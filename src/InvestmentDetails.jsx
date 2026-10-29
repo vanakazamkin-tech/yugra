@@ -420,8 +420,15 @@ export const InvestmentDetails = () => {
     const scopePriority = (item) => (
       item.geographic_level === 'municipality' || item.indicator_code === 'population_municipality' || item.indicator_code === 'population_municipality_history' ? 0 : 1
     );
+    const indicatorPriority = (item) => (
+      item.indicator_code === 'population_municipality' ? 0
+        : item.indicator_code === 'population_municipality_history' ? 1
+          : 2
+    );
     candidates.sort((a, b) =>
-      scopePriority(a) - scopePriority(b) || Number(b.reference_year) - Number(a.reference_year)
+      scopePriority(a) - scopePriority(b)
+        || Number(b.reference_year) - Number(a.reference_year)
+        || indicatorPriority(a) - indicatorPriority(b)
     );
     candidates.forEach((item) => {
       if (!chosen.has(item.municipality_id)) chosen.set(item.municipality_id, item);
@@ -523,9 +530,16 @@ export const InvestmentDetails = () => {
     ];
     const rows = municipalities.map((municipality) => {
       const categories = categoryDefinitions.map((category) => {
-        const records = municipalityRows.filter((item) =>
+        const allRecords = municipalityRows.filter((item) =>
           item.municipality_id === municipality.id && category.matches(item)
         );
+        // When canonical municipal totals exist, do not double-count the same years
+        // from the historical city-specific series in this coverage summary.
+        const hasCanonicalPopulation = category.key === 'population'
+          && allRecords.some((item) => item.indicator_code === 'population_municipality');
+        const records = hasCanonicalPopulation
+          ? allRecords.filter((item) => item.indicator_code !== 'population_municipality_history')
+          : allRecords;
         const years = records.map((item) => Number(item.reference_year)).filter(Number.isFinite);
         const settlementOnly = category.key === 'population' && records.length === 0 && settlementPopulationIds.has(municipality.id);
         return {
