@@ -124,8 +124,11 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
   const baselineSme = useMemo(() => forecasts.reduce((sum, row) => sum + (row.sme ?? 0), 0), [forecasts]);
   const avgScore = useMemo(() => {
     const validScores = forecasts.filter((row) => row.projectedScore != null);
-    return validScores.reduce((sum, row) => sum + row.projectedScore, 0) / Math.max(1, validScores.length);
+    return validScores.length ? validScores.reduce((sum, row) => sum + row.projectedScore, 0) / validScores.length : null;
   }, [forecasts]);
+  const investmentCoverage = forecasts.filter((row) => row.hasInvestment).length;
+  const smeCoverage = forecasts.filter((row) => row.hasSme).length;
+  const scoreCoverage = forecasts.filter((row) => row.hasScore).length;
   const chartRows = useMemo(() => filtered.filter((row) => row.projectedInvestments != null).slice().sort((a, b) => b.projectedInvestments - a.projectedInvestments).slice(0, 8), [filtered]);
   const maxInvestments = Math.max(1, ...chartRows.map((row) => row.projectedInvestments));
 
@@ -170,7 +173,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
         <span className={'forecast-source-pill ' + (scenarioStatus === 'database' ? 'is-live' : '')}><i />{scenarioStatus === 'database' ? 'Сценарии из Supabase' : 'Встроенные шаблоны'}</span>
       </div>
 
-      <div className="forecast-warning"><strong>Концептуальная модель, не официальный прогноз.</strong><span>Проверенных временных рядов и официальных прогнозных входов здесь нет. Значения ниже — результат заданных пользователем допущений на основе текущего среза; это сценарный эксперимент, а не статистически обученная модель.</span></div>
+      <div className="forecast-warning"><strong>Концептуальная модель, не официальный прогноз.</strong><span>Проверенных временных рядов и официальных прогнозных входов здесь нет. Значения ниже — результат заданных пользователем допущений на основе текущего среза; это сценарный эксперимент, а не статистически обученная модель.</span><span className="forecast-coverage-note">Заполненность исходных данных: инвестиции — {investmentCoverage} из {forecasts.length}; МСП — {smeCoverage} из {forecasts.length}; балл — {scoreCoverage} из {forecasts.length}. Пропуски не подменяются нулями.</span></div>
 
       <div className="forecast-controls-grid">
         <div className="forecast-control-card">
@@ -201,7 +204,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
           <div className="forecast-kpi-grid">
             <article><span>Инвестиции, модельный итог</span><strong>{fmt(totalInvestment, 1)} <small>млрд ₽</small></strong><em>{pct(baselineInvestment ? (totalInvestment / baselineInvestment - 1) * 100 : 0)} к базе</em></article>
             <article><span>Субъекты МСП, модельный итог</span><strong>{fmt(totalSme, 0)}</strong><em>{pct(baselineSme ? (totalSme / baselineSme - 1) * 100 : 0)} к базе</em></article>
-            <article><span>Средний модельный балл</span><strong>{fmt(avgScore, 1)}</strong><em>по {forecasts.length} территориям</em></article>
+            <article><span>Средний модельный балл</span><strong>{fmt(avgScore, 1)}</strong><em>данные по {scoreCoverage} из {forecasts.length} территорий</em></article>
           </div>
           <div className="forecast-chart-head"><div><h4>Инвестиции по территориям</h4><p>Модельные значения, млрд ₽</p></div><span>Показано {chartRows.length} территорий с данными</span></div>
           <div className="forecast-bars">{chartRows.map((row) => <div className="forecast-bar-row" key={row.id}><span title={row.name}>{row.name}</span><div className="forecast-bar-track"><i style={{ width: Math.max(1, row.projectedInvestments / maxInvestments * 100) + '%' }} /></div><strong>{fmt(row.projectedInvestments, 1)}</strong></div>)}</div>
