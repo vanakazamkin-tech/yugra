@@ -412,6 +412,7 @@ export const InvestmentDetails = () => {
     return {
       totalRows: officialIndicators.length,
       municipalityCount: municipalCoverage.size,
+      settlementPopulationCount: new Set(officialIndicators.filter((item) => item.indicator_code === 'population_settlement' && item.geographic_level === 'settlement').map((item) => item.geographic_name || item.municipality_id)).size,
       indicatorCount: uniqueIndicators.size,
       latestYear: latestYear || null,
       pendingSources: (sourceCounts.identified || 0) + (sourceCounts.ready_for_import || 0) + (sourceCounts.access_issue || 0),
@@ -1036,7 +1037,7 @@ export const InvestmentDetails = () => {
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="data-quality-title">Качество и покрытие данных</h2><p>Фактический охват подключённой базы; демонстрационные поля рейтинга здесь не учитываются</p></div></div><span className="section-tag">ОФИЦИАЛЬНЫЙ СЛОЙ</span></div>
               <div className="data-quality-kpis">
                 <article><span>Подтверждённых наблюдений</span><strong>{officialDataQuality.totalRows}</strong><small>{officialDataQuality.indicatorCount} различных кодов показателей</small></article>
-                <article><span>Территорий с муниципальными наблюдениями</span><strong>{officialDataQuality.municipalityCount} / {municipalities.length}</strong><small>учтены записи муниципального уровня</small></article>
+                <article><span>Территорий с муниципальными наблюдениями</span><strong>{officialDataQuality.municipalityCount} / {municipalities.length}</strong><small>муниципальный уровень; отдельно есть население по {officialDataQuality.settlementPopulationCount} городам и населённым пунктам</small></article>
                 <article><span>Последний год в базе</span><strong>{officialDataQuality.latestYear ?? '—'}</strong><small>это не означает наличие полного набора за год</small></article>
                 <article><span>Источников, ожидающих импорта или доступ</span><strong>{officialDataQuality.pendingSources}</strong><small>найденные, подготовленные и требующие доступа наборы</small></article>
               </div>
