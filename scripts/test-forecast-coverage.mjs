@@ -15,6 +15,7 @@ const indicators = [
 const coverage = buildForecastCoverage(indicators, [
   { municipality_id: 'megion', report_date: '2026-06-30', verification_status: 'verified' },
   { municipality_id: 'megion', report_date: '2026-09-30', verification_status: 'verified' },
+  { municipality_id: 'langepas', report_date: null, verification_status: 'verified' },
 ], 22);
 const byKey = Object.fromEntries(coverage.map((item) => [item.key, item]));
 
@@ -27,6 +28,7 @@ assert.equal(byKey.investment.observationCount, 1);
 assert.equal(byKey.budget.municipalityCount, 2);
 assert.equal(byKey.budget.observationCount, 3);
 assert.equal(byKey.budget.latestYear, 2026);
+assert.equal(byKey.budget.municipalityCount, 3);
 assert.equal(byKey.migration.municipalityCount, 1);
 assert.equal(byKey.migration.latestYear, 2023);
 console.log('Forecast coverage classification test passed.');
