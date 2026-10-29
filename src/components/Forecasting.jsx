@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 const FALLBACK_SCENARIOS = [
-  { id: null, key: 'cautious', title: 'Осторожный', summary: 'Сдержанная динамика и повышенная неопределённость.', investment_growth_rate: 1, sme_growth_rate: 1, score_growth_rate: 0.5, uncertainty_rate: 10, display_order: 1 },
-  { id: null, key: 'base', title: 'Инерционный', summary: 'Умеренное продолжение заданных тенденций без резкого ускорения.', investment_growth_rate: 4, sme_growth_rate: 3, score_growth_rate: 1.5, uncertainty_rate: 7, display_order: 2 },
-  { id: null, key: 'ambitious', title: 'Ускоренное развитие', summary: 'Более высокие темпы при условии реализации инициатив и доступности ресурсов.', investment_growth_rate: 8, sme_growth_rate: 6, score_growth_rate: 3, uncertainty_rate: 12, display_order: 3 },
-  { id: null, key: 'sanctions_stress', title: 'Санкционный стресс', summary: 'Стресс-допущение: ограничения экспорта сырья, рост издержек, дефицит кадров и давление на муниципальные доходы. Параметры не являются оценкой вероятности.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18, display_order: 4 },
+  { id: null, key: 'cautious', title: 'Пессимистичный', summary: 'Неблагоприятный сценарий: снижение экспортной выручки, усиление санкционных ограничений, рост издержек предприятий и дефицит кадров.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18, display_order: 1 },
+  { id: null, key: 'base', title: 'Базовый', summary: 'Продолжение наблюдаемых тенденций при сохранении текущих внешних и внутренних условий.', investment_growth_rate: 4, sme_growth_rate: 3, score_growth_rate: 1.5, uncertainty_rate: 7, display_order: 2 },
+  { id: null, key: 'ambitious', title: 'Оптимистичный', summary: 'Улучшение инвестиционной активности, расширение занятости и реализация мер поддержки при доступности ресурсов.', investment_growth_rate: 8, sme_growth_rate: 6, score_growth_rate: 3, uncertainty_rate: 12, display_order: 3 },
 ];
 
 const hasNumericValue = (value) => value != null && value !== '' && Number.isFinite(Number(value));
@@ -94,11 +93,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
             uncertainty_rate: n(s.uncertainty_rate),
             display_order: s.display_order,
           }));
-          const sanctionsScenario = FALLBACK_SCENARIOS.find((item) => item.key === 'sanctions_stress');
-          const mergedScenarios = normalized.some((item) => item.key === 'sanctions_stress')
-            ? normalized
-            : [...normalized, sanctionsScenario];
-          setScenarios(mergedScenarios);
+          setScenarios(normalized);
           setScenarioStatus('database');
           const initial = normalized.find((s) => s.key === 'base') || normalized[0];
           setScenarioKey(initial.key);
@@ -217,7 +212,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
         <div className="forecast-control-card">
           <label className="forecast-field"><span>Сценарий</span><select value={scenarioKey} onChange={(e) => selectScenario(e.target.value)}>{scenarios.map((scenario) => <option key={scenario.key} value={scenario.key}>{scenario.title}</option>)}</select></label>
           <p className="forecast-scenario-description">{activeScenario.summary}</p>
-          <div className="forecast-field"><span>Горизонт модели</span><div className="forecast-horizons">{[1, 3, 5].map((years) => <button key={years} className={horizon === years ? 'selected' : ''} onClick={() => { setHorizon(years); }}>{years} {years === 1 ? 'год' : 'лет'}</button>)}</div></div>
+          <div className="forecast-field"><span>Горизонт модели</span><div className="forecast-horizons">{[1, 2, 3].map((years) => <button key={years} className={horizon === years ? 'selected' : ''} onClick={() => { setHorizon(years); }}>{years} {years === 1 ? 'год' : 'лет'}</button>)}</div></div>
           <div className="forecast-parameter-list">
             <label><span>Годовой рост инвестиций, %</span><strong>{fmt(n(params.investment_growth_rate), 1)}%</strong><input aria-label="Годовой рост инвестиций" type="range" min="-10" max="20" step="0.5" value={params.investment_growth_rate} onChange={(e) => setParam('investment_growth_rate', Number(e.target.value))}/></label>
             <label><span>Годовой рост субъектов МСП, %</span><strong>{fmt(n(params.sme_growth_rate), 1)}%</strong><input aria-label="Годовой рост субъектов МСП" type="range" min="-10" max="20" step="0.5" value={params.sme_growth_rate} onChange={(e) => setParam('sme_growth_rate', Number(e.target.value))}/></label>
