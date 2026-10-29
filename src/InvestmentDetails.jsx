@@ -1385,12 +1385,12 @@ export const InvestmentDetails = () => {
                 <table className="ranking-table municipality-coverage-table">
                   <thead><tr>
                     <th>Муниципалитет</th>
-                    {officialMunicipalCoverage.categories.map((category) => <th key={category.key}>{category.label}<small className="cell-subnote">{category.coveredCount}/{municipalities.length} с данными</small></th>)}
+                    {officialMunicipalCoverage.categories.map((category) => <th key={category.key}>{category.label}<small className="cell-subnote">{category.coveredCount}/{municipalities.length} на уровне МО</small></th>)}
                   </tr></thead>
                   <tbody>{officialMunicipalCoverage.rows.map((municipality) => <tr key={municipality.id}>
                     <td className="municipality-cell"><strong>{municipality.name}</strong></td>
-                    {municipality.categories.map((cell) => <td key={cell.key}>
-                      <strong>{cell.status === 'covered' ? 'Есть' : cell.status === 'settlement-only' ? 'Только поселение' : 'Нет'}</strong>
+                    {municipality.categories.map((cell) => <td key={cell.key} className={`municipality-coverage-cell municipality-coverage-cell--${cell.status}`}>
+                      <strong className={`municipality-coverage-status municipality-coverage-status--${cell.status}`}>{cell.status === 'covered' ? 'Есть на уровне МО' : cell.status === 'settlement-only' ? 'Только поселение' : 'Нет'}</strong>
                       <small className="cell-subnote">{cell.recordsCount > 0
                         ? cell.recordsCount + ' набл. · ' + (cell.firstYear === cell.lastYear ? cell.lastYear : cell.firstYear + '–' + cell.lastYear)
                         : cell.status === 'settlement-only' ? 'Не заменяет данные всего района' : 'Нет подтверждённых наблюдений'}</small>
