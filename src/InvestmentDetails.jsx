@@ -181,6 +181,7 @@ export const InvestmentDetails = () => {
   const [facilitySearch, setFacilitySearch] = useState('');
   const [indicatorSearch, setIndicatorSearch] = useState('');
   const [indicatorMunicipalityFilter, setIndicatorMunicipalityFilter] = useState('all');
+  const [indicatorYearFilter, setIndicatorYearFilter] = useState('all');
   const [officialDataStatus, setOfficialDataStatus] = useState(isSupabaseConfigured ? 'loading' : 'offline');
   const [officialDataError, setOfficialDataError] = useState('');
   const [officialDataSyncedAt, setOfficialDataSyncedAt] = useState(null);
@@ -616,6 +617,7 @@ export const InvestmentDetails = () => {
     const query = indicatorSearch.trim().toLocaleLowerCase('ru-RU');
     return [...officialIndicators]
       .filter((item) => indicatorMunicipalityFilter === 'all' || item.municipality_id === indicatorMunicipalityFilter)
+      .filter((item) => indicatorYearFilter === 'all' || String(item.reference_year) === indicatorYearFilter)
       .filter((item) => {
         const text = [item.geographic_name, item.indicator_name, item.municipality_id, item.unit, item.notes]
           .filter(Boolean).join(' ').toLocaleLowerCase('ru-RU');
@@ -624,7 +626,7 @@ export const InvestmentDetails = () => {
       .sort((a, b) => Number(b.reference_year) - Number(a.reference_year)
         || String(b.reference_period || '').localeCompare(String(a.reference_period || ''))
         || String(a.geographic_name || '').localeCompare(String(b.geographic_name || ''), 'ru-RU'));
-  }, [officialIndicators, indicatorSearch, indicatorMunicipalityFilter]);
+  }, [officialIndicators, indicatorSearch, indicatorMunicipalityFilter, indicatorYearFilter]);
 
   const programExecutionSummary = useMemo(() => ({
     count: programExecution.length,
@@ -1664,8 +1666,9 @@ export const InvestmentDetails = () => {
               <div className="official-indicator-toolbar">
                 <label className="search-box"><Icon name="search"/><input value={indicatorSearch} onChange={(event) => setIndicatorSearch(event.target.value)} placeholder="Поиск показателя, города или единицы…" aria-label="Поиск официальных показателей"/></label>
                 <label className="select-field"><span>Муниципалитет</span><select value={indicatorMunicipalityFilter} onChange={(event) => setIndicatorMunicipalityFilter(event.target.value)}><option value="all">Все территории</option>{municipalities.slice().sort((a,b) => a.name.localeCompare(b.name,'ru-RU')).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
+                <label className="select-field"><span>Год</span><select value={indicatorYearFilter} onChange={(event) => setIndicatorYearFilter(event.target.value)}><option value="all">Все годы</option>{[...new Set(officialIndicators.map((item) => String(item.reference_year)).filter((year) => year && year !== 'undefined'))].sort((a,b) => Number(b)-Number(a)).map((year) => <option key={year} value={year}>{year}</option>)}</select></label>
                 <button type="button" className="outline-button" onClick={downloadFilteredOfficialIndicatorsCsv} disabled={filteredOfficialIndicators.length === 0}><Icon name="download"/>CSV · {filteredOfficialIndicators.length}</button>
-                <button type="button" className="outline-button" onClick={() => {setIndicatorSearch('');setIndicatorMunicipalityFilter('all');}}><Icon name="refresh"/>Сбросить</button>
+                <button type="button" className="outline-button" onClick={() => {setIndicatorSearch('');setIndicatorMunicipalityFilter('all');setIndicatorYearFilter('all');}}><Icon name="refresh"/>Сбросить</button>
               </div>
               <div className="official-indicator-table-wrap">
                 <table className="fuel-prices-table official-indicator-table">
