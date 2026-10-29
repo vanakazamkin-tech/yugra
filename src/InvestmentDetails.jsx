@@ -517,7 +517,28 @@ export const InvestmentDetails = () => {
                 <small>из {extendedInsights.growthCoverage} с доступным показателем</small>
               </article>
             </section>
-            <p className="data-quality-note">Дополнительные показатели рассчитываются автоматически из текущего набора данных. Перед использованием как официальной статистики необходимо сверить исходные значения, год наблюдения и методику с первоисточником.</p>
+            <p className="data-quality-note">Все сводные карточки выше — демонстрационные расчёты из концептуального набора и не являются официальной статистикой. Проверенные значения и охват источников показаны отдельно ниже.</p>
+
+            <section className="official-data-panel panel" aria-labelledby="official-data-heading">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="check"/></span><div><h2 id="official-data-heading">Слой проверенных официальных данных</h2><p>Отдельно от демонстрационных показателей концепта</p></div></div>
+                <span className={`official-status-chip official-status--${officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
+              </div>
+              <div className="official-data-kpis">
+                <article><span>Проверенные наблюдения</span><strong>{officialDataSummary.recordCount}</strong><small>значения с зафиксированными источниками</small></article>
+                <article><span>Территории с данными</span><strong>{officialDataSummary.municipalityCount} <i>/ {municipalities.length}</i></strong><small>без замены пропусков оценками</small></article>
+                <article><span>Последний год наблюдения</span><strong>{officialDataSummary.latestYear ?? '—'}</strong><small>по подтверждённым значениям</small></article>
+                <article><span>Записи инвестплощадок</span><strong>{officialDataSummary.investmentSiteCount}</strong><small>импортируются отдельно от статистики</small></article>
+              </div>
+              {officialIndicators.length > 0 ? <div className="verified-preview">
+                <div className="verified-preview-heading"><strong>Последние проверенные значения</strong><span>Источник и год сохраняются для каждой записи</span></div>
+                <div className="verified-preview-list">{officialIndicators.slice(0, 6).map((item) => {
+                  const municipality = municipalities.find((m) => m.id === item.municipality_id);
+                  return <article key={item.id}><span>{municipality?.name || item.municipality_id}</span><strong>{item.indicator_name}</strong><b>{formatNumber(item.value, 1)} <i>{item.unit}</i></b><small>{item.reference_year} · <a href={item.source_url} target="_blank" rel="noreferrer">первоисточник ↗</a></small></article>;
+                })}</div>
+              </div> : <p className="official-data-empty">Слой готов к загрузке. Сейчас в базе нет других проверенных рядов кроме показателей, которые были отдельно подтверждены и внесены. Для остальных источников идёт подготовка сопоставимых наборов; пустые значения намеренно не заполняются догадками.</p>}
+              {officialDataStatus === 'error' && officialDataError && <p className="official-data-error">Не удалось обновить официальный слой: {officialDataError}</p>}
+            </section>
 
             <section className="source-panel panel" aria-labelledby="source-panel-title">
               <div className="section-heading">
@@ -533,7 +554,7 @@ export const InvestmentDetails = () => {
                   <span className="source-item-link">{DATA_STATUS_LABELS[source.import_status] || 'Статус проверяется'} ↗</span>
                 </a>)}
               </div>
-              <p className="source-panel-note">Каталог хранится в Supabase. Подтверждёнными считаются только показатели с проверенным источником и годом наблюдения; наличие ссылки само по себе не означает, что весь набор уже импортирован.</p>
+              <p className="source-panel-note">Каталог хранится в Supabase. Статус каждого набора показывает, найден ли источник, подготовлен ли импорт или уже загружена только часть данных.</p>
             </section>
 
             <div className="dashboard-grid">
