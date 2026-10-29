@@ -122,7 +122,7 @@ export const FALLBACK_DATA_SOURCES = [
   },
   {
     id: 'rosstat_passport_kogalym',
-    name: 'Росстат — паспорт Когалыма, показатели за I квартал 2026 года',
+    name: 'Росстат — паспорт Когалыма: занятость и экономические показатели за I квартал 2026 года',
     category: 'official_statistics',
     url: 'https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=718830002026',
     description: 'Квартальные показатели экономики и социальной сферы городского округа Когалым.',
