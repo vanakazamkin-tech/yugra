@@ -2,7 +2,7 @@ name: Build verification
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/municipal-data-coverage-matrix]
   pull_request:
     branches: [main]
   workflow_dispatch:
