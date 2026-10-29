@@ -1610,7 +1610,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 /* Official employment-by-sector profile */
 .sector-employment-panel { padding: 21px; margin-top: 14px; }
-.sector-employment-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 640px; margin: 6px 0 12px; }
+.sector-employment-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; max-width: 920px; margin: 6px 0 12px; }
 .sector-employment-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 13px 0 15px; }
 .sector-employment-summary article { display: flex; flex-direction: column; gap: 6px; padding: 13px 15px; border: 1px solid #e0d7c7; border-radius: 8px; background: #fffdf8; }
 .sector-employment-summary article > span { color: #778476; font-size: 9px; line-height: 1.45; }
