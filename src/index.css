@@ -939,3 +939,30 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     scroll-behavior: auto !important;
   }
 }
+
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  transform: translateY(-160%);
+  padding: 10px 14px;
+  border: 1px solid #c29556;
+  border-radius: 7px;
+  background: #fffbf3;
+  color: #173e30;
+  box-shadow: 0 4px 16px rgba(23,62,48,.16);
+  font-size: 12px;
+  font-weight: 700;
+}
+.skip-link:focus { transform: translateY(0); }
+.forecast-action-symbol {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  margin-right: 2px;
+  color: currentColor;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+}
