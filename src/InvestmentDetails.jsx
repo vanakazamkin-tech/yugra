@@ -81,7 +81,8 @@ export const InvestmentDetails = () => {
   const [officialDataSources, setOfficialDataSources] = useState(FALLBACK_DATA_SOURCES);
   const [officialIndicators, setOfficialIndicators] = useState([]);
   const [investmentSites, setInvestmentSites] = useState([]);
-  const [officialDataStatus, setOfficialDataStatus] = useState(isSupabaseConfigured ? 'loading' : 'offline');
+  const [programExecution, setProgramExecution] = useState([]);
+  const [officialDataStatus, setOfficialDataStatus = useState(isSupabaseConfigured ? 'loading' : 'offline');
   const [officialDataError, setOfficialDataError] = useState('');
 
   useEffect(() => {
@@ -140,6 +141,7 @@ export const InvestmentDetails = () => {
         setOfficialDataSources(result.sources);
         setOfficialIndicators(result.indicators);
         setInvestmentSites(result.investmentSites);
+        setProgramExecution(result.programExecution || []);
         setOfficialDataStatus('connected');
         setOfficialDataError('');
       } catch (error) {
@@ -287,6 +289,14 @@ export const InvestmentDetails = () => {
       investmentSiteCount: investmentSites.length,
     };
   }, [officialIndicators, officialDataSources, investmentSites]);
+
+  const programExecutionSummary = useMemo(() => ({
+    count: programExecution.length,
+    latest: programExecution.length ? programExecution[0] : null,
+    averageExecution: programExecution.length
+      ? programExecution.reduce((sum, item) => sum + Number(item.execution_percent || 0), 0) / programExecution.length
+      : null,
+  }), [programExecution]);
 
   const modalOfficialIndicators = useMemo(() => {
     if (!activeModalItem) return [];
@@ -570,6 +580,35 @@ export const InvestmentDetails = () => {
                 })}
               </div>
               <p className="source-panel-note">Показаны {investmentSites.length} записи, прошедшие первичную проверку, из 18 строк опубликованного каталога. Это частичный импорт одного муниципалитета; данные не экстраполируются на всю Югру.</p>
+            </section>}
+
+            {programExecution.length > 0 && <section className="program-execution-panel panel" aria-labelledby="program-execution-title">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="program-execution-title">Исполнение муниципальных программ</h2><p>Официальные отчётные срезы Мегиона · отчётная дата указана в каждой строке</p></div></div>
+                <span className="section-tag">{programExecution.length} ОТЧЁТА</span>
+              </div>
+              <div className="program-execution-summary">
+                <span>Отчётов с проверенными бюджетными значениями</span><strong>{programExecutionSummary.count}</strong>
+                <small>Покрытие пока ограничено Мегионом; это не рейтинг исполнения программ всей Югры.</small>
+              </div>
+              <div className="program-execution-list">
+                {programExecution.map((item) => {
+                  const municipality = municipalities.find((m) => m.id === item.municipality_id);
+                  return <article key={item.id} className="program-execution-row">
+                    <div className="program-execution-copy">
+                      <span className="program-report-date">{municipality?.name || item.municipality_id} · отчёт на {new Intl.DateTimeFormat('ru-RU').format(new Date(item.report_date + 'T00:00:00'))}</span>
+                      <strong>{item.program_name}</strong>
+                    </div>
+                    <div className="program-execution-metrics">
+                      <span><small>Уточнённый бюджет</small><strong>{formatNumber(item.revised_budget_thousand / 1000, 2)} млн ₽</strong></span>
+                      <span><small>Исполнено</small><strong>{formatNumber(item.executed_budget_thousand / 1000, 2)} млн ₽</strong></span>
+                      <span><small>Доля исполнения</small><strong>{formatNumber(item.execution_percent, 1)}%</strong></span>
+                    </div>
+                    <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a>
+                  </article>;
+                })}
+              </div>
+              <p className="source-panel-note">Суммы переведены из тысяч рублей в миллионы только для отображения. Процент — исполненные расходы / уточнённые ассигнования; это расчёт приложения по опубликованным цифрам, не отдельный показатель источника.</p>
             </section>}
 
             <section className="source-panel panel" aria-labelledby="source-panel-title">
