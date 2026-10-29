@@ -1480,3 +1480,21 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .support-sim-controls { grid-template-columns: minmax(0, 1fr); }
   .support-sim-head { align-items: flex-start; flex-direction: column; }
 }
+
+
+/* Historical official population series */
+.population-trend-panel { padding: 21px; }
+.population-trend-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.population-trend-kpis article { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid #e1d8c8; border-radius: 8px; background: #fffdf8; }
+.population-trend-kpis article > span { color: #7b8779; font-size: 9px; }
+.population-trend-kpis article > strong { color: var(--forest); font-family: 'Playfair Display', Georgia, serif; font-size: clamp(18px, 2vw, 25px); line-height: 1.15; }
+.population-trend-kpis article > small { color: #8c9486; font-size: 8px; line-height: 1.45; }
+.population-trend-chart-wrap { margin-top: 12px; padding: 10px 10px 0; border: 1px solid #e3ddce; border-radius: 9px; background: #fcfbf5; }
+.population-trend-chart { display: block; width: 100%; height: auto; overflow: visible; }
+.population-trend-panel .source-panel-note a { color: var(--forest-2); font-weight: 800; text-decoration: none; }
+.population-trend-panel .source-panel-note a:hover { text-decoration: underline; }
+@media (max-width: 640px) {
+  .population-trend-panel { padding: 14px; }
+  .population-trend-kpis { grid-template-columns: 1fr; }
+  .population-trend-kpis article { padding: 10px; }
+}
