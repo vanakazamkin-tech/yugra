@@ -41,10 +41,3 @@ from public.data_sources ds
 left join counts c on c.source_id = ds.id
 order by ds.import_status, ds.name;
 
-select ds.import_status, count(*) as sources,
-       count(*) filter (where coalesce(c.imported_rows, 0) > 0) as sources_with_rows,
-       count(*) filter (where coalesce(c.imported_rows, 0) = 0) as sources_without_rows
-from public.data_sources ds
-left join counts c on c.source_id = ds.id
-group by ds.import_status
-order by ds.import_status;
