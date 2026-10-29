@@ -963,13 +963,67 @@ export const InvestmentDetails = () => {
   }), [municipalities, riskYellowThreshold, riskGreenThreshold]);
 
   const pillarCoverage = useMemo(() => {
-    const idsFor = (codes) => new Set(officialIndicators.filter((item) => codes.includes(item.indicator_code)).map((item) => item.municipality_id));
+    // Coverage is calculated only from verified municipal-level observations.
+    // Settlement-level values and unverified concept data must not inflate it.
+    const verifiedMunicipalRows = officialIndicators.filter((item) =>
+      item.verification_status === 'verified'
+      && (item.geographic_level || 'municipality') === 'municipality'
+      && item.municipality_id
+      && numericValue(item.value) != null
+    );
+    const verifiedPrograms = programExecution.filter((item) => item.verification_status === 'verified');
+
+    const makePillar = (key, title, description, matches, includePrograms = false) => {
+      const rows = verifiedMunicipalRows.filter(matches);
+      const programs = includePrograms ? verifiedPrograms : [];
+      const ids = new Set(rows.map((item) => item.municipality_id));
+      programs.forEach((item) => {
+        if (item.municipality_id) ids.add(item.municipality_id);
+      });
+      return {
+        key,
+        title,
+        description,
+        ids,
+        municipalityCount: ids.size,
+        observationCount: rows.length + programs.length,
+      };
+    };
+
     return [
-      { key: 'employment', title: 'Занятость', description: 'Среднесписочная численность работников и рынок труда', ids: idsFor(['average_employees_q1']) },
-      { key: 'income', title: 'Доходы населения', description: 'Заработная плата и связанные показатели доходов', ids: idsFor(['average_monthly_salary_q1', 'avg_monthly_salary_large_medium_nco']) },
-      { key: 'budget', title: 'Местный бюджет', description: 'В прототипе есть только отдельные отчёты по муниципальным программам, не полная бюджетная панель', ids: new Set(programExecution.map((item) => item.municipality_id)) },
-      { key: 'migration', title: 'Миграция', description: 'Официальный сопоставимый муниципальный ряд пока не импортирован', ids: new Set() },
-      { key: 'investment', title: 'Инвестиции', description: 'Есть отдельные официальные оценки инвестиций на душу населения', ids: idsFor(['investment_per_capita_no_budget']) },
+      makePillar(
+        'employment',
+        'Занятость',
+        'Среднесписочная численность работников и отраслевые данные. Это не полная оценка занятости всего населения.',
+        (item) => String(item.indicator_code || '').startsWith('average_employees_')
+          || String(item.indicator_code || '').startsWith('employees_')
+      ),
+      makePillar(
+        'income',
+        'Доходы населения',
+        'Пока представлены отдельные показатели начисленной заработной платы; полного ряда располагаемых доходов населения нет.',
+        (item) => /salary|wage/i.test(String(item.indicator_code || ''))
+          || String(item.indicator_name || '').toLocaleLowerCase('ru-RU').includes('заработн')
+      ),
+      makePillar(
+        'budget',
+        'Местный бюджет',
+        'Есть отдельные инвестиции за счёт местного бюджета и подтверждённые отчёты по муниципальным программам. Это не полная панель доходов и расходов.',
+        (item) => item.indicator_code === 'fixed_capital_investment_local_budget',
+        true
+      ),
+      makePillar(
+        'migration',
+        'Миграция',
+        'Сопоставимые подтверждённые муниципальные ряды прибывших, выбывших и миграционного баланса пока не загружены.',
+        (item) => ['migration_arrivals', 'migration_departures', 'migration_balance'].includes(item.indicator_code)
+      ),
+      makePillar(
+        'investment',
+        'Инвестиции',
+        'Доступны отдельные подтверждённые оценки инвестиций организаций; охват муниципалитетов и периодов пока неполный.',
+        (item) => ['fixed_capital_investment_enterprises_non_sme', 'investment_per_capita_no_budget'].includes(item.indicator_code)
+      ),
     ];
   }, [officialIndicators, programExecution]);
 
@@ -1895,7 +1949,7 @@ export const InvestmentDetails = () => {
             </section>
             <section className="risk-pillars panel">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Пять групп показателей проекта</h2><p>Покрытие официальными данными в текущем прототипе</p></div></div><button className="outline-button" onClick={()=>navigateToTab('data')}>Открыть центр данных <Icon name="arrow"/></button></div>
-              <div className="risk-pillar-grid">{pillarCoverage.map((pillar)=><article className="risk-pillar-card" key={pillar.key}><span className="risk-pillar-number">{String(['employment','income','budget','migration','investment'].indexOf(pillar.key)+1).padStart(2,'0')}</span><strong>{pillar.title}</strong><span className="risk-pillar-coverage">{pillar.ids.size} {pillar.ids.size===1?'территория':'территорий'} с данными</span><div className="risk-pillar-track"><i style={{width:Math.min(100,pillar.ids.size/municipalities.length*100)+'%'}}/></div><p>{pillar.description}</p></article>)}</div>
+              <div className="risk-pillar-grid">{pillarCoverage.map((pillar)=><article className="risk-pillar-card" key={pillar.key}><span className="risk-pillar-number">{String(['employment','income','budget','migration','investment'].indexOf(pillar.key)+1).padStart(2,'0')}</span><strong>{pillar.title}</strong><span className="risk-pillar-coverage">{pillar.municipalityCount} из {municipalities.length} муниципалитетов</span><div className="risk-pillar-track"><i style={{width:Math.min(100,pillar.municipalityCount/Math.max(1,municipalities.length)*100)+'%'}}/></div><span className="risk-pillar-coverage">{pillar.observationCount} подтверждённых наблюдений</span><p>{pillar.description}</p></article>)}</div>
             </section>
             <section className="risk-table-panel panel">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="table"/></span><div><h2>Список территорий</h2><p>Цветовая зона использует только демонстрационный балл</p></div></div><label className="search-box risk-search"><Icon name="search"/><input value={riskSearch} onChange={(event)=>setRiskSearch(event.target.value)} placeholder="Найти муниципалитет…" aria-label="Поиск территории в светофоре"/></label></div>
