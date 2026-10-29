@@ -484,8 +484,14 @@ export const InvestmentDetails = () => {
       && item.geographic_level === 'municipality'
       && numericValue(item.value) != null
     ).forEach((item) => {
-      const key = `${item.reference_year}|${item.reference_period || 'annual'}`;
-      if (!seen.has(key)) seen.set(key, { key, year: Number(item.reference_year), period: item.reference_period || 'annual' });
+      const key = String(item.reference_year) + '|' + String(item.reference_period || 'annual');
+      if (!seen.has(key)) seen.set(key, {
+        key,
+        year: Number(item.reference_year),
+        period: item.reference_period || 'annual',
+        municipalityIds: new Set(),
+      });
+      seen.get(key).municipalityIds.add(item.municipality_id);
     });
     const periodRank = (period) => {
       if (period === 'annual') return 0;
@@ -495,7 +501,11 @@ export const InvestmentDetails = () => {
       if (half) return Number(half[1]) * 10 + 5;
       return 99;
     };
-    return [...seen.values()].sort((a,b) => a.year-b.year || periodRank(a.period)-periodRank(b.period));
+    // Offer only periods with at least two distinct municipalities in the same scope.
+    return [...seen.values()]
+      .filter((item) => item.municipalityIds.size >= 2)
+      .map(({ municipalityIds, ...item }) => item)
+      .sort((a,b) => a.year-b.year || periodRank(a.period)-periodRank(b.period));
   }, [officialIndicators, effectiveOfficialComparisonCode]);
 
   const effectiveOfficialComparisonPeriod = officialComparisonPeriods.some((period) => period.key === selectedOfficialComparisonPeriod)
