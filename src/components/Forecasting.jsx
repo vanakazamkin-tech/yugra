@@ -158,7 +158,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
     const headers = ['Муниципалитет', 'Группа', 'Инвестиции: база, млрд ₽', 'Инвестиции: прогноз, млрд ₽', 'Нижняя граница модели, млрд ₽', 'Верхняя граница модели, млрд ₽', 'МСП: база', 'МСП: прогноз', 'МСП: нижняя граница', 'МСП: верхняя граница', 'Прогнозный балл', 'Модельное место'];
     const rows = filtered.map((row) => [
       row.name, row.group || '', row.investment, row.projectedInvestments, row.investmentsLow, row.investmentsHigh,
-      row.sme, row.projectedSme, row.projectedScore, row.projectedRank,
+      row.sme, row.projectedSme, row.smeLow, row.smeHigh, row.projectedScore, row.projectedRank,
     ]);
     // Prevent spreadsheet formula execution for text cells in exported CSV.
     // Numeric values remain numeric (including legitimate negative scenario outputs).
