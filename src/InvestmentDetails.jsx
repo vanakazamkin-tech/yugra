@@ -335,7 +335,7 @@ export const InvestmentDetails = () => {
         {reportIncludeSummary && <><h2>Сводка</h2>{renderReportSummary()}</>}
         {reportIncludeChart && reportItems.length > 0 && <><h2>Сравнение показателя: {reportChartMetricDef.label}</h2>{renderReportChart()}</>}
         {reportIncludeTable && <><h2>Детализация показателей</h2>{renderReportTable()}</>}
-        {reportIncludeMethodology && <p className="print-methodology">Источник данных: {syncStatus === 'connected' ? 'Supabase' : 'резервный локальный набор'}. Отчёт отражает выбранную выборку и настройки конструктора. Перед официальным использованием проверьте первоисточники, период наблюдения и методику расчёта.</p>}
+        {reportIncludeMethodology && <p className="print-methodology">Источник данных: {lastSyncedAt ? 'Supabase (последняя успешная загрузка)' : 'резервный локальный набор'}. Отчёт отражает выбранную выборку и настройки конструктора. Перед официальным использованием проверьте первоисточники, период наблюдения и методику расчёта.</p>}
       </section>
 
       <a className="skip-link" href="#main-content">Перейти к содержимому</a>
@@ -511,7 +511,7 @@ export const InvestmentDetails = () => {
                   {reportIncludeSummary && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>Ключевые показатели выборки</h4><span>01 / СВОДКА</span></div>{renderReportSummary()}</section>}
                   {reportIncludeChart && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>{reportChartMetricDef.label}</h4><span>02 / СРАВНЕНИЕ</span></div><p className="chart-unit-note">{reportChartMetricDef.unit === 'место' ? 'Для места в рейтинге более длинная полоса означает более высокую позицию.' : `Значение показателя в ${reportChartMetricDef.unit}.`}</p>{reportItems.some((m) => reportChartMetricDef.get(m) != null) ? renderReportChart() : <p className="report-empty-note">Нет заполненных значений этого показателя в выбранной выборке.</p>}</section>}
                   {reportIncludeTable && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>Детализация</h4><span>03 / ТАБЛИЦА</span></div>{reportPrintFields.length === 0 ? <p className="report-empty-note">Выберите хотя бы один показатель для таблицы.</p> : renderReportTable()}</section>}
-                  {reportIncludeMethodology && <div className="report-method-note"><Icon name="info"/><p>Источник данных: {syncStatus === 'connected' ? 'Supabase' : 'резервный локальный набор'}. Перед официальной публикацией сверяйте первоисточники, период наблюдения и методику расчёта.</p></div>}
+                  {reportIncludeMethodology && <div className="report-method-note"><Icon name="info"/><p>Источник данных: {lastSyncedAt ? 'Supabase (последняя успешная загрузка)' : 'резервный локальный набор'}. Перед официальной публикацией сверяйте первоисточники, период наблюдения и методику расчёта.</p></div>}
                   <div className="report-doc-footer"><span>ЮГРА · ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</span><span>Сформировано {reportDate()}</span></div>
                 </article>
               </div>
