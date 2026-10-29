@@ -124,10 +124,22 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
     return forecasts.filter((row) => (selectedId === 'ALL' || row.id === selectedId)
       && (!searchText || row.name.toLocaleLowerCase('ru-RU').includes(searchText)));
   }, [forecasts, selectedId, search]);
-  const totalInvestment = useMemo(() => forecasts.reduce((sum, row) => sum + (row.projectedInvestments ?? 0), 0), [forecasts]);
-  const baselineInvestment = useMemo(() => forecasts.reduce((sum, row) => sum + (row.investment ?? 0), 0), [forecasts]);
-  const totalSme = useMemo(() => forecasts.reduce((sum, row) => sum + (row.projectedSme ?? 0), 0), [forecasts]);
-  const baselineSme = useMemo(() => forecasts.reduce((sum, row) => sum + (row.sme ?? 0), 0), [forecasts]);
+  const totalInvestment = useMemo(() => {
+    const available = forecasts.filter((row) => row.projectedInvestments != null);
+    return available.length ? available.reduce((sum, row) => sum + row.projectedInvestments, 0) : null;
+  }, [forecasts]);
+  const baselineInvestment = useMemo(() => {
+    const available = forecasts.filter((row) => row.investment != null);
+    return available.length ? available.reduce((sum, row) => sum + row.investment, 0) : null;
+  }, [forecasts]);
+  const totalSme = useMemo(() => {
+    const available = forecasts.filter((row) => row.projectedSme != null);
+    return available.length ? available.reduce((sum, row) => sum + row.projectedSme, 0) : null;
+  }, [forecasts]);
+  const baselineSme = useMemo(() => {
+    const available = forecasts.filter((row) => row.sme != null);
+    return available.length ? available.reduce((sum, row) => sum + row.sme, 0) : null;
+  }, [forecasts]);
   const avgScore = useMemo(() => {
     const validScores = forecasts.filter((row) => row.projectedScore != null);
     return validScores.length ? validScores.reduce((sum, row) => sum + row.projectedScore, 0) / validScores.length : null;
