@@ -585,6 +585,51 @@ export const InvestmentDetails = () => {
   const reportPrintFields = reportFields.filter((key) => METRIC_BY_KEY[key]);
 
   const requestSort = (key) => setSortConfig((current) => ({ key, direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc' }));
+  const downloadFilteredOfficialIndicatorsCsv = () => {
+    const headers = [
+      'Территория',
+      'Уровень географии',
+      'Показатель',
+      'Значение',
+      'Единица измерения',
+      'Год',
+      'Период',
+      'Источник данных',
+      'URL источника',
+      'Статус проверки',
+      'Примечание',
+    ];
+    const rows = filteredOfficialIndicators.map((item) => {
+      const municipality = municipalities.find((entry) => entry.id === item.municipality_id);
+      const geography = item.geographic_level === 'settlement'
+        ? 'Населённый пункт'
+        : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
+      return [
+        item.geographic_name || municipality?.name || item.municipality_id,
+        geography,
+        item.indicator_name,
+        item.value,
+        item.unit,
+        item.reference_year,
+        formatReferencePeriod(item),
+        item.source_id,
+        item.source_url,
+        item.verification_status,
+        item.notes || '',
+      ];
+    });
+    const escape = (value) => '"' + String(value == null ? '' : value).replaceAll('"', '""') + '"';
+    const csv = '\uFEFF' + [headers, ...rows].map((row) => row.map(escape).join(';')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'yugra-official-indicators-filtered.csv';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const downloadOfficialComparisonCsv = () => {
     const headers = ['Муниципальное образование', 'Показатель', 'Значение', 'Единица измерения', 'Период', 'Источник'];
     const rows = officialComparisonRows.map((item) => [
@@ -930,6 +975,7 @@ export const InvestmentDetails = () => {
               <div className="official-indicator-toolbar">
                 <label className="search-box"><Icon name="search"/><input value={indicatorSearch} onChange={(event) => setIndicatorSearch(event.target.value)} placeholder="Поиск показателя, города или единицы…" aria-label="Поиск официальных показателей"/></label>
                 <label className="select-field"><span>Муниципалитет</span><select value={indicatorMunicipalityFilter} onChange={(event) => setIndicatorMunicipalityFilter(event.target.value)}><option value="all">Все территории</option>{municipalities.slice().sort((a,b) => a.name.localeCompare(b.name,'ru-RU')).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
+                <button type="button" className="outline-button" onClick={downloadFilteredOfficialIndicatorsCsv} disabled={filteredOfficialIndicators.length === 0}><Icon name="download"/>CSV · {filteredOfficialIndicators.length}</button>
                 <button type="button" className="outline-button" onClick={() => {setIndicatorSearch('');setIndicatorMunicipalityFilter('all');}}><Icon name="refresh"/>Сбросить</button>
               </div>
               <div className="official-indicator-table-wrap">
