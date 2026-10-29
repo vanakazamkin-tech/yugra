@@ -255,6 +255,7 @@ export const InvestmentDetails = () => {
   const [reportIncludeChart, setReportIncludeChart] = useState(true);
   const [reportIncludeTable, setReportIncludeTable] = useState(true);
   const [reportIncludeMethodology, setReportIncludeMethodology] = useState(true);
+  const [reportIncludeOfficialData, setReportIncludeOfficialData] = useState(false);
   const [reportChartMetric, setReportChartMetric] = useState('investments');
   const [reportTemplateSaved, setReportTemplateSaved] = useState(false);
   
@@ -580,6 +581,15 @@ export const InvestmentDetails = () => {
       avgAssessment: assessmentRows.length ? assessmentRows.reduce((s, m) => s + Number(m.assessmentScore), 0) / assessmentRows.length : null,
     };
   }, [reportItems]);
+  const reportOfficialIndicators = useMemo(() => {
+    const ids = new Set(reportItems.map((item) => item.id));
+    return officialIndicators
+      .filter((item) => ids.has(item.municipality_id) && item.verification_status === 'verified')
+      .slice()
+      .sort((a,b) => Number(b.reference_year)-Number(a.reference_year)
+        || String(b.reference_period || '').localeCompare(String(a.reference_period || ''))
+        || String(a.indicator_name || '').localeCompare(String(b.indicator_name || ''), 'ru-RU'));
+  }, [reportItems, officialIndicators]);
   const comparisonMetricDef = METRIC_BY_KEY[comparisonMetric] || METRICS[0];
   const reportChartMetricDef = METRIC_BY_KEY[reportChartMetric] || METRICS[0];
   const reportPrintFields = reportFields.filter((key) => METRIC_BY_KEY[key]);
@@ -665,7 +675,7 @@ export const InvestmentDetails = () => {
   const toggleReportSelection = (id) => { setReportTemplateSaved(false); setReportSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]); };
   const toggleReportField = (key) => { setReportTemplateSaved(false); setReportFields((current) => current.includes(key) ? current.filter((field) => field !== key) : [...current, key]); };
   const saveReportTemplate = () => {
-    const template = { reportTitle, reportScope, reportSelectedIds, reportFields, reportIncludeSummary, reportIncludeChart, reportIncludeTable, reportIncludeMethodology, reportChartMetric };
+    const template = { reportTitle, reportScope, reportSelectedIds, reportFields, reportIncludeSummary, reportIncludeChart, reportIncludeTable, reportIncludeMethodology, reportIncludeOfficialData, reportChartMetric };
     try { localStorage.setItem('yugra-report-template-v1', JSON.stringify(template)); setReportTemplateSaved(true); }
     catch { setReportTemplateSaved(false); }
   };
@@ -682,6 +692,7 @@ export const InvestmentDetails = () => {
       if (typeof template.reportIncludeChart === 'boolean') setReportIncludeChart(template.reportIncludeChart);
       if (typeof template.reportIncludeTable === 'boolean') setReportIncludeTable(template.reportIncludeTable);
       if (typeof template.reportIncludeMethodology === 'boolean') setReportIncludeMethodology(template.reportIncludeMethodology);
+      if (typeof template.reportIncludeOfficialData === 'boolean') setReportIncludeOfficialData(template.reportIncludeOfficialData);
       if (template.reportChartMetric && METRIC_BY_KEY[template.reportChartMetric]) setReportChartMetric(template.reportChartMetric);
       setReportTemplateSaved(true);
     } catch { setReportTemplateSaved(false); }
@@ -1259,6 +1270,7 @@ export const InvestmentDetails = () => {
                   {reportIncludeChart && <label className="form-field chart-metric-select"><span>Показатель диаграммы</span><select value={reportChartMetric} onChange={(e) => { setReportChartMetric(e.target.value); setReportTemplateSaved(false); }}>{METRICS.map((metric) => <option key={metric.key} value={metric.key}>{metric.label}</option>)}</select></label>}
                   <label className="switch-row"><span><strong>Детальная таблица</strong><small>Строки по территориям и выбранные колонки</small></span><input type="checkbox" checked={reportIncludeTable} onChange={(e) => { setReportIncludeTable(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
                   <label className="switch-row"><span><strong>Методика и оговорки</strong><small>Указать происхождение и необходимость проверки данных</small></span><input type="checkbox" checked={reportIncludeMethodology} onChange={(e) => { setReportIncludeMethodology(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
+                  <label className="switch-row"><span><strong>Официальные наблюдения</strong><small>Отдельная таблица с источником, географическим уровнем и периодом · {reportOfficialIndicators.length} значений в текущей выборке</small></span><input type="checkbox" checked={reportIncludeOfficialData} onChange={(e) => { setReportIncludeOfficialData(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
                 </div>
                 <div className="report-actions"><button className="primary-button" onClick={handleExportPDF}><Icon name="download"/>Сохранить / печатать PDF</button><button className="outline-button" onClick={exportReportCsv}><Icon name="table"/>Экспорт CSV</button></div>
               </aside>
@@ -1272,6 +1284,24 @@ export const InvestmentDetails = () => {
                   {reportIncludeSummary && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>Ключевые показатели выборки</h4><span>01 / СВОДКА</span></div>{renderReportSummary()}</section>}
                   {reportIncludeChart && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>{reportChartMetricDef.label}</h4><span>02 / СРАВНЕНИЕ</span></div><p className="chart-unit-note">{reportChartMetricDef.unit === 'место' ? 'Для места в рейтинге более длинная полоса означает более высокую позицию.' : `Значение показателя в ${reportChartMetricDef.unit}.`}</p>{reportItems.some((m) => reportChartMetricDef.get(m) != null) ? renderReportChart() : <p className="report-empty-note">Нет заполненных значений этого показателя в выбранной выборке.</p>}</section>}
                   {reportIncludeTable && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>Детализация</h4><span>03 / ТАБЛИЦА</span></div>{reportPrintFields.length === 0 ? <p className="report-empty-note">Выберите хотя бы один показатель для таблицы.</p> : renderReportTable()}</section>}
+                  {reportIncludeOfficialData && <section className="report-preview-section report-official-section">
+                    <div className="report-preview-section-heading"><h4>Проверенные официальные наблюдения</h4><span>ОТДЕЛЬНЫЙ СТАТИСТИЧЕСКИЙ СЛОЙ</span></div>
+                    <p className="report-official-intro">{reportOfficialIndicators.length} наблюдений по выбранным территориям. Эти значения не смешиваются с демонстрационными баллами, инвестиционными объёмами и оценками из локального набора. Уровень географии указан в каждой строке.</p>
+                    {reportOfficialIndicators.length ? <div className="report-official-data-table-wrap"><table className="report-official-data-table">
+                      <thead><tr><th>Территория / уровень</th><th>Показатель</th><th>Значение</th><th>Период</th><th>Примечание / источник</th></tr></thead>
+                      <tbody>{reportOfficialIndicators.map((item) => {
+                        const municipality = municipalities.find((entry) => entry.id === item.municipality_id);
+                        const geography = item.geographic_level === 'settlement' ? 'Населённый пункт' : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
+                        return <tr key={item.id}>
+                          <td><strong>{item.geographic_name || municipality?.name || item.municipality_id}</strong><small>{geography}</small></td>
+                          <td>{item.indicator_name}</td>
+                          <td><strong>{formatNumber(item.value, 2)}</strong><small>{item.unit}</small></td>
+                          <td>{formatReferencePeriod(item)}</td>
+                          <td>{item.notes && <small>{item.notes}</small>}{item.source_url && <a href={item.source_url} target="_blank" rel="noreferrer">Росстат / первоисточник ↗</a>}</td>
+                        </tr>;
+                      })}</tbody>
+                    </table></div> : <p className="report-empty-note">Для выбранной выборки нет подтверждённых официальных наблюдений.</p>}
+                  </section>}
                   {reportIncludeMethodology && <div className="report-method-note"><Icon name="info"/><p>Источник данных: {lastSyncedAt ? 'Supabase (последняя успешная загрузка)' : 'резервный локальный набор'}. Перед официальной публикацией сверяйте первоисточники, период наблюдения и методику расчёта.</p></div>}
                   <div className="report-doc-footer"><span>ЮГРА · ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</span><span>Сформировано {reportDate()}</span></div>
                 </article>
