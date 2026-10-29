@@ -72,6 +72,24 @@ const OFFICIAL_TREND_SERIES = [
   { code: 'fixed_capital_investment_local_budget', title: 'Инвестиции за счёт средств местного бюджета', periodLabel: 'За год', unit: 'тыс. руб.', definition: 'Отдельная статья муниципальных бюджетных вложений; не общий объём всех инвестиций.' },
   { code: 'fixed_capital_investment_enterprises_non_sme', title: 'Инвестиции организаций без субъектов малого предпринимательства', periodLabel: 'За год', unit: 'тыс. руб.', definition: 'Общий объём инвестиций организаций на территории муниципалитета, без субъектов малого предпринимательства; не смешивать с вложениями местного бюджета.' },
 ];
+const OFFICIAL_COMPARISON_SERIES = [
+  { code: 'average_employees_q1', label: 'Численность работников · I квартал', unit: 'человек', definition: 'Среднесписочная численность работников организаций без субъектов малого предпринимательства; накопительный показатель за январь–март.' },
+  { code: 'average_employees_h1', label: 'Численность работников · полугодие', unit: 'человек', definition: 'Среднесписочная численность работников организаций без субъектов малого предпринимательства; январь–июнь.' },
+  { code: 'average_monthly_salary_q1', label: 'Среднемесячная зарплата · I квартал', unit: 'руб.', definition: 'Среднемесячная начисленная зарплата работников организаций без субъектов малого предпринимательства за январь–март.' },
+  { code: 'average_monthly_salary_h1', label: 'Среднемесячная зарплата · полугодие', unit: 'руб.', definition: 'Среднемесячная начисленная зарплата работников организаций без субъектов малого предпринимательства за январь–июнь.' },
+  { code: 'retail_turnover_q1', label: 'Оборот розничной торговли · I квартал', unit: 'тыс. руб.', definition: 'Накопительный оборот розничной торговли без субъектов малого предпринимательства за январь–март.' },
+  { code: 'retail_turnover_h1', label: 'Оборот розничной торговли · полугодие', unit: 'тыс. руб.', definition: 'Накопительный оборот розничной торговли без субъектов малого предпринимательства за январь–июнь.' },
+  { code: 'retail_specialized_food_q1', label: 'Розничная торговля продовольствием · I квартал', unit: 'тыс. руб.', definition: 'Оборот продовольственных товаров, напитков и табачных изделий в специализированных магазинах за январь–март.' },
+  { code: 'retail_specialized_food_h1', label: 'Розничная торговля продовольствием · полугодие', unit: 'тыс. руб.', definition: 'Оборот продовольственных товаров, напитков и табачных изделий в специализированных магазинах за январь–июнь.' },
+  { code: 'food_service_turnover_q1', label: 'Общественное питание · I квартал', unit: 'тыс. руб.', definition: 'Оборот общественного питания без субъектов малого предпринимательства за январь–март.' },
+  { code: 'food_service_turnover_h1', label: 'Общественное питание · полугодие', unit: 'тыс. руб.', definition: 'Оборот общественного питания без субъектов малого предпринимательства за январь–июнь.' },
+  { code: 'own_production_shipments_q1', label: 'Отгрузка собственной продукции · I квартал', unit: 'тыс. руб.', definition: 'Отгрузка продукции, работ и услуг собственными силами без субъектов малого предпринимательства за январь–март.' },
+  { code: 'own_production_shipments_h1', label: 'Отгрузка собственной продукции · полугодие', unit: 'тыс. руб.', definition: 'Отгрузка продукции, работ и услуг собственными силами без субъектов малого предпринимательства за январь–июнь.' },
+  { code: 'resale_goods_q1', label: 'Продажа перепроданных товаров · I квартал', unit: 'тыс. руб.', definition: 'Продажа товаров несобственного производства без субъектов малого предпринимательства за январь–март.' },
+  { code: 'resale_goods_h1', label: 'Продажа перепроданных товаров · полугодие', unit: 'тыс. руб.', definition: 'Продажа товаров несобственного производства без субъектов малого предпринимательства за январь–июнь.' },
+  { code: 'fixed_capital_investment_local_budget', label: 'Инвестиции за счёт местного бюджета · год', unit: 'тыс. руб.', definition: 'Отдельная статья вложений из местного бюджета; не общий объём инвестиций.' },
+  { code: 'fixed_capital_investment_enterprises_non_sme', label: 'Инвестиции организаций без субъектов МСП · год', unit: 'тыс. руб.', definition: 'Общий объём инвестиций организаций на территории муниципалитета без субъектов малого предпринимательства.' },
+];
 const DEFAULT_COMPARE_IDS = ['surgutsky', 'khanty-mansiysk', 'surgut'];
 const DEFAULT_REPORT_FIELDS = ['score', 'rank2024', 'investments', 'growthPercent', 'smeCount', 'assessmentScore'];
 
@@ -216,6 +234,8 @@ export const InvestmentDetails = () => {
   const [riskGreenThreshold, setRiskGreenThreshold] = useState(330);
   const [riskSearch, setRiskSearch] = useState('');
   const [selectedTrendSeries, setSelectedTrendSeries] = useState('average_employees_h1');
+  const [selectedOfficialComparisonCode, setSelectedOfficialComparisonCode] = useState('own_production_shipments_q1');
+  const [selectedOfficialComparisonPeriod, setSelectedOfficialComparisonPeriod] = useState('2026|2026-Q1');
   const [supportMunicipalityId, setSupportMunicipalityId] = useState('megion');
   const [supportInvestmentChange, setSupportInvestmentChange] = useState(8);
   const [supportSmeChange, setSupportSmeChange] = useState(5);
@@ -434,6 +454,46 @@ export const InvestmentDetails = () => {
     }));
     return { ...config, rows: points, first: points[0] || null, latest: points[points.length - 1] || null };
   }, [officialIndicators, selectedTrendSeries]);
+
+  const officialComparisonPeriods = useMemo(() => {
+    const seen = new Map();
+    officialIndicators.filter((item) =>
+      item.indicator_code === selectedOfficialComparisonCode
+      && item.geographic_level === 'municipality'
+      && numericValue(item.value) != null
+    ).forEach((item) => {
+      const key = `${item.reference_year}|${item.reference_period || 'annual'}`;
+      if (!seen.has(key)) seen.set(key, { key, year: Number(item.reference_year), period: item.reference_period || 'annual' });
+    });
+    const periodRank = (period) => {
+      if (period === 'annual') return 0;
+      const quarter = String(period).match(/Q([1-4])$/);
+      if (quarter) return Number(quarter[1]) * 10;
+      const half = String(period).match(/H([12])$/);
+      if (half) return Number(half[1]) * 10 + 5;
+      return 99;
+    };
+    return [...seen.values()].sort((a,b) => a.year-b.year || periodRank(a.period)-periodRank(b.period));
+  }, [officialIndicators, selectedOfficialComparisonCode]);
+
+  const effectiveOfficialComparisonPeriod = officialComparisonPeriods.some((period) => period.key === selectedOfficialComparisonPeriod)
+    ? selectedOfficialComparisonPeriod
+    : officialComparisonPeriods[officialComparisonPeriods.length - 1]?.key || '';
+
+  const officialComparisonConfig = OFFICIAL_COMPARISON_SERIES.find((series) => series.code === selectedOfficialComparisonCode) || OFFICIAL_COMPARISON_SERIES[0];
+
+  const officialComparisonRows = useMemo(() => {
+    return officialIndicators.filter((item) =>
+      item.indicator_code === selectedOfficialComparisonCode
+      && item.geographic_level === 'municipality'
+      && `${item.reference_year}|${item.reference_period || 'annual'}` === effectiveOfficialComparisonPeriod
+      && numericValue(item.value) != null
+    ).map((item) => ({
+      ...item,
+      numericValue: numericValue(item.value),
+      municipalityName: municipalities.find((m) => m.id === item.municipality_id)?.name || item.geographic_name || item.municipality_id,
+    })).sort((a,b) => b.numericValue-a.numericValue);
+  }, [officialIndicators, selectedOfficialComparisonCode, effectiveOfficialComparisonPeriod, municipalities]);
 
   const riskRows = useMemo(() => {
     const query = riskSearch.trim().toLocaleLowerCase('ru-RU');
@@ -768,6 +828,23 @@ export const InvestmentDetails = () => {
                 </div>
                 <div className="table-scroll official-trend-table-wrap"><table className="ranking-table"><thead><tr><th>Период</th><th>Значение, {surgutComparableTrend.unit}</th><th>Изменение к предыдущему</th><th>Источник</th></tr></thead><tbody>{surgutComparableTrend.rows.map((item)=><tr key={item.id}><td>{formatReferencePeriod(item)}</td><td className="score-cell">{formatNumber(item.numericValue,1)}</td><td>{item.changePercent==null?'—':`${item.changePercent>0?'+':''}${formatNumber(item.changePercent,1)}%`}</td><td><a href={item.source_url} target="_blank" rel="noreferrer">Росстат ↗</a></td></tr>)}</tbody></table></div>
               </> : <div className="empty-state"><span>Для выбранного показателя пока недостаточно наблюдений</span><p>Выберите другой показатель или проверьте заполненность источника.</p></div>}
+            </section>
+            <section className="official-municipal-comparison panel" aria-labelledby="official-municipal-comparison-title">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2 id="official-municipal-comparison-title">Сравнение муниципалитетов по официальным данным</h2><p>Сравниваем только одинаковые показатель, период и территориальный уровень</p></div></div><span className="section-tag">{officialComparisonRows.length} ТЕРРИТОРИЙ</span></div>
+              <div className="official-comparison-controls">
+                <label className="official-trend-select"><span>Показатель</span><select value={selectedOfficialComparisonCode} onChange={(event)=>{setSelectedOfficialComparisonCode(event.target.value);setSelectedOfficialComparisonPeriod('');}}>{OFFICIAL_COMPARISON_SERIES.map((series)=><option key={series.code} value={series.code}>{series.label}</option>)}</select></label>
+                <label className="official-trend-select"><span>Период наблюдения</span><select value={effectiveOfficialComparisonPeriod} onChange={(event)=>setSelectedOfficialComparisonPeriod(event.target.value)}>{officialComparisonPeriods.map((period)=><option key={period.key} value={period.key}>{formatReferencePeriod({reference_year:period.year,reference_period:period.period})}</option>)}</select></label>
+              </div>
+              <p className="official-trend-definition">{officialComparisonConfig.definition} Пропущенные значения не заменяются нулями; показываются только территории с наблюдением за выбранный период.</p>
+              {officialComparisonRows.length ? <>
+                <div className="official-comparison-chart">{officialComparisonRows.map((item,index)=><div className="official-comparison-row" key={item.id}>
+                  <div className="official-comparison-label"><span>{String(index+1).padStart(2,'0')}</span><strong>{item.municipalityName}</strong></div>
+                  <div className="official-comparison-track"><i style={{width:Math.max(1,item.numericValue/Math.max(1,officialComparisonRows[0].numericValue)*100)+'%'}}/></div>
+                  <strong className="official-comparison-value">{formatNumber(item.numericValue,1)} <small>{officialComparisonConfig.unit}</small></strong>
+                </div>)}</div>
+                <div className="official-comparison-footer"><span>Показано {officialComparisonRows.length} из {municipalities.length} муниципалитетов, по которым есть подтверждённое наблюдение в выбранном срезе.</span><button className="text-action" onClick={()=>downloadCsv(officialComparisonRows.map((item)=>({name:item.municipalityName,group2024:'',score:item.numericValue})),['score'],'yugra-official-comparison')}><Icon name="download"/>Выгрузить срез CSV</button></div>
+                <div className="table-scroll official-trend-table-wrap"><table className="ranking-table"><thead><tr><th>Муниципальное образование</th><th>Значение</th><th>Период</th><th>Источник</th></tr></thead><tbody>{officialComparisonRows.map((item)=><tr key={item.id}><td>{item.municipalityName}</td><td className="score-cell">{formatNumber(item.numericValue,1)} {officialComparisonConfig.unit}</td><td>{formatReferencePeriod(item)}</td><td><a href={item.source_url} target="_blank" rel="noreferrer">Росстат ↗</a></td></tr>)}</tbody></table></div>
+              </> : <div className="empty-state"><span>Нет сопоставимых наблюдений для выбранного среза</span><p>Выберите показатель или другой период. Для корректного сравнения нужны одна единица измерения и один территориальный уровень.</p></div>}
             </section>
             <section className="official-data-panel panel" aria-labelledby="official-data-heading">
               <div className="section-heading">
