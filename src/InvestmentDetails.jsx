@@ -234,7 +234,11 @@ export const InvestmentDetails = () => {
     }
 
     let cancelled = false;
+    let officialRequestInFlight = false;
     const loadOfficialData = async () => {
+      if (cancelled || officialRequestInFlight) return;
+      officialRequestInFlight = true;
+      setOfficialDataStatus((status) => status === 'connected' ? 'connected' : 'loading');
       try {
         const result = await fetchOfficialData(supabase);
         if (cancelled) return;
@@ -251,6 +255,8 @@ export const InvestmentDetails = () => {
         if (cancelled) return;
         setOfficialDataStatus('error');
         setOfficialDataError(error?.message || 'Не удалось загрузить каталог официальных данных');
+      } finally {
+        officialRequestInFlight = false;
       }
     };
 
