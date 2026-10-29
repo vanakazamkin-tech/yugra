@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { buildForecastCoverage } from '../lib/forecastCoverage';
 
 const FALLBACK_SCENARIOS = [
   { id: null, key: 'cautious', title: 'Пессимистичный', summary: 'Неблагоприятный сценарий: снижение экспортной выручки, усиление санкционных ограничений, рост издержек предприятий и дефицит кадров.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18, display_order: 1 },
@@ -60,7 +61,7 @@ function buildForecasts(municipalities, params, horizon) {
     });
 }
 
-export default function Forecasting({ municipalities, supabase, isSupabaseConfigured }) {
+export default function Forecasting({ municipalities, supabase, isSupabaseConfigured, officialIndicators = [], programExecution = [], officialDataStatus = 'offline' }) {
   const [scenarios, setScenarios] = useState(FALLBACK_SCENARIOS);
   const [scenarioKey, setScenarioKey] = useState('base');
   const [horizon, setHorizon] = useState(3);
@@ -114,6 +115,8 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
 
   const activeScenario = scenarios.find((item) => item.key === scenarioKey) || scenarios[0];
   const forecasts = useMemo(() => buildForecasts(municipalities || [], params, horizon), [municipalities, params, horizon]);
+  const officialCoverage = useMemo(() => buildForecastCoverage(officialIndicators, programExecution, (municipalities || []).length || 22), [officialIndicators, programExecution, municipalities]);
+  const officialCoverageLoaded = officialDataStatus === 'connected';
   const filtered = useMemo(() => {
     const searchText = search.trim().toLocaleLowerCase('ru-RU');
     return forecasts.filter((row) => (selectedId === 'ALL' || row.id === selectedId)
@@ -207,6 +210,22 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       </div>
 
       <div className="forecast-warning"><strong>Концептуальная модель, не официальный прогноз.</strong><span>Проверенных временных рядов по всем 22 территориям нет. Это сценарный эксперимент с заданными пользователем темпами, а не статистически обученная модель и не вероятность развития событий.</span><span className="forecast-coverage-note">Пять групп из паспорта проекта: занятость, доходы населения, местный бюджет, миграция и инвестиции. Текущий расчётный прототип использует инвестиции, число субъектов МСП и концептуальный балл; занятость, доходы, бюджет и миграция пока не входят в вычислительное ядро. Подтверждённых сопоставимых муниципальных рядов миграции сейчас нет. Пропуски не подменяются нулями.</span></div>
+
+      <section className="forecast-coverage-panel" aria-labelledby="forecast-coverage-title">
+        <div className="forecast-coverage-heading">
+          <div><h3 id="forecast-coverage-title">Покрытие официальными данными</h3><p>Сколько муниципалитетов имеют хотя бы одно подтверждённое наблюдение в каждой группе. Это охват, а не полнота всех показателей и периодов.</p></div>
+          <span className={'forecast-coverage-status ' + (officialCoverageLoaded ? 'is-connected' : '')}>{officialCoverageLoaded ? 'Срез Supabase' : 'Каталог не загружен'}</span>
+        </div>
+        <div className="forecast-coverage-grid">
+          {officialCoverage.map((item) => <article className="forecast-coverage-card" key={item.key}>
+            <div className="forecast-coverage-card-top"><span>{item.label}</span><strong>{officialCoverageLoaded ? `${item.municipalityCount}/${item.municipalityTotal}` : '—'}</strong></div>
+            <div className="forecast-coverage-track" aria-hidden="true"><i style={{ width: (officialCoverageLoaded ? Math.min(100, item.municipalityCount / Math.max(1, item.municipalityTotal) * 100) : 0) + '%' }} /></div>
+            <p>{item.description}</p>
+            <small>{officialCoverageLoaded ? `${item.observationCount} записей${item.latestYear ? ` · последний год: ${item.latestYear}` : ''}` : 'Нет подтверждённого актуального среза'}</small>
+          </article>)}
+        </div>
+        <p className="forecast-coverage-footnote">Для местного бюджета отдельно учитываются подтверждённые записи исполнения муниципальных программ; они не заменяют полную бюджетную статистику. Городские/поселковые наблюдения и непроверенные записи исключены. Отсутствие записи не означает нулевое значение.</p>
+      </section>
 
       <div className="forecast-controls-grid">
         <div className="forecast-control-card">
