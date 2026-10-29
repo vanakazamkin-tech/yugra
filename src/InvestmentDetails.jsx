@@ -375,8 +375,9 @@ export const InvestmentDetails = () => {
             <button aria-current={activeTab === 'compare' ? 'page' : undefined} className={activeTab === 'compare' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('compare')}><Icon name="compare"/>Сравнение</button>
             <button aria-current={activeTab === 'reports' ? 'page' : undefined} className={activeTab === 'reports' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('reports')}><Icon name="file"/>Отчёты</button>
             <button title="Режим прогнозирования" aria-label="Режим прогнозирования" aria-current={activeTab === 'forecast' ? 'page' : undefined} className={activeTab === 'forecast' ? 'nav-item active nav-item-forecast' : 'nav-item nav-item-forecast'} onClick={() => navigateToTab('forecast')}><Icon name="chart"/>Прогноз</button>
+            <button aria-current={activeTab === 'about' ? 'page' : undefined} className={activeTab === 'about' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('about')}><Icon name="info"/>О проекте</button>
           </nav>
-          <div className="header-motto"><span className="motto-mark"/>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</div>
+          <div className="header-motto"><span className="concept-corner">КОНЦЕПТ</span><span className="motto-mark"/>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</div>
         </header>
         <div className="ornament-divider" aria-hidden="true" />
         <div className={`sync-status sync-status--${syncStatus}`} role="status" aria-live="polite">
@@ -593,6 +594,48 @@ export const InvestmentDetails = () => {
                 </article>
               </div>
             </div>
+          </section>}
+          {activeTab === 'about' && <section className="about-page">
+            <section className="about-hero panel">
+              <span className="eyebrow"><span className="eyebrow-diamond"/> О ПРОЕКТЕ</span>
+              <div className="about-hero-layout">
+                <div>
+                  <h1>Югра — концепт аналитической платформы</h1>
+                  <p>Интерактивный прототип для изучения и сравнения муниципальных образований Ханты-Мансийского автономного округа — Югры. Проект демонстрирует, как могут выглядеть муниципальные паспорта, карта, рейтинг, сравнение и сценарное прогнозирование.</p>
+                </div>
+                <div className="about-stamp"><strong>DEMO</strong><span>КОНЦЕПТ</span><span>НЕ ОФИЦИАЛЬНАЯ СТАТИСТИКА</span></div>
+              </div>
+              <div className="concept-warning"><Icon name="info"/><p><strong>Внимание: демонстрационная версия.</strong> Часть показателей в текущем наборе предназначена для демонстрации интерфейса и логики аналитики; она не подтверждена первичными официальными источниками. Не используйте значения, рейтинг и прогноз для принятия решений до проверки и замены исходных данных.</p></div>
+            </section>
+
+            <section className="about-section panel">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Что умеет прототип</h2><p>Функции, которые готовятся к работе с проверенной статистикой</p></div></div></div>
+              <div className="about-capability-grid">
+                <article><span>01</span><strong>Каталог и карта</strong><p>Навигация по муниципалитетам и карточки территории.</p></article>
+                <article><span>02</span><strong>Рейтинг и сравнение</strong><p>Сравнение выбранных показателей и просмотр различий.</p></article>
+                <article><span>03</span><strong>Отчёты</strong><p>Настройка состава отчёта и экспорт данных в CSV или печать в PDF.</p></article>
+                <article><span>04</span><strong>Сценарный прогноз</strong><p>Редактируемые предположения для анализа сценариев, не официальное предсказание.</p></article>
+              </div>
+            </section>
+
+            <section className="about-section panel">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2>Источники и методика</h2><p>Приоритет — первичные, проверяемые и сопоставимые данные</p></div></div></div>
+              <div className="about-source-list">
+                <a href="https://rosstat.gov.ru/munstat" target="_blank" rel="noreferrer"><strong>Росстат — муниципальная статистика</strong><span>Показатели и статистические материалы по муниципальным образованиям.</span><span className="source-item-link">Открыть ↗</span></a>
+                <a href="https://rosstat.gov.ru/folder/12781" target="_blank" rel="noreferrer"><strong>Росстат — демография</strong><span>Опубликованные оценки численности населения, в том числе по муниципальным образованиям.</span><span className="source-item-link">Открыть ↗</span></a>
+                <a href="https://rosstat.gov.ru/emiss" target="_blank" rel="noreferrer"><strong>ЕМИСС</strong><span>Официальные статистические показатели и реестр показателей.</span><span className="source-item-link">Открыть ↗</span></a>
+                <a href="https://investugra.ru/" target="_blank" rel="noreferrer"><strong>Инвестиционный портал Югры</strong><span>Инвестиционные проекты, предложения и меры поддержки.</span><span className="source-item-link">Открыть ↗</span></a>
+                <a href="https://map.investugra.ru/" target="_blank" rel="noreferrer"><strong>Инвестиционная карта Югры</strong><span>Инвестиционные площадки и инфраструктура.</span><span className="source-item-link">Открыть ↗</span></a>
+                <a href="https://opendata.admmegion.ru/datasets/" target="_blank" rel="noreferrer"><strong>Открытые данные Мегиона</strong><span>Пример муниципального портала с CSV-наборами: площадки, бюджет, программы и городское хозяйство.</span><span className="source-item-link">Открыть ↗</span></a>
+                <a href="https://www.rosstat.gov.ru/folder/210/document/13223" target="_blank" rel="noreferrer"><strong>Статистика малого и среднего бизнеса</strong><span>Региональные и федеральные материалы о МСП; применимость на муниципальном уровне нужно проверять отдельно.</span><span className="source-item-link">Открыть ↗</span></a>
+              </div>
+              <div className="about-methodology"><h3>Правила публикации данных</h3><ol>
+                <li>Для каждого значения сохраняются источник, год наблюдения, единица измерения и дата загрузки.</li>
+                <li>Региональные данные не подставляются вместо муниципальных; отсутствующие значения отображаются как «нет данных».</li>
+                <li>Рассчитанные показатели и сценарные оценки маркируются отдельно от официальной статистики.</li>
+                <li>Перед публикацией проверяются названия муниципалитетов, периодичность, сопоставимость методик и полнота охвата.</li>
+              </ol></div>
+            </section>
           </section>}
         </main>
 
