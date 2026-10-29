@@ -1783,3 +1783,5 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .forecast-coverage-card p { min-height: 0; }
 }
 @media (max-width: 420px) { .forecast-coverage-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.forecast-coverage-status.is-stale { border-color: #dfc99f; color: #87642d; background: rgba(190, 145, 65, .08); }
