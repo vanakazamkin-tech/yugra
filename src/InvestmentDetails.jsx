@@ -763,7 +763,7 @@ export const InvestmentDetails = () => {
       <section className="print-report">
         <div className="print-report-kicker">ЮГРА · АНАЛИТИЧЕСКАЯ ПЛАТФОРМА</div>
         <h1>{reportTitle || 'Аналитический отчёт по муниципалитетам Югры'}</h1>
-        <p>Срез данных: 2024 · Сформировано: {reportDate()} · В выборке: {reportSummary.count} муниципалитетов</p>
+        <p>Демонстрационные поля рейтинга · Сформировано: {reportDate()} · В выборке: {reportSummary.count} муниципалитетов</p>
         {reportIncludeSummary && <><h2>Сводка</h2>{renderReportSummary()}</>}
         {reportIncludeChart && reportItems.length > 0 && <><h2>Сравнение показателя: {reportChartMetricDef.label}</h2>{renderReportChart()}</>}
         {reportIncludeTable && <><h2>Детализация показателей</h2>{renderReportTable()}</>}
@@ -785,7 +785,7 @@ export const InvestmentDetails = () => {
             })}</tbody>
           </table> : <p>Для выбранной выборки нет подтверждённых официальных наблюдений.</p>}
         </section>}
-        {reportIncludeMethodology && <p className="print-methodology">Источник данных: {lastSyncedAt ? 'Supabase (последняя успешная загрузка)' : 'резервный локальный набор'}. Отчёт отражает выбранную выборку и настройки конструктора. Перед официальным использованием проверьте первоисточники, период наблюдения и методику расчёта.</p>}
+        {reportIncludeMethodology && <p className="print-methodology">Демонстрационные поля каталога загружаются из Supabase или резервного локального набора. Подтверждённые официальные наблюдения выводятся отдельно с периодом, территориальным уровнем и первоисточником. Перед использованием в управленческих решениях необходимо проверить методику и полноту охвата.</p>}
       </section>
 
       <a className="skip-link" href="#main-content">Перейти к содержимому</a>
@@ -1296,9 +1296,9 @@ export const InvestmentDetails = () => {
               <div className="report-preview-column">
                 <div className="preview-topline"><div><span className="micro-label">LIVE PREVIEW</span><h3>Предпросмотр отчёта</h3></div><span className="preview-status"><i/>Обновляется автоматически</span></div>
                 <article className="report-document-preview">
-                  <div className="report-document-brand"><span className="report-doc-emblem"><img src="/images/khanty-prosperity-seal.svg" alt=""/></span><div><strong>ЮГРА</strong><small>аналитическая платформа муниципалитетов</small></div><span className="document-year">2024</span></div>
+                  <div className="report-document-brand"><span className="report-doc-emblem"><img src="/images/khanty-prosperity-seal.svg" alt=""/></span><div><strong>ЮГРА</strong><small>аналитическая платформа муниципалитетов</small></div><span className="document-year">КОНЦЕПТ</span></div>
                   <div className="report-doc-rule" aria-hidden="true"/>
-                  <span className="report-doc-kicker">АНАЛИТИЧЕСКИЙ ОТЧЁТ · {reportDate().toLocaleUpperCase('ru-RU')}</span><h2>{reportTitle || 'Название отчёта не задано'}</h2><p className="report-doc-subtitle">Набор данных: 2024 год. В выборке: <strong>{reportSummary.count}</strong> муниципалитетов.</p>
+                  <span className="report-doc-kicker">АНАЛИТИЧЕСКИЙ ОТЧЁТ · {reportDate().toLocaleUpperCase('ru-RU')}</span><h2>{reportTitle || 'Название отчёта не задано'}</h2><p className="report-doc-subtitle">Рейтинговые поля и часть базовых метрик — демонстрационный набор. В выборке: <strong>{reportSummary.count}</strong> муниципалитетов. Подтверждённые официальные наблюдения, если включены, приводятся отдельно с собственным периодом, территориальным уровнем и ссылкой на источник.</p>
                   {reportIncludeSummary && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>Ключевые показатели выборки</h4><span>01 / СВОДКА</span></div>{renderReportSummary()}</section>}
                   {reportIncludeChart && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>{reportChartMetricDef.label}</h4><span>02 / СРАВНЕНИЕ</span></div><p className="chart-unit-note">{reportChartMetricDef.unit === 'место' ? 'Для места в рейтинге более длинная полоса означает более высокую позицию.' : `Значение показателя в ${reportChartMetricDef.unit}.`}</p>{reportItems.some((m) => reportChartMetricDef.get(m) != null) ? renderReportChart() : <p className="report-empty-note">Нет заполненных значений этого показателя в выбранной выборке.</p>}</section>}
                   {reportIncludeTable && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>Детализация</h4><span>03 / ТАБЛИЦА</span></div>{reportPrintFields.length === 0 ? <p className="report-empty-note">Выберите хотя бы один показатель для таблицы.</p> : renderReportTable()}</section>}
