@@ -1016,7 +1016,14 @@ export const InvestmentDetails = () => {
         'migration',
         'Миграция',
         'Сопоставимые подтверждённые муниципальные ряды прибывших, выбывших и миграционного баланса пока не загружены.',
-        (item) => ['migration_arrivals', 'migration_departures', 'migration_balance'].includes(item.indicator_code)
+        (item) => [
+          'migration_arrivals',
+          'migration_departures',
+          'migration_balance',
+          'rosstat_migration_8112021',
+          'rosstat_migration_8112022',
+          'rosstat_migration_8112023',
+        ].includes(item.indicator_code)
       ),
       makePillar(
         'investment',
