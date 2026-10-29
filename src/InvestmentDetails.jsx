@@ -202,6 +202,9 @@ export const InvestmentDetails = () => {
   const [comparisonSearch, setComparisonSearch] = useState('');
   const [selectedCompareIds, setSelectedCompareIds] = useState(() => DEFAULT_COMPARE_IDS.filter((id) => municipalities.some((m) => m.id === id)));
   const [comparisonMetric, setComparisonMetric] = useState('score');
+  const [riskYellowThreshold, setRiskYellowThreshold] = useState(285);
+  const [riskGreenThreshold, setRiskGreenThreshold] = useState(330);
+  const [riskSearch, setRiskSearch] = useState('');
 
   // Конструктор отчёта: источник данных, поля, блоки и шаблон настроек.
   const [reportTitle, setReportTitle] = useState('Социально-экономический обзор муниципалитетов Югры');
@@ -382,6 +385,37 @@ export const InvestmentDetails = () => {
       .sort((a, b) => Number(b.reference_year) - Number(a.reference_year) || a.indicator_name.localeCompare(b.indicator_name, 'ru-RU'));
   }, [officialIndicators, activeModalItem]);
 
+  const riskRows = useMemo(() => {
+    const query = riskSearch.trim().toLocaleLowerCase('ru-RU');
+    return municipalities.map((municipality) => {
+      const score = numericValue(municipality.score);
+      const level = score == null ? 'unknown' : score >= riskGreenThreshold ? 'green' : score >= riskYellowThreshold ? 'yellow' : 'red';
+      return { ...municipality, conceptScore: score, riskLevel: level };
+    }).filter((item) => !query || item.name.toLocaleLowerCase('ru-RU').includes(query))
+      .sort((a,b) => {
+        const priority = { red: 0, yellow: 1, green: 2, unknown: 3 };
+        return priority[a.riskLevel] - priority[b.riskLevel] || (a.conceptScore ?? Infinity) - (b.conceptScore ?? Infinity);
+      });
+  }, [municipalities, riskSearch, riskYellowThreshold, riskGreenThreshold]);
+
+  const riskCounts = useMemo(() => ({
+    red: municipalities.filter((m) => numericValue(m.score) != null && Number(m.score) < riskYellowThreshold).length,
+    yellow: municipalities.filter((m) => numericValue(m.score) != null && Number(m.score) >= riskYellowThreshold && Number(m.score) < riskGreenThreshold).length,
+    green: municipalities.filter((m) => numericValue(m.score) != null && Number(m.score) >= riskGreenThreshold).length,
+    missing: municipalities.filter((m) => numericValue(m.score) == null).length,
+  }), [municipalities, riskYellowThreshold, riskGreenThreshold]);
+
+  const pillarCoverage = useMemo(() => {
+    const idsFor = (codes) => new Set(officialIndicators.filter((item) => codes.includes(item.indicator_code)).map((item) => item.municipality_id));
+    return [
+      { key: 'employment', title: 'Занятость', description: 'Среднесписочная численность работников и рынок труда', ids: idsFor(['average_employees_q1']) },
+      { key: 'income', title: 'Доходы населения', description: 'Заработная плата и связанные показатели доходов', ids: idsFor(['average_monthly_salary_q1', 'avg_monthly_salary_large_medium_nco']) },
+      { key: 'budget', title: 'Местный бюджет', description: 'В прототипе есть только отдельные отчёты по муниципальным программам, не полная бюджетная панель', ids: new Set(programExecution.map((item) => item.municipality_id)) },
+      { key: 'migration', title: 'Миграция', description: 'Официальный сопоставимый муниципальный ряд пока не импортирован', ids: new Set() },
+      { key: 'investment', title: 'Инвестиции', description: 'Есть отдельные официальные оценки инвестиций на душу населения', ids: idsFor(['investment_per_capita_no_budget']) },
+    ];
+  }, [officialIndicators, programExecution]);
+
   const comparisonItems = useMemo(() => municipalities.filter((m) => selectedCompareIds.includes(m.id)), [municipalities, selectedCompareIds]);
   const comparisonCandidates = useMemo(() => municipalities.filter((m) => m.name.toLocaleLowerCase('ru-RU').includes(comparisonSearch.trim().toLocaleLowerCase('ru-RU'))), [municipalities, comparisonSearch]);
   const reportItems = useMemo(() => {
@@ -528,6 +562,7 @@ export const InvestmentDetails = () => {
             <button aria-current={activeTab === 'catalog' ? 'page' : undefined} className={activeTab === 'catalog' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('catalog')}><Icon name="home"/>Главная</button>
             <button aria-current={activeTab === 'map' ? 'page' : undefined} className={activeTab === 'map' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('map')}><Icon name="map"/>Карта</button>
             <button aria-current={activeTab === 'rating' ? 'page' : undefined} className={activeTab === 'rating' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('rating')}><Icon name="chart"/>Рейтинг</button>
+            <button aria-current={activeTab === 'risk' ? 'page' : undefined} className={activeTab === 'risk' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('risk')}><Icon name="chart"/>Риски</button>
             <button aria-current={activeTab === 'compare' ? 'page' : undefined} className={activeTab === 'compare' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('compare')}><Icon name="compare"/>Сравнение</button>
             <button aria-current={activeTab === 'reports' ? 'page' : undefined} className={activeTab === 'reports' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('reports')}><Icon name="file"/>Отчёты</button>
             <button title="Режим прогнозирования" aria-label="Режим прогнозирования" aria-current={activeTab === 'forecast' ? 'page' : undefined} className={activeTab === 'forecast' ? 'nav-item active nav-item-forecast' : 'nav-item nav-item-forecast'} onClick={() => navigateToTab('forecast')}><Icon name="chart"/>Прогноз</button>
@@ -846,6 +881,35 @@ export const InvestmentDetails = () => {
             <div className="rating-filters"><label className="search-box"><Icon name="search"/><input aria-label="Поиск в рейтинге" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Найти муниципалитет…"/></label><div className="filter-row">{[['ALL', 'Все группы'], ['A', 'Группа A'], ['B', 'Группа B']].map(([value, label]) => <button key={value} className={`filter-pill ${selectedGroup === value ? 'selected' : ''}`} onClick={() => setSelectedGroup(value)}>{label}</button>)}</div><button className="text-action" onClick={resetFilters}><Icon name="refresh"/>Сбросить фильтры</button></div>
             <div className="table-meta"><span>В ТАБЛИЦЕ <strong>{sortedMunicipalities.length}</strong> МУНИЦИПАЛИТЕТОВ</span><span className="table-sort-hint">Нажмите на заголовок, чтобы изменить порядок</span></div>
             <div className="table-scroll compare-scroll"><table className="ranking-table compare-table"><thead><tr><th className="num-col">№</th><th><SortButton label="Муниципальное образование" column="name"/></th><th><SortButton label="Группа" column="group2024"/></th><th><SortButton label="Балл" column="score"/></th><th><SortButton label="Инвестиции, млрд ₽" column="investments"/></th><th><SortButton label="МСП, ед." column="smeCount"/></th><th><SortButton label="Оценка бизнеса" column="assessmentScore"/></th><th>Паспорт</th></tr></thead><tbody>{sortedMunicipalities.map((m, i) => <tr key={m.id} onMouseEnter={() => setHoveredRegionId(m.id)} onMouseLeave={() => setHoveredRegionId(null)}><td className="row-number">{String(i + 1).padStart(2, '0')}</td><td><button className="municipality-link" onClick={() => setActiveModalItem(m)}>{m.name}</button></td><td><span className={`group-badge ${m.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i/>{`Группа ${m.group2024}`}</span></td><td className="score-cell">{formatNumber(m.score, 1)}</td><td className="number-cell">{formatNumber(m.investments.volumeBillion, 1)}</td><td className="number-cell">{formatNumber(m.smeCount)}</td><td>{formatNumber(m.assessmentScore, 2)} / 5</td><td><button className="icon-button" onClick={() => setActiveModalItem(m)} aria-label={`Открыть паспорт: ${m.name}`}><Icon name="arrow"/></button></td></tr>)}</tbody></table></div>
+          </section>}
+
+          {activeTab === 'risk' && <section className="risk-page">
+            <section className="risk-hero panel">
+              <div><span className="eyebrow"><span className="eyebrow-diamond"/> МОНИТОРИНГ УСТОЙЧИВОСТИ</span><h1>Светофор муниципальных рисков</h1><p>Демонстрационный экран будущей методики. Сейчас зона рассчитывается только по баллу концептуального набора, а не по подтверждённой модели устойчивости. Пороги можно менять, чтобы показать принцип настройки.</p></div>
+              <span className="concept-corner">КОНЦЕПТ</span>
+            </section>
+            <div className="risk-kpi-grid">
+              <article className="risk-kpi risk-kpi-red"><span className="risk-dot"/><div><small>КРАСНАЯ ЗОНА</small><strong>{riskCounts.red}</strong><span>ниже жёлтого порога</span></div></article>
+              <article className="risk-kpi risk-kpi-yellow"><span className="risk-dot"/><div><small>ЖЁЛТАЯ ЗОНА</small><strong>{riskCounts.yellow}</strong><span>между порогами</span></div></article>
+              <article className="risk-kpi risk-kpi-green"><span className="risk-dot"/><div><small>ЗЕЛЁНАЯ ЗОНА</small><strong>{riskCounts.green}</strong><span>выше зелёного порога</span></div></article>
+              <article className="risk-kpi risk-kpi-neutral"><span className="risk-dot"/><div><small>НЕТ ДАННЫХ</small><strong>{riskCounts.missing}</strong><span>балл не задан</span></div></article>
+            </div>
+            <section className="risk-thresholds panel">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="sliders"/></span><div><h2>Настройка порогов</h2><p>Пример настройки будущего светофора риска</p></div></div><button className="outline-button" onClick={() => {setRiskYellowThreshold(285);setRiskGreenThreshold(330);}}><Icon name="refresh"/>Сбросить пороги</button></div>
+              <div className="risk-threshold-controls">
+                <label><span><i className="risk-dot yellow"/>Нижняя граница жёлтой зоны</span><strong>{riskYellowThreshold} баллов</strong><input type="range" min="240" max={Math.min(325,riskGreenThreshold-5)} step="5" value={riskYellowThreshold} onChange={(event)=>setRiskYellowThreshold(Math.min(Number(event.target.value),riskGreenThreshold-5))}/><small>Ниже — красная зона</small></label>
+                <label><span><i className="risk-dot green"/>Нижняя граница зелёной зоны</span><strong>{riskGreenThreshold} баллов</strong><input type="range" min={Math.max(250,riskYellowThreshold+5)} max="385" step="5" value={riskGreenThreshold} onChange={(event)=>setRiskGreenThreshold(Math.max(Number(event.target.value),riskYellowThreshold+5))}/><small>Выше — зелёная зона</small></label>
+              </div>
+              <p className="risk-assumption-note">Пороги 285 и 330 заданы для демонстрации, а не утверждены методикой. В рабочей версии их нужно обосновать по распределению реальных показателей, экспертным оценкам и проверке на исторических данных.</p>
+            </section>
+            <section className="risk-pillars panel">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Пять групп показателей проекта</h2><p>Покрытие официальными данными в текущем прототипе</p></div></div><button className="outline-button" onClick={()=>navigateToTab('data')}>Открыть центр данных <Icon name="arrow"/></button></div>
+              <div className="risk-pillar-grid">{pillarCoverage.map((pillar)=><article className="risk-pillar-card" key={pillar.key}><span className="risk-pillar-number">{String(['employment','income','budget','migration','investment'].indexOf(pillar.key)+1).padStart(2,'0')}</span><strong>{pillar.title}</strong><span className="risk-pillar-coverage">{pillar.ids.size} {pillar.ids.size===1?'территория':'территорий'} с данными</span><div className="risk-pillar-track"><i style={{width:Math.min(100,pillar.ids.size/municipalities.length*100)+'%'}}/></div><p>{pillar.description}</p></article>)}</div>
+            </section>
+            <section className="risk-table-panel panel">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="table"/></span><div><h2>Список территорий</h2><p>Цветовая зона использует только демонстрационный балл</p></div></div><label className="search-box risk-search"><Icon name="search"/><input value={riskSearch} onChange={(event)=>setRiskSearch(event.target.value)} placeholder="Найти муниципалитет…" aria-label="Поиск территории в светофоре"/></label></div>
+              <div className="table-scroll"><table className="ranking-table risk-table"><thead><tr><th>Муниципальное образование</th><th>Демо-балл</th><th>Зона</th><th>Группа набора</th><th>Паспорт</th></tr></thead><tbody>{riskRows.map((item)=><tr key={item.id}><td><button className="municipality-link" onClick={()=>setActiveModalItem(item)}>{item.name}</button></td><td className="score-cell">{item.conceptScore==null?'—':formatNumber(item.conceptScore,1)}</td><td><span className={`risk-zone-badge risk-zone-${item.riskLevel}`}><i/>{({green:'Зелёная',yellow:'Жёлтая',red:'Красная',unknown:'Нет данных'})[item.riskLevel]}</span></td><td>{item.group2024?`Группа ${item.group2024} · демо`:'—'}</td><td><button className="icon-button" onClick={()=>setActiveModalItem(item)} aria-label={`Открыть паспорт: ${item.name}`}><Icon name="arrow"/></button></td></tr>)}</tbody></table>{riskRows.length===0&&<div className="empty-state"><span>Территории не найдены</span><p>Попробуйте изменить запрос.</p></div>}</div>
+            </section>
           </section>}
 
           {activeTab === 'compare' && <section className="panel full-panel compare-page">
