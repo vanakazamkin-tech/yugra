@@ -160,7 +160,13 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       row.name, row.group || '', row.investment, row.projectedInvestments, row.investmentsLow, row.investmentsHigh,
       row.sme, row.projectedSme, row.projectedScore, row.projectedRank,
     ]);
-    const escaped = (value) => '"' + String(value == null ? '' : value).replaceAll('"', '""') + '"';
+    // Prevent spreadsheet formula execution for text cells in exported CSV.
+    // Numeric values remain numeric (including legitimate negative scenario outputs).
+    const escaped = (value) => {
+      let text = String(value == null ? '' : value);
+      if (typeof value === 'string' && /^[\\s]*[=+@\\-\\t\\r]/.test(text)) text = "'" + text;
+      return '"' + text.replaceAll('"', '""') + '"';
+    };
     const metadata = [
       ['Тип результата', 'Концептуальный сценарный расчёт, не официальный прогноз'],
       ['Сценарий', activeScenario.title],
