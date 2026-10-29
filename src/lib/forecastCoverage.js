@@ -70,7 +70,7 @@ export function buildForecastCoverage(indicators = [], programExecution = [], mu
     if (definition.key === 'budget') {
       for (const item of verifiedPrograms) {
         const datePrefix = String(item.report_date || '').slice(0, 4);
-        if (!/^\\d{4}$/.test(datePrefix)) continue;
+        if (!/^\d{4}$/.test(datePrefix)) continue;
         const year = Number(datePrefix);
         latestYear = latestYear == null ? year : Math.max(latestYear, year);
       }
