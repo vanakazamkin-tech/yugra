@@ -71,6 +71,8 @@ const OFFICIAL_TREND_SERIES = [
   { code: 'resale_goods_h1', title: 'Продажа товаров несобственного производства', periodLabel: 'Первое полугодие', unit: 'тыс. руб.', definition: 'Накопительный итог за январь–июнь, без субъектов малого предпринимательства.' },
   { code: 'fixed_capital_investment_local_budget', title: 'Инвестиции за счёт средств местного бюджета', periodLabel: 'За год', unit: 'тыс. руб.', definition: 'Отдельная статья муниципальных бюджетных вложений; не общий объём всех инвестиций.' },
   { code: 'fixed_capital_investment_enterprises_non_sme', title: 'Инвестиции организаций без субъектов малого предпринимательства', periodLabel: 'За год', unit: 'тыс. руб.', definition: 'Общий объём инвестиций организаций на территории муниципалитета, без субъектов малого предпринимательства; не смешивать с вложениями местного бюджета.' },
+  { code: 'investment_per_capita_no_budget', title: 'Инвестиции на душу населения без бюджетных средств', periodLabel: 'За год', unit: 'руб./чел.', definition: 'Объём инвестиций в основной капитал на душу населения без бюджетных средств; доступные наблюдения относятся к 2021 и 2024 годам.' },
+  { code: 'avg_monthly_salary_large_medium_nco', title: 'Среднемесячная зарплата в крупных и средних организациях и НКО', periodLabel: 'За год', unit: 'руб.', definition: 'Среднемесячная номинальная зарплата работников крупных и средних предприятий и НКО; доступные наблюдения относятся к 2021 и 2024 годам.' },
 ];
 const OFFICIAL_COMPARISON_SERIES = [
   { code: 'average_employees_q1', label: 'Численность работников · I квартал', unit: 'человек', definition: 'Среднесписочная численность работников организаций без субъектов малого предпринимательства; накопительный показатель за январь–март.' },
@@ -87,6 +89,7 @@ const OFFICIAL_COMPARISON_SERIES = [
   { code: 'own_production_shipments_h1', label: 'Отгрузка собственной продукции · полугодие', unit: 'тыс. руб.', definition: 'Отгрузка продукции, работ и услуг собственными силами без субъектов малого предпринимательства за январь–июнь.' },
   { code: 'resale_goods_q1', label: 'Продажа перепроданных товаров · I квартал', unit: 'тыс. руб.', definition: 'Продажа товаров несобственного производства без субъектов малого предпринимательства за январь–март.' },
   { code: 'resale_goods_h1', label: 'Продажа перепроданных товаров · полугодие', unit: 'тыс. руб.', definition: 'Продажа товаров несобственного производства без субъектов малого предпринимательства за январь–июнь.' },
+  { code: 'population_municipality', label: 'Численность населения муниципального образования · на 1 января', unit: 'человек', definition: 'Численность населения муниципального образования или городского округа на 1 января. В сравнении учитывается только уровень муниципального образования и одинаковый год.' },
   { code: 'fixed_capital_investment_local_budget', label: 'Инвестиции за счёт местного бюджета · год', unit: 'тыс. руб.', definition: 'Отдельная статья вложений из местного бюджета; не общий объём инвестиций.' },
   { code: 'fixed_capital_investment_enterprises_non_sme', label: 'Инвестиции организаций без субъектов МСП · год', unit: 'тыс. руб.', definition: 'Общий объём инвестиций организаций на территории муниципалитета без субъектов малого предпринимательства.' },
 ];
@@ -455,10 +458,28 @@ export const InvestmentDetails = () => {
     return { ...config, rows: points, first: points[0] || null, latest: points[points.length - 1] || null };
   }, [officialIndicators, selectedTrendSeries]);
 
+  const officialComparisonSeriesOptions = useMemo(() => OFFICIAL_COMPARISON_SERIES.filter((series) => {
+    const periods = new Map();
+    officialIndicators.filter((item) =>
+      item.indicator_code === series.code
+      && item.geographic_level === 'municipality'
+      && numericValue(item.value) != null
+    ).forEach((item) => {
+      const periodKey = `${item.reference_year}|${item.reference_period || 'annual'}`;
+      if (!periods.has(periodKey)) periods.set(periodKey, new Set());
+      periods.get(periodKey).add(item.municipality_id);
+    });
+    return [...periods.values()].some((municipalityIds) => municipalityIds.size >= 2);
+  }), [officialIndicators]);
+
+  const effectiveOfficialComparisonCode = officialComparisonSeriesOptions.some((series) => series.code === selectedOfficialComparisonCode)
+    ? selectedOfficialComparisonCode
+    : officialComparisonSeriesOptions[0]?.code || selectedOfficialComparisonCode;
+
   const officialComparisonPeriods = useMemo(() => {
     const seen = new Map();
     officialIndicators.filter((item) =>
-      item.indicator_code === selectedOfficialComparisonCode
+      item.indicator_code === effectiveOfficialComparisonCode
       && item.geographic_level === 'municipality'
       && numericValue(item.value) != null
     ).forEach((item) => {
@@ -474,17 +495,17 @@ export const InvestmentDetails = () => {
       return 99;
     };
     return [...seen.values()].sort((a,b) => a.year-b.year || periodRank(a.period)-periodRank(b.period));
-  }, [officialIndicators, selectedOfficialComparisonCode]);
+  }, [officialIndicators, effectiveOfficialComparisonCode]);
 
   const effectiveOfficialComparisonPeriod = officialComparisonPeriods.some((period) => period.key === selectedOfficialComparisonPeriod)
     ? selectedOfficialComparisonPeriod
     : officialComparisonPeriods[officialComparisonPeriods.length - 1]?.key || '';
 
-  const officialComparisonConfig = OFFICIAL_COMPARISON_SERIES.find((series) => series.code === selectedOfficialComparisonCode) || OFFICIAL_COMPARISON_SERIES[0];
+  const officialComparisonConfig = OFFICIAL_COMPARISON_SERIES.find((series) => series.code === effectiveOfficialComparisonCode) || OFFICIAL_COMPARISON_SERIES[0];
 
   const officialComparisonRows = useMemo(() => {
     return officialIndicators.filter((item) =>
-      item.indicator_code === selectedOfficialComparisonCode
+      item.indicator_code === effectiveOfficialComparisonCode
       && item.geographic_level === 'municipality'
       && `${item.reference_year}|${item.reference_period || 'annual'}` === effectiveOfficialComparisonPeriod
       && numericValue(item.value) != null
@@ -493,7 +514,7 @@ export const InvestmentDetails = () => {
       numericValue: numericValue(item.value),
       municipalityName: municipalities.find((m) => m.id === item.municipality_id)?.name || item.geographic_name || item.municipality_id,
     })).sort((a,b) => b.numericValue-a.numericValue);
-  }, [officialIndicators, selectedOfficialComparisonCode, effectiveOfficialComparisonPeriod, municipalities]);
+  }, [officialIndicators, effectiveOfficialComparisonCode, effectiveOfficialComparisonPeriod, municipalities]);
 
   const riskRows = useMemo(() => {
     const query = riskSearch.trim().toLocaleLowerCase('ru-RU');
@@ -853,7 +874,7 @@ export const InvestmentDetails = () => {
             <section className="official-municipal-comparison panel" aria-labelledby="official-municipal-comparison-title">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2 id="official-municipal-comparison-title">Сравнение муниципалитетов по официальным данным</h2><p>Сравниваем только одинаковые показатель, период и территориальный уровень</p></div></div><span className="section-tag">{officialComparisonRows.length} ТЕРРИТОРИЙ</span></div>
               <div className="official-comparison-controls">
-                <label className="official-trend-select"><span>Показатель</span><select value={selectedOfficialComparisonCode} onChange={(event)=>{setSelectedOfficialComparisonCode(event.target.value);setSelectedOfficialComparisonPeriod('');}}>{OFFICIAL_COMPARISON_SERIES.map((series)=><option key={series.code} value={series.code}>{series.label}</option>)}</select></label>
+                <label className="official-trend-select"><span>Показатель</span><select value={effectiveOfficialComparisonCode} onChange={(event)=>{setSelectedOfficialComparisonCode(event.target.value);setSelectedOfficialComparisonPeriod('');}}>{officialComparisonSeriesOptions.map((series)=><option key={series.code} value={series.code}>{series.label}</option>)}</select></label>
                 <label className="official-trend-select"><span>Период наблюдения</span><select value={effectiveOfficialComparisonPeriod} onChange={(event)=>setSelectedOfficialComparisonPeriod(event.target.value)}>{officialComparisonPeriods.map((period)=><option key={period.key} value={period.key}>{formatReferencePeriod({reference_year:period.year,reference_period:period.period})}</option>)}</select></label>
               </div>
               <p className="official-trend-definition">{officialComparisonConfig.definition} Пропущенные значения не заменяются нулями; показываются только территории с наблюдением за выбранный период.</p>
