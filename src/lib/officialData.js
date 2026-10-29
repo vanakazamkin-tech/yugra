@@ -114,11 +114,31 @@ export const FALLBACK_DATA_SOURCES = [
     id: 'megion_fuel_prices',
     name: 'Мегион — цены на топливо по АЗС',
     category: 'fuel_prices',
-    url: 'https://opendata.admmegion.ru/datasets/',
-    description: 'Еженедельные цены на бензин, дизель и газомоторное топливо. Числа пока не импортированы из-за несогласованности доступных версий и строк.',
+    url: 'https://opendata.admmegion.ru/datasets/svedeniya/87789/',
+    description: 'Еженедельные цены на бензин, дизель и газомоторное топливо. Версия 28.10.2026 импортирована: 9 станционных записей.',
     format: 'CSV',
-    coverage: 'Мегион · данные по автозаправочным станциям',
-    import_status: 'identified',
+    coverage: 'Мегион и Высокий; 9 АЗС в срезе 28.10.2026',
+    import_status: 'partially_imported',
+  },
+  {
+    id: 'megion_preschool_facilities',
+    name: 'Мегион — объекты дошкольного образования',
+    category: 'education',
+    url: 'https://opendata.admmegion.ru/datasets/obrazovanie/31857/',
+    description: 'Реестр дошкольных организаций и корпусов: адрес, координаты, штатная обеспеченность и среднегодовое количество детей.',
+    format: 'CSV',
+    coverage: 'Мегион и Высокий; импортировано 17 из 18 строк',
+    import_status: 'partially_imported',
+  },
+  {
+    id: 'megion_school_facilities',
+    name: 'Мегион — объекты общего образования',
+    category: 'education',
+    url: 'https://opendata.admmegion.ru/datasets/obrazovanie/34757/',
+    description: 'Реестр школ с адресами, координатами, лицензиями, штатной обеспеченностью и среднегодовым количеством учеников.',
+    format: 'CSV',
+    coverage: 'Мегион и Высокий; 7 записей из версии 16.12.2024',
+    import_status: 'partially_imported',
   },
   {
     id: 'megion_bus_stops',
@@ -325,10 +345,10 @@ export const FALLBACK_DATA_SOURCES = [
 
 export async function fetchOfficialData(client) {
   if (!client) {
-    return { sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [], programExecution: [], fuelPrices: [] };
+    return { sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [], programExecution: [], fuelPrices: [], facilities: [] };
   }
 
-  const [sourcesResult, indicatorsResult, sitesResult, programsResult, fuelPricesResult] = await Promise.all([
+  const [sourcesResult, indicatorsResult, sitesResult, programsResult, fuelPricesResult, facilitiesResult] = await Promise.all([
     client.from('data_sources')
       .select('id,name,category,url,description,format,coverage,update_frequency,import_status,last_checked_at,notes')
       .order('category', { ascending: true })
@@ -350,6 +370,11 @@ export async function fetchOfficialData(client) {
       .eq('verification_status', 'verified')
       .order('observed_at', { ascending: false })
       .order('source_row', { ascending: true }),
+    client.from('municipal_facilities')
+      .select('id,municipality_id,source_id,external_id,facility_category,name_full,name_short,address,postal_code,latitude,longitude,phone,working_hours,license_info,ownership,staffing_percent,annual_attendance,source_updated_at,source_url,source_payload,verification_status,retrieved_at')
+      .eq('verification_status', 'verified')
+      .order('facility_category', { ascending: true })
+      .order('name_short', { ascending: true }),
   ]);
 
   // A failed query is surfaced rather than being silently treated as an empty official dataset.
@@ -358,6 +383,7 @@ export async function fetchOfficialData(client) {
   if (sitesResult.error) throw sitesResult.error;
   if (programsResult.error) throw programsResult.error;
   if (fuelPricesResult.error) throw fuelPricesResult.error;
+  if (facilitiesResult.error) throw facilitiesResult.error;
 
   return {
     sources: Array.isArray(sourcesResult.data) && sourcesResult.data.length
@@ -367,6 +393,7 @@ export async function fetchOfficialData(client) {
     investmentSites: Array.isArray(sitesResult.data) ? sitesResult.data : [],
     programExecution: Array.isArray(programsResult.data) ? programsResult.data : [],
     fuelPrices: Array.isArray(fuelPricesResult.data) ? fuelPricesResult.data : [],
+    facilities: Array.isArray(facilitiesResult.data) ? facilitiesResult.data : [],
   };
 }
 
@@ -379,6 +406,7 @@ export const DATA_CATEGORY_LABELS = {
   municipal_open_data: 'МУНИЦИПАЛЬНЫЕ ДАННЫЕ',
   transport: 'ТРАНСПОРТ',
   education: 'ОБРАЗОВАНИЕ',
+  transport: 'ТРАНСПОРТ',
   culture: 'КУЛЬТУРА',
   sports: 'СПОРТ',
   fuel_prices: 'ТОПЛИВО',
