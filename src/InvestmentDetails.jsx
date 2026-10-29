@@ -298,6 +298,14 @@ export const InvestmentDetails = () => {
       : null,
   }), [programExecution]);
 
+  const investmentSiteSummary = useMemo(() => {
+    const greenfield = investmentSites.filter((site) => site.site_type?.toLocaleLowerCase('ru-RU') === 'гринфилд');
+    const brownfield = investmentSites.filter((site) => site.site_type?.toLocaleLowerCase('ru-RU') === 'браунфилд');
+    const largest = [...investmentSites].filter((site) => numericValue(site.area_hectares) != null)
+      .sort((a, b) => Number(b.area_hectares) - Number(a.area_hectares))[0] || null;
+    return { count: investmentSites.length, greenfieldCount: greenfield.length, brownfieldCount: brownfield.length, largest };
+  }, [investmentSites]);
+
   const modalOfficialIndicators = useMemo(() => {
     if (!activeModalItem) return [];
     return officialIndicators
@@ -559,7 +567,13 @@ export const InvestmentDetails = () => {
             {investmentSites.length > 0 && <section className="investment-sites-panel panel" aria-labelledby="investment-sites-heading">
               <div className="section-heading">
                 <div className="heading-label"><span className="heading-icon"><Icon name="pin"/></span><div><h2 id="investment-sites-heading">Инвестиционные площадки</h2><p>Реестр открытых данных города Мегиона</p></div></div>
-                <span className="section-tag">{investmentSites.length} ЗАПИСИ</span>
+                <span className="section-tag">{investmentSites.length} ПРЕДЛОЖЕНИЙ</span>
+              </div>
+              <div className="investment-site-kpis" aria-label="Сводка по инвестиционным площадкам">
+                <article><span>Уникальные предложения</span><strong>{investmentSiteSummary.count}</strong><small>из исходных 18 строк</small></article>
+                <article><span>Гринфилд</span><strong>{investmentSiteSummary.greenfieldCount}</strong><small>площадки без существующей застройки по классификации источника</small></article>
+                <article><span>Браунфилд</span><strong>{investmentSiteSummary.brownfieldCount}</strong><small>площадки с существующей застройкой/освоением по классификации источника</small></article>
+                <article><span>Крупнейшая карточка</span><strong>{investmentSiteSummary.largest ? `${formatNumber(investmentSiteSummary.largest.area_hectares, 2)} га` : '—'}</strong><small>{investmentSiteSummary.largest?.permitted_use || 'Нет данных'}</small></article>
               </div>
               <div className="investment-sites-list">
                 {investmentSites.map((site) => {
@@ -579,7 +593,7 @@ export const InvestmentDetails = () => {
                   </article>;
                 })}
               </div>
-              <p className="source-panel-note">Показаны {investmentSites.length} записи, прошедшие первичную проверку, из 18 строк опубликованного каталога. Это частичный импорт одного муниципалитета; данные не экстраполируются на всю Югру.</p>
+              <p className="source-panel-note">Загружено {investmentSites.length} уникальных предложений из 18 исходных строк официального каталога; один полностью дублирующийся ряд исключён. Реестр относится только к Мегиону и не экстраполируется на другие муниципалитеты.</p>
             </section>}
 
             {programExecution.length > 0 && <section className="program-execution-panel panel" aria-labelledby="program-execution-title">
