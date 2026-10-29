@@ -767,6 +767,24 @@ export const InvestmentDetails = () => {
         {reportIncludeSummary && <><h2>Сводка</h2>{renderReportSummary()}</>}
         {reportIncludeChart && reportItems.length > 0 && <><h2>Сравнение показателя: {reportChartMetricDef.label}</h2>{renderReportChart()}</>}
         {reportIncludeTable && <><h2>Детализация показателей</h2>{renderReportTable()}</>}
+        {reportIncludeOfficialData && <section className="print-official-data">
+          <h2>Проверенные официальные наблюдения ({reportOfficialIndicators.length})</h2>
+          <p>Отдельный слой фактических данных с первоисточниками. Географический уровень указан в каждой строке; поселковые данные не трактуются автоматически как данные всего района.</p>
+          {reportOfficialIndicators.length ? <table className="report-official-data-table">
+            <thead><tr><th>Территория / уровень</th><th>Показатель</th><th>Значение</th><th>Период</th><th>Примечание / источник</th></tr></thead>
+            <tbody>{reportOfficialIndicators.map((item) => {
+              const municipality = municipalities.find((entry) => entry.id === item.municipality_id);
+              const geography = item.geographic_level === 'settlement' ? 'Населённый пункт' : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
+              return <tr key={item.id}>
+                <td><strong>{item.geographic_name || municipality?.name || item.municipality_id}</strong><br/><small>{geography}</small></td>
+                <td>{item.indicator_name}</td>
+                <td><strong>{formatNumber(item.value, 2)}</strong><br/><small>{item.unit}</small></td>
+                <td>{formatReferencePeriod(item)}</td>
+                <td>{item.notes && <small>{item.notes}</small>}{item.source_url && <><br/><a href={item.source_url} target="_blank" rel="noreferrer">Первоисточник</a></>}</td>
+              </tr>;
+            })}</tbody>
+          </table> : <p>Для выбранной выборки нет подтверждённых официальных наблюдений.</p>}
+        </section>}
         {reportIncludeMethodology && <p className="print-methodology">Источник данных: {lastSyncedAt ? 'Supabase (последняя успешная загрузка)' : 'резервный локальный набор'}. Отчёт отражает выбранную выборку и настройки конструктора. Перед официальным использованием проверьте первоисточники, период наблюдения и методику расчёта.</p>}
       </section>
 
