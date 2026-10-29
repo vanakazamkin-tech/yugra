@@ -1710,6 +1710,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 .data-page-hero-actions { display: flex; align-items: flex-end; flex-direction: column; gap: 9px; flex: 0 0 auto; }
 .data-dictionary-link { text-decoration: none; min-height: 34px; font-size: 10px; }
+.official-data-updated { color: #777; font-size: 11px; font-variant-numeric: tabular-nums; }
+.data-page-hero-actions button:disabled { opacity: .6; cursor: wait; }
 @media (max-width: 700px) {
   .data-page-hero { align-items: flex-start; flex-direction: column; padding: 17px; }
   .data-page-hero-actions { align-items: flex-start; flex-direction: row; flex-wrap: wrap; width: 100%; }
