@@ -1270,7 +1270,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 .data-page-hero p { max-width: 850px; margin: 0; color: #69796c; font-size: 12px; line-height: 1.75; }
 .data-page-hero .official-status-chip { flex: 0 0 auto; }
-.data-page-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.data-page-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .data-page-summary article { display: flex; flex-direction: column; gap: 7px; padding: 15px 17px; border: 1px solid #e1d5c0; border-radius: 11px; background: rgba(255,251,243,.88); }
 .data-page-summary article > span { color: #718071; font-size: 10px; line-height: 1.4; }
 .data-page-summary article > strong { color: var(--forest); font-family: 'Playfair Display', Georgia, serif; font-size: 27px; line-height: 1.05; }
@@ -1327,3 +1327,34 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .fuel-prices-table a:hover { text-decoration: underline; }
 @media (max-width: 1050px) { .data-page-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .fuel-prices-panel { padding: 14px; } .data-page-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+
+/* Municipal school and preschool inventory */
+.municipal-facilities-panel { padding: 21px; }
+.facility-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; justify-content: space-between; margin-bottom: 12px; }
+.facility-toolbar .search-box { flex: 1 1 260px; max-width: 420px; }
+.facility-list-meta { margin: 0 0 9px; color: #818b7d; font-size: 10px; }
+.facility-list-meta strong { color: var(--forest); }
+.facility-table td { min-width: 95px; white-space: normal; }
+.facility-table td:first-child { min-width: 220px; max-width: 310px; }
+.facility-table td:first-child strong { font-size: 10px; line-height: 1.55; }
+.facility-table td:first-child small { margin-top: 5px; font-size: 8px; line-height: 1.5; white-space: normal; }
+.facility-table td:nth-child(2) { min-width: 200px; max-width: 290px; white-space: normal; }
+.facility-table td:nth-child(2) small,
+.facility-table td:last-child small { display: block; margin-top: 5px; color: #8c9486; font-size: 8px; white-space: nowrap; }
+.facility-table td:nth-child(4),
+.facility-table td:nth-child(5) { color: #214b33; font-weight: 800; font-variant-numeric: tabular-nums; }
+.facility-table td:nth-child(6) { min-width: 140px; white-space: nowrap; }
+.facility-table a { color: var(--forest-2); font-weight: 700; text-decoration: none; }
+.facility-table a:hover { text-decoration: underline; }
+@media (max-width: 1050px) {
+  .data-page-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .municipal-facilities-panel { padding: 17px; }
+}
+@media (max-width: 640px) {
+  .data-page-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .facility-toolbar { align-items: stretch; }
+  .facility-toolbar .search-box { max-width: none; flex-basis: 100%; }
+  .municipal-facilities-panel { padding: 14px; }
+  .facility-table td:first-child { min-width: 190px; }
+}
