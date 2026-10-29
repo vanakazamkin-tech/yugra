@@ -188,6 +188,14 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       ['Покрытие инвестиций', investmentCoverage + ' из ' + forecasts.length + ' территорий'],
       ['Покрытие МСП', smeCoverage + ' из ' + forecasts.length + ' территорий'],
       ['Покрытие модельного балла', scoreCoverage + ' из ' + forecasts.length + ' территорий'],
+      ['Официальный каталог данных', officialCoverageLoaded ? 'Загружен из Supabase' : 'Не загружен; актуальный охват не подтверждён'],
+      ['Включено ли покрытие официальных данных в расчёт', 'Нет; матрица покрытия показана отдельно от расчётного ядра'],
+      ...officialCoverage.map((item) => [
+        'Охват официальными данными: ' + item.label,
+        officialCoverageLoaded
+          ? item.municipalityCount + ' из ' + item.municipalityTotal + ' муниципалитетов; ' + item.observationCount + ' записей' + (item.latestYear ? '; последний год: ' + item.latestYear : '')
+          : 'Актуальный срез не загружен',
+      ]),
       ['Примечание', 'Пустые значения означают отсутствие исходных данных; квартальные/полугодовые показатели нельзя автоматически суммировать.'],
       [],
     ];
