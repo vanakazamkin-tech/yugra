@@ -148,6 +148,11 @@ const municipalityIds = new Map([
   ['югорск', 'ugorsk'],
 ]);
 
+const sourceCodeToBdPmoCode = new Map([
+  ['2332000010001', '8112021'],
+  ['2332000010002', '8112022'],
+  ['2332000010003', '8112023'],
+]);
 const migrationCodes = new Set(['8112021', '8112022', '8112023']);
 const migrationNames = new Map([
   ['8112021', 'Число прибывших'],
@@ -193,6 +198,7 @@ for (const raw of parsed.slice(1)) {
     indicator_code: `rosstat_migration_${indicator}`,
     indicator_name: migrationNames.get(indicator),
     rosstat_indicator_code: indicator,
+    source_indicator_code: sourceIndicatorCode,
     reference_year: year,
     reference_period: get('period') || String(year),
     value,
