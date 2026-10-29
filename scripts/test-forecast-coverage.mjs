@@ -24,7 +24,7 @@ assert.equal(byKey.income.municipalityCount, 1);
 assert.equal(byKey.income.observationCount, 1);
 assert.equal(byKey.investment.municipalityCount, 1);
 assert.equal(byKey.investment.observationCount, 1);
-assert.equal(byKey.budget.municipalityCount, 1);
+assert.equal(byKey.budget.municipalityCount, 2);
 assert.equal(byKey.budget.observationCount, 3);
 assert.equal(byKey.budget.latestYear, 2026);
 assert.equal(byKey.migration.municipalityCount, 1);
