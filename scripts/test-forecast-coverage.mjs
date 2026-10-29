@@ -4,7 +4,7 @@ import { buildForecastCoverage } from '../src/lib/forecastCoverage.js';
 const indicators = [
   { municipality_id: 'surgut', indicator_code: 'average_employees_q1', indicator_name: 'Среднесписочная численность работников', reference_year: 2026, verification_status: 'verified', geographic_level: 'municipality' },
   { municipality_id: 'megion', indicator_code: 'employees_trade', indicator_name: 'Численность работников торговли', reference_year: 2026, verification_status: 'verified', geographic_level: 'municipality' },
-  { municipality_id: 'surgut', indicator_code: 'average_monthly_salary_q1', indicator_name: 'Среднемесячная заработная плата', reference_year: 2026, verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'surgut', indicator_code: 'average_monthly_salary_q1', indicator_name: 'Среднемесячная заработная плата работников организаций без субъектов малого предпринимательства', reference_year: 2026, verification_status: 'verified', geographic_level: 'municipality' },
   { municipality_id: 'megion', indicator_code: 'fixed_capital_investment_local_budget', indicator_name: 'Инвестиции в основной капитал за счёт средств местного бюджета', reference_year: 2024, verification_status: 'verified', geographic_level: 'municipality' },
   { municipality_id: 'megion', indicator_code: 'rosstat_migration_8112023', indicator_name: 'Миграционный прирост', reference_year: 2023, verification_status: 'verified', geographic_level: 'municipality' },
   { municipality_id: 'settlement-a', indicator_code: 'average_employees_q1', indicator_name: 'Численность работников', reference_year: 2026, verification_status: 'verified', geographic_level: 'settlement' },
