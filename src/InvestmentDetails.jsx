@@ -183,6 +183,7 @@ export const InvestmentDetails = () => {
   const [indicatorMunicipalityFilter, setIndicatorMunicipalityFilter] = useState('all');
   const [officialDataStatus, setOfficialDataStatus] = useState(isSupabaseConfigured ? 'loading' : 'offline');
   const [officialDataError, setOfficialDataError] = useState('');
+  const [officialDataSyncedAt, setOfficialDataSyncedAt] = useState(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
@@ -244,6 +245,7 @@ export const InvestmentDetails = () => {
         setFuelPrices(result.fuelPrices || []);
         setFacilities(result.facilities || []);
         setOfficialDataStatus('connected');
+        setOfficialDataSyncedAt(new Date());
         setOfficialDataError('');
       } catch (error) {
         if (cancelled) return;
@@ -1404,6 +1406,8 @@ export const InvestmentDetails = () => {
               <div><span className="eyebrow"><span className="eyebrow-diamond"/> ЦЕНТР ДАННЫХ</span><h1>Источники и проверенные показатели</h1><p>Официальные наблюдения отделены от демонстрационного набора. Здесь видно покрытие, происхождение данных и наборы, подготовленные к импорту.</p></div>
               <div className="data-page-hero-actions">
                 <span className={`official-status-chip official-status--${officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
+                {officialDataSyncedAt && <span className="official-data-updated">Обновлено: {new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(officialDataSyncedAt)}</span>}
+                <button className="outline-button" onClick={() => setSyncAttempt((attempt) => attempt + 1)} disabled={officialDataStatus === 'loading'}><Icon name="refresh"/>Обновить данные</button>
                 <a className="outline-button data-dictionary-link" href="/data-dictionary.md" download="yugra-data-dictionary.md"><Icon name="download"/>Скачать словарь данных</a>
               </div>
             </section>
