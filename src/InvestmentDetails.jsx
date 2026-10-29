@@ -216,6 +216,23 @@ export const InvestmentDetails = () => {
     };
   }, [filteredMunicipalities]);
 
+  const extendedInsights = useMemo(() => {
+    const growthRows = municipalities.filter((m) => numericValue(m.investments?.growthPercent) != null);
+    const assessmentRows = municipalities.filter((m) => numericValue(m.assessmentScore) != null);
+    const investmentRows = municipalities.filter((m) => numericValue(m.investments?.volumeBillion) != null);
+    const topInvestment = [...investmentRows].sort((a, b) => Number(b.investments.volumeBillion) - Number(a.investments.volumeBillion))[0] || null;
+    const growthAbove100 = growthRows.filter((m) => Number(m.investments.growthPercent) > 100).length;
+    return {
+      avgGrowth: growthRows.length ? growthRows.reduce((sum, m) => sum + Number(m.investments.growthPercent), 0) / growthRows.length : null,
+      growthCoverage: growthRows.length,
+      growthAbove100,
+      avgAssessment: assessmentRows.length ? assessmentRows.reduce((sum, m) => sum + Number(m.assessmentScore), 0) / assessmentRows.length : null,
+      assessmentCoverage: assessmentRows.length,
+      topInvestment,
+      investmentCoverage: investmentRows.length,
+    };
+  }, [municipalities]);
+
   const comparisonItems = useMemo(() => municipalities.filter((m) => selectedCompareIds.includes(m.id)), [municipalities, selectedCompareIds]);
   const comparisonCandidates = useMemo(() => municipalities.filter((m) => m.name.toLocaleLowerCase('ru-RU').includes(comparisonSearch.trim().toLocaleLowerCase('ru-RU'))), [municipalities, comparisonSearch]);
   const reportItems = useMemo(() => {
@@ -414,6 +431,34 @@ export const InvestmentDetails = () => {
               <article className="metric-card"><span className="metric-icon"><Icon name="coins"/></span><div className="metric-copy"><span className="metric-label">Инвестиции</span><strong>{formatNumber(totals.investments, 1)} <i>млрд ₽</i></strong><small>значения по {totals.investmentCount} из {totals.count} территорий</small></div><span className="metric-index">03</span></article>
               <article className="metric-card"><span className="metric-icon"><Icon name="people"/></span><div className="metric-copy"><span className="metric-label">Субъекты МСП</span><strong>{formatNumber(totals.sme)}</strong><small>значения по {totals.smeCount} из {totals.count} территорий</small></div><span className="metric-index">04</span></article>
             </section>
+
+            <section className="insight-grid" aria-label="Дополнительные аналитические показатели">
+              <article className="insight-card">
+                <span className="insight-card-kicker">ИНВЕСТИЦИОННАЯ ДИНАМИКА</span>
+                <strong>{extendedInsights.avgGrowth == null ? '—' : `${formatNumber(extendedInsights.avgGrowth, 1)}%`}</strong>
+                <span>Среднее изменение инвестиций</span>
+                <small>по {extendedInsights.growthCoverage} из {municipalities.length} территорий</small>
+              </article>
+              <article className="insight-card">
+                <span className="insight-card-kicker">ТЕРРИТОРИЯ-ЛИДЕР</span>
+                <strong className="insight-card-name">{extendedInsights.topInvestment?.name || '—'}</strong>
+                <span>Наибольший указанный объём инвестиций</span>
+                <small>{extendedInsights.topInvestment ? formatBillion(extendedInsights.topInvestment.investments.volumeBillion) : 'Нет данных'} · охват {extendedInsights.investmentCoverage}/{municipalities.length}</small>
+              </article>
+              <article className="insight-card">
+                <span className="insight-card-kicker">ДЕЛОВОЙ КЛИМАТ</span>
+                <strong>{extendedInsights.avgAssessment == null ? '—' : `${formatNumber(extendedInsights.avgAssessment, 2)} / 5`}</strong>
+                <span>Средняя оценка бизнеса</span>
+                <small>по {extendedInsights.assessmentCoverage} из {municipalities.length} территорий</small>
+              </article>
+              <article className="insight-card">
+                <span className="insight-card-kicker">РОСТ ВЫШЕ 100%</span>
+                <strong>{extendedInsights.growthRows ? extendedInsights.growthAbove100 : '—'}</strong>
+                <span>Территорий с положительной динамикой</span>
+                <small>из {extendedInsights.growthCoverage} с доступным показателем</small>
+              </article>
+            </section>
+            <p className="data-quality-note">Дополнительные показатели рассчитываются автоматически из текущего набора данных. Перед использованием как официальной статистики необходимо сверить исходные значения, год наблюдения и методику с первоисточником.</p>
 
             <div className="dashboard-grid">
               <section className="map-panel panel">
