@@ -1498,3 +1498,19 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .population-trend-kpis { grid-template-columns: 1fr; }
   .population-trend-kpis article { padding: 10px; }
 }
+
+
+/* Comparable official economic series in the data centre */
+.official-trend-select { display: flex; flex-direction: column; gap: 7px; max-width: 620px; margin: 12px 0 10px; }
+.official-trend-select > span { color: #798675; font-size: 10px; font-weight: 700; }
+.official-trend-select select { width: 100%; min-height: 42px; border: 1px solid #ddd4c3; border-radius: 7px; padding: 9px 12px; color: var(--forest); background: #fffdf8; font: inherit; font-size: 11px; }
+.official-trend-definition { margin: 0 0 12px; color: #818b7f; font-size: 10px; line-height: 1.7; }
+.official-trend-table-wrap { margin-top: 12px; }
+.official-trend-table-wrap a { color: var(--forest-2); font-size: 10px; font-weight: 800; text-decoration: none; }
+.official-trend-table-wrap a:hover { text-decoration: underline; }
+.trend-positive { color: #46754f !important; }
+.trend-negative { color: #a55649 !important; }
+@media (max-width: 640px) {
+  .official-trend-select { max-width: 100%; }
+  .official-trend-select select { font-size: 10px; }
+}
