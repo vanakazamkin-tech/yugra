@@ -803,7 +803,7 @@ export const InvestmentDetails = () => {
       sector.item?.source_id || '', sector.item?.source_url || '', sector.item?.notes || '',
     ]);
     const escape = (value) => '"' + String(value == null ? '' : value).replaceAll('"','""') + '"';
-    const csv = '\\uFEFF' + [headers, ...rows].map((row)=>row.map(escape).join(';')).join('\\r\\n');
+    const csv = '\uFEFF' + [headers, ...rows].map((row)=>row.map(escape).join(';')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
     const anchor = document.createElement('a');
     anchor.href=url;
