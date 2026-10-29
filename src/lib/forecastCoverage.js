@@ -69,8 +69,10 @@ export function buildForecastCoverage(indicators = [], programExecution = [], mu
 
     if (definition.key === 'budget') {
       for (const item of verifiedPrograms) {
-        const year = Number(String(item.report_date || '').slice(0, 4));
-        if (Number.isInteger(year)) latestYear = latestYear == null ? year : Math.max(latestYear, year);
+        const datePrefix = String(item.report_date || '').slice(0, 4);
+        if (!/^\\d{4}$/.test(datePrefix)) continue;
+        const year = Number(datePrefix);
+        latestYear = latestYear == null ? year : Math.max(latestYear, year);
       }
       for (const id of programMunicipalities) municipalities.add(id);
       observationCount += verifiedPrograms.length;
