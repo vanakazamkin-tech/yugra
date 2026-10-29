@@ -1731,3 +1731,18 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .municipality-coverage-table .municipality-coverage-status--missing { color: #777e77; }
 .municipality-coverage-table .municipality-coverage-cell--settlement-only { background: rgba(183, 138, 73, .045); }
 .municipality-coverage-table .municipality-coverage-cell--missing { background: rgba(120, 126, 120, .025); }
+
+
+/* Official urban/rural population composition */
+.population-composition-table { min-width: 900px; }
+.population-composition-table thead th { white-space: normal; }
+.population-composition-table .number-cell { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.population-composition-track { display: flex; width: min(250px, 100%); height: 9px; margin: 2px 0 6px; overflow: hidden; border: 1px solid #e0dacb; border-radius: 99px; background: #f1ecdf; }
+.population-composition-track span { display: block; height: 100%; min-width: 0; }
+.population-composition-urban, .population-composition-legend-urban { background: #3d7050; }
+.population-composition-rural, .population-composition-legend-rural { background: #b78a49; }
+.population-composition-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 9px 18px; margin-top: 14px; color: #728071; font-size: 10px; line-height: 1.6; }
+.population-composition-footer > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.population-composition-footer i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.population-composition-footer p { flex-basis: 100%; margin: 0; }
+.population-composition-footer a { color: var(--forest); text-decoration: underline; text-underline-offset: 2px; }
