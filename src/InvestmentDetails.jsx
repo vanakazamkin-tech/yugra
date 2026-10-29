@@ -82,6 +82,7 @@ export const InvestmentDetails = () => {
   const [officialIndicators, setOfficialIndicators] = useState([]);
   const [investmentSites, setInvestmentSites] = useState([]);
   const [programExecution, setProgramExecution] = useState([]);
+  const [fuelPrices, setFuelPrices] = useState([]);
   const [officialDataStatus, setOfficialDataStatus] = useState(isSupabaseConfigured ? 'loading' : 'offline');
   const [officialDataError, setOfficialDataError] = useState('');
 
@@ -142,6 +143,7 @@ export const InvestmentDetails = () => {
         setOfficialIndicators(result.indicators);
         setInvestmentSites(result.investmentSites);
         setProgramExecution(result.programExecution || []);
+        setFuelPrices(result.fuelPrices || []);
         setOfficialDataStatus('connected');
         setOfficialDataError('');
       } catch (error) {
@@ -600,7 +602,7 @@ export const InvestmentDetails = () => {
               <div><span className="eyebrow"><span className="eyebrow-diamond"/> ЦЕНТР ДАННЫХ</span><h1>Источники и проверенные показатели</h1><p>Официальные наблюдения отделены от демонстрационного набора. Здесь видно покрытие, происхождение данных и наборы, подготовленные к импорту.</p></div>
               <span className={`official-status-chip official-status--${officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
             </section>
-            <div className="data-page-summary"><article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong></article><article><span>Проверенных наблюдений</span><strong>{officialDataSummary.recordCount}</strong></article><article><span>Уникальных инвестплощадок</span><strong>{officialDataSummary.investmentSiteCount}</strong></article><article><span>Отчётов по программам</span><strong>{programExecution.length}</strong></article></div>
+            <div className="data-page-summary"><article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong></article><article><span>Проверенных наблюдений</span><strong>{officialDataSummary.recordCount}</strong></article><article><span>Уникальных инвестплощадок</span><strong>{officialDataSummary.investmentSiteCount}</strong></article><article><span>Отчётов по программам</span><strong>{programExecution.length}</strong></article><article><span>Записей цен на топливо</span><strong>{fuelPrices.length}</strong></article></div>
             <section className="official-data-panel panel" aria-labelledby="official-data-heading">
               <div className="section-heading">
                 <div className="heading-label"><span className="heading-icon"><Icon name="check"/></span><div><h2 id="official-data-heading">Слой проверенных официальных данных</h2><p>Отдельно от демонстрационных показателей концепта</p></div></div>
@@ -683,6 +685,30 @@ export const InvestmentDetails = () => {
                 })}
               </div>
               <p className="source-panel-note">Суммы переведены из тысяч рублей в миллионы только для отображения. Процент — исполненные расходы / уточнённые ассигнования; это расчёт приложения по опубликованным цифрам, не отдельный показатель источника.</p>
+            </section>}
+
+            {fuelPrices.length > 0 && <section className="fuel-prices-panel panel" aria-labelledby="fuel-prices-heading">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="coins"/></span><div><h2 id="fuel-prices-heading">Цены на топливо по АЗС</h2><p>Мегион и посёлок Высокий · версия источника от 28.10.2026</p></div></div>
+                <span className="section-tag">{fuelPrices.length} АЗС</span>
+              </div>
+              <p className="fuel-unit-note">В паспорте источника единица измерения явно не указана, поэтому значения показаны ровно в том виде, в котором опубликованы. Пустые поля и прочерки не считаются нулевыми ценами; исходные значения сохранены для проверки.</p>
+              <div className="fuel-prices-table-wrap">
+                <table className="fuel-prices-table">
+                  <thead><tr><th>АЗС / компания</th><th>Адрес</th><th>АИ‑92</th><th>АИ‑95</th><th>АИ‑98</th><th>Пропан</th><th>Дизель</th><th>Источник</th></tr></thead>
+                  <tbody>{fuelPrices.map((fuel) => <tr key={fuel.id}>
+                    <td><strong>{fuel.station_name}</strong><small>{fuel.company_name || 'Компания не указана'}</small></td>
+                    <td>{fuel.address || '—'}</td>
+                    <td>{fuel.gasoline_92 == null ? '—' : formatNumber(fuel.gasoline_92, 2)}</td>
+                    <td>{fuel.gasoline_95 == null ? '—' : formatNumber(fuel.gasoline_95, 2)}</td>
+                    <td>{fuel.gasoline_98 == null ? '—' : formatNumber(fuel.gasoline_98, 2)}</td>
+                    <td>{fuel.propane == null ? '—' : formatNumber(fuel.propane, 2)}</td>
+                    <td>{fuel.diesel == null ? '—' : formatNumber(fuel.diesel, 2)}</td>
+                    <td><a href={fuel.source_url} target="_blank" rel="noreferrer">CSV ↗</a></td>
+                  </tr>)}</tbody>
+                </table>
+              </div>
+              <p className="source-panel-note">Источник: официальный открытый CSV. Версия от 28.10.2026; наблюдения относятся к девяти строкам выгрузки. Нулевые цены на дизель у двух станций сохранены в исходном payload, но нормализованное ценовое поле оставлено пустым до уточнения смысла «0,00» у владельца набора.</p>
             </section>}
 
             <section className="source-panel panel" aria-labelledby="source-panel-title">
