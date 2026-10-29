@@ -292,10 +292,11 @@ export const InvestmentDetails = () => {
   );
 
   const renderReportChart = () => {
-    const rawValues = reportItems.map((m) => reportChartMetricDef.get(m));
+    const chartItems = reportItems.filter((m) => reportChartMetricDef.get(m) != null);
+    const rawValues = chartItems.map((m) => reportChartMetricDef.get(m));
     const maxValue = Math.max(...rawValues, 1);
     const rankMax = Math.max(...municipalities.map((m) => Number(m.rank2024 || 0)), 1);
-    return <div className="report-chart-list">{reportItems.map((m) => {
+    return <div className="report-chart-list">{chartItems.map((m) => {
       const value = reportChartMetricDef.get(m);
       const barValue = reportChartMetric === 'rank2024' ? rankMax + 1 - value : value;
       const denominator = reportChartMetric === 'rank2024' ? rankMax : maxValue;
@@ -492,7 +493,7 @@ export const InvestmentDetails = () => {
                   <div className="report-doc-rule" aria-hidden="true"/>
                   <span className="report-doc-kicker">АНАЛИТИЧЕСКИЙ ОТЧЁТ · {reportDate().toLocaleUpperCase('ru-RU')}</span><h2>{reportTitle || 'Название отчёта не задано'}</h2><p className="report-doc-subtitle">Набор данных: 2024 год. В выборке: <strong>{reportSummary.count}</strong> муниципалитетов.</p>
                   {reportIncludeSummary && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>Ключевые показатели выборки</h4><span>01 / СВОДКА</span></div>{renderReportSummary()}</section>}
-                  {reportIncludeChart && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>{reportChartMetricDef.label}</h4><span>02 / СРАВНЕНИЕ</span></div><p className="chart-unit-note">{reportChartMetricDef.unit === 'место' ? 'Для места в рейтинге более длинная полоса означает более высокую позицию.' : `Значение показателя в ${reportChartMetricDef.unit}.`}</p>{reportItems.length > 0 ? renderReportChart() : <p className="report-empty-note">Нет территорий для визуализации — измените источник данных.</p>}</section>}
+                  {reportIncludeChart && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>{reportChartMetricDef.label}</h4><span>02 / СРАВНЕНИЕ</span></div><p className="chart-unit-note">{reportChartMetricDef.unit === 'место' ? 'Для места в рейтинге более длинная полоса означает более высокую позицию.' : `Значение показателя в ${reportChartMetricDef.unit}.`}</p>{reportItems.some((m) => reportChartMetricDef.get(m) != null) ? renderReportChart() : <p className="report-empty-note">Нет заполненных значений этого показателя в выбранной выборке.</p>}</section>}
                   {reportIncludeTable && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>Детализация</h4><span>03 / ТАБЛИЦА</span></div>{reportPrintFields.length === 0 ? <p className="report-empty-note">Выберите хотя бы один показатель для таблицы.</p> : renderReportTable()}</section>}
                   {reportIncludeMethodology && <div className="report-method-note"><Icon name="info"/><p>Источник данных: {syncStatus === 'connected' ? 'Supabase' : 'резервный локальный набор'}. Перед официальной публикацией сверяйте первоисточники, период наблюдения и методику расчёта.</p></div>}
                   <div className="report-doc-footer"><span>ЮГРА · ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</span><span>Сформировано {reportDate()}</span></div>
