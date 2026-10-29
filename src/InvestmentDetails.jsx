@@ -1120,6 +1120,19 @@ export const InvestmentDetails = () => {
               </article>
             </section>
             <p className="data-quality-note">Все сводные карточки выше — демонстрационные расчёты из концептуального набора и не являются официальной статистикой. Проверенные значения и охват источников показаны отдельно ниже.</p>
+            <section className="official-coverage-teaser panel" aria-labelledby="home-official-coverage-title">
+              <div className="official-coverage-copy">
+                <span className="eyebrow"><span className="eyebrow-diamond"/> ФАКТИЧЕСКИЙ СЛОЙ ДАННЫХ</span>
+                <h2 id="home-official-coverage-title">Отдельно от демонстрационных показателей</h2>
+                <p>Официальные значения содержат первоисточник, период, единицу измерения и уровень территории. Их покрытие пока неоднородно — недостающие значения не заменяются демо-числами.</p>
+              </div>
+              <div className="official-coverage-metrics">
+                <article><span>Проверенных наблюдений</span><strong>{officialDataSummary.recordCount}</strong><small>в Supabase</small></article>
+                <article><span>Муниципалитетов с данными своего уровня</span><strong>{officialDataSummary.municipalityCount} / {municipalities.length}</strong><small>городские поселения отдельно</small></article>
+                <article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong><small>включая источники, ожидающие импорта</small></article>
+              </div>
+              <div className="official-coverage-footer"><span className={`official-coverage-status official-coverage-status--${officialDataStatus}`}><i/>{officialDataStatus === 'connected' ? 'Официальный слой подключён' : officialDataStatus === 'loading' ? 'Загрузка официального слоя' : officialDataStatus === 'error' ? 'Ошибка чтения официального слоя' : 'Демонстрационный режим'}</span><button className="primary-button" onClick={() => navigateToTab('data')}>Открыть центр данных <Icon name="arrow"/></button></div>
+            </section>
           </>}
 
           {activeTab === 'data' && <section className="data-page">
