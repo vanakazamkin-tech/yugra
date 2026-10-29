@@ -233,6 +233,16 @@ export const FALLBACK_DATA_SOURCES = [
     import_status: 'identified',
   },
   {
+    id: 'rosstat_city_population_2022',
+    name: 'Росстат — население городов Югры на 1 января 2022 года',
+    category: 'official_statistics',
+    url: 'https://rosstat.gov.ru/storage/mediabank/Region_Goroda_2022.pdf',
+    description: 'Оценка численности населения отдельных городов Югры на 1 января 2022 года; каждый ряд маркирован уровнем населённого пункта.',
+    format: 'PDF',
+    coverage: '16 городов Югры · оценка на 01.01.2022',
+    import_status: 'imported',
+  },
+  {
     id: 'rosstat_surgut_population_history',
     name: 'Росстат — динамика населения Сургута, 2009–2025',
     category: 'demography',
