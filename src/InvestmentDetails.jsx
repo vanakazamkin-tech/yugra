@@ -3,6 +3,7 @@ import data from '../data/municipalities-detailed.json';
 import { UgraMap, UgraMapList } from './components/UgraMap';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { fetchMunicipalities } from './lib/municipalities';
+import Forecasting from './components/Forecasting';
 
 const Icon = ({ name, className = '' }) => {
   const paths = {
@@ -312,6 +313,7 @@ export const InvestmentDetails = () => {
             <button className={activeTab === 'rating' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('rating')}><Icon name="chart"/>Рейтинг</button>
             <button className={activeTab === 'compare' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('compare')}><Icon name="compare"/>Сравнение</button>
             <button className={activeTab === 'reports' ? 'nav-item active' : 'nav-item'} onClick={() => setActiveTab('reports')}><Icon name="file"/>Отчёты</button>
+            <button className={activeTab === 'forecast' ? 'nav-item active nav-item-forecast' : 'nav-item nav-item-forecast'} onClick={() => setActiveTab('forecast')}><Icon name="chart"/>Режим прогнозирования</button>
           </nav>
           <div className="header-motto"><span className="motto-mark"/>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</div>
         </header>
@@ -385,6 +387,8 @@ export const InvestmentDetails = () => {
               </section>
             </div>
           </>}
+
+          {activeTab === 'forecast' && <Forecasting municipalities={municipalities} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} />}
 
           {activeTab === 'map' && <section className="panel full-panel">
             <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="map"/></span><div><h2>Муниципальная карта Югры</h2><p>Выберите территорию на карте или в списке</p></div></div><button className="outline-button" onClick={() => setIsMapListOpen(!isMapListOpen)}>{isMapListOpen ? 'Скрыть список' : 'Показать список'}</button></div>
