@@ -628,6 +628,64 @@ export const InvestmentDetails = () => {
     };
   }, [officialIndicators, selectedSectorYear, selectedSectorPeriod, selectedSectorMunicipalityId, municipalities]);
 
+  const sectorEmploymentComparison = useMemo(() => {
+    const year = Number(selectedSectorYear);
+    const periodKey = selectedSectorPeriod === 'annual' ? 'annual' : `${year}-${selectedSectorPeriod}`;
+    const totalCode = {
+      Q1: 'average_employees_q1',
+      H1: 'average_employees_h1',
+      Q3: 'average_employees_q3',
+      annual: 'average_employees_annual',
+    }[selectedSectorPeriod];
+    const sectorRows = officialIndicators.filter((item) =>
+      String(item.indicator_code || '').startsWith('employees_')
+      && Number(item.reference_year) === year
+      && String(item.reference_period || 'annual') === periodKey
+      && numericValue(item.value) != null
+    );
+    const ids = [...new Set(sectorRows.map((item)=>item.municipality_id))];
+    const territories = ids.map((id) => {
+      const municipality = municipalities.find((item)=>item.id===id);
+      const totalRow = officialIndicators.find((item)=>
+        item.municipality_id===id
+        && item.indicator_code===totalCode
+        && Number(item.reference_year)===year
+        && String(item.reference_period || 'annual')===periodKey
+        && numericValue(item.value)!=null
+      );
+      return {
+        id,
+        name: municipality?.name || sectorRows.find((item)=>item.municipality_id===id)?.geographic_name || id,
+        total: numericValue(totalRow?.value),
+        sourceUrl: totalRow?.source_url || sectorRows.find((item)=>item.municipality_id===id)?.source_url || '',
+      };
+    }).filter((item)=>item.total!=null&&item.total>0).sort((a,b)=>a.name.localeCompare(b.name,'ru-RU'));
+    const rows = OFFICIAL_EMPLOYMENT_SECTORS.map((sector) => ({
+      ...sector,
+      values: territories.map((territory) => {
+        const item = sectorRows.find((candidate)=>candidate.municipality_id===territory.id&&candidate.indicator_code===sector.code);
+        const value = numericValue(item?.value);
+        return {
+          municipalityId: territory.id,
+          municipalityName: territory.name,
+          item: item || null,
+          value,
+          sharePercent: value==null ? null : value/territory.total*100,
+        };
+      }),
+    })).filter((row)=>row.values.filter((item)=>item.value!=null).length>=2)
+      .sort((a,b)=>Math.max(...b.values.map((item)=>item.sharePercent||0))-Math.max(...a.values.map((item)=>item.sharePercent||0)));
+    const maxShare = Math.max(1,...rows.flatMap((row)=>row.values.map((item)=>item.sharePercent||0)));
+    return {
+      year,
+      periodKey,
+      periodLabel: {Q1:'I квартал (январь–март)',H1:'Полугодие (январь–июнь)',Q3:'9 месяцев (январь–сентябрь)',annual:'Полный год (январь–декабрь)'}[selectedSectorPeriod],
+      territories,
+      rows,
+      maxShare,
+    };
+  }, [officialIndicators, selectedSectorYear, selectedSectorPeriod, municipalities]);
+
   const surgutComparableTrend = useMemo(() => {
     const config = OFFICIAL_TREND_SERIES.find((series) => series.code === selectedTrendSeries) || OFFICIAL_TREND_SERIES[0];
     const rows = officialIndicators
@@ -1338,6 +1396,25 @@ export const InvestmentDetails = () => {
                 </div>)}</div>
               </> : <div className="empty-state"><span>Для выбранного года и периода данных пока нет</span><p>Выберите другой срез. Например, полный год доступен за 2024 и 2025 годы, но ещё не за 2026-й.</p></div>}
               <p className="source-panel-note">Источник: <a href={sectorEmploymentProfile.sourceUrl} target="_blank" rel="noreferrer">официальный паспорт {sectorEmploymentProfile.municipalityName} в Росстате ↗</a>. В таблице показаны отрасли с отдельными опубликованными значениями; их сумма может быть меньше общей численности работников.</p>
+            </section>
+            <section className="sector-comparison-panel panel" aria-labelledby="sector-comparison-title">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2 id="sector-comparison-title">Сравнение отраслевой структуры занятости</h2><p>Доли считаются от общей среднесписочной численности каждой территории</p></div></div>
+                <span className="section-tag">{sectorEmploymentComparison.territories.length} ТЕРРИТОРИИ</span>
+              </div>
+              {sectorEmploymentComparison.territories.length>=2 && sectorEmploymentComparison.rows.length ? <>
+                <p className="official-trend-definition">Период: {sectorEmploymentComparison.year} · {sectorEmploymentComparison.periodLabel}. Показаны только отрасли с наблюдениями в обеих территориях; значения не заменяются нулями. Абсолютная численность зависит от размера территории, поэтому дополнительно сравниваются доли.</p>
+                <div className="sector-comparison-header"><span>Отрасль</span>{sectorEmploymentComparison.territories.map((territory)=><div key={territory.id}><strong>{territory.name}</strong><small>Всего {formatNumber(territory.total)} чел.</small><a href={territory.sourceUrl} target="_blank" rel="noreferrer">Источник Росстата ↗</a></div>)}</div>
+                <div className="sector-comparison-list">{sectorEmploymentComparison.rows.map((sector,index)=><div className="sector-comparison-row" key={sector.code}>
+                  <div className="sector-comparison-label"><span>{String(index+1).padStart(2,'0')}</span><strong>{sector.name}</strong></div>
+                  {sector.values.map((value)=><div className="sector-comparison-cell" key={value.municipalityId}>
+                    <div className="sector-comparison-track"><i style={{width:Math.max(1,(value.sharePercent||0)/sectorEmploymentComparison.maxShare*100)+'%'}}/></div>
+                    <strong>{value.value==null?'—':formatNumber(value.value)} <small>чел.</small></strong>
+                    <span>{value.sharePercent==null?'нет данных':`${formatNumber(value.sharePercent,1)}% от общей численности`}</span>
+                  </div>)}
+                </div>)}</div>
+                <p className="source-panel-note">Сравнение основано на отдельных показателях Росстата, исключающих субъекты малого предпринимательства. Различия в долях сами по себе не означают преимущество или риск — нужна интерпретация с учётом специализации экономики и динамики нескольких периодов.</p>
+              </> : <div className="empty-state"><span>Пока нет двух территорий с сопоставимыми отраслевыми данными</span><p>На текущем срезе доступны Когалым и Сургут за I квартал 2026 года. Выберите 2026 год и I квартал в профиле выше, чтобы сравнить отрасли на одной основе.</p></div>}
             </section>
             <section className="official-municipal-comparison panel" aria-labelledby="official-municipal-comparison-title">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2 id="official-municipal-comparison-title">Сравнение территорий по официальным данным</h2><p>Сравниваем только одинаковые показатель, период и территориальный уровень</p></div></div><span className="section-tag">{officialComparisonRows.length} ТЕРРИТОРИЙ</span></div>
