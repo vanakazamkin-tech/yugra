@@ -29,5 +29,7 @@ jobs:
         run: node --check scripts/prepare-rosstat-migration-import.mjs
       - name: Test migration staging filters
         run: node scripts/test-rosstat-migration-staging.mjs
+      - name: Test forecast coverage classification
+        run: node scripts/test-forecast-coverage.mjs
       - name: Build production bundle
         run: npm run build
