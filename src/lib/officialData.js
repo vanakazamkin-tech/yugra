@@ -34,10 +34,10 @@ export const FALLBACK_DATA_SOURCES = [
     name: 'Открытые данные Мегиона — население на 01.01.2025',
     category: 'demography',
     url: 'https://opendata.admmegion.ru/datasets/departament-ekonomecheskoy-politiki/34830/',
-    description: 'Паспорт административно-территориального устройства: официальная строка по населению города Мегион.',
+    description: 'Официальный набор по населению Мегиона. В текущей базе наблюдение связано с источником Росстата; до отдельной сверки происхождения набор не считается импортированным.',
     format: 'CSV',
-    coverage: 'Частичное покрытие: Мегион',
-    import_status: 'partially_imported',
+    coverage: 'Мегион; требуется сверить происхождение и географический уровень',
+    import_status: 'identified',
   },
 
   {
