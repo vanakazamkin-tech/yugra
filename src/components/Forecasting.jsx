@@ -226,7 +226,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       <section className="forecast-coverage-panel" aria-labelledby="forecast-coverage-title">
         <div className="forecast-coverage-heading">
           <div><h3 id="forecast-coverage-title">Покрытие официальными данными</h3><p>Сколько муниципалитетов имеют хотя бы одно подтверждённое наблюдение в каждой группе. Это охват, а не полнота всех показателей и периодов.</p></div>
-          <span className={'forecast-coverage-status ' + (officialCoverageLoaded ? 'is-connected' : '')}>{officialCoverageStale ? 'Последний успешный срез' : officialCoverageLoaded ? 'Срез Supabase' : 'Каталог не загружен'}</span>
+          <span className={'forecast-coverage-status ' + (officialCoverageStale ? 'is-stale' : officialCoverageLoaded ? 'is-connected' : '')}>{officialCoverageStale ? 'Последний успешный срез' : officialCoverageLoaded ? 'Срез Supabase' : 'Каталог не загружен'}</span>
         </div>
         <div className="forecast-coverage-grid">
           {officialCoverage.map((item) => <article className="forecast-coverage-card" key={item.key}>
