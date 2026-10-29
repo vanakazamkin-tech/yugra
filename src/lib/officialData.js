@@ -30,6 +30,17 @@ export const FALLBACK_DATA_SOURCES = [
     import_status: 'partially_imported',
   },
   {
+    id: 'megion_admin_territorial_population',
+    name: 'Открытые данные Мегиона — население на 01.01.2025',
+    category: 'demography',
+    url: 'https://opendata.admmegion.ru/datasets/departament-ekonomecheskoy-politiki/34830/',
+    description: 'Паспорт административно-территориального устройства: официальная строка по населению города Мегион.',
+    format: 'CSV',
+    coverage: 'Частичное покрытие: Мегион',
+    import_status: 'partially_imported',
+  },
+
+  {
     id: 'emiss',
     name: 'Росстат — ЕМИСС',
     category: 'official_statistics',
@@ -77,7 +88,7 @@ export const FALLBACK_DATA_SOURCES = [
     description: 'Муниципальный CSV-набор площадок с параметрами участков и условиями предоставления.',
     format: 'CSV',
     coverage: 'Мегион; одно муниципальное образование',
-    import_status: 'ready_for_import',
+    import_status: 'partially_imported',
   },
   {
     id: 'megion_open_data',
@@ -96,7 +107,7 @@ export async function fetchOfficialData(client) {
     return { sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [] };
   }
 
-  const [sourcesResult, indicatorsResult, sitesResult] = await Promise.all([
+  const [sourcesResult, indicatorsResult, sitesResult, programsResult] = await Promise.all([
     client.from('data_sources')
       .select('id,name,category,url,description,format,coverage,update_frequency,import_status,last_checked_at,notes')
       .order('category', { ascending: true })
@@ -107,13 +118,19 @@ export async function fetchOfficialData(client) {
       .order('reference_year', { ascending: false }),
     client.from('investment_sites')
       .select('id,municipality_id,source_id,external_id,name,site_type,location_text,area_hectares,land_status,offer_type,permitted_use,source_url,source_updated_at,verification_status,retrieved_at')
+      .eq('verification_status', 'verified')
       .order('name', { ascending: true }),
+    client.from('municipal_program_execution')
+      .select('id,municipality_id,source_id,program_code,program_name,report_date,approved_budget_thousand,revised_budget_thousand,executed_budget_thousand,execution_percent,source_url,source_published_at,retrieved_at,verification_status,notes')
+      .eq('verification_status', 'verified')
+      .order('report_date', { ascending: false }),
   ]);
 
   // A failed query is surfaced rather than being silently treated as an empty official dataset.
   if (sourcesResult.error) throw sourcesResult.error;
   if (indicatorsResult.error) throw indicatorsResult.error;
   if (sitesResult.error) throw sitesResult.error;
+  if (programsResult.error) throw programsResult.error;
 
   return {
     sources: Array.isArray(sourcesResult.data) && sourcesResult.data.length
@@ -121,6 +138,7 @@ export async function fetchOfficialData(client) {
       : FALLBACK_DATA_SOURCES,
     indicators: Array.isArray(indicatorsResult.data) ? indicatorsResult.data : [],
     investmentSites: Array.isArray(sitesResult.data) ? sitesResult.data : [],
+    programExecution: Array.isArray(programsResult.data) ? programsResult.data : [],
   };
 }
 
