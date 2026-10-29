@@ -593,10 +593,7 @@ export const InvestmentDetails = () => {
               </article>
             </section>
             <p className="data-quality-note">Все сводные карточки выше — демонстрационные расчёты из концептуального набора и не являются официальной статистикой. Проверенные значения и охват источников показаны отдельно ниже.</p>
-
-
-
-
+          </>}
 
           {activeTab === 'data' && <section className="data-page">
             <section className="data-page-hero panel">
