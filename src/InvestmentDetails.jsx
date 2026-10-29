@@ -197,11 +197,11 @@ export const InvestmentDetails = () => {
     const smeRows = list.filter((m) => numericValue(m.smeCount) != null);
     return {
       count: list.length,
-      averageScore: scored.reduce((sum, m) => sum + Number(m.score), 0) / Math.max(scored.length, 1),
+      averageScore: scored.length ? scored.reduce((sum, m) => sum + Number(m.score), 0) / scored.length : null,
       scoredCount: scored.length,
-      investments: investmentRows.reduce((sum, m) => sum + Number(m.investments.volumeBillion), 0),
+      investments: investmentRows.length ? investmentRows.reduce((sum, m) => sum + Number(m.investments.volumeBillion), 0) : null,
       investmentCount: investmentRows.length,
-      sme: smeRows.reduce((sum, m) => sum + Number(m.smeCount), 0),
+      sme: smeRows.length ? smeRows.reduce((sum, m) => sum + Number(m.smeCount), 0) : null,
       smeCount: smeRows.length,
     };
   }, [filteredMunicipalities]);
@@ -220,12 +220,12 @@ export const InvestmentDetails = () => {
     const assessmentRows = reportItems.filter((m) => numericValue(m.assessmentScore) != null);
     return {
       count: reportItems.length,
-      avgScore: scored.reduce((s, m) => s + Number(m.score), 0) / Math.max(scored.length, 1),
-      investments: investmentRows.reduce((s, m) => s + Number(m.investments.volumeBillion), 0),
+      avgScore: scored.length ? scored.reduce((s, m) => s + Number(m.score), 0) / scored.length : null,
+      investments: investmentRows.length ? investmentRows.reduce((s, m) => s + Number(m.investments.volumeBillion), 0) : null,
       investmentCoverage: investmentRows.length,
-      sme: smeRows.reduce((s, m) => s + Number(m.smeCount), 0),
+      sme: smeRows.length ? smeRows.reduce((s, m) => s + Number(m.smeCount), 0) : null,
       smeCoverage: smeRows.length,
-      avgAssessment: assessmentRows.reduce((s, m) => s + Number(m.assessmentScore), 0) / Math.max(assessmentRows.length, 1),
+      avgAssessment: assessmentRows.length ? assessmentRows.reduce((s, m) => s + Number(m.assessmentScore), 0) / assessmentRows.length : null,
     };
   }, [reportItems]);
   const comparisonMetricDef = METRIC_BY_KEY[comparisonMetric] || METRICS[0];
@@ -453,9 +453,9 @@ export const InvestmentDetails = () => {
                       const maxVal = comparisonMetric === 'rank2024' ? Math.max(...municipalities.map((m) => Number(m.rank2024 || 0)), 1) : Math.max(...values, 1);
                       return comparisonItems.map((m, index) => {
                         const val = comparisonMetricDef.get(m);
-                        const barVal = comparisonMetric === 'rank2024' ? maxVal + 1 - val : val;
+                        const barVal = val == null ? 0 : comparisonMetric === 'rank2024' ? maxVal + 1 - val : val;
                         const denom = comparisonMetric === 'rank2024' ? maxVal : Math.max(...values, 1);
-                        const width = Math.max(3, Math.min(100, (barVal / denom) * 100));
+                        const width = val == null ? 0 : Math.max(3, Math.min(100, (barVal / denom) * 100));
                         const paletteClass = ['bar-forest', 'bar-ochre', 'bar-moss', 'bar-russet'][index % 4];
                         return <div className="comparison-bar-row" key={m.id}><div className="comparison-bar-label"><span className="comparison-number">0{index + 1}</span><strong>{m.name}</strong></div><div className="comparison-bar-track"><i className={paletteClass} style={{ width: `${width}%` }}/></div><strong className="comparison-bar-value">{comparisonMetricDef.format(m)}</strong></div>;
                       });
