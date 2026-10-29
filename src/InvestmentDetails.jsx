@@ -1899,7 +1899,7 @@ export const InvestmentDetails = () => {
 
           </section>}
 
-          {activeTab === 'forecast' && <Forecasting municipalities={municipalities} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} />}
+          {activeTab === 'forecast' && <Forecasting municipalities={municipalities} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} officialIndicators={officialIndicators} programExecution={programExecution} officialDataStatus={officialDataStatus} />}
 
           {activeTab === 'map' && <section className="panel full-panel">
             <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="map"/></span><div><h2>Муниципальная карта Югры</h2><p>Выберите территорию на карте или в списке</p></div></div><button className="outline-button" onClick={() => setIsMapListOpen(!isMapListOpen)}>{isMapListOpen ? 'Скрыть список' : 'Показать список'}</button></div>
