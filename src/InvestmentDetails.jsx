@@ -553,6 +553,27 @@ export const InvestmentDetails = () => {
   const reportPrintFields = reportFields.filter((key) => METRIC_BY_KEY[key]);
 
   const requestSort = (key) => setSortConfig((current) => ({ key, direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc' }));
+  const downloadOfficialComparisonCsv = () => {
+    const headers = ['Муниципальное образование', 'Показатель', 'Значение', 'Единица измерения', 'Период', 'Источник'];
+    const rows = officialComparisonRows.map((item) => [
+      item.municipalityName,
+      officialComparisonConfig.label,
+      item.numericValue,
+      officialComparisonConfig.unit,
+      formatReferencePeriod(item),
+      item.source_url || '',
+    ]);
+    const escape = (value) => '"' + String(value == null ? '' : value).replaceAll('"', '""') + '"';
+    const csv = '\uFEFF' + [headers, ...rows].map((row) => row.map(escape).join(';')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'yugra-official-municipal-comparison.csv';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  };
   const handleExportPDF = () => window.print();
   const resetFilters = () => {
     setSearchTerm(''); setSelectedGroup('ALL'); setActiveSlice('all');
@@ -842,7 +863,7 @@ export const InvestmentDetails = () => {
                   <div className="official-comparison-track"><i style={{width:Math.max(1,item.numericValue/Math.max(1,officialComparisonRows[0].numericValue)*100)+'%'}}/></div>
                   <strong className="official-comparison-value">{formatNumber(item.numericValue,1)} <small>{officialComparisonConfig.unit}</small></strong>
                 </div>)}</div>
-                <div className="official-comparison-footer"><span>Показано {officialComparisonRows.length} из {municipalities.length} муниципалитетов, по которым есть подтверждённое наблюдение в выбранном срезе.</span><button className="text-action" onClick={()=>downloadCsv(officialComparisonRows.map((item)=>({name:item.municipalityName,group2024:'',score:item.numericValue})),['score'],'yugra-official-comparison')}><Icon name="download"/>Выгрузить срез CSV</button></div>
+                <div className="official-comparison-footer"><span>Показано {officialComparisonRows.length} из {municipalities.length} муниципалитетов, по которым есть подтверждённое наблюдение в выбранном срезе.</span><button className="text-action" onClick={downloadOfficialComparisonCsv}><Icon name="download"/>Выгрузить срез CSV</button></div>
                 <div className="table-scroll official-trend-table-wrap"><table className="ranking-table"><thead><tr><th>Муниципальное образование</th><th>Значение</th><th>Период</th><th>Источник</th></tr></thead><tbody>{officialComparisonRows.map((item)=><tr key={item.id}><td>{item.municipalityName}</td><td className="score-cell">{formatNumber(item.numericValue,1)} {officialComparisonConfig.unit}</td><td>{formatReferencePeriod(item)}</td><td><a href={item.source_url} target="_blank" rel="noreferrer">Росстат ↗</a></td></tr>)}</tbody></table></div>
               </> : <div className="empty-state"><span>Нет сопоставимых наблюдений для выбранного среза</span><p>Выберите показатель или другой период. Для корректного сравнения нужны одна единица измерения и один территориальный уровень.</p></div>}
             </section>
