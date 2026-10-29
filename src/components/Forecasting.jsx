@@ -7,6 +7,7 @@ const FALLBACK_SCENARIOS = [
   { id: null, key: 'sanctions_stress', title: 'Санкционный стресс', summary: 'Стресс-допущение: ограничения экспорта сырья, рост издержек, дефицит кадров и давление на муниципальные доходы. Параметры не являются оценкой вероятности.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18, display_order: 4 },
 ];
 
+const hasNumericValue = (value) => value != null && value !== '' && Number.isFinite(Number(value));
 const n = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -18,9 +19,9 @@ function buildForecasts(municipalities, params, horizon) {
   const uncertainty = Math.max(0, n(params.uncertainty_rate)) * Math.sqrt(horizon);
   const rows = municipalities.map((m) => {
     const investmentRaw = m.investments && m.investments.volumeBillion;
-    const hasInvestment = investmentRaw != null && Number.isFinite(Number(investmentRaw));
-    const hasSme = m.smeCount != null && Number.isFinite(Number(m.smeCount));
-    const hasScore = m.score != null && Number.isFinite(Number(m.score));
+    const hasInvestment = hasNumericValue(investmentRaw);
+    const hasSme = hasNumericValue(m.smeCount);
+    const hasScore = hasNumericValue(m.score);
     const investment = hasInvestment ? n(investmentRaw) : null;
     const sme = hasSme ? n(m.smeCount) : null;
     const score = hasScore ? n(m.score) : null;
@@ -170,6 +171,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       ['Условная неопределённость, %/год', params.uncertainty_rate],
       ['Покрытие инвестиций', investmentCoverage + ' из ' + forecasts.length + ' территорий'],
       ['Покрытие МСП', smeCoverage + ' из ' + forecasts.length + ' территорий'],
+      ['Покрытие модельного балла', scoreCoverage + ' из ' + forecasts.length + ' территорий'],
       ['Примечание', 'Пустые значения означают отсутствие исходных данных; квартальные/полугодовые показатели нельзя автоматически суммировать.'],
       [],
     ];
@@ -220,8 +222,8 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
         <div className="forecast-results">
           <div className="forecast-results-heading"><div><span className="micro-label">MODEL OUTPUT</span><h3>Итог сценария</h3></div><span className="forecast-horizon-tag">Горизонт: {horizon} {horizon === 1 ? 'год' : 'лет'}</span></div>
           <div className="forecast-kpi-grid">
-            <article><span>Инвестиции, модельный итог</span><strong>{fmt(totalInvestment, 1)} <small>млрд ₽</small></strong><em>{pct(baselineInvestment ? (totalInvestment / baselineInvestment - 1) * 100 : 0)} к базе · данные по {investmentCoverage} из {forecasts.length} территорий</em></article>
-            <article><span>Субъекты МСП, модельный итог</span><strong>{fmt(totalSme, 0)}</strong><em>{pct(baselineSme ? (totalSme / baselineSme - 1) * 100 : 0)} к базе · данные по {smeCoverage} из {forecasts.length} территорий</em></article>
+            <article><span>Инвестиции, модельный итог</span><strong>{fmt(totalInvestment, 1)} <small>млрд ₽</small></strong><em>{baselineInvestment > 0 ? pct((totalInvestment / baselineInvestment - 1) * 100) : '—'} к базе · данные по {investmentCoverage} из {forecasts.length} территорий</em></article>
+            <article><span>Субъекты МСП, модельный итог</span><strong>{fmt(totalSme, 0)}</strong><em>{baselineSme > 0 ? pct((totalSme / baselineSme - 1) * 100) : '—'} к базе · данные по {smeCoverage} из {forecasts.length} территорий</em></article>
             <article><span>Средний модельный балл</span><strong>{fmt(avgScore, 1)}</strong><em>данные по {scoreCoverage} из {forecasts.length} территорий</em></article>
           </div>
           <div className="forecast-chart-head"><div><h4>Инвестиции по территориям</h4><p>Модельные значения, млрд ₽</p></div><span>Показано {chartRows.length} территорий с данными</span></div>
