@@ -271,14 +271,18 @@ export const InvestmentDetails = () => {
   }, [municipalities]);
 
   const officialDataSummary = useMemo(() => {
-    const municipalityIds = new Set(officialIndicators.map((item) => item.municipality_id));
-    const latestYear = officialIndicators.length
-      ? Math.max(...officialIndicators.map((item) => Number(item.reference_year)).filter(Number.isFinite))
-      : null;
+    const municipalIds = new Set(officialIndicators
+      .filter((item) => (item.geographic_level || 'municipality') === 'municipality')
+      .map((item) => item.municipality_id));
+    const settlements = new Set(officialIndicators
+      .filter((item) => item.geographic_level === 'settlement')
+      .map((item) => item.geographic_name || item.municipality_id));
+    const yearValues = officialIndicators.map((item) => Number(item.reference_year)).filter(Number.isFinite);
     return {
       recordCount: officialIndicators.length,
-      municipalityCount: municipalityIds.size,
-      latestYear,
+      municipalityCount: municipalIds.size,
+      settlementCount: settlements.size,
+      latestYear: yearValues.length ? Math.max(...yearValues) : null,
       sourceCount: officialDataSources.length,
       investmentSiteCount: investmentSites.length,
     };
@@ -526,15 +530,17 @@ export const InvestmentDetails = () => {
               </div>
               <div className="official-data-kpis">
                 <article><span>Проверенные наблюдения</span><strong>{officialDataSummary.recordCount}</strong><small>значения с зафиксированными источниками</small></article>
-                <article><span>Территории с данными</span><strong>{officialDataSummary.municipalityCount} <i>/ {municipalities.length}</i></strong><small>без замены пропусков оценками</small></article>
+                <article><span>Муниципалитеты с муниципальными данными</span><strong>{officialDataSummary.municipalityCount} <i>/ {municipalities.length}</i></strong><small>покрытие именно уровня муниципального образования</small></article>
+                <article><span>Города и населённые пункты</span><strong>{officialDataSummary.settlementCount}</strong><small>отдельно от населения всего муниципалитета</small></article>
                 <article><span>Последний год наблюдения</span><strong>{officialDataSummary.latestYear ?? '—'}</strong><small>по подтверждённым значениям</small></article>
-                <article><span>Записи инвестплощадок</span><strong>{officialDataSummary.investmentSiteCount}</strong><small>импортируются отдельно от статистики</small></article>
+                <article><span>Инвестплощадки в базе</span><strong>{officialDataSummary.investmentSiteCount}</strong><small>частичный импорт каталога Мегиона</small></article>
               </div>
               {officialIndicators.length > 0 ? <div className="verified-preview">
                 <div className="verified-preview-heading"><strong>Последние проверенные значения</strong><span>Источник и год сохраняются для каждой записи</span></div>
                 <div className="verified-preview-list">{officialIndicators.slice(0, 6).map((item) => {
                   const municipality = municipalities.find((m) => m.id === item.municipality_id);
-                  return <article key={item.id}><span>{municipality?.name || item.municipality_id}</span><strong>{item.indicator_name}</strong><b>{formatNumber(item.value, 1)} <i>{item.unit}</i></b><small>{item.reference_year} · <a href={item.source_url} target="_blank" rel="noreferrer">первоисточник ↗</a></small></article>;
+                  const geographyLabel = item.geographic_level === 'settlement' ? 'населённый пункт' : item.geographic_level === 'region' ? 'регион' : 'муниципалитет';
+                  return <article key={item.id}><span>{item.geographic_name || municipality?.name || item.municipality_id} · {geographyLabel}</span><strong>{item.indicator_name}</strong><b>{formatNumber(item.value, 1)} <i>{item.unit}</i></b><small>{item.reference_year} · <a href={item.source_url} target="_blank" rel="noreferrer">первоисточник ↗</a></small></article>;
                 })}</div>
               </div> : <p className="official-data-empty">Слой готов к загрузке. Сейчас в базе нет других проверенных рядов кроме показателей, которые были отдельно подтверждены и внесены. Для остальных источников идёт подготовка сопоставимых наборов; пустые значения намеренно не заполняются догадками.</p>}
               {officialDataStatus === 'error' && officialDataError && <p className="official-data-error">Не удалось обновить официальный слой: {officialDataError}</p>}
@@ -748,7 +754,7 @@ export const InvestmentDetails = () => {
           <div className="modal-official-heading"><h3 id="modal-official-heading">Подтверждённые официальные показатели</h3><span>{modalOfficialIndicators.length} знач.</span></div>
           {modalOfficialIndicators.length > 0 ? <div className="modal-official-list">
             {modalOfficialIndicators.map((item) => <article key={item.id} className="modal-official-row">
-              <div><strong>{item.indicator_name}</strong><span>{item.reference_year} год · {item.unit}</span></div>
+              <div><strong>{item.indicator_name}</strong><span>{item.geographic_name || activeModalItem.name} · {item.geographic_level === 'settlement' ? 'населённый пункт' : item.geographic_level === 'region' ? 'регион' : 'муниципалитет'} · {item.reference_year} · {item.unit}</span></div>
               <b>{formatNumber(item.value, 1)}</b>
               <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a>
             </article>)}
