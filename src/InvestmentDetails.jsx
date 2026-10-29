@@ -43,9 +43,9 @@ const formatReferencePeriod = (item) => {
   const period = item?.reference_period;
   if (!period || period === 'annual') return String(item?.reference_year ?? '—');
   const quarterLabels = { Q1: 'I квартал', Q2: 'II квартал', Q3: 'III квартал', Q4: 'IV квартал' };
-  const quarter = String(period).match(/^(\\d{4})-(Q[1-4])$/);
+  const quarter = String(period).match(/^(\d{4})-(Q[1-4])$/);
   if (quarter) return `${quarter[1]} · ${quarterLabels[quarter[2]]}`;
-  const date = String(period).match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+  const date = String(period).match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (date) return `на ${new Intl.DateTimeFormat('ru-RU').format(new Date(`${period}T00:00:00`))}`;
   return `${item?.reference_year ?? ''} · ${period}`.trim();
 };
@@ -311,11 +311,11 @@ export const InvestmentDetails = () => {
   const populationByMunicipality = useMemo(() => {
     const chosen = new Map();
     const candidates = officialIndicators.filter((item) =>
-      ['population_municipality', 'population_settlement'].includes(item.indicator_code)
+      ['population_municipality', 'population_settlement', 'population_municipality_history'].includes(item.indicator_code)
       && numericValue(item.value) != null
     );
     const scopePriority = (item) => (
-      item.geographic_level === 'municipality' || item.indicator_code === 'population_municipality' ? 0 : 1
+      item.geographic_level === 'municipality' || item.indicator_code === 'population_municipality' || item.indicator_code === 'population_municipality_history' ? 0 : 1
     );
     candidates.sort((a, b) =>
       scopePriority(a) - scopePriority(b) || Number(b.reference_year) - Number(a.reference_year)
