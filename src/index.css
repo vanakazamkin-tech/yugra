@@ -1387,3 +1387,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 @media (max-width: 640px) {
   .official-indicators-table-panel { padding: 14px; }
 }
+
+
+.modal-facilities-passport .modal-no-official { margin-bottom: 10px; }
+.modal-facilities-details { border: 1px solid #dce3d5; border-radius: 7px; background: #fffdf8; }
+.modal-facilities-details > summary { padding: 11px 13px; color: #34583c; cursor: pointer; font-size: 10px; font-weight: 800; }
+.modal-facilities-details[open] > summary { border-bottom: 1px solid #e6ecdf; }
+.modal-facilities-details .modal-official-list { padding: 9px; }
+.modal-facilities-details .modal-official-row > div span { line-height: 1.5; white-space: normal; }
