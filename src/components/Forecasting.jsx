@@ -10,47 +10,53 @@ const n = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 };
-const fmt = (value, digits) => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: digits == null ? 1 : digits, minimumFractionDigits: 0 }).format(value);
+const fmt = (value, digits) => value == null || value === '' ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: digits == null ? 1 : digits, minimumFractionDigits: 0 }).format(value);
 const pct = (value) => (value > 0 ? '+' : '') + fmt(value, 1) + '%';
 
 function buildForecasts(municipalities, params, horizon) {
   const uncertainty = Math.max(0, n(params.uncertainty_rate)) * Math.sqrt(horizon);
   const rows = municipalities.map((m) => {
-    const investment = n(m.investments && m.investments.volumeBillion);
-    const sme = n(m.smeCount);
-    const score = n(m.score);
+    const investmentRaw = m.investments && m.investments.volumeBillion;
+    const hasInvestment = investmentRaw != null && Number.isFinite(Number(investmentRaw));
+    const hasSme = m.smeCount != null && Number.isFinite(Number(m.smeCount));
+    const hasScore = m.score != null && Number.isFinite(Number(m.score));
+    const investment = hasInvestment ? n(investmentRaw) : null;
+    const sme = hasSme ? n(m.smeCount) : null;
+    const score = hasScore ? n(m.score) : null;
     const investRate = n(params.investment_growth_rate) / 100;
     const smeRate = n(params.sme_growth_rate) / 100;
     const scoreRate = n(params.score_growth_rate) / 100;
-    const projectedInvestments = investment * Math.pow(1 + investRate, horizon);
-    const projectedSme = sme * Math.pow(1 + smeRate, horizon);
-    const projectedScore = Math.max(0, score * Math.pow(1 + scoreRate, horizon));
-    const hasInvestment = m.investments && m.investments.volumeBillion != null;
-    const hasSme = m.smeCount != null;
-    const hasScore = m.score != null;
+    const projectedInvestments = hasInvestment ? investment * Math.pow(1 + investRate, horizon) : null;
+    const projectedSme = hasSme ? Math.round(sme * Math.pow(1 + smeRate, horizon)) : null;
+    const projectedScore = hasScore ? Math.max(0, score * Math.pow(1 + scoreRate, horizon)) : null;
     return {
       id: m.id,
       name: m.name,
       group: m.group2024,
-      investment: investment,
-      projectedInvestments: projectedInvestments,
-      investmentsLow: projectedInvestments * Math.max(0, 1 - uncertainty / 100),
-      investmentsHigh: projectedInvestments * (1 + uncertainty / 100),
-      sme: sme,
-      projectedSme: Math.round(projectedSme),
-      smeLow: Math.round(sme * Math.pow(Math.max(0, 1 + smeRate - uncertainty / 100), horizon)),
-      smeHigh: Math.round(sme * Math.pow(Math.max(0, 1 + smeRate + uncertainty / 100), horizon)),
-      score: score,
-      projectedScore: projectedScore,
-      hasInvestment: hasInvestment,
-      hasSme: hasSme,
-      hasScore: hasScore,
+      investment,
+      projectedInvestments,
+      investmentsLow: projectedInvestments == null ? null : projectedInvestments * Math.max(0, 1 - uncertainty / 100),
+      investmentsHigh: projectedInvestments == null ? null : projectedInvestments * (1 + uncertainty / 100),
+      sme,
+      projectedSme,
+      smeLow: hasSme ? Math.round(sme * Math.pow(Math.max(0, 1 + smeRate - uncertainty / 100), horizon)) : null,
+      smeHigh: hasSme ? Math.round(sme * Math.pow(Math.max(0, 1 + smeRate + uncertainty / 100), horizon)) : null,
+      score,
+      projectedScore,
+      hasInvestment,
+      hasSme,
+      hasScore,
     };
   });
-  const ordered = rows.slice().sort((a, b) => b.projectedScore - a.projectedScore);
+  const ordered = rows.filter((row) => row.projectedScore != null).slice().sort((a, b) => b.projectedScore - a.projectedScore);
   const rank = new Map(ordered.map((row, index) => [row.id, index + 1]));
   return rows.map((row) => Object.assign({}, row, { projectedRank: rank.get(row.id) || null }))
-    .sort((a, b) => b.projectedInvestments - a.projectedInvestments);
+    .sort((a, b) => {
+      if (a.projectedInvestments == null && b.projectedInvestments == null) return a.name.localeCompare(b.name, 'ru-RU');
+      if (a.projectedInvestments == null) return 1;
+      if (b.projectedInvestments == null) return -1;
+      return b.projectedInvestments - a.projectedInvestments;
+    });
 }
 
 export default function Forecasting({ municipalities, supabase, isSupabaseConfigured }) {
@@ -113,12 +119,16 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
     return forecasts.filter((row) => (selectedId === 'ALL' || row.id === selectedId)
       && (!searchText || row.name.toLocaleLowerCase('ru-RU').includes(searchText)));
   }, [forecasts, selectedId, search]);
-  const totalInvestment = useMemo(() => forecasts.reduce((sum, row) => sum + row.projectedInvestments, 0), [forecasts]);
-  const baselineInvestment = useMemo(() => forecasts.reduce((sum, row) => sum + row.investment, 0), [forecasts]);
-  const totalSme = useMemo(() => forecasts.reduce((sum, row) => sum + row.projectedSme, 0), [forecasts]);
-  const baselineSme = useMemo(() => forecasts.reduce((sum, row) => sum + row.sme, 0), [forecasts]);
-  const avgScore = useMemo(() => forecasts.reduce((sum, row) => sum + row.projectedScore, 0) / Math.max(1, forecasts.length), [forecasts]);
-  const maxInvestments = Math.max(1, ...filtered.map((row) => row.projectedInvestments));
+  const totalInvestment = useMemo(() => forecasts.reduce((sum, row) => sum + (row.projectedInvestments ?? 0), 0), [forecasts]);
+  const baselineInvestment = useMemo(() => forecasts.reduce((sum, row) => sum + (row.investment ?? 0), 0), [forecasts]);
+  const totalSme = useMemo(() => forecasts.reduce((sum, row) => sum + (row.projectedSme ?? 0), 0), [forecasts]);
+  const baselineSme = useMemo(() => forecasts.reduce((sum, row) => sum + (row.sme ?? 0), 0), [forecasts]);
+  const avgScore = useMemo(() => {
+    const validScores = forecasts.filter((row) => row.projectedScore != null);
+    return validScores.reduce((sum, row) => sum + row.projectedScore, 0) / Math.max(1, validScores.length);
+  }, [forecasts]);
+  const chartRows = useMemo(() => filtered.filter((row) => row.projectedInvestments != null).slice().sort((a, b) => b.projectedInvestments - a.projectedInvestments).slice(0, 8), [filtered]);
+  const maxInvestments = Math.max(1, ...chartRows.map((row) => row.projectedInvestments));
 
   const selectScenario = (key) => {
     const selected = scenarios.find((item) => item.key === key);
@@ -152,12 +162,12 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       projected_results: forecasts.map((row) => ({
         id: row.id, name: row.name, group: row.group,
         baseline_investments_billion: row.investment,
-        projected_investments_billion: Number(row.projectedInvestments.toFixed(3)),
-        investments_low_billion: Number(row.investmentsLow.toFixed(3)),
-        investments_high_billion: Number(row.investmentsHigh.toFixed(3)),
+        projected_investments_billion: row.projectedInvestments == null ? null : Number(row.projectedInvestments.toFixed(3)),
+        investments_low_billion: row.investmentsLow == null ? null : Number(row.investmentsLow.toFixed(3)),
+        investments_high_billion: row.investmentsHigh == null ? null : Number(row.investmentsHigh.toFixed(3)),
         baseline_sme_count: row.sme,
         projected_sme_count: row.projectedSme,
-        projected_score: Number(row.projectedScore.toFixed(3)),
+        projected_score: row.projectedScore == null ? null : Number(row.projectedScore.toFixed(3)),
         projected_rank: row.projectedRank,
       })),
       municipality_count: forecasts.length,
@@ -224,15 +234,15 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
             <article><span>Субъекты МСП, модельный итог</span><strong>{fmt(totalSme, 0)}</strong><em>{pct(baselineSme ? (totalSme / baselineSme - 1) * 100 : 0)} к базе</em></article>
             <article><span>Средний модельный балл</span><strong>{fmt(avgScore, 1)}</strong><em>по {forecasts.length} территориям</em></article>
           </div>
-          <div className="forecast-chart-head"><div><h4>Инвестиции по территориям</h4><p>Модельные значения, млрд ₽</p></div><span>Показано {Math.min(8, filtered.length)} из {filtered.length}</span></div>
-          <div className="forecast-bars">{filtered.slice().sort((a, b) => b.projectedInvestments - a.projectedInvestments).slice(0, 8).map((row) => <div className="forecast-bar-row" key={row.id}><span title={row.name}>{row.name}</span><div className="forecast-bar-track"><i style={{ width: Math.max(1, row.projectedInvestments / maxInvestments * 100) + '%' }} /></div><strong>{fmt(row.projectedInvestments, 1)}</strong></div>)}</div>
+          <div className="forecast-chart-head"><div><h4>Инвестиции по территориям</h4><p>Модельные значения, млрд ₽</p></div><span>Показано {chartRows.length} территорий с данными</span></div>
+          <div className="forecast-bars">{chartRows.map((row) => <div className="forecast-bar-row" key={row.id}><span title={row.name}>{row.name}</span><div className="forecast-bar-track"><i style={{ width: Math.max(1, row.projectedInvestments / maxInvestments * 100) + '%' }} /></div><strong>{fmt(row.projectedInvestments, 1)}</strong></div>)}</div>
         </div>
       </div>
 
       <div className="forecast-table-panel">
         <div className="forecast-table-toolbar"><div><h3>Результаты по муниципалитетам</h3><p>Рейтинг рассчитан заново по модельному баллу; он не является официальным рейтингом.</p></div><div className="forecast-table-filters"><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск территории…" aria-label="Поиск территории в прогнозе"/><select aria-label="Выбрать муниципалитет" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}><option value="ALL">Все территории</option>{municipalities.map((m) => <option value={m.id} key={m.id}>{m.name}</option>)}</select></div></div>
         <div className="table-scroll"><table className="ranking-table forecast-table"><thead><tr><th>Территория</th><th>Инвестиции: база</th><th>Прогноз, млрд ₽</th><th>Модельный диапазон, млрд ₽</th><th>МСП: база → прогноз</th><th>Прогнозный балл</th><th>Модельное место</th></tr></thead>
-          <tbody>{filtered.map((row) => <tr key={row.id}><td>{row.name}</td><td>{fmt(row.investment, 1)}</td><td className="score-cell">{fmt(row.projectedInvestments, 1)}</td><td>{fmt(row.investmentsLow, 1)}–{fmt(row.investmentsHigh, 1)}</td><td>{fmt(row.sme, 0)} → {fmt(row.projectedSme, 0)}</td><td>{fmt(row.projectedScore, 1)}</td><td>№ {row.projectedRank}</td></tr>)}</tbody>
+          <tbody>{filtered.map((row) => <tr key={row.id}><td>{row.name}</td><td>{fmt(row.investment, 1)}</td><td className="score-cell">{fmt(row.projectedInvestments, 1)}</td><td>{row.projectedInvestments == null ? '—' : `${fmt(row.investmentsLow, 1)}–${fmt(row.investmentsHigh, 1)}`}</td><td>{row.sme == null ? '—' : `${fmt(row.sme, 0)} → ${fmt(row.projectedSme, 0)}`}</td><td>{fmt(row.projectedScore, 1)}</td><td>{row.projectedRank == null ? '—' : `№ ${row.projectedRank}`}</td></tr>)}</tbody>
         </table>{filtered.length === 0 && <div className="empty-state"><span>Территории не найдены</span><p>Измените поиск или фильтр.</p></div>}</div>
       </div>
 
