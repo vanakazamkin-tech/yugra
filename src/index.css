@@ -1706,3 +1706,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .risk-signal-row { grid-template-columns: minmax(0, 1fr); }
   .risk-signal-track, .risk-signal-value { grid-column: 1; grid-row: auto; text-align: left; }
 }
+
+
+.data-page-hero-actions { display: flex; align-items: flex-end; flex-direction: column; gap: 9px; flex: 0 0 auto; }
+.data-dictionary-link { text-decoration: none; min-height: 34px; font-size: 10px; }
+@media (max-width: 700px) {
+  .data-page-hero { align-items: flex-start; flex-direction: column; padding: 17px; }
+  .data-page-hero-actions { align-items: flex-start; flex-direction: row; flex-wrap: wrap; width: 100%; }
+}
