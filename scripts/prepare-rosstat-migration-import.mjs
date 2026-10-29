@@ -169,7 +169,8 @@ const seen = new Map();
 for (const raw of parsed.slice(1)) {
   const row = Object.fromEntries(headers.map((header, i) => [header, raw[i] ?? '']));
   const get = (field) => headerIndex[field] == null ? '' : String(raw[headerIndex[field]] ?? '').trim();
-  const indicator = get('indicator').replace(/\.0$/, '');
+  const sourceIndicatorCode = get('indicator').replace(/\.0$/, '');
+  const indicator = sourceCodeToBdPmoCode.get(sourceIndicatorCode) ?? sourceIndicatorCode;
   if (!migrationCodes.has(indicator)) {
     skipped.nonMigrationIndicator += 1;
     continue;
