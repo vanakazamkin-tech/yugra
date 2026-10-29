@@ -1582,7 +1582,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .data-quality-kpis article > span { color: #788575; font-size: 9px; line-height: 1.45; }
 .data-quality-kpis article > strong { color: var(--forest); font-family: 'Playfair Display', Georgia, serif; font-size: clamp(20px, 2.2vw, 30px); line-height: 1.1; overflow-wrap: anywhere; }
 .data-quality-kpis article > small { color: #91998a; font-size: 8px; line-height: 1.5; }
-.data-quality-pillar-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; }
+.data-quality-pillar-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
 .data-quality-pillar { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 13px; border: 1px solid #e1d9c9; border-radius: 8px; background: #fcfaf3; }
 .data-quality-pillar-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .data-quality-pillar-top strong { color: #34583d; font-family: 'Playfair Display', Georgia, serif; font-size: 13px; line-height: 1.3; }
