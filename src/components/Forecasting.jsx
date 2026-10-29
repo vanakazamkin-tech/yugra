@@ -184,7 +184,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
             <label><span>Условная неопределённость, %/год</span><strong>±{fmt(n(params.uncertainty_rate), 1)}%</strong><input aria-label="Допущение неопределённости" type="range" min="0" max="25" step="0.5" value={params.uncertainty_rate} onChange={(e) => setParam('uncertainty_rate', Number(e.target.value))}/></label>
           </div>
           <div className="forecast-control-actions">
-            <button className="primary-button" onClick={exportCsv}><Icon name="download"/>Экспортировать результат CSV</button>
+            <button className="primary-button" onClick={exportCsv}><span className="forecast-action-symbol" aria-hidden="true">↓</span>Экспортировать результат CSV</button>
             <button className="outline-button" onClick={() => {
               setParams({
                 investment_growth_rate: activeScenario.investment_growth_rate,
@@ -192,7 +192,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
                 score_growth_rate: activeScenario.score_growth_rate,
                 uncertainty_rate: activeScenario.uncertainty_rate,
               });
-            }}><Icon name="refresh"/>Вернуть настройки сценария</button>
+            }}><span className="forecast-action-symbol" aria-hidden="true">↻</span>Вернуть настройки сценария</button>
           </div>
         </div>
 
