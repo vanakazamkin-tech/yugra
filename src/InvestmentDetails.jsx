@@ -482,6 +482,70 @@ export const InvestmentDetails = () => {
     };
   }, [officialIndicators, officialDataSources, programExecution]);
 
+
+  const officialMunicipalCoverage = useMemo(() => {
+    const verified = officialIndicators.filter((item) => item.verification_status === 'verified');
+    const municipalityRows = verified.filter((item) => (item.geographic_level || 'municipality') === 'municipality');
+    const settlementPopulationIds = new Set(verified
+      .filter((item) => item.indicator_code === 'population_settlement' && item.geographic_level === 'settlement')
+      .map((item) => item.municipality_id));
+    const categoryDefinitions = [
+      {
+        key: 'population',
+        label: 'Население',
+        matches: (item) => ['population_municipality', 'population_municipality_history', 'population_total'].includes(item.indicator_code),
+      },
+      {
+        key: 'investment',
+        label: 'Инвестиции',
+        matches: (item) => String(item.indicator_code || '').toLowerCase().includes('investment')
+          || String(item.indicator_name || '').toLocaleLowerCase('ru-RU').includes('инвестици'),
+      },
+      {
+        key: 'salary',
+        label: 'Зарплата',
+        matches: (item) => /salary|wage/i.test(String(item.indicator_code || ''))
+          || String(item.indicator_name || '').toLocaleLowerCase('ru-RU').includes('заработн'),
+      },
+      {
+        key: 'employment',
+        label: 'Занятость',
+        matches: (item) => String(item.indicator_code || '').startsWith('employees_')
+          || String(item.indicator_code || '').startsWith('average_employees_'),
+      },
+      {
+        key: 'entrepreneurship',
+        label: 'Предпринимательство',
+        matches: (item) => String(item.indicator_code || '').startsWith('registered_')
+          || String(item.indicator_code || '').toLowerCase().includes('sme')
+          || String(item.indicator_name || '').toLocaleLowerCase('ru-RU').includes('индивидуальных предпринимател'),
+      },
+    ];
+    const rows = municipalities.map((municipality) => {
+      const categories = categoryDefinitions.map((category) => {
+        const records = municipalityRows.filter((item) =>
+          item.municipality_id === municipality.id && category.matches(item)
+        );
+        const years = records.map((item) => Number(item.reference_year)).filter(Number.isFinite);
+        const settlementOnly = category.key === 'population' && records.length === 0 && settlementPopulationIds.has(municipality.id);
+        return {
+          key: category.key,
+          recordsCount: records.length,
+          firstYear: years.length ? Math.min(...years) : null,
+          lastYear: years.length ? Math.max(...years) : null,
+          status: records.length ? 'covered' : settlementOnly ? 'settlement-only' : 'missing',
+        };
+      });
+      return { id: municipality.id, name: municipality.name, categories };
+    }).sort((a, b) => a.name.localeCompare(b.name, 'ru-RU'));
+    const categories = categoryDefinitions.map((category) => ({
+      key: category.key,
+      label: category.label,
+      coveredCount: rows.filter((row) => row.categories.find((cell) => cell.key === category.key)?.recordsCount > 0).length,
+    }));
+    return { rows, categories };
+  }, [municipalities, officialIndicators]);
+
   const filteredFacilities = useMemo(() => {
     const query = facilitySearch.trim().toLocaleLowerCase('ru-RU');
     return facilities.filter((facility) => {
@@ -1311,6 +1375,30 @@ export const InvestmentDetails = () => {
                 <p>{pillar.description}</p>
               </article>)}</div>
               <p className="data-quality-footnote">Покрытие означает наличие хотя бы одного наблюдения по группе, а не полноту набора. Для сравнения проверяйте единицы измерения, методику, период, территориальный уровень и первоисточник.</p>
+            </section>
+            <section className="municipality-coverage-panel panel" aria-labelledby="municipality-coverage-title">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="table"/></span><div><h2 id="municipality-coverage-title">Покрытие официальными данными по муниципалитетам</h2><p>Приоритет расширения базы: население, инвестиции, зарплата, занятость и предпринимательство</p></div></div>
+                <span className="section-tag">{officialMunicipalCoverage.rows.length} ТЕРРИТОРИЙ</span>
+              </div>
+              <div className="table-scroll">
+                <table className="ranking-table municipality-coverage-table">
+                  <thead><tr>
+                    <th>Муниципалитет</th>
+                    {officialMunicipalCoverage.categories.map((category) => <th key={category.key}>{category.label}<small className="cell-subnote">{category.coveredCount}/{municipalities.length} с данными</small></th>)}
+                  </tr></thead>
+                  <tbody>{officialMunicipalCoverage.rows.map((municipality) => <tr key={municipality.id}>
+                    <td className="municipality-cell"><strong>{municipality.name}</strong></td>
+                    {municipality.categories.map((cell) => <td key={cell.key}>
+                      <strong>{cell.status === 'covered' ? 'Есть' : cell.status === 'settlement-only' ? 'Только поселение' : 'Нет'}</strong>
+                      <small className="cell-subnote">{cell.recordsCount > 0
+                        ? cell.recordsCount + ' набл. · ' + (cell.firstYear === cell.lastYear ? cell.lastYear : cell.firstYear + '–' + cell.lastYear)
+                        : cell.status === 'settlement-only' ? 'Не заменяет данные всего района' : 'Нет подтверждённых наблюдений'}</small>
+                    </td>)}
+                  </tr>)}</tbody>
+                </table>
+              </div>
+              <p className="data-quality-footnote">Считаются только наблюдения со статусом проверки «verified» на муниципальном уровне. Для населения отдельно показано, когда есть данные лишь по населённому пункту: их нельзя подставлять вместо данных всего района. Наличие наблюдений не означает полный ряд или сопоставимость периодов.</p>
             </section>
             {surgutPopulationTrend.rows.length > 1 && <section className="population-trend-panel panel" aria-labelledby="population-trend-title">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="population-trend-title">Историческая динамика населения Сургута</h2><p>Официальный годовой ряд Росстата · численность на 1 января</p></div></div><span className="section-tag">{surgutPopulationTrend.rows.length} НАБЛЮДЕНИЙ</span></div>
