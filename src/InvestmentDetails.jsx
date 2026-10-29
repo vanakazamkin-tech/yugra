@@ -205,6 +205,10 @@ export const InvestmentDetails = () => {
   const [riskYellowThreshold, setRiskYellowThreshold] = useState(285);
   const [riskGreenThreshold, setRiskGreenThreshold] = useState(330);
   const [riskSearch, setRiskSearch] = useState('');
+  const [supportMunicipalityId, setSupportMunicipalityId] = useState('megion');
+  const [supportInvestmentChange, setSupportInvestmentChange] = useState(8);
+  const [supportSmeChange, setSupportSmeChange] = useState(5);
+  const [supportScoreChange, setSupportScoreChange] = useState(4);
 
   // Конструктор отчёта: источник данных, поля, блоки и шаблон настроек.
   const [reportTitle, setReportTitle] = useState('Социально-экономический обзор муниципалитетов Югры');
@@ -949,6 +953,32 @@ export const InvestmentDetails = () => {
                 </>}
               </div>
             </div>
+
+            <section className="support-simulation panel" aria-labelledby="support-sim-title">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2 id="support-sim-title">Сценарий «до и после» мер поддержки</h2><p>Интерактивная иллюстрация будущей оценки эффекта программ</p></div></div><span className="concept-corner">ДЕМО</span></div>
+              <div className="support-sim-warning">Изменения ниже — условные пользовательские допущения. Это не измеренный эффект субсидий и не причинно-следственная оценка.</div>
+              <div className="support-sim-controls">
+                <label className="select-field"><span>Муниципалитет</span><select value={supportMunicipalityId} onChange={(event)=>setSupportMunicipalityId(event.target.value)}>{municipalities.slice().sort((a,b)=>a.name.localeCompare(b.name,'ru-RU')).map((m)=><option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
+                <label><span>Условное изменение инвестиций</span><strong>+{supportInvestmentChange}%</strong><input type="range" min="0" max="30" step="1" value={supportInvestmentChange} onChange={(event)=>setSupportInvestmentChange(Number(event.target.value))}/></label>
+                <label><span>Условное изменение МСП</span><strong>+{supportSmeChange}%</strong><input type="range" min="0" max="20" step="1" value={supportSmeChange} onChange={(event)=>setSupportSmeChange(Number(event.target.value))}/></label>
+                <label><span>Условное изменение балла</span><strong>+{supportScoreChange}%</strong><input type="range" min="0" max="15" step="1" value={supportScoreChange} onChange={(event)=>setSupportScoreChange(Number(event.target.value))}/></label>
+              </div>
+              {(() => {
+                const selected = municipalities.find((m)=>m.id===supportMunicipalityId) || municipalities[0];
+                const baseInvestments = numericValue(selected?.investments?.volumeBillion);
+                const baseSme = numericValue(selected?.smeCount);
+                const baseScore = numericValue(selected?.score);
+                return <div className="support-sim-results">
+                  <div className="support-sim-head"><strong>{selected?.name || 'Муниципалитет'}</strong><span>БАЗОВЫЙ СРЕЗ → УСЛОВНЫЙ СЦЕНАРИЙ</span></div>
+                  <div className="support-sim-grid">
+                    <article><span>Инвестиции · демо</span><strong>{baseInvestments==null?'—':formatBillion(baseInvestments)}</strong><small>После: {baseInvestments==null?'нет данных':formatBillion(baseInvestments*(1+supportInvestmentChange/100))}</small><em>+{supportInvestmentChange}% · допущение</em></article>
+                    <article><span>МСП · демо</span><strong>{baseSme==null?'—':formatNumber(baseSme)}</strong><small>После: {baseSme==null?'нет данных':formatNumber(Math.round(baseSme*(1+supportSmeChange/100)))}</small><em>+{supportSmeChange}% · допущение</em></article>
+                    <article><span>Балльный показатель · демо</span><strong>{baseScore==null?'—':formatNumber(baseScore,1)}</strong><small>После: {baseScore==null?'нет данных':formatNumber(baseScore*(1+supportScoreChange/100),1)}</small><em>+{supportScoreChange}% · допущение</em></article>
+                  </div>
+                </div>;
+              })()}
+              <p className="source-panel-note">Для реального анализа «до/после» потребуются даты и объём меры поддержки, сопоставимые показатели до и после, а также контроль внешних факторов. Сейчас блок демонстрирует только интерфейс будущей функции.</p>
+            </section>
           </section>}
 
           {activeTab === 'reports' && <section className="panel full-panel reports-page">
