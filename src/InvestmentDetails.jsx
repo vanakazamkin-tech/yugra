@@ -239,6 +239,7 @@ export const InvestmentDetails = () => {
   const [riskGreenThreshold, setRiskGreenThreshold] = useState(330);
   const [riskSearch, setRiskSearch] = useState('');
   const [selectedTrendSeries, setSelectedTrendSeries] = useState('average_employees_h1');
+  const [selectedSettlementPopulationId, setSelectedSettlementPopulationId] = useState('surgut');
   const [selectedOfficialComparisonCode, setSelectedOfficialComparisonCode] = useState('own_production_shipments_q1');
   const [selectedOfficialComparisonPeriod, setSelectedOfficialComparisonPeriod] = useState('2026|2026-Q1');
   const [supportMunicipalityId, setSupportMunicipalityId] = useState('megion');
@@ -486,6 +487,39 @@ export const InvestmentDetails = () => {
     }));
     return { rows: points, min, max, latest: points[points.length - 1] || null, first: points[0] || null };
   }, [officialIndicators]);
+
+  const settlementPopulationOptions = useMemo(() => {
+    const seen = new Map();
+    officialIndicators.filter((item) => item.indicator_code === 'population_settlement' && item.geographic_level === 'settlement' && numericValue(item.value) != null)
+      .forEach((item) => {
+        if (!seen.has(item.municipality_id)) seen.set(item.municipality_id, {
+          id: item.municipality_id,
+          name: item.geographic_name || municipalities.find((m) => m.id === item.municipality_id)?.name || item.municipality_id,
+        });
+      });
+    return [...seen.values()].sort((a,b) => a.name.localeCompare(b.name,'ru-RU'));
+  }, [officialIndicators, municipalities]);
+
+  const effectiveSettlementPopulationId = settlementPopulationOptions.some((item) => item.id === selectedSettlementPopulationId)
+    ? selectedSettlementPopulationId : settlementPopulationOptions[0]?.id || '';
+
+  const settlementPopulationTrend = useMemo(() => {
+    const rows = officialIndicators.filter((item) => item.indicator_code === 'population_settlement'
+      && item.geographic_level === 'settlement'
+      && item.municipality_id === effectiveSettlementPopulationId
+      && numericValue(item.value) != null).slice()
+      .sort((a,b) => Number(a.reference_year)-Number(b.reference_year));
+    const values = rows.map((item) => numericValue(item.value));
+    const min = values.length ? Math.min(...values) : 0;
+    const max = values.length ? Math.max(...values) : 1;
+    const points = rows.map((item,index) => ({
+      ...item, numericValue: numericValue(item.value),
+      x: rows.length < 2 ? 400 : 44 + index / (rows.length - 1) * 712,
+      y: 168 - ((numericValue(item.value) - min) / Math.max(0.000001, max - min)) * 112,
+    }));
+    return { name: points[0]?.geographic_name || settlementPopulationOptions.find((item) => item.id === effectiveSettlementPopulationId)?.name || 'Город',
+      rows: points, first: points[0] || null, latest: points[points.length - 1] || null };
+  }, [officialIndicators, effectiveSettlementPopulationId, settlementPopulationOptions]);
 
   const surgutComparableTrend = useMemo(() => {
     const config = OFFICIAL_TREND_SERIES.find((series) => series.code === selectedTrendSeries) || OFFICIAL_TREND_SERIES[0];
@@ -1031,6 +1065,27 @@ export const InvestmentDetails = () => {
               </div>
               <p className="source-panel-note">Источник: <a href={surgutPopulationTrend.latest.source_url} target="_blank" rel="noreferrer">муниципальный паспорт Росстата ↗</a>. Ряд относится к численности городского округа на 1 января. Это историческое наблюдение, не прогноз.</p>
             </section>}
+            <section className="population-trend-panel panel" aria-labelledby="settlement-population-trend-title">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="settlement-population-trend-title">Динамика населения городов Югры</h2><p>Оценки Росстата на 1 января · уровень населённого пункта, отдельно от района</p></div></div><span className="section-tag">{settlementPopulationTrend.rows.length} НАБЛЮДЕНИЙ</span></div>
+              <label className="official-trend-select"><span>Выберите город</span><select value={effectiveSettlementPopulationId} onChange={(event)=>setSelectedSettlementPopulationId(event.target.value)}>{settlementPopulationOptions.map((item)=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+              {settlementPopulationTrend.rows.length > 1 ? <>
+                <div className="population-trend-kpis">
+                  <article><span>Первый период</span><strong>{formatNumber(settlementPopulationTrend.first.numericValue,1)} тыс. чел.</strong><small>{settlementPopulationTrend.first.reference_year} год</small></article>
+                  <article><span>Последнее значение</span><strong>{formatNumber(settlementPopulationTrend.latest.numericValue,1)} тыс. чел.</strong><small>{settlementPopulationTrend.latest.reference_year} год</small></article>
+                  <article><span>Изменение между периодами</span><strong className={settlementPopulationTrend.latest.numericValue>=settlementPopulationTrend.first.numericValue?'trend-positive':'trend-negative'}>{formatNumber((settlementPopulationTrend.latest.numericValue/settlementPopulationTrend.first.numericValue-1)*100,1)}%</strong><small>{settlementPopulationTrend.first.reference_year} → {settlementPopulationTrend.latest.reference_year}, не годовой темп</small></article>
+                </div>
+                <div className="population-trend-chart-wrap">
+                  <svg className="population-trend-chart" viewBox="0 0 800 220" role="img" aria-label={`Изменение численности населения города ${settlementPopulationTrend.name} между доступными наблюдениями`}>
+                    <line x1="44" y1="168" x2="756" y2="168" stroke="#d9d9ca" strokeWidth="1"/>
+                    <line x1="44" y1="112" x2="756" y2="112" stroke="#e5e3d7" strokeWidth="1" strokeDasharray="4 5"/>
+                    <line x1="44" y1="56" x2="756" y2="56" stroke="#e5e3d7" strokeWidth="1" strokeDasharray="4 5"/>
+                    <polyline points={settlementPopulationTrend.rows.map((item)=>`${item.x},${item.y}`).join(' ')} fill="none" stroke="#3d7050" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                    {settlementPopulationTrend.rows.map((item,index)=><g key={item.id}><circle cx={item.x} cy={item.y} r="5" fill={index===settlementPopulationTrend.rows.length-1?'#b78a49':'#3d7050'} stroke="#fffdf8" strokeWidth="1.5"/><text x={item.x} y={Math.max(23,item.y-12)} textAnchor="middle" fill="#46614b" fontSize="12" fontWeight="700">{formatNumber(item.numericValue,1)}</text><text x={item.x} y="194" textAnchor="middle" fill="#7c8979" fontSize="12">{item.reference_year}</text></g>)}
+                  </svg>
+                </div>
+                <div className="table-scroll official-trend-table-wrap"><table className="ranking-table"><thead><tr><th>Город</th><th>Значение, тыс. чел.</th><th>Период</th><th>Географический уровень</th><th>Источник</th></tr></thead><tbody>{settlementPopulationTrend.rows.map((item)=><tr key={item.id}><td>{item.geographic_name || settlementPopulationTrend.name}</td><td className="score-cell">{formatNumber(item.numericValue,1)}</td><td>{formatReferencePeriod(item)}</td><td>Населённый пункт</td><td><a href={item.source_url} target="_blank" rel="noreferrer">Росстат ↗</a></td></tr>)}</tbody></table></div>
+              </> : <div className="empty-state"><span>Для выбранного города пока доступно менее двух наблюдений</span><p>Выберите другой город. Значения населённого пункта не трактуются как данные всего муниципального района.</p></div>}
+            </section>
             <section className="population-trend-panel panel" aria-labelledby="economic-trend-title">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="economic-trend-title">Сопоставимая динамика экономики Сургута</h2><p>Одинаковые периоды за 2024–2026 годы · официальный муниципальный паспорт</p></div></div><div className="toolbar-actions"><span className="section-tag">{surgutComparableTrend.rows.length} НАБЛЮДЕНИЙ</span><button className="outline-button" onClick={downloadSurgutComparableTrendCsv} disabled={surgutComparableTrend.rows.length===0}><Icon name="download"/>CSV</button></div></div>
               <label className="official-trend-select"><span>Показатель и период сравнения</span><select value={selectedTrendSeries} onChange={(event)=>setSelectedTrendSeries(event.target.value)}>{OFFICIAL_TREND_SERIES.map((series)=><option value={series.code} key={series.code}>{series.title} — {series.periodLabel}</option>)}</select></label>
