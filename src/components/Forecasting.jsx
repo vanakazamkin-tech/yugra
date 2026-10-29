@@ -4,6 +4,7 @@ const FALLBACK_SCENARIOS = [
   { id: null, key: 'cautious', title: 'Осторожный', summary: 'Сдержанная динамика и повышенная неопределённость.', investment_growth_rate: 1, sme_growth_rate: 1, score_growth_rate: 0.5, uncertainty_rate: 10, display_order: 1 },
   { id: null, key: 'base', title: 'Инерционный', summary: 'Умеренное продолжение заданных тенденций без резкого ускорения.', investment_growth_rate: 4, sme_growth_rate: 3, score_growth_rate: 1.5, uncertainty_rate: 7, display_order: 2 },
   { id: null, key: 'ambitious', title: 'Ускоренное развитие', summary: 'Более высокие темпы при условии реализации инициатив и доступности ресурсов.', investment_growth_rate: 8, sme_growth_rate: 6, score_growth_rate: 3, uncertainty_rate: 12, display_order: 3 },
+  { id: null, key: 'sanctions_stress', title: 'Санкционный стресс', summary: 'Стресс-допущение: ограничения экспорта сырья, рост издержек, дефицит кадров и давление на муниципальные доходы. Параметры не являются оценкой вероятности.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18, display_order: 4 },
 ];
 
 const n = (value) => {
@@ -92,7 +93,11 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
             uncertainty_rate: n(s.uncertainty_rate),
             display_order: s.display_order,
           }));
-          setScenarios(normalized);
+          const sanctionsScenario = FALLBACK_SCENARIOS.find((item) => item.key === 'sanctions_stress');
+          const mergedScenarios = normalized.some((item) => item.key === 'sanctions_stress')
+            ? normalized
+            : [...normalized, sanctionsScenario];
+          setScenarios(mergedScenarios);
           setScenarioStatus('database');
           const initial = normalized.find((s) => s.key === 'base') || normalized[0];
           setScenarioKey(initial.key);
@@ -173,7 +178,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
         <span className={'forecast-source-pill ' + (scenarioStatus === 'database' ? 'is-live' : '')}><i />{scenarioStatus === 'database' ? 'Сценарии из Supabase' : 'Встроенные шаблоны'}</span>
       </div>
 
-      <div className="forecast-warning"><strong>Концептуальная модель, не официальный прогноз.</strong><span>Проверенных временных рядов и официальных прогнозных входов здесь нет. Значения ниже — результат заданных пользователем допущений на основе текущего среза; это сценарный эксперимент, а не статистически обученная модель.</span><span className="forecast-coverage-note">Заполненность исходных данных: инвестиции — {investmentCoverage} из {forecasts.length}; МСП — {smeCoverage} из {forecasts.length}; балл — {scoreCoverage} из {forecasts.length}. Пропуски не подменяются нулями.</span></div>
+      <div className="forecast-warning"><strong>Концептуальная модель, не официальный прогноз.</strong><span>Проверенных временных рядов по всем 22 территориям нет. Это сценарный эксперимент с заданными пользователем темпами, а не статистически обученная модель и не вероятность развития событий.</span><span className="forecast-coverage-note">Пять групп из паспорта проекта: занятость, доходы населения, местный бюджет, миграция и инвестиции. Сейчас модельный интерфейс рассчитывает только поля, доступные в демо-наборе; пропуски не подменяются нулями.</span></div>
 
       <div className="forecast-controls-grid">
         <div className="forecast-control-card">
