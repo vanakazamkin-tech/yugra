@@ -163,6 +163,16 @@ export const FALLBACK_DATA_SOURCES = [
 
 
   {
+    id: 'rosstat_surgut_total_capital_investment',
+    name: 'Росстат — инвестиции в основной капитал организаций Сургута без субъектов малого предпринимательства',
+    category: 'official_statistics',
+    url: 'https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=71876000202420252026',
+    description: 'Общий объём инвестиций в основной капитал организаций на территории Сургута в 2024 и 2025 годах, без субъектов малого предпринимательства.',
+    format: 'HTML',
+    coverage: 'Сургут · 2 наблюдения за 2024–2025 годы',
+    import_status: 'partially_imported',
+  },
+  {
     id: 'nizhnevartovsk_open_data_catalog',
     name: 'Нижневартовск — официальный портал открытых данных',
     category: 'municipal_open_data',
