@@ -62,6 +62,24 @@ const METRICS = [
   { key: 'assessmentScore', label: 'Оценка бизнеса', short: 'Бизнес', unit: 'из 5', get: (m) => numericValue(m.assessmentScore), format: (m) => numericValue(m.assessmentScore) == null ? '—' : `${formatNumber(m.assessmentScore, 2)} / 5` },
 ];
 const METRIC_BY_KEY = Object.fromEntries(METRICS.map((metric) => [metric.key, metric]));
+const SURGUT_EMPLOYMENT_SECTORS = [
+  { code: 'employees_mining', name: 'Добыча полезных ископаемых' },
+  { code: 'employees_manufacturing', name: 'Обрабатывающие производства' },
+  { code: 'employees_energy', name: 'Электроэнергия, газ и пар' },
+  { code: 'employees_water_supply', name: 'Водоснабжение и обращение с отходами' },
+  { code: 'employees_construction', name: 'Строительство' },
+  { code: 'employees_trade', name: 'Торговля и ремонт автотранспорта' },
+  { code: 'employees_transport', name: 'Транспортировка и хранение' },
+  { code: 'employees_hospitality', name: 'Гостиницы и общественное питание' },
+  { code: 'employees_information_communication', name: 'Информация и связь' },
+  { code: 'employees_finance', name: 'Финансы и страхование' },
+  { code: 'employees_real_estate', name: 'Операции с недвижимостью' },
+  { code: 'employees_professional_scientific', name: 'Профессиональная и научная деятельность' },
+  { code: 'employees_admin_services', name: 'Административные услуги' },
+  { code: 'employees_public_admin', name: 'Государственное управление' },
+  { code: 'employees_education', name: 'Образование' },
+  { code: 'employees_healthcare', name: 'Здравоохранение и социальные услуги' },
+];
 const OFFICIAL_TREND_SERIES = [
   { code: 'average_employees_q1', title: 'Среднесписочная численность работников', periodLabel: 'I квартал', unit: 'человек', definition: 'Организации без субъектов малого предпринимательства; январь–март каждого года.' },
   { code: 'average_employees_h1', title: 'Среднесписочная численность работников', periodLabel: 'Первое полугодие', unit: 'человек', definition: 'Организации без субъектов малого предпринимательства; январь–июнь каждого года.' },
@@ -246,6 +264,8 @@ export const InvestmentDetails = () => {
   const [riskGreenThreshold, setRiskGreenThreshold] = useState(330);
   const [riskSearch, setRiskSearch] = useState('');
   const [selectedTrendSeries, setSelectedTrendSeries] = useState('average_employees_h1');
+  const [selectedSectorYear, setSelectedSectorYear] = useState('2026');
+  const [selectedSectorPeriod, setSelectedSectorPeriod] = useState('Q1');
   const [selectedSettlementPopulationId, setSelectedSettlementPopulationId] = useState('surgut');
   const [selectedOfficialComparisonCode, setSelectedOfficialComparisonCode] = useState('own_production_shipments_q1');
   const [selectedOfficialComparisonPeriod, setSelectedOfficialComparisonPeriod] = useState('2026|2026-Q1');
@@ -529,6 +549,47 @@ export const InvestmentDetails = () => {
       rows: points, first: points[0] || null, latest: points[points.length - 1] || null };
   }, [officialIndicators, effectiveSettlementPopulationId, settlementPopulationOptions]);
 
+  const surgutSectorEmployment = useMemo(() => {
+    const year = Number(selectedSectorYear);
+    const periodKey = selectedSectorPeriod === 'annual' ? 'annual' : `${year}-${selectedSectorPeriod}`;
+    const totalCode = {
+      Q1: 'average_employees_q1',
+      H1: 'average_employees_h1',
+      Q3: 'average_employees_q3',
+      annual: 'average_employees_annual',
+    }[selectedSectorPeriod];
+    const totalRow = officialIndicators.find((item) =>
+      item.municipality_id === 'surgut'
+      && item.indicator_code === totalCode
+      && Number(item.reference_year) === year
+      && String(item.reference_period || 'annual') === periodKey
+      && numericValue(item.value) != null
+    );
+    const rows = SURGUT_EMPLOYMENT_SECTORS.map((sector) => {
+      const item = officialIndicators.find((candidate) =>
+        candidate.municipality_id === 'surgut'
+        && candidate.indicator_code === sector.code
+        && Number(candidate.reference_year) === year
+        && String(candidate.reference_period || 'annual') === periodKey
+        && numericValue(candidate.value) != null
+      );
+      const value = item ? numericValue(item.value) : null;
+      return {
+        ...sector,
+        item: item || null,
+        value,
+        sharePercent: value != null && numericValue(totalRow?.value) > 0 ? value / Number(totalRow.value) * 100 : null,
+      };
+    }).filter((item) => item.value != null).sort((a,b) => b.value-a.value);
+    const total = totalRow ? numericValue(totalRow.value) : null;
+    const listedTotal = rows.reduce((sum,item)=>sum+item.value,0);
+    return {
+      year, periodKey, total, totalRow, rows, listedTotal,
+      coveragePercent: total && total > 0 ? listedTotal / total * 100 : null,
+      periodLabel: {Q1:'I квартал (январь–март)',H1:'Полугодие (январь–июнь)',Q3:'9 месяцев (январь–сентябрь)',annual:'Полный год (январь–декабрь)'}[selectedSectorPeriod],
+    };
+  }, [officialIndicators, selectedSectorYear, selectedSectorPeriod]);
+
   const surgutComparableTrend = useMemo(() => {
     const config = OFFICIAL_TREND_SERIES.find((series) => series.code === selectedTrendSeries) || OFFICIAL_TREND_SERIES[0];
     const rows = officialIndicators
@@ -727,6 +788,26 @@ export const InvestmentDetails = () => {
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = 'yugra-official-indicators-filtered.csv';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadSurgutSectorEmploymentCsv = () => {
+    const headers = ['Территория','Отрасль','Среднесписочная численность работников','Единица измерения','Период','Доля от общей численности, %','Источник','URL источника','Примечание'];
+    const rows = surgutSectorEmployment.rows.map((sector) => [
+      'Сургут', sector.name, sector.value, 'человек',
+      `${surgutSectorEmployment.year} · ${surgutSectorEmployment.periodLabel}`,
+      sector.sharePercent == null ? '' : sector.sharePercent,
+      sector.item?.source_id || '', sector.item?.source_url || '', sector.item?.notes || '',
+    ]);
+    const escape = (value) => '"' + String(value == null ? '' : value).replaceAll('"','""') + '"';
+    const csv = '\\uFEFF' + [headers, ...rows].map((row)=>row.map(escape).join(';')).join('\\r\\n');
+    const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+    const anchor = document.createElement('a');
+    anchor.href=url;
+    anchor.download=`yugra-surgut-sector-employment-${surgutSectorEmployment.year}-${selectedSectorPeriod}.csv`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
@@ -1122,6 +1203,30 @@ export const InvestmentDetails = () => {
                 </div>
                 <div className="table-scroll official-trend-table-wrap"><table className="ranking-table"><thead><tr><th>Период</th><th>Значение, {surgutComparableTrend.unit}</th><th>Изменение к предыдущему</th><th>Источник</th></tr></thead><tbody>{surgutComparableTrend.rows.map((item)=><tr key={item.id}><td>{formatReferencePeriod(item)}</td><td className="score-cell">{formatNumber(item.numericValue,1)}</td><td>{item.changePercent==null?'—':`${item.changePercent>0?'+':''}${formatNumber(item.changePercent,1)}%`}</td><td><a href={item.source_url} target="_blank" rel="noreferrer">Росстат ↗</a></td></tr>)}</tbody></table></div>
               </> : <div className="empty-state"><span>Для выбранного показателя пока недостаточно наблюдений</span><p>Выберите другой показатель или проверьте заполненность источника.</p></div>}
+            </section>
+            <section className="sector-employment-panel panel" aria-labelledby="sector-employment-title">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="people"/></span><div><h2 id="sector-employment-title">Отраслевая структура занятости Сургута</h2><p>Официальная среднесписочная численность работников в 16 отраслях</p></div></div>
+                <div className="toolbar-actions"><span className="section-tag">{surgutSectorEmployment.rows.length} ОТРАСЛЕЙ</span><button className="outline-button" onClick={downloadSurgutSectorEmploymentCsv} disabled={!surgutSectorEmployment.rows.length}><Icon name="download"/>CSV</button></div>
+              </div>
+              <div className="sector-employment-controls">
+                <label className="official-trend-select"><span>Год</span><select value={selectedSectorYear} onChange={(event)=>setSelectedSectorYear(event.target.value)}>{['2024','2025','2026'].map((year)=><option key={year} value={year}>{year}</option>)}</select></label>
+                <label className="official-trend-select"><span>Период</span><select value={selectedSectorPeriod} onChange={(event)=>setSelectedSectorPeriod(event.target.value)}><option value="Q1">I квартал</option><option value="H1">Первое полугодие</option><option value="Q3">9 месяцев</option><option value="annual">Полный год</option></select></label>
+              </div>
+              <p className="official-trend-definition">Численность не включает субъектов малого предпринимательства. Для каждого отраслевого среза показывается среднесписочное число работников за выбранный отчётный период — это не сумма работников за несколько периодов. Отсутствующие значения за 2026 год не прогнозируются.</p>
+              {surgutSectorEmployment.rows.length ? <>
+                <div className="sector-employment-summary">
+                  <article><span>Общая численность по обследуемым видам</span><strong>{formatNumber(surgutSectorEmployment.total)} чел.</strong><small>{surgutSectorEmployment.periodLabel} · Росстат</small></article>
+                  <article><span>Покрытие выбранными отраслевыми строками</span><strong>{surgutSectorEmployment.coveragePercent == null ? '—' : `${formatNumber(surgutSectorEmployment.coveragePercent,1)}%`}</strong><small>сумма показанных отраслей к общей численности; перечень не включает все виды деятельности</small></article>
+                </div>
+                <div className="sector-employment-bars">{surgutSectorEmployment.rows.map((sector,index)=><div className="sector-employment-row" key={sector.code}>
+                  <div className="sector-employment-label"><span>{String(index+1).padStart(2,'0')}</span><strong>{sector.name}</strong></div>
+                  <div className="sector-employment-track"><i style={{width:Math.max(1,sector.value/Math.max(1,surgutSectorEmployment.rows[0].value)*100)+'%'}}/></div>
+                  <strong className="sector-employment-value">{formatNumber(sector.value)}<small> чел.</small></strong>
+                  <span className="sector-employment-share">{sector.sharePercent == null ? '—' : `${formatNumber(sector.sharePercent,1)}% от общей занятости`}</span>
+                </div>)}</div>
+              </> : <div className="empty-state"><span>Для выбранного года и периода данных пока нет</span><p>Выберите другой срез. Например, полный год доступен за 2024 и 2025 годы, но ещё не за 2026-й.</p></div>}
+              <p className="source-panel-note">Источник: <a href="https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=71876000202420252026" target="_blank" rel="noreferrer">официальный паспорт Сургута в Росстате ↗</a>. В таблице показаны отрасли с отдельными опубликованными значениями; их сумма может быть меньше общей численности работников.</p>
             </section>
             <section className="official-municipal-comparison panel" aria-labelledby="official-municipal-comparison-title">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2 id="official-municipal-comparison-title">Сравнение территорий по официальным данным</h2><p>Сравниваем только одинаковые показатель, период и территориальный уровень</p></div></div><span className="section-tag">{officialComparisonRows.length} ТЕРРИТОРИЙ</span></div>
