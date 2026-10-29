@@ -1071,6 +1071,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .about-capability-grid article strong { color: var(--forest); font-family: 'Playfair Display', Georgia, serif; font-size: 16px; }
 .about-capability-grid article p { margin: 0; color: #788273; font-size: 10px; line-height: 1.65; }
 .about-source-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.source-catalog-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(190px, 260px) auto auto; gap: 10px; align-items: end; margin: 14px 0 12px; }
+.source-catalog-toolbar .search-box { max-width: none; }
+.source-catalog-toolbar .select-field { min-width: 0; }
+@media (max-width: 800px) { .source-catalog-toolbar { grid-template-columns: 1fr 1fr; } .source-catalog-toolbar .search-box { grid-column: 1 / -1; } }
+@media (max-width: 480px) { .source-catalog-toolbar { grid-template-columns: 1fr; } .source-catalog-toolbar .search-box { grid-column: auto; } }
 .about-source-list a { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; padding: 13px 14px; border: 1px solid #e4d9c7; border-radius: 8px; background: #fffdf8; text-decoration: none; color: inherit; transition: border-color .18s, background .18s; }
 .about-source-list a:hover { border-color: var(--ochre); background: #f8f1e5; }
 .about-source-list a strong { color: var(--forest); font-size: 12px; }
