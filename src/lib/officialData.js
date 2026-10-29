@@ -243,6 +243,16 @@ export const FALLBACK_DATA_SOURCES = [
     import_status: 'imported',
   },
   {
+    id: 'rosstat_hmao_municipal_population_2022_2025',
+    name: 'Тюменьстат — население городских округов и муниципальных районов Югры на 01.01.2022–2025',
+    category: 'demography',
+    url: 'https://72.rosstat.gov.ru/ofs_demp_hmao',
+    description: 'Официальный XLSX: общая численность населения 22 муниципальных образований за 2022–2025 годы, а также городская и сельская составляющие там, где они опубликованы.',
+    format: 'XLSX',
+    coverage: '22 муниципальных образования; 88 общих, 84 городских и 40 сельских наблюдений',
+    import_status: 'imported',
+  },
+  {
     id: 'rosstat_surgut_population_history',
     name: 'Росстат — динамика населения Сургута, 2009–2025',
     category: 'demography',
