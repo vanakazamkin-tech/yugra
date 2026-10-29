@@ -453,7 +453,7 @@ export const InvestmentDetails = () => {
               </article>
               <article className="insight-card">
                 <span className="insight-card-kicker">РОСТ ВЫШЕ 100%</span>
-                <strong>{extendedInsights.growthRows ? extendedInsights.growthAbove100 : '—'}</strong>
+                <strong>{extendedInsights.growthCoverage ? extendedInsights.growthAbove100 : '—'}</strong>
                 <span>Территорий с положительной динамикой</span>
                 <small>из {extendedInsights.growthCoverage} с доступным показателем</small>
               </article>
