@@ -379,6 +379,51 @@ export const InvestmentDetails = () => {
     return `${formatNumber(item.value, 1)} ${item.unit}`;
   };
 
+  const officialDataQuality = useMemo(() => {
+    const municipalRows = officialIndicators.filter((item) => (item.geographic_level || 'municipality') === 'municipality');
+    const municipalCoverage = new Set(municipalRows.map((item) => item.municipality_id));
+    const latestYear = officialIndicators.reduce((max, item) => {
+      const year = Number(item.reference_year);
+      return Number.isFinite(year) ? Math.max(max, year) : max;
+    }, 0);
+    const uniqueIndicators = new Set(officialIndicators.map((item) => item.indicator_code).filter(Boolean));
+    const sourceCounts = officialDataSources.reduce((counts, source) => {
+      const status = source.import_status || 'identified';
+      counts[status] = (counts[status] || 0) + 1;
+      return counts;
+    }, {});
+    const makePillar = (key, title, description, codes, includePrograms = false) => {
+      const rows = officialIndicators.filter((item) => codes.includes(item.indicator_code));
+      const municipalIndicatorRows = rows.filter((item) => (item.geographic_level || 'municipality') === 'municipality');
+      const covered = new Set(municipalIndicatorRows.map((item) => item.municipality_id));
+      if (includePrograms) programExecution.forEach((item) => covered.add(item.municipality_id));
+      const years = rows.map((item) => Number(item.reference_year)).filter(Number.isFinite);
+      const periods = new Set(rows.map((item) => item.reference_period || 'annual'));
+      return {
+        key, title, description,
+        rows: rows.length + (includePrograms ? programExecution.length : 0),
+        municipalityCount: covered.size,
+        firstYear: years.length ? Math.min(...years) : null,
+        lastYear: years.length ? Math.max(...years) : null,
+        periodCount: periods.size,
+      };
+    };
+    return {
+      totalRows: officialIndicators.length,
+      municipalityCount: municipalCoverage.size,
+      indicatorCount: uniqueIndicators.size,
+      latestYear: latestYear || null,
+      pendingSources: (sourceCounts.identified || 0) + (sourceCounts.ready_for_import || 0) + (sourceCounts.access_issue || 0),
+      pillars: [
+        makePillar('employment', 'Занятость', 'Среднесписочная численность работников в обследуемых организациях; это не полный показатель занятости всего населения.', ['average_employees_q1', 'average_employees_h1']),
+        makePillar('income', 'Доходы и заработная плата', 'Есть отдельные показатели зарплаты; полного муниципального ряда доходов населения пока нет.', ['average_monthly_salary_q1', 'average_monthly_salary_h1', 'avg_monthly_salary_large_medium_nco']),
+        makePillar('budget', 'Местный бюджет', 'Есть вложения за счёт местного бюджета и отдельные отчёты муниципальных программ, но не полная панель доходов и расходов.', ['fixed_capital_investment_local_budget'], true),
+        makePillar('migration', 'Миграция', 'Сопоставимый подтверждённый муниципальный ряд прибывших и выбывших пока не импортирован.', ['migration_arrivals', 'migration_departures', 'migration_balance']),
+        makePillar('investment', 'Инвестиции', 'Доступны отдельные значения инвестиций организаций и инвестиций на душу населения; охват периодами различается.', ['fixed_capital_investment_enterprises_non_sme', 'investment_per_capita_no_budget']),
+      ],
+    };
+  }, [officialIndicators, officialDataSources, programExecution]);
+
   const filteredFacilities = useMemo(() => {
     const query = facilitySearch.trim().toLocaleLowerCase('ru-RU');
     return facilities.filter((facility) => {
@@ -953,6 +998,22 @@ export const InvestmentDetails = () => {
               <span className={`official-status-chip official-status--${officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
             </section>
             <div className="data-page-summary"><article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong></article><article><span>Проверенных наблюдений</span><strong>{officialDataSummary.recordCount}</strong></article><article><span>Инвестиционных площадок</span><strong>{officialDataSummary.investmentSiteCount}</strong></article><article><span>Отчётов по программам</span><strong>{programExecution.length}</strong></article><article><span>Записей цен на топливо</span><strong>{fuelPrices.length}</strong></article><article><span>Школ и детсадов</span><strong>{facilities.length}</strong></article></div>
+            <section className="data-quality-panel panel" aria-labelledby="data-quality-title">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="data-quality-title">Качество и покрытие данных</h2><p>Фактический охват подключённой базы; демонстрационные поля рейтинга здесь не учитываются</p></div></div><span className="section-tag">ОФИЦИАЛЬНЫЙ СЛОЙ</span></div>
+              <div className="data-quality-kpis">
+                <article><span>Подтверждённых наблюдений</span><strong>{officialDataQuality.totalRows}</strong><small>{officialDataQuality.indicatorCount} различных кодов показателей</small></article>
+                <article><span>Территорий с муниципальными наблюдениями</span><strong>{officialDataQuality.municipalityCount} / {municipalities.length}</strong><small>учтены записи муниципального уровня</small></article>
+                <article><span>Последний год в базе</span><strong>{officialDataQuality.latestYear ?? '—'}</strong><small>это не означает наличие полного набора за год</small></article>
+                <article><span>Источников, ожидающих импорта или доступ</span><strong>{officialDataQuality.pendingSources}</strong><small>найденные, подготовленные и требующие доступа наборы</small></article>
+              </div>
+              <div className="data-quality-pillar-grid">{officialDataQuality.pillars.map((pillar) => <article className="data-quality-pillar" key={pillar.key}>
+                <div className="data-quality-pillar-top"><strong>{pillar.title}</strong><span>{pillar.municipalityCount} террит.</span></div>
+                <div className="data-quality-pillar-track"><i style={{width:Math.min(100,pillar.municipalityCount/municipalities.length*100)+'%'}}/></div>
+                <div className="data-quality-pillar-meta"><span>{pillar.rows} записей</span><span>{pillar.firstYear == null ? 'Нет временного ряда' : `${pillar.firstYear}–${pillar.lastYear}`}</span></div>
+                <p>{pillar.description}</p>
+              </article>)}</div>
+              <p className="data-quality-footnote">Покрытие означает наличие хотя бы одного наблюдения по группе, а не полноту набора. Для сравнения проверяйте единицы измерения, методику, период, территориальный уровень и первоисточник.</p>
+            </section>
             {surgutPopulationTrend.rows.length > 1 && <section className="population-trend-panel panel" aria-labelledby="population-trend-title">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="population-trend-title">Историческая динамика населения Сургута</h2><p>Официальный годовой ряд Росстата · численность на 1 января</p></div></div><span className="section-tag">{surgutPopulationTrend.rows.length} НАБЛЮДЕНИЙ</span></div>
               <div className="population-trend-kpis"><article><span>Начало ряда</span><strong>{formatNumber(surgutPopulationTrend.first.value)} чел.</strong><small>{surgutPopulationTrend.first.reference_year} год</small></article><article><span>Последнее значение</span><strong>{formatNumber(surgutPopulationTrend.latest.value)} чел.</strong><small>{surgutPopulationTrend.latest.reference_year} год</small></article><article><span>Изменение за период</span><strong>{formatNumber((surgutPopulationTrend.latest.value/surgutPopulationTrend.first.value-1)*100,1)}%</strong><small>за весь доступный ряд, не годовой темп</small></article></div>
