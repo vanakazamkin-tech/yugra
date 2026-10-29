@@ -82,7 +82,7 @@ export const InvestmentDetails = () => {
   const [officialIndicators, setOfficialIndicators] = useState([]);
   const [investmentSites, setInvestmentSites] = useState([]);
   const [programExecution, setProgramExecution] = useState([]);
-  const [officialDataStatus, setOfficialDataStatus = useState(isSupabaseConfigured ? 'loading' : 'offline');
+  const [officialDataStatus, setOfficialDataStatus] = useState(isSupabaseConfigured ? 'loading' : 'offline');
   const [officialDataError, setOfficialDataError] = useState('');
 
   useEffect(() => {
