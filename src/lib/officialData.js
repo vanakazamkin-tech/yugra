@@ -160,26 +160,8 @@ export const FALLBACK_DATA_SOURCES = [
     coverage: 'Сургут · 2 наблюдения за 2024–2025 годы',
     import_status: 'partially_imported',
   },
-  {
-    id: 'rosstat_surgut_passport_economy_2024_2026',
-    name: 'Росстат — паспорт Сургута: занятость и деятельность предприятий, 2024–2026',
-    category: 'official_statistics',
-    url: 'https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=71876000202420252026',
-    description: 'Среднесписочная численность работников, отгрузка собственной продукции и перепродажа товаров за I квартал и первое полугодие 2024–2026 годов.',
-    format: 'HTML',
-    coverage: 'Сургут · 19 наблюдений за 2024–2026 годы',
-    import_status: 'partially_imported',
-  },
-  {
-    id: 'rosstat_surgut_capital_investments',
-    name: 'Росстат — инвестиции в основной капитал за счёт местного бюджета, Сургут',
-    category: 'official_statistics',
-    url: 'https://rosstat.gov.ru/scripts/db_inet2/passport/table.aspx?opt=71876000202420252026',
-    description: 'Официальные значения вложений за счёт средств местного бюджета за 2024 и 2025 годы.',
-    format: 'HTML',
-    coverage: 'Сургут · 2 наблюдения за 2024–2025 годы',
-    import_status: 'partially_imported',
-  },
+
+
   {
     id: 'nizhnevartovsk_open_data_catalog',
     name: 'Нижневартовск — официальный портал открытых данных',
