@@ -160,7 +160,20 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       row.sme, row.projectedSme, row.projectedScore, row.projectedRank,
     ]);
     const escaped = (value) => '"' + String(value == null ? '' : value).replaceAll('"', '""') + '"';
-    const csv = '\uFEFF' + [headers, ...rows].map((row) => row.map(escaped).join(';')).join('\r\n');
+    const metadata = [
+      ['Тип результата', 'Концептуальный сценарный расчёт, не официальный прогноз'],
+      ['Сценарий', activeScenario.title],
+      ['Горизонт, лет', horizon],
+      ['Годовой темп инвестиций, %', params.investment_growth_rate],
+      ['Годовой темп МСП, %', params.sme_growth_rate],
+      ['Годовое изменение балла, %', params.score_growth_rate],
+      ['Условная неопределённость, %/год', params.uncertainty_rate],
+      ['Покрытие инвестиций', investmentCoverage + ' из ' + forecasts.length + ' территорий'],
+      ['Покрытие МСП', smeCoverage + ' из ' + forecasts.length + ' территорий'],
+      ['Примечание', 'Пустые значения означают отсутствие исходных данных; квартальные/полугодовые показатели нельзя автоматически суммировать.'],
+      [],
+    ];
+    const csv = '\uFEFF' + [...metadata, headers, ...rows].map((row) => row.map(escaped).join(';')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     const a = document.createElement('a');
     a.href = url;
