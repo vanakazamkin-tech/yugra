@@ -557,3 +557,31 @@ export async function fetchOfficialData(client) {
     facilities,
   };
 }
+
+export const DATA_CATEGORY_LABELS = {
+  official_statistics: 'ОФИЦИАЛЬНАЯ СТАТИСТИКА',
+  municipal_programs: 'МУНИЦИПАЛЬНЫЕ ПРОГРАММЫ',
+  municipal_budget: 'МУНИЦИПАЛЬНЫЙ БЮДЖЕТ',
+  demography: 'ДЕМОГРАФИЯ',
+  business: 'БИЗНЕС И МСП',
+  investments: 'ИНВЕСТИЦИИ',
+  investment_sites: 'ИНВЕСТПЛОЩАДКИ',
+  municipal_open_data: 'МУНИЦИПАЛЬНЫЕ ДАННЫЕ',
+  transport: 'ТРАНСПОРТ',
+  education: 'ОБРАЗОВАНИЕ',
+  culture: 'КУЛЬТУРА',
+  sports: 'СПОРТ',
+  fuel_prices: 'ТОПЛИВО',
+  utilities: 'КОММУНАЛЬНЫЕ УСЛУГИ',
+  construction: 'СТРОИТЕЛЬСТВО',
+  business_locations: 'ТОРГОВЛЯ И УСЛУГИ',
+  business_support: 'ПОДДЕРЖКА БИЗНЕСА',
+};
+
+export const DATA_STATUS_LABELS = {
+  identified: 'Источник найден · данные ещё не импортированы',
+  ready_for_import: 'Подготовлен к загрузке',
+  partially_imported: 'Загружен частично',
+  imported: 'Данные импортированы',
+  access_issue: 'Требуется проверить доступ к данным',
+};
