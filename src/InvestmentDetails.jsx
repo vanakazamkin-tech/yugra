@@ -39,6 +39,16 @@ const formatNumber = (value, maximumFractionDigits = 0) => {
   return number == null ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits }).format(number);
 };
 const formatBillion = (value) => numericValue(value) == null ? '—' : `${formatNumber(value, 1)} млрд ₽`;
+const formatReferencePeriod = (item) => {
+  const period = item?.reference_period;
+  if (!period || period === 'annual') return String(item?.reference_year ?? '—');
+  const quarterLabels = { Q1: 'I квартал', Q2: 'II квартал', Q3: 'III квартал', Q4: 'IV квартал' };
+  const quarter = String(period).match(/^(\\d{4})-(Q[1-4])$/);
+  if (quarter) return `${quarter[1]} · ${quarterLabels[quarter[2]]}`;
+  const date = String(period).match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+  if (date) return `на ${new Intl.DateTimeFormat('ru-RU').format(new Date(`${period}T00:00:00`))}`;
+  return `${item?.reference_year ?? ''} · ${period}`.trim();
+};
 const reportDate = () => new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date());
 
 const METRICS = [
@@ -634,7 +644,7 @@ export const InvestmentDetails = () => {
                 <div className="verified-preview-list">{officialIndicators.slice(0, 6).map((item) => {
                   const municipality = municipalities.find((m) => m.id === item.municipality_id);
                   const geographyLabel = item.geographic_level === 'settlement' ? 'населённый пункт' : item.geographic_level === 'region' ? 'регион' : 'муниципалитет';
-                  return <article key={item.id}><span>{item.geographic_name || municipality?.name || item.municipality_id} · {geographyLabel}</span><strong>{item.indicator_name}</strong><b>{formatNumber(item.value, 1)} <i>{item.unit}</i></b><small>{item.reference_year} · <a href={item.source_url} target="_blank" rel="noreferrer">первоисточник ↗</a></small></article>;
+                  return <article key={item.id}><span>{item.geographic_name || municipality?.name || item.municipality_id} · {geographyLabel}</span><strong>{item.indicator_name}</strong><b>{formatNumber(item.value, 1)} <i>{item.unit}</i></b><small>{formatReferencePeriod(item)} · <a href={item.source_url} target="_blank" rel="noreferrer">первоисточник ↗</a></small></article>;
                 })}</div>
               </div> : <p className="official-data-empty">Слой готов к загрузке. Сейчас в базе нет других проверенных рядов кроме показателей, которые были отдельно подтверждены и внесены. Для остальных источников идёт подготовка сопоставимых наборов; пустые значения намеренно не заполняются догадками.</p>}
               {officialDataStatus === 'error' && officialDataError && <p className="official-data-error">Не удалось обновить официальный слой: {officialDataError}</p>}
@@ -921,7 +931,7 @@ export const InvestmentDetails = () => {
           <div className="modal-official-heading"><h3 id="modal-official-heading">Подтверждённые официальные показатели</h3><span>{modalOfficialIndicators.length} знач.</span></div>
           {modalOfficialIndicators.length > 0 ? <div className="modal-official-list">
             {modalOfficialIndicators.map((item) => <article key={item.id} className="modal-official-row">
-              <div><strong>{item.indicator_name}</strong><span>{item.geographic_name || activeModalItem.name} · {item.geographic_level === 'settlement' ? 'населённый пункт' : item.geographic_level === 'region' ? 'регион' : 'муниципалитет'} · {item.reference_year} · {item.unit}</span></div>
+              <div><strong>{item.indicator_name}</strong><span>{item.geographic_name || activeModalItem.name} · {item.geographic_level === 'settlement' ? 'населённый пункт' : item.geographic_level === 'region' ? 'регион' : 'муниципалитет'} · {formatReferencePeriod(item)} · {item.unit}</span></div>
               <b>{formatPopulationIndicator(item)}</b>
               <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a>
             </article>)}
