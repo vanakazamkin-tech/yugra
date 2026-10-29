@@ -480,6 +480,7 @@ export const InvestmentDetails = () => {
       latestYear: latestYear || null,
       pendingSources: (sourceCounts.identified || 0) + (sourceCounts.ready_for_import || 0) + (sourceCounts.access_issue || 0),
       pillars: [
+        makePillar('population', 'Население', 'Общая численность по всем 22 муниципалитетам за 2022–2025 годы; отдельный длительный ряд по Сургуту и городское/сельское разбиение там, где оно опубликовано.', ['population_municipality', 'population_municipality_history', 'population_urban_municipality', 'population_rural_municipality']),
         makePillar('employment', 'Занятость', 'Среднесписочная численность работников в обследуемых организациях; это не полный показатель занятости всего населения.', ['average_employees_q1', 'average_employees_h1']),
         makePillar('income', 'Доходы и заработная плата', 'Есть отдельные показатели зарплаты; полного муниципального ряда доходов населения пока нет.', ['average_monthly_salary_q1', 'average_monthly_salary_h1', 'avg_monthly_salary_large_medium_nco']),
         makePillar('budget', 'Местный бюджет', 'Есть вложения за счёт местного бюджета и отдельные отчёты муниципальных программ, но не полная панель доходов и расходов.', ['fixed_capital_investment_local_budget'], true),
@@ -500,7 +501,7 @@ export const InvestmentDetails = () => {
       {
         key: 'population',
         label: 'Население',
-        matches: (item) => ['population_municipality', 'population_municipality_history', 'population_total'].includes(item.indicator_code),
+        matches: (item) => ['population_municipality', 'population_municipality_history', 'population_total', 'population_urban_municipality', 'population_rural_municipality'].includes(item.indicator_code),
       },
       {
         key: 'investment',
