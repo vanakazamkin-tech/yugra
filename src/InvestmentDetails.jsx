@@ -4,6 +4,7 @@ import { UgraMap, UgraMapList } from './components/UgraMap';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { fetchMunicipalities } from './lib/municipalities';
 import Forecasting from './components/Forecasting';
+import { FALLBACK_DATA_SOURCES, fetchOfficialData, DATA_CATEGORY_LABELS, DATA_STATUS_LABELS } from './lib/officialData';
 
 const Icon = ({ name, className = '' }) => {
   const paths = {
@@ -77,6 +78,11 @@ export const InvestmentDetails = () => {
   const [syncStatus, setSyncStatus] = useState(isSupabaseConfigured ? 'loading' : 'unconfigured');
   const [syncMessage, setSyncMessage] = useState('');
   const [syncAttempt, setSyncAttempt] = useState(0);
+  const [officialDataSources, setOfficialDataSources] = useState(FALLBACK_DATA_SOURCES);
+  const [officialIndicators, setOfficialIndicators] = useState([]);
+  const [investmentSites, setInvestmentSites] = useState([]);
+  const [officialDataStatus, setOfficialDataStatus] = useState(isSupabaseConfigured ? 'loading' : 'offline');
+  const [officialDataError, setOfficialDataError] = useState('');
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
@@ -118,6 +124,37 @@ export const InvestmentDetails = () => {
     };
     // lastSyncedAt не включается намеренно: интервал должен создаваться один раз.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncAttempt]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) {
+      setOfficialDataStatus('offline');
+      return undefined;
+    }
+
+    let cancelled = false;
+    const loadOfficialData = async () => {
+      try {
+        const result = await fetchOfficialData(supabase);
+        if (cancelled) return;
+        setOfficialDataSources(result.sources);
+        setOfficialIndicators(result.indicators);
+        setInvestmentSites(result.investmentSites);
+        setOfficialDataStatus('connected');
+        setOfficialDataError('');
+      } catch (error) {
+        if (cancelled) return;
+        setOfficialDataStatus('error');
+        setOfficialDataError(error?.message || 'Не удалось загрузить каталог официальных данных');
+      }
+    };
+
+    loadOfficialData();
+    const intervalId = window.setInterval(loadOfficialData, 300_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
   }, [syncAttempt]);
 
   const syncTimeLabel = lastSyncedAt
@@ -232,6 +269,27 @@ export const InvestmentDetails = () => {
       investmentCoverage: investmentRows.length,
     };
   }, [municipalities]);
+
+  const officialDataSummary = useMemo(() => {
+    const municipalityIds = new Set(officialIndicators.map((item) => item.municipality_id));
+    const latestYear = officialIndicators.length
+      ? Math.max(...officialIndicators.map((item) => Number(item.reference_year)).filter(Number.isFinite))
+      : null;
+    return {
+      recordCount: officialIndicators.length,
+      municipalityCount: municipalityIds.size,
+      latestYear,
+      sourceCount: officialDataSources.length,
+      investmentSiteCount: investmentSites.length,
+    };
+  }, [officialIndicators, officialDataSources, investmentSites]);
+
+  const modalOfficialIndicators = useMemo(() => {
+    if (!activeModalItem) return [];
+    return officialIndicators
+      .filter((item) => item.municipality_id === activeModalItem.id)
+      .sort((a, b) => Number(b.reference_year) - Number(a.reference_year) || a.indicator_name.localeCompare(b.indicator_name, 'ru-RU'));
+  }, [officialIndicators, activeModalItem]);
 
   const comparisonItems = useMemo(() => municipalities.filter((m) => selectedCompareIds.includes(m.id)), [municipalities, selectedCompareIds]);
   const comparisonCandidates = useMemo(() => municipalities.filter((m) => m.name.toLocaleLowerCase('ru-RU').includes(comparisonSearch.trim().toLocaleLowerCase('ru-RU'))), [municipalities, comparisonSearch]);
@@ -467,24 +525,15 @@ export const InvestmentDetails = () => {
                 <span className="section-tag">ВНЕШНИЕ ИСТОЧНИКИ</span>
               </div>
               <div className="source-grid">
-                <a className="source-item" href="https://72.rosstat.gov.ru/main_indicators" target="_blank" rel="noreferrer">
-                  <span className="source-item-type">ОФИЦИАЛЬНАЯ СТАТИСТИКА</span><strong>Тюменьстат / Росстат</strong>
-                  <span>Муниципальные показатели, население и социально-экономическая динамика</span><span className="source-item-link">Открыть источник ↗</span>
-                </a>
-                <a className="source-item" href="https://investugra.ru/" target="_blank" rel="noreferrer">
-                  <span className="source-item-type">ИНВЕСТИЦИИ</span><strong>Инвестиционный портал Югры</strong>
-                  <span>Инвестпроекты, меры поддержки, инвестиционные предложения</span><span className="source-item-link">Открыть источник ↗</span>
-                </a>
-                <a className="source-item" href="https://map.investugra.ru/" target="_blank" rel="noreferrer">
-                  <span className="source-item-type">ИНВЕСТКАРТА</span><strong>Площадки и инфраструктура</strong>
-                  <span>Потенциальные площадки и возможности размещения проектов</span><span className="source-item-link">Открыть источник ↗</span>
-                </a>
-                <a className="source-item" href="https://opendata.admmegion.ru/datasets/" target="_blank" rel="noreferrer">
-                  <span className="source-item-type">ОТКРЫТЫЕ ДАННЫЕ</span><strong>Портал Мегиона</strong>
-                  <span>Наборы по инвестиционным площадкам, программам и городскому хозяйству</span><span className="source-item-link">Открыть источник ↗</span>
-                </a>
+                {officialDataSources.map((source) => <a className="source-item" key={source.id} href={source.url} target="_blank" rel="noreferrer">
+                  <span className="source-item-type">{DATA_CATEGORY_LABELS[source.category] || 'ИСТОЧНИК ДАННЫХ'}</span>
+                  <strong>{source.name}</strong>
+                  <span>{source.description}</span>
+                  <span className="source-coverage">{source.coverage || source.format || 'Покрытие уточняется'}</span>
+                  <span className="source-item-link">{DATA_STATUS_LABELS[source.import_status] || 'Статус проверяется'} ↗</span>
+                </a>)}
               </div>
-              <p className="source-panel-note">Ссылки ведут к первоисточникам. Данные из них пока не загружены автоматически в этот интерфейс; показатели выше рассчитаны из подключённого набора проекта.</p>
+              <p className="source-panel-note">Каталог хранится в Supabase. Подтверждёнными считаются только показатели с проверенным источником и годом наблюдения; наличие ссылки само по себе не означает, что весь набор уже импортирован.</p>
             </section>
 
             <div className="dashboard-grid">
@@ -621,13 +670,13 @@ export const InvestmentDetails = () => {
             <section className="about-section panel">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2>Источники и методика</h2><p>Приоритет — первичные, проверяемые и сопоставимые данные</p></div></div></div>
               <div className="about-source-list">
-                <a href="https://rosstat.gov.ru/munstat" target="_blank" rel="noreferrer"><strong>Росстат — муниципальная статистика</strong><span>Показатели и статистические материалы по муниципальным образованиям.</span><span className="source-item-link">Открыть ↗</span></a>
-                <a href="https://rosstat.gov.ru/folder/12781" target="_blank" rel="noreferrer"><strong>Росстат — демография</strong><span>Опубликованные оценки численности населения, в том числе по муниципальным образованиям.</span><span className="source-item-link">Открыть ↗</span></a>
-                <a href="https://rosstat.gov.ru/emiss" target="_blank" rel="noreferrer"><strong>ЕМИСС</strong><span>Официальные статистические показатели и реестр показателей.</span><span className="source-item-link">Открыть ↗</span></a>
-                <a href="https://investugra.ru/" target="_blank" rel="noreferrer"><strong>Инвестиционный портал Югры</strong><span>Инвестиционные проекты, предложения и меры поддержки.</span><span className="source-item-link">Открыть ↗</span></a>
-                <a href="https://map.investugra.ru/" target="_blank" rel="noreferrer"><strong>Инвестиционная карта Югры</strong><span>Инвестиционные площадки и инфраструктура.</span><span className="source-item-link">Открыть ↗</span></a>
-                <a href="https://opendata.admmegion.ru/datasets/" target="_blank" rel="noreferrer"><strong>Открытые данные Мегиона</strong><span>Пример муниципального портала с CSV-наборами: площадки, бюджет, программы и городское хозяйство.</span><span className="source-item-link">Открыть ↗</span></a>
-                <a href="https://www.rosstat.gov.ru/folder/210/document/13223" target="_blank" rel="noreferrer"><strong>Статистика малого и среднего бизнеса</strong><span>Региональные и федеральные материалы о МСП; применимость на муниципальном уровне нужно проверять отдельно.</span><span className="source-item-link">Открыть ↗</span></a>
+                {officialDataSources.map((source) => <a key={source.id} href={source.url} target="_blank" rel="noreferrer">
+                  <strong>{source.name}</strong>
+                  <span>{source.description}</span>
+                  <span className="source-coverage">{source.coverage || source.format || 'Покрытие уточняется'}</span>
+                  <span className={`source-status source-status--${source.import_status || 'identified'}`}>{DATA_STATUS_LABELS[source.import_status] || 'Статус проверяется'}</span>
+                  <span className="source-item-link">Открыть источник ↗</span>
+                </a>)}
               </div>
               <div className="about-methodology"><h3>Правила публикации данных</h3><ol>
                 <li>Для каждого значения сохраняются источник, год наблюдения, единица измерения и дата загрузки.</li>
@@ -644,9 +693,20 @@ export const InvestmentDetails = () => {
 
       {activeModalItem && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setActiveModalItem(null); }}><section className="municipality-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-intro">
         <div className="modal-ornament" aria-hidden="true"/><div className="modal-topline"><span className="eyebrow"><span className="eyebrow-diamond"/> ПАСПОРТ ТЕРРИТОРИИ</span><button autoFocus className="close-button" onClick={() => setActiveModalItem(null)} aria-label="Закрыть"><Icon name="close"/></button></div>
-        <h2 id="modal-title">{activeModalItem.name}</h2><p className="modal-intro" id="modal-intro">Ключевые показатели муниципального образования</p>
+        <h2 id="modal-title">{activeModalItem.name}</h2><p className="modal-intro" id="modal-intro">Демонстрационные показатели проекта приведены отдельно от проверенной официальной статистики.</p>
         <div className="modal-group-line"><span className={`group-badge ${activeModalItem.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i/>Группа {activeModalItem.group2024}</span><span>Рейтинг № {activeModalItem.rank2024}</span></div>
-        <div className="modal-stats"><div><span>Итоговый балл</span><strong>{formatNumber(activeModalItem.score, 1)}</strong></div><div><span>Инвестиции без добычи</span><strong>{formatBillion(activeModalItem.investments.volumeBillion)}</strong></div><div><span>Динамика инвестиций</span><strong className="growth-value">{numericValue(activeModalItem.investments?.growthPercent) == null ? '—' : `${formatNumber(activeModalItem.investments.growthPercent)}%`}</strong></div><div><span>Субъекты МСП</span><strong>{formatNumber(activeModalItem.smeCount)}</strong></div><div><span>Оценка предпринимателей</span><strong>{formatNumber(activeModalItem.assessmentScore, 2)} / 5.0</strong></div></div>
+        <div className="modal-demo-label"><Icon name="info"/> ДЕМО-НАБОР · ЗНАЧЕНИЯ НЕ ПРОВЕРЕНЫ КАК ОФИЦИАЛЬНАЯ СТАТИСТИКА</div>
+        <div className="modal-stats"><div><span>Итоговый балл · демо</span><strong>{formatNumber(activeModalItem.score, 1)}</strong></div><div><span>Инвестиции · демо</span><strong>{formatBillion(activeModalItem.investments?.volumeBillion)}</strong></div><div><span>Динамика инвестиций · демо</span><strong className="growth-value">{numericValue(activeModalItem.investments?.growthPercent) == null ? '—' : `${formatNumber(activeModalItem.investments.growthPercent)}%`}</strong></div><div><span>Субъекты МСП · демо</span><strong>{formatNumber(activeModalItem.smeCount)}</strong></div><div><span>Оценка бизнеса · демо</span><strong>{formatNumber(activeModalItem.assessmentScore, 2)} / 5.0</strong></div></div>
+        <section className="modal-official-data" aria-labelledby="modal-official-heading">
+          <div className="modal-official-heading"><h3 id="modal-official-heading">Подтверждённые официальные показатели</h3><span>{modalOfficialIndicators.length} знач.</span></div>
+          {modalOfficialIndicators.length > 0 ? <div className="modal-official-list">
+            {modalOfficialIndicators.map((item) => <article key={item.id} className="modal-official-row">
+              <div><strong>{item.indicator_name}</strong><span>{item.reference_year} год · {item.unit}</span></div>
+              <b>{formatNumber(item.value, 1)}</b>
+              <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a>
+            </article>)}
+          </div> : <p className="modal-no-official">Для этой территории пока нет проверенных официальных показателей в базе. Новые значения будут добавляться только после проверки источника, периода и территориальной привязки.</p>}
+        </section>
         <button className="primary-button modal-print" onClick={() => { setReportScope('selected'); setReportSelectedIds([activeModalItem.id]); setActiveModalItem(null); navigateToTab('reports'); }}><Icon name="file"/>Создать отчёт по территории</button>
       </section></div>}
     </div>
