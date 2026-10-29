@@ -70,7 +70,6 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
     uncertainty_rate: 7,
   });
   const [scenarioStatus, setScenarioStatus] = useState('fallback');
-  const [saveStatus, setSaveStatus] = useState('');
   const [selectedId, setSelectedId] = useState('ALL');
   const [search, setSearch] = useState('');
 
@@ -140,48 +139,11 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       score_growth_rate: selected.score_growth_rate,
       uncertainty_rate: selected.uncertainty_rate,
     });
-    setSaveStatus('');
   };
   const setParam = (key, value) => {
     setParams((current) => Object.assign({}, current, { [key]: value }));
-    setSaveStatus('');
   };
 
-  const saveForecast = async () => {
-    setSaveStatus('');
-    if (!isSupabaseConfigured || !supabase) {
-      setSaveStatus('Нет соединения с Supabase: расчёт доступен, но сохранить его нельзя.');
-      return;
-    }
-    setSaveStatus('saving');
-    const payload = {
-      scenario_id: activeScenario && activeScenario.id ? activeScenario.id : null,
-      scenario_key: scenarioKey,
-      horizon_years: horizon,
-      input_parameters: Object.assign({}, params, { scenario_title: activeScenario.title }),
-      projected_results: forecasts.map((row) => ({
-        id: row.id, name: row.name, group: row.group,
-        baseline_investments_billion: row.investment,
-        projected_investments_billion: row.projectedInvestments == null ? null : Number(row.projectedInvestments.toFixed(3)),
-        investments_low_billion: row.investmentsLow == null ? null : Number(row.investmentsLow.toFixed(3)),
-        investments_high_billion: row.investmentsHigh == null ? null : Number(row.investmentsHigh.toFixed(3)),
-        baseline_sme_count: row.sme,
-        projected_sme_count: row.projectedSme,
-        projected_score: row.projectedScore == null ? null : Number(row.projectedScore.toFixed(3)),
-        projected_rank: row.projectedRank,
-      })),
-      municipality_count: forecasts.length,
-      base_year: 2024,
-      source_label: 'Концептуальная модель; базовые значения из текущего набора данных; официальная статистика не предполагается',
-    };
-    try {
-      const { error } = await supabase.from('forecast_runs').insert(payload);
-      if (error) throw error;
-      setSaveStatus('saved');
-    } catch (error) {
-      setSaveStatus('error:' + (error && error.message ? error.message : 'не удалось записать сценарий'));
-    }
-  };
 
   const exportCsv = () => {
     const headers = ['Муниципалитет', 'Группа', 'Инвестиции: база, млрд ₽', 'Инвестиции: прогноз, млрд ₽', 'Нижняя граница модели, млрд ₽', 'Верхняя граница модели, млрд ₽', 'МСП: база', 'МСП: прогноз', 'Прогнозный балл', 'Модельное место'];
@@ -221,10 +183,17 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
             <label><span>Годовое изменение балла, %</span><strong>{fmt(n(params.score_growth_rate), 1)}%</strong><input aria-label="Годовое изменение балла" type="range" min="-10" max="10" step="0.5" value={params.score_growth_rate} onChange={(e) => setParam('score_growth_rate', Number(e.target.value))}/></label>
             <label><span>Условная неопределённость, %/год</span><strong>±{fmt(n(params.uncertainty_rate), 1)}%</strong><input aria-label="Допущение неопределённости" type="range" min="0" max="25" step="0.5" value={params.uncertainty_rate} onChange={(e) => setParam('uncertainty_rate', Number(e.target.value))}/></label>
           </div>
-          <div className="forecast-control-actions"><button className="primary-button" onClick={saveForecast} disabled={saveStatus === 'saving'}>{saveStatus === 'saving' ? 'Сохраняем…' : 'Сохранить сценарий в Supabase'}</button><button className="outline-button" onClick={exportCsv}>Экспорт CSV</button></div>
-          {saveStatus === 'saved' && <p className="forecast-save-message is-success">Расчёт сохранён в Supabase.</p>}
-          {saveStatus.startsWith('error:') && <p className="forecast-save-message is-error">Не удалось сохранить: {saveStatus.slice(6)}</p>}
-          {saveStatus && saveStatus !== 'saved' && saveStatus !== 'saving' && !saveStatus.startsWith('error:') && <p className="forecast-save-message is-error">{saveStatus}</p>}
+          <div className="forecast-control-actions">
+            <button className="primary-button" onClick={exportCsv}><Icon name="download"/>Экспортировать результат CSV</button>
+            <button className="outline-button" onClick={() => {
+              setParams({
+                investment_growth_rate: activeScenario.investment_growth_rate,
+                sme_growth_rate: activeScenario.sme_growth_rate,
+                score_growth_rate: activeScenario.score_growth_rate,
+                uncertainty_rate: activeScenario.uncertainty_rate,
+              });
+            }}><Icon name="refresh"/>Вернуть настройки сценария</button>
+          </div>
         </div>
 
         <div className="forecast-results">
