@@ -166,7 +166,8 @@ const skipped = { nonMigrationIndicator: 0, wrongRegion: 0, invalidValueOrYear: 
 const duplicates = [];
 const seen = new Map();
 
-for (const raw of parsed.slice(1)) {
+for (const [dataRowIndex, raw] of parsed.slice(1).entries()) {
+  const sourceRowNumber = dataRowIndex + 2;
   const row = Object.fromEntries(headers.map((header, i) => [header, raw[i] ?? '']));
   const get = (field) => headerIndex[field] == null ? '' : String(raw[headerIndex[field]] ?? '').trim();
   const sourceIndicatorCode = get('indicator').replace(/\.0$/, '');
@@ -204,6 +205,7 @@ for (const raw of parsed.slice(1)) {
     reference_period: get('period') || String(year),
     value,
     unit: get('unit') || 'человек',
+    source_row_number: sourceRowNumber,
     source_id: 'rosstat_municipal',
     source_url: 'https://rosstat.gov.ru/storage/mediabank/MUNST.htm',
     verification_status: 'REVIEW_REQUIRED',
@@ -211,8 +213,8 @@ for (const raw of parsed.slice(1)) {
     source_row: row,
   };
   const key = [record.rosstat_indicator_code, record.reference_year, normalize(municipalityName), normalize(record.reference_period)].join('|');
-  if (seen.has(key)) duplicates.push({ key, firstRow: seen.get(key), duplicateRow: staged.length + 2 });
-  else seen.set(key, staged.length + 2);
+  if (seen.has(key)) duplicates.push({ key, firstRow: seen.get(key), duplicateRow: sourceRowNumber });
+  else seen.set(key, sourceRowNumber);
   staged.push(record);
 }
 
