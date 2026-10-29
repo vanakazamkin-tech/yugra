@@ -2062,6 +2062,7 @@ export const InvestmentDetails = () => {
                   <span className={`source-status source-status--${source.import_status || 'identified'}`}>{DATA_STATUS_LABELS[source.import_status] || 'Статус проверяется'}</span>
                   <span className="source-item-link">Открыть источник ↗</span>
                 </a>)}
+                {filteredDataSources.length === 0 && <div className="empty-state"><span>Источники не найдены</span><p>Измените запрос или сбросьте фильтры каталога.</p></div>}
               </div>
               <div className="about-methodology"><h3>Правила публикации данных</h3><ol>
                 <li>Для каждого значения сохраняются источник, год наблюдения, единица измерения и дата загрузки.</li>
