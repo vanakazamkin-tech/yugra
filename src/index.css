@@ -1606,3 +1606,38 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .data-quality-pillar-top { flex-direction: column; }
   .data-quality-pillar-top span { white-space: normal; }
 }
+
+
+/* Official employment-by-sector profile */
+.sector-employment-panel { padding: 21px; margin-top: 14px; }
+.sector-employment-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 640px; margin: 6px 0 12px; }
+.sector-employment-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 13px 0 15px; }
+.sector-employment-summary article { display: flex; flex-direction: column; gap: 6px; padding: 13px 15px; border: 1px solid #e0d7c7; border-radius: 8px; background: #fffdf8; }
+.sector-employment-summary article > span { color: #778476; font-size: 9px; line-height: 1.45; }
+.sector-employment-summary article > strong { color: var(--forest); font-family: 'Playfair Display', Georgia, serif; font-size: clamp(20px, 2vw, 28px); line-height: 1.1; }
+.sector-employment-summary article > small { color: #8b9386; font-size: 9px; line-height: 1.5; }
+.sector-employment-bars { display: flex; flex-direction: column; gap: 11px; padding: 14px; border: 1px solid #e1dccf; border-radius: 9px; background: #fcfbf5; }
+.sector-employment-row { display: grid; grid-template-columns: minmax(170px, 1.2fr) minmax(80px, 1.4fr) minmax(105px, .5fr) minmax(120px, .65fr); align-items: center; gap: 12px; }
+.sector-employment-label { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+.sector-employment-label > span { color: #b28a50; font-size: 9px; font-weight: 900; line-height: 1.6; }
+.sector-employment-label > strong { color: #506651; font-size: 10px; font-weight: 700; line-height: 1.45; }
+.sector-employment-track { width: 100%; height: 7px; overflow: hidden; border-radius: 8px; background: #e8e8dd; }
+.sector-employment-track > i { display: block; height: 100%; border-radius: inherit; background: #638365; }
+.sector-employment-value { color: var(--forest); font-variant-numeric: tabular-nums; font-size: 12px; text-align: right; white-space: nowrap; }
+.sector-employment-value small { color: #8b9587; font-size: 8px; font-weight: 500; }
+.sector-employment-share { color: #818b7f; font-size: 9px; text-align: right; }
+.sector-employment-panel .source-panel-note a { color: var(--forest-2); font-weight: 800; text-decoration: none; }
+.sector-employment-panel .source-panel-note a:hover { text-decoration: underline; }
+@media (max-width: 920px) {
+  .sector-employment-row { grid-template-columns: minmax(150px, 1.2fr) minmax(70px, 1fr) minmax(90px, .5fr); }
+  .sector-employment-share { grid-column: 1 / -1; text-align: left; margin: -5px 0 2px 18px; }
+}
+@media (max-width: 640px) {
+  .sector-employment-panel { padding: 14px; }
+  .sector-employment-controls, .sector-employment-summary { grid-template-columns: minmax(0, 1fr); }
+  .sector-employment-row { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; }
+  .sector-employment-label { grid-column: 1 / -1; }
+  .sector-employment-track { grid-column: 1 / 2; }
+  .sector-employment-value { grid-column: 2; grid-row: 2; }
+  .sector-employment-share { grid-column: 1 / -1; margin: 0 0 4px 18px; }
+}
