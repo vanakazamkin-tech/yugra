@@ -87,7 +87,7 @@ export const FALLBACK_DATA_SOURCES = [
     url: 'https://opendata.admmegion.ru/datasets/upravlenie-arkhitektury-i-gradostroitelstva/76774/',
     description: 'Муниципальный CSV-набор площадок с параметрами участков и условиями предоставления.',
     format: 'CSV',
-    coverage: 'Мегион; одно муниципальное образование',
+    coverage: 'Мегион; 17 уникальных предложений из 18 строк источника',
     import_status: 'imported',
   },
   {
