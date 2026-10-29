@@ -560,6 +560,33 @@ export const InvestmentDetails = () => {
     return { rows, categories };
   }, [municipalities, officialIndicators]);
 
+
+  const officialMunicipalPopulationMix = useMemo(() => {
+    const sourceId = 'rosstat_hmao_municipal_population_2022_2025';
+    const rowsByMunicipality = new Map();
+    officialIndicators
+      .filter((item) => item.source_id === sourceId
+        && Number(item.reference_year) === 2025
+        && ['population_municipality', 'population_urban_municipality', 'population_rural_municipality'].includes(item.indicator_code)
+        && (item.geographic_level || 'municipality') === 'municipality')
+      .forEach((item) => {
+        if (!rowsByMunicipality.has(item.municipality_id)) rowsByMunicipality.set(item.municipality_id, {});
+        const values = rowsByMunicipality.get(item.municipality_id);
+        if (item.indicator_code === 'population_municipality') values.total = numericValue(item.value);
+        if (item.indicator_code === 'population_urban_municipality') values.urban = numericValue(item.value);
+        if (item.indicator_code === 'population_rural_municipality') values.rural = numericValue(item.value);
+        values.name = item.geographic_name || municipalities.find((m) => m.id === item.municipality_id)?.name || item.municipality_id;
+      });
+    return [...rowsByMunicipality.entries()]
+      .filter(([, item]) => item.total != null && item.urban != null && item.rural != null && item.total === item.urban + item.rural)
+      .map(([id, item]) => ({
+        id, ...item,
+        urbanShare: item.urban / item.total * 100,
+        ruralShare: item.rural / item.total * 100,
+      }))
+      .sort((a, b) => b.ruralShare - a.ruralShare || a.name.localeCompare(b.name, 'ru-RU'));
+  }, [officialIndicators, municipalities]);
+
   const filteredFacilities = useMemo(() => {
     const query = facilitySearch.trim().toLocaleLowerCase('ru-RU');
     return facilities.filter((facility) => {
@@ -1414,6 +1441,35 @@ export const InvestmentDetails = () => {
               </div>
               <p className="data-quality-footnote">Считаются только наблюдения со статусом проверки «verified» на муниципальном уровне. Для населения отдельно показано, когда есть данные лишь по населённому пункту: их нельзя подставлять вместо данных всего района. Наличие наблюдений не означает полный ряд или сопоставимость периодов.</p>
             </section>
+            {officialMunicipalPopulationMix.length > 0 && <section className="population-composition-panel panel" aria-labelledby="population-composition-title">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="population-composition-title">Городское и сельское население</h2><p>Официальное разбиение на 1 января 2025 года · только территории, где в источнике указаны обе составляющие</p></div></div>
+                <span className="section-tag">{officialMunicipalPopulationMix.length} ТЕРРИТОРИЙ</span>
+              </div>
+              <div className="table-scroll">
+                <table className="ranking-table population-composition-table">
+                  <thead><tr><th>Муниципалитет</th><th>Всего жителей</th><th>Городское / сельское население</th><th>Городское</th><th>Сельское</th></tr></thead>
+                  <tbody>{officialMunicipalPopulationMix.map((item) => <tr key={item.id}>
+                    <td className="municipality-cell"><strong>{item.name}</strong></td>
+                    <td className="number-cell">{formatNumber(item.total)}</td>
+                    <td>
+                      <div className="population-composition-track" role="img" aria-label={item.name + ': ' + formatNumber(item.urbanShare, 1) + '% городского и ' + formatNumber(item.ruralShare, 1) + '% сельского населения'}>
+                        <span className="population-composition-urban" style={{ width: item.urbanShare + '%' }} />
+                        <span className="population-composition-rural" style={{ width: item.ruralShare + '%' }} />
+                      </div>
+                      <small className="cell-subnote">{formatNumber(item.urbanShare, 1)}% городское · {formatNumber(item.ruralShare, 1)}% сельское</small>
+                    </td>
+                    <td className="number-cell">{formatNumber(item.urban)}</td>
+                    <td className="number-cell">{formatNumber(item.rural)}</td>
+                  </tr>)}</tbody>
+                </table>
+              </div>
+              <div className="population-composition-footer">
+                <span><i className="population-composition-legend-urban" /> Городское население</span>
+                <span><i className="population-composition-legend-rural" /> Сельское население</span>
+                <p>Источник: <a href="https://72.rosstat.gov.ru/ofs_demp_hmao" target="_blank" rel="noreferrer">Тюменьстат, официальный XLSX</a>. Территории без одной из составляющих не включены в диаграмму; пустые значения не заменяются нулём.</p>
+              </div>
+            </section>}
             {surgutPopulationTrend.rows.length > 1 && <section className="population-trend-panel panel" aria-labelledby="population-trend-title">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="population-trend-title">Историческая динамика населения Сургута</h2><p>Официальный годовой ряд Росстата · численность на 1 января</p></div></div><span className="section-tag">{surgutPopulationTrend.rows.length} НАБЛЮДЕНИЙ</span></div>
               <div className="population-trend-kpis"><article><span>Начало ряда</span><strong>{formatNumber(surgutPopulationTrend.first.value)} чел.</strong><small>{surgutPopulationTrend.first.reference_year} год</small></article><article><span>Последнее значение</span><strong>{formatNumber(surgutPopulationTrend.latest.value)} чел.</strong><small>{surgutPopulationTrend.latest.reference_year} год</small></article><article><span>Изменение за период</span><strong>{formatNumber((surgutPopulationTrend.latest.value/surgutPopulationTrend.first.value-1)*100,1)}%</strong><small>за весь доступный ряд, не годовой темп</small></article></div>
