@@ -32,17 +32,21 @@ const Icon = ({ name, className = '' }) => {
   return <svg aria-hidden="true" viewBox="0 0 24 24" className={`ui-icon ${className}`} fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">{paths[name] || paths.file}</svg>;
 };
 
-const formatNumber = (value, maximumFractionDigits = 0) => new Intl.NumberFormat('ru-RU', { maximumFractionDigits }).format(Number(value || 0));
-const formatBillion = (value) => `${formatNumber(value, 1)} млрд ₽`;
+const numericValue = (value) => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
+const formatNumber = (value, maximumFractionDigits = 0) => {
+  const number = numericValue(value);
+  return number == null ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits }).format(number);
+};
+const formatBillion = (value) => numericValue(value) == null ? '—' : `${formatNumber(value, 1)} млрд ₽`;
 const reportDate = () => new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date());
 
 const METRICS = [
-  { key: 'score', label: 'Итоговый балл', short: 'Балл', unit: 'баллов', get: (m) => Number(m.score || 0), format: (m) => formatNumber(m.score, 1) },
-  { key: 'rank2024', label: 'Место в рейтинге', short: 'Место', unit: 'место', get: (m) => Number(m.rank2024 || 0), format: (m) => `№ ${formatNumber(m.rank2024)}` },
-  { key: 'investments', label: 'Инвестиции без добычи', short: 'Инвестиции', unit: 'млрд ₽', get: (m) => Number(m.investments?.volumeBillion || 0), format: (m) => `${formatNumber(m.investments?.volumeBillion, 1)} млрд ₽` },
-  { key: 'growthPercent', label: 'Динамика инвестиций', short: 'Динамика', unit: '%', get: (m) => Number(m.investments?.growthPercent || 0), format: (m) => `${formatNumber(m.investments?.growthPercent, 0)}%` },
-  { key: 'smeCount', label: 'Субъекты МСП', short: 'МСП', unit: 'ед.', get: (m) => Number(m.smeCount || 0), format: (m) => formatNumber(m.smeCount) },
-  { key: 'assessmentScore', label: 'Оценка бизнеса', short: 'Бизнес', unit: 'из 5', get: (m) => Number(m.assessmentScore || 0), format: (m) => `${formatNumber(m.assessmentScore, 2)} / 5` },
+  { key: 'score', label: 'Итоговый балл', short: 'Балл', unit: 'баллов', get: (m) => numericValue(m.score), format: (m) => formatNumber(m.score, 1) },
+  { key: 'rank2024', label: 'Место в рейтинге', short: 'Место', unit: 'место', get: (m) => numericValue(m.rank2024), format: (m) => numericValue(m.rank2024) == null ? '—' : `№ ${formatNumber(m.rank2024)}` },
+  { key: 'investments', label: 'Инвестиции без добычи', short: 'Инвестиции', unit: 'млрд ₽', get: (m) => numericValue(m.investments?.volumeBillion), format: (m) => formatBillion(m.investments?.volumeBillion) },
+  { key: 'growthPercent', label: 'Динамика инвестиций', short: 'Динамика', unit: '%', get: (m) => numericValue(m.investments?.growthPercent), format: (m) => numericValue(m.investments?.growthPercent) == null ? '—' : `${formatNumber(m.investments?.growthPercent, 0)}%` },
+  { key: 'smeCount', label: 'Субъекты МСП', short: 'МСП', unit: 'ед.', get: (m) => numericValue(m.smeCount), format: (m) => formatNumber(m.smeCount) },
+  { key: 'assessmentScore', label: 'Оценка бизнеса', short: 'Бизнес', unit: 'из 5', get: (m) => numericValue(m.assessmentScore), format: (m) => numericValue(m.assessmentScore) == null ? '—' : `${formatNumber(m.assessmentScore, 2)} / 5` },
 ];
 const METRIC_BY_KEY = Object.fromEntries(METRICS.map((metric) => [metric.key, metric]));
 const DEFAULT_COMPARE_IDS = ['surgutsky', 'khanty-mansiysk', 'surgut'];
@@ -72,6 +76,7 @@ export const InvestmentDetails = () => {
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [syncStatus, setSyncStatus] = useState(isSupabaseConfigured ? 'loading' : 'unconfigured');
   const [syncMessage, setSyncMessage] = useState('');
+  const [syncAttempt, setSyncAttempt] = useState(0);
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
@@ -113,7 +118,7 @@ export const InvestmentDetails = () => {
     };
     // lastSyncedAt не включается намеренно: интервал должен создаваться один раз.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [syncAttempt]);
 
   const syncTimeLabel = lastSyncedAt
     ? new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(lastSyncedAt)
@@ -152,25 +157,27 @@ export const InvestmentDetails = () => {
     const matchesGroup = selectedGroup === 'ALL' || m.group2024 === selectedGroup;
     const matchesSearch = name.includes(searchTerm.trim().toLocaleLowerCase('ru-RU'));
     const matchesSlice = activeSlice === 'all'
-      || (activeSlice === 'top' && Number(m.rank2024) <= 5)
-      || (activeSlice === 'investment' && Number(m.investments?.volumeBillion || 0) >= 50)
-      || (activeSlice === 'growth' && Number(m.investments?.growthPercent || 0) >= 103)
-      || (activeSlice === 'business' && Number(m.assessmentScore || 0) >= 4.5);
-    const matchesScoreMin = filters.minScore === '' || Number(m.score) >= Number(filters.minScore);
-    const matchesScoreMax = filters.maxScore === '' || Number(m.score) <= Number(filters.maxScore);
-    const matchesInvestment = filters.minInvestments === '' || Number(m.investments?.volumeBillion || 0) >= Number(filters.minInvestments);
-    const matchesSme = filters.minSme === '' || Number(m.smeCount || 0) >= Number(filters.minSme);
-    const matchesGrowth = filters.minGrowth === '' || Number(m.investments?.growthPercent || 0) >= Number(filters.minGrowth);
-    const matchesAssessment = filters.minAssessment === '' || Number(m.assessmentScore || 0) >= Number(filters.minAssessment);
+      || (activeSlice === 'top' && numericValue(m.rank2024) != null && Number(m.rank2024) <= 5)
+      || (activeSlice === 'investment' && numericValue(m.investments?.volumeBillion) != null && Number(m.investments.volumeBillion) >= 50)
+      || (activeSlice === 'growth' && numericValue(m.investments?.growthPercent) != null && Number(m.investments.growthPercent) >= 103)
+      || (activeSlice === 'business' && numericValue(m.assessmentScore) != null && Number(m.assessmentScore) >= 4.5);
+    const matchesScoreMin = filters.minScore === '' || (numericValue(m.score) != null && Number(m.score) >= Number(filters.minScore));
+    const matchesScoreMax = filters.maxScore === '' || (numericValue(m.score) != null && Number(m.score) <= Number(filters.maxScore));
+    const matchesInvestment = filters.minInvestments === '' || (numericValue(m.investments?.volumeBillion) != null && Number(m.investments.volumeBillion) >= Number(filters.minInvestments));
+    const matchesSme = filters.minSme === '' || (numericValue(m.smeCount) != null && Number(m.smeCount) >= Number(filters.minSme));
+    const matchesGrowth = filters.minGrowth === '' || (numericValue(m.investments?.growthPercent) != null && Number(m.investments.growthPercent) >= Number(filters.minGrowth));
+    const matchesAssessment = filters.minAssessment === '' || (numericValue(m.assessmentScore) != null && Number(m.assessmentScore) >= Number(filters.minAssessment));
     return matchesGroup && matchesSearch && matchesSlice && matchesScoreMin && matchesScoreMax && matchesInvestment && matchesSme && matchesGrowth && matchesAssessment;
   }), [municipalities, selectedGroup, searchTerm, activeSlice, filters]);
 
   const sortedMunicipalities = useMemo(() => [...filteredMunicipalities].sort((a, b) => {
-    const getValue = (item) => sortConfig.key === 'investments' ? item.investments.volumeBillion : item[sortConfig.key];
+    const getValue = (item) => sortConfig.key === 'investments' ? numericValue(item.investments?.volumeBillion) : sortConfig.key === 'growthPercent' ? numericValue(item.investments?.growthPercent) : numericValue(item[sortConfig.key]) ?? item[sortConfig.key];
     const aValue = getValue(a);
     const bValue = getValue(b);
-    if (typeof aValue === 'string') {
-      const result = aValue.localeCompare(bValue, 'ru-RU');
+    if (aValue == null && bValue != null) return 1;
+    if (bValue == null && aValue != null) return -1;
+    if (typeof aValue === 'string' || typeof bValue === 'string') {
+      const result = String(aValue ?? '').localeCompare(String(bValue ?? ''), 'ru-RU');
       return sortConfig.direction === 'asc' ? result : -result;
     }
     if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -180,11 +187,17 @@ export const InvestmentDetails = () => {
 
   const totals = useMemo(() => {
     const list = filteredMunicipalities;
+    const scored = list.filter((m) => numericValue(m.score) != null);
+    const investmentRows = list.filter((m) => numericValue(m.investments?.volumeBillion) != null);
+    const smeRows = list.filter((m) => numericValue(m.smeCount) != null);
     return {
       count: list.length,
-      averageScore: list.reduce((sum, m) => sum + Number(m.score || 0), 0) / Math.max(list.length, 1),
-      investments: list.reduce((sum, m) => sum + Number(m.investments?.volumeBillion || 0), 0),
-      sme: list.reduce((sum, m) => sum + Number(m.smeCount || 0), 0),
+      averageScore: scored.reduce((sum, m) => sum + Number(m.score), 0) / Math.max(scored.length, 1),
+      scoredCount: scored.length,
+      investments: investmentRows.reduce((sum, m) => sum + Number(m.investments.volumeBillion), 0),
+      investmentCount: investmentRows.length,
+      sme: smeRows.reduce((sum, m) => sum + Number(m.smeCount), 0),
+      smeCount: smeRows.length,
     };
   }, [filteredMunicipalities]);
 
@@ -195,13 +208,21 @@ export const InvestmentDetails = () => {
     if (reportScope === 'selected') return municipalities.filter((m) => reportSelectedIds.includes(m.id));
     return [...filteredMunicipalities];
   }, [reportScope, municipalities, reportSelectedIds, filteredMunicipalities]);
-  const reportSummary = useMemo(() => ({
-    count: reportItems.length,
-    avgScore: reportItems.reduce((s, m) => s + Number(m.score || 0), 0) / Math.max(reportItems.length, 1),
-    investments: reportItems.reduce((s, m) => s + Number(m.investments?.volumeBillion || 0), 0),
-    sme: reportItems.reduce((s, m) => s + Number(m.smeCount || 0), 0),
-    avgAssessment: reportItems.reduce((s, m) => s + Number(m.assessmentScore || 0), 0) / Math.max(reportItems.length, 1),
-  }), [reportItems]);
+  const reportSummary = useMemo(() => {
+    const scored = reportItems.filter((m) => numericValue(m.score) != null);
+    const investmentRows = reportItems.filter((m) => numericValue(m.investments?.volumeBillion) != null);
+    const smeRows = reportItems.filter((m) => numericValue(m.smeCount) != null);
+    const assessmentRows = reportItems.filter((m) => numericValue(m.assessmentScore) != null);
+    return {
+      count: reportItems.length,
+      avgScore: scored.reduce((s, m) => s + Number(m.score), 0) / Math.max(scored.length, 1),
+      investments: investmentRows.reduce((s, m) => s + Number(m.investments.volumeBillion), 0),
+      investmentCoverage: investmentRows.length,
+      sme: smeRows.reduce((s, m) => s + Number(m.smeCount), 0),
+      smeCoverage: smeRows.length,
+      avgAssessment: assessmentRows.reduce((s, m) => s + Number(m.assessmentScore), 0) / Math.max(assessmentRows.length, 1),
+    };
+  }, [reportItems]);
   const comparisonMetricDef = METRIC_BY_KEY[comparisonMetric] || METRICS[0];
   const reportChartMetricDef = METRIC_BY_KEY[reportChartMetric] || METRICS[0];
   const reportPrintFields = reportFields.filter((key) => METRIC_BY_KEY[key]);
