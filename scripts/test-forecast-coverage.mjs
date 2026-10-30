@@ -12,6 +12,7 @@ const indicators = [
   { municipality_id: 'settlement-a', indicator_code: 'average_employees_q1', indicator_name: 'Численность работников', reference_year: 2026, verification_status: 'verified', geographic_level: 'settlement' },
   { municipality_id: 'langepas', indicator_code: 'average_monthly_salary_annual', indicator_name: 'Средняя заработная плата', reference_year: 2025, verification_status: 'pending', geographic_level: 'municipality' },
   { municipality_id: 'surgut', indicator_code: 'municipal_budget_expenditure', indicator_name: 'Расходы бюджета', reference_year: 2025, verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'nizhnevartovsk', indicator_code: 'registered_unemployment_rate', indicator_name: 'Уровень зарегистрированной безработицы', reference_year: 2025, verification_status: 'verified', geographic_level: 'municipality' },
 ];
 
 const coverage = buildForecastCoverage(indicators, [
@@ -21,8 +22,8 @@ const coverage = buildForecastCoverage(indicators, [
 ], 22);
 const byKey = Object.fromEntries(coverage.map((item) => [item.key, item]));
 
-assert.equal(byKey.employment.municipalityCount, 3);
-assert.equal(byKey.employment.observationCount, 3);
+assert.equal(byKey.employment.municipalityCount, 4);
+assert.equal(byKey.employment.observationCount, 4);
 assert.equal(byKey.income.municipalityCount, 1);
 assert.equal(byKey.income.observationCount, 1);
 assert.equal(byKey.investment.municipalityCount, 2);
