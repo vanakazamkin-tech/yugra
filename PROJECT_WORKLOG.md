@@ -286,3 +286,9 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Для оценки населения и безработицы сохранён отдельный `reference_period=year_end_estimate`; это предотвращает смешение с рядом Росстата на 01.01.2025 (113 663 человека) и с официальными периодами. Не импортировано заявление «более 57 млрд руб.» как точная инвестиционная сумма.
 - Миграция `20261030134518_import_khanty_mansiysk_economic_interview_2025.sql`, GitHub commit `5db3627`; readback подтвердил 4 строки. Документация `docs/KHANTY_MANSIYSK_ECONOMIC_INTERVIEW_2025_IMPORT.md`, commit `ae735e8`.
 - Текущий аудит: 967 verified observations, 136 indicator codes, 78 sources, 34 used sources, 319 code/source/geography combinations; duplicate logical keys = 0.
+
+
+### 2026-10-30 — корректировка матрицы покрытия и каталога источников
+- Пересчитал покрытие именно по наблюдениям 2025 года, а не по наличию любых исторических рядов: занятость 13/22, доходы 11/22, местный бюджет 2/22, инвестиции 9/22, миграция 0/22.
+- Уточнил формулировку о старых рядах рейтинга: они дают историческое покрытие 22/22 по двум отдельным показателям за 2022–2023 годы, но не означают наличие сопоставимых данных за 2025 год.
+- Пересобрал таблицу каталога источников по актуальным данным Supabase: 78 источников в 21 категории, включая новые категории municipal_budget_execution, municipal_information_center и municipal_official_report. Обновлены DATA_DICTIONARY.md и public/data-dictionary.md.
