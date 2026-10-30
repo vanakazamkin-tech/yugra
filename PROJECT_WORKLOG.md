@@ -324,3 +324,10 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Миграция `20261030135819_import_hmrn_migration_2023_2024.sql`, GitHub commit `530e918`; readback подтвердил две строки. Документация `docs/HMRN_MIGRATION_2023_2024_IMPORT.md`, commit `a4cb8cb`.
 - Историческое миграционное покрытие расширено до 3/22 муниципалитетов: Сургут, Ханты-Мансийск и Ханты-Мансийский район. Покрытие за 2025 год остаётся 0/22.
 - Общий аудит: 1 003 verified observations, 149 indicator codes, 82 sources, 39 used sources, 341 code/source/geography combinations; duplicate logical keys = 0.
+
+
+### 2026-10-30 — миграционный прирост Сургута за 2024–2025 годы
+- Из официального отчёта Сургута за 2025 год добавлены сальдо миграции: 9,0 тыс. человек за 2024 год (округлённое значение) и 5,2 тыс. за 2025 год (предварительная оценка). Дополнительно импортированы коэффициенты миграционного прироста 21,2‰ и 12,0‰ соответственно.
+- Миграция `20261030140009_import_surgut_migration_2024_2025_preliminary.sql`, GitHub commit `639b8a8`; readback подтвердил четыре строки. Документация `docs/SURGUT_MIGRATION_2021_2023_IMPORT.md` расширена до 2025 года, commit `2e72189`.
+- Покрытие миграции в срезе 2025 года стало 1/22 (Сургут; показатель предварительный). Историческое покрытие — 3/22 (Сургут, Ханты-Мансийск, Ханты-Мансийский район).
+- Общий аудит: 1 007 verified observations, 150 indicator codes, 82 sources, 39 used sources, 343 code/source/geography combinations; duplicate logical keys = 0.
