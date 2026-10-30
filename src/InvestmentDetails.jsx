@@ -144,7 +144,6 @@ const OFFICIAL_COMPARISON_SERIES = [
 const DEFAULT_COMPARE_IDS = ['surgutsky', 'khanty-mansiysk', 'surgut'];
 const DEFAULT_REPORT_FIELDS = ['score', 'rank2024', 'investments', 'growthPercent', 'smeCount', 'assessmentScore'];
 
-const metricValue = (municipality, key) => METRIC_BY_KEY[key]?.get(municipality) ?? '';
 const metricText = (municipality, key) => METRIC_BY_KEY[key]?.format(municipality) ?? '';
 const csvEscape = (value) => {
   let text = String(value ?? '');
