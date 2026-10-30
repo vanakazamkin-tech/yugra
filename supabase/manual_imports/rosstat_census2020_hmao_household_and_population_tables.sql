@@ -1,0 +1,15 @@
+-- Register additional municipal and settlement-level HMAO census sources.
+-- Metadata only. No observations are imported by this script.
+-- Official index: https://72.rosstat.gov.ru/perepis_nas2020
+-- Reference date: 2021-10-01.
+
+INSERT INTO public.data_sources
+(id,name,category,url,description,format,coverage,update_frequency,import_status,last_checked_at,notes)
+VALUES
+('rosstat_census2020_hmao_population_distribution_municipal','Росстат — численность населения ХМАО, городских округов, муниципальных районов, поселений и крупных населённых пунктов, ВПН-2020, том 1, таблица 4','demography','https://72.rosstat.gov.ru/perepis_nas2020','Переписная численность населения по административным и муниципальным территориям, включая городское и сельское население и населённые пункты с численностью от 3000 человек.','XLSX','ХМАО — Югра; региональный, муниципальный и поселенческий уровни; переписная дата 01.10.2021','Перепись населения','identified',now(),'Официальная страница Росстата: XLSX 39,87 КБ, опубликован 26.05.2023. Состав территорий шире 22 муниципалитетов проекта; при импорте сохранить исходный уровень и тип территории, не сводить поселения к муниципалитетам без ключа соответствия.')
+,('rosstat_census2020_hmao_family_units_municipal','Росстат — семейные ячейки частных домохозяйств по размеру и числу детей младше 18 лет по муниципальным образованиям ХМАО, ВПН-2020, том 8, таблица 7','demography','https://72.rosstat.gov.ru/perepis_nas2020','Распределение семейных ячеек по размеру и числу детей младше 18 лет в муниципальных образованиях.','XLSX','ХМАО — Югра; муниципальные образования; переписная дата 01.10.2021','Перепись населения','identified',now(),'Официальный перечень региональной страницы содержит таблицу 8.7 с муниципальной детализацией (62 КБ, 19.06.2023). Семейные ячейки — отдельная статистическая единица, не тождественная частному домохозяйству или семье в бытовом смысле; проверить определения и итоги.')
+,('rosstat_census2020_hmao_household_housing_type_municipal','Росстат — частные домохозяйства по типам занимаемых жилых помещений и размеру домохозяйства по муниципальным образованиям ХМАО, ВПН-2020, том 11, таблица 3','demography','https://72.rosstat.gov.ru/perepis_nas2020','Распределение частных домохозяйств по типу занимаемого жилого помещения и размеру домохозяйства в муниципальных образованиях.','XLSX','ХМАО — Югра; муниципальные образования; переписная дата 01.10.2021','Перепись населения','identified',now(),'Официальный перечень региональной страницы содержит таблицу 11.3 с муниципальной детализацией (21,14 КБ, 20.06.2023). Не смешивать домохозяйства с жилыми помещениями или численностью населения; проверить категории и контрольные суммы.')
+ON CONFLICT (id) DO UPDATE SET
+ name=EXCLUDED.name,category=EXCLUDED.category,url=EXCLUDED.url,description=EXCLUDED.description,
+ format=EXCLUDED.format,coverage=EXCLUDED.coverage,update_frequency=EXCLUDED.update_frequency,
+ import_status=EXCLUDED.import_status,last_checked_at=now(),notes=EXCLUDED.notes,updated_at=now();
