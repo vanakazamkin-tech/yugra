@@ -34,10 +34,10 @@ export const FALLBACK_DATA_SOURCES = [
     name: 'Открытые данные Мегиона — население на 01.01.2025',
     category: 'demography',
     url: 'https://opendata.admmegion.ru/datasets/departament-ekonomecheskoy-politiki/34830/',
-    description: 'Паспорт административно-территориального устройства: официальная строка по населению города Мегион.',
+    description: 'Официальный набор по населению Мегиона. В текущей базе наблюдение связано с источником Росстата; до отдельной сверки происхождения набор не считается импортированным.',
     format: 'CSV',
-    coverage: 'Частичное покрытие: Мегион',
-    import_status: 'partially_imported',
+    coverage: 'Мегион; требуется сверить происхождение и географический уровень',
+    import_status: 'identified',
   },
 
   {
@@ -78,6 +78,46 @@ export const FALLBACK_DATA_SOURCES = [
     description: 'Инвестиционные площадки и инфраструктурные предложения на карте.',
     format: 'Веб-карта',
     coverage: 'По объектам карты',
+    import_status: 'identified',
+  },
+  {
+    id: 'depeconom_ser_2025',
+    name: 'Депэкономики Югры — итоги социально-экономического развития за 2025 год',
+    category: 'official_statistics',
+    url: 'https://depeconom.admhmao.ru/activity/otraslevye-napravleniya/sotsialno-ekonomicheskoe-razvitie/110506-2025-god/itogi-sotsialno-ekonomicheskogo-razvitiya-khanty-mansiyskogo_13064992/',
+    description: 'Региональный итоговый обзор СЭР за 2025 год. Использовать для макроэкономического контекста Югры; не превращать региональные показатели в муниципальные наблюдения без отдельной территориальной разбивки.',
+    format: 'HTML / документы',
+    coverage: 'ХМАО — Югра, региональный уровень',
+    import_status: 'identified',
+  },
+  {
+    id: 'investugra_municipal_rating_methodology_2024',
+    name: 'Инвестиционный портал Югры — методология рейтинга муниципальных образований, редакция от 02.04.2024',
+    category: 'official_statistics',
+    url: 'https://investugra.ru/upload/Metodologiya_reytinga_MO_02.04.2024.pdf',
+    description: 'Методология муниципального рейтинга инвестиционного климата и развития конкуренции: 35 показателей в пяти группах; сочетает статистические, административные и опросные данные.',
+    format: 'PDF',
+    coverage: '22 муниципальных образования Югры',
+    import_status: 'identified',
+  },
+  {
+    id: 'investugra_municipal_rating_report_2023',
+    name: 'АНО «Центр стратегических разработок Югры» — аналитический отчёт рейтинга муниципалитетов за 2023 год',
+    category: 'official_statistics',
+    url: 'https://investugra.ru/upload/%D0%90%D0%BD%D0%B0%D0%BB%D0%B8%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BE%20%D1%80%D0%B5%D0%B7%D1%83%D0%BB%D1%8C%D1%82%D0%B0%D1%82%D0%B0%D1%85%20%D1%80%D0%B5%D0%B9%D1%82%D0%B8%D0%BD%D0%B3%D0%B0%20%D0%9C%D0%9E%20%D0%98%D0%BD%D0%B2%D0%B5%D1%81%D1%82%D0%BA%D0%BB%D0%B8%D0%BC%D0%B0%D1%82%20%D0%B7%D0%B0%202023%20%D0%B3%D0%BE%D0%B4.pdf',
+    description: 'Сопоставительный отчёт по 22 муниципалитетам. Из таблиц 1 и 12 извлечены исторические значения инвестиций без добычи и доли работников МСП за 2022–2023 годы.',
+    format: 'PDF',
+    coverage: '22 муниципальных образования; отдельные годовые показатели за 2022–2023 годы',
+    import_status: 'partially_imported',
+  },
+  {
+    id: 'investugra_municipal_rating_portal',
+    name: 'Инвестиционный портал Югры — рейтинг муниципальных образований',
+    category: 'investments',
+    url: 'https://investugra.ru/about/investment-climate/municipality/',
+    description: 'Страница рейтинга муниципальных образований ХМАО-Югры по условиям инвестиционного климата. Дату и версию методологии необходимо фиксировать отдельно.',
+    format: 'Веб-страница',
+    coverage: '22 муниципальных образования Югры',
     import_status: 'identified',
   },
   {
@@ -240,6 +280,16 @@ export const FALLBACK_DATA_SOURCES = [
     description: 'Оценка численности населения отдельных городов Югры на 1 января 2022 года; каждый ряд маркирован уровнем населённого пункта.',
     format: 'PDF',
     coverage: '16 городов Югры · оценка на 01.01.2022',
+    import_status: 'imported',
+  },
+  {
+    id: 'rosstat_hmao_municipal_population_2022_2025',
+    name: 'Тюменьстат — население городских округов и муниципальных районов Югры на 01.01.2022–2025',
+    category: 'demography',
+    url: 'https://72.rosstat.gov.ru/ofs_demp_hmao',
+    description: 'Официальный XLSX: общая численность населения 22 муниципальных образований за 2022–2025 годы, а также городская и сельская составляющие там, где они опубликованы.',
+    format: 'XLSX',
+    coverage: '22 муниципальных образования; 88 общих, 84 городских и 40 сельских наблюдений',
     import_status: 'imported',
   },
   {
@@ -485,57 +535,66 @@ export const FALLBACK_DATA_SOURCES = [
   },
 ];
 
+async function fetchAllRows(buildQuery, pageSize = 500) {
+  const rows = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await buildQuery().range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    const page = Array.isArray(data) ? data : [];
+    rows.push(...page);
+    if (page.length < pageSize) return rows;
+  }
+}
+
 export async function fetchOfficialData(client) {
   if (!client) {
     return { sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [], programExecution: [], fuelPrices: [], facilities: [] };
   }
 
-  const [sourcesResult, indicatorsResult, sitesResult, programsResult, fuelPricesResult, facilitiesResult] = await Promise.all([
-    client.from('data_sources')
+  // Supabase/PostgREST may cap each response (commonly at 1,000 rows).
+  // Fetch deterministic pages so a growing official-data catalogue is never silently truncated.
+  const [sources, indicators, investmentSites, programExecution, fuelPrices, facilities] = await Promise.all([
+    fetchAllRows(() => client.from('data_sources')
       .select('id,name,category,url,description,format,coverage,update_frequency,import_status,last_checked_at,notes')
       .order('category', { ascending: true })
-      .order('name', { ascending: true }),
-    client.from('municipality_indicators')
+      .order('name', { ascending: true })
+      .order('id', { ascending: true })),
+    fetchAllRows(() => client.from('municipality_indicators')
       .select('id,municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,source_published_at,retrieved_at,verification_status,notes,geographic_level,geographic_name')
       .eq('verification_status', 'verified')
-      .order('reference_year', { ascending: false }),
-    client.from('investment_sites')
+      .order('reference_year', { ascending: false })
+      .order('id', { ascending: true })),
+    fetchAllRows(() => client.from('investment_sites')
       .select('id,municipality_id,source_id,external_id,name,site_type,location_text,area_hectares,land_status,offer_type,permitted_use,source_url,source_updated_at,verification_status,retrieved_at')
       .eq('verification_status', 'verified')
-      .order('name', { ascending: true }),
-    client.from('municipal_program_execution')
+      .order('name', { ascending: true })
+      .order('id', { ascending: true })),
+    fetchAllRows(() => client.from('municipal_program_execution')
       .select('id,municipality_id,source_id,program_code,program_name,report_date,approved_budget_thousand,revised_budget_thousand,executed_budget_thousand,execution_percent,source_url,source_published_at,retrieved_at,verification_status,notes')
       .eq('verification_status', 'verified')
-      .order('report_date', { ascending: false }),
-    client.from('fuel_price_observations')
+      .order('report_date', { ascending: false })
+      .order('id', { ascending: true })),
+    fetchAllRows(() => client.from('fuel_price_observations')
       .select('id,municipality_id,source_id,source_row,observed_at,station_name,company_name,address,latitude,longitude,gasoline_80,gasoline_92,gasoline_95,gasoline_98,gasoline_100,butane,propane,diesel,methane,value_unit,source_url,source_payload,verification_status,retrieved_at')
       .eq('verification_status', 'verified')
       .order('observed_at', { ascending: false })
-      .order('source_row', { ascending: true }),
-    client.from('municipal_facilities')
+      .order('source_row', { ascending: true })
+      .order('id', { ascending: true })),
+    fetchAllRows(() => client.from('municipal_facilities')
       .select('id,municipality_id,source_id,external_id,facility_category,name_full,name_short,address,postal_code,latitude,longitude,phone,working_hours,license_info,ownership,staffing_percent,annual_attendance,source_updated_at,source_url,source_payload,verification_status,retrieved_at')
       .eq('verification_status', 'verified')
       .order('facility_category', { ascending: true })
-      .order('name_short', { ascending: true }),
+      .order('name_short', { ascending: true })
+      .order('id', { ascending: true })),
   ]);
 
-  // A failed query is surfaced rather than being silently treated as an empty official dataset.
-  if (sourcesResult.error) throw sourcesResult.error;
-  if (indicatorsResult.error) throw indicatorsResult.error;
-  if (sitesResult.error) throw sitesResult.error;
-  if (programsResult.error) throw programsResult.error;
-  if (fuelPricesResult.error) throw fuelPricesResult.error;
-  if (facilitiesResult.error) throw facilitiesResult.error;
-
   return {
-    sources: Array.isArray(sourcesResult.data) && sourcesResult.data.length
-      ? sourcesResult.data
-      : FALLBACK_DATA_SOURCES,
-    indicators: Array.isArray(indicatorsResult.data) ? indicatorsResult.data : [],
-    investmentSites: Array.isArray(sitesResult.data) ? sitesResult.data : [],
-    programExecution: Array.isArray(programsResult.data) ? programsResult.data : [],
-    fuelPrices: Array.isArray(fuelPricesResult.data) ? fuelPricesResult.data : [],
-    facilities: Array.isArray(facilitiesResult.data) ? facilitiesResult.data : [],
+    sources: sources.length ? sources : FALLBACK_DATA_SOURCES,
+    indicators,
+    investmentSites,
+    programExecution,
+    fuelPrices,
+    facilities,
   };
 }
 

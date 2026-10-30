@@ -1071,6 +1071,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .about-capability-grid article strong { color: var(--forest); font-family: 'Playfair Display', Georgia, serif; font-size: 16px; }
 .about-capability-grid article p { margin: 0; color: #788273; font-size: 10px; line-height: 1.65; }
 .about-source-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.source-catalog-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(190px, 260px) auto auto; gap: 10px; align-items: end; margin: 14px 0 12px; }
+.source-catalog-toolbar .search-box { max-width: none; }
+.source-catalog-toolbar .select-field { min-width: 0; }
+@media (max-width: 800px) { .source-catalog-toolbar { grid-template-columns: 1fr 1fr; } .source-catalog-toolbar .search-box { grid-column: 1 / -1; } }
+@media (max-width: 480px) { .source-catalog-toolbar { grid-template-columns: 1fr; } .source-catalog-toolbar .search-box { grid-column: auto; } }
 .about-source-list a { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; padding: 13px 14px; border: 1px solid #e4d9c7; border-radius: 8px; background: #fffdf8; text-decoration: none; color: inherit; transition: border-color .18s, background .18s; }
 .about-source-list a:hover { border-color: var(--ochre); background: #f8f1e5; }
 .about-source-list a strong { color: var(--forest); font-size: 12px; }
@@ -1582,7 +1587,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .data-quality-kpis article > span { color: #788575; font-size: 9px; line-height: 1.45; }
 .data-quality-kpis article > strong { color: var(--forest); font-family: 'Playfair Display', Georgia, serif; font-size: clamp(20px, 2.2vw, 30px); line-height: 1.1; overflow-wrap: anywhere; }
 .data-quality-kpis article > small { color: #91998a; font-size: 8px; line-height: 1.5; }
-.data-quality-pillar-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; }
+.data-quality-pillar-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
 .data-quality-pillar { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 13px; border: 1px solid #e1d9c9; border-radius: 8px; background: #fcfaf3; }
 .data-quality-pillar-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .data-quality-pillar-top strong { color: #34583d; font-family: 'Playfair Display', Georgia, serif; font-size: 13px; line-height: 1.3; }
@@ -1710,7 +1715,73 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 .data-page-hero-actions { display: flex; align-items: flex-end; flex-direction: column; gap: 9px; flex: 0 0 auto; }
 .data-dictionary-link { text-decoration: none; min-height: 34px; font-size: 10px; }
+.official-data-updated { color: #777; font-size: 11px; font-variant-numeric: tabular-nums; }
+.data-load-error { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 14px 0; padding: 16px 18px; border: 1px solid #c98b77; border-radius: 12px; background: rgba(201, 139, 119, .09); color: var(--ink, #34382f); }
+.data-load-error p { margin: 5px 0; font-size: 13px; overflow-wrap: anywhere; }
+.data-load-error small { color: #777; font-size: 11px; }
+@media (max-width: 700px) { .data-load-error { align-items: flex-start; flex-direction: column; } }
+.data-page-hero-actions button:disabled { opacity: .6; cursor: wait; }
 @media (max-width: 700px) {
   .data-page-hero { align-items: flex-start; flex-direction: column; padding: 17px; }
   .data-page-hero-actions { align-items: flex-start; flex-direction: row; flex-wrap: wrap; width: 100%; }
 }
+
+
+/* Municipality-level official-data coverage matrix */
+.municipality-coverage-table { min-width: 930px; }
+.municipality-coverage-table thead th:not(:first-child) { min-width: 138px; white-space: normal; }
+.municipality-coverage-table thead th small.cell-subnote { display: block; margin-top: 5px; color: #7e8978; font-size: 8px; font-weight: 700; line-height: 1.35; white-space: normal; }
+.municipality-coverage-table tbody td { min-width: 138px; vertical-align: top; }
+.municipality-coverage-table tbody td:first-child { min-width: 185px; }
+.municipality-coverage-table .municipality-coverage-status { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; line-height: 1.4; white-space: normal; }
+.municipality-coverage-table .municipality-coverage-status::before { content: ""; display: inline-block; flex: 0 0 6px; width: 6px; height: 6px; border-radius: 50%; background: #9aa29a; }
+.municipality-coverage-table .municipality-coverage-status--covered { color: #315d42; }
+.municipality-coverage-table .municipality-coverage-status--covered::before { background: #3d7050; }
+.municipality-coverage-table .municipality-coverage-status--settlement-only { color: #8a642f; }
+.municipality-coverage-table .municipality-coverage-status--settlement-only::before { background: #b78a49; }
+.municipality-coverage-table .municipality-coverage-status--missing { color: #777e77; }
+.municipality-coverage-table .municipality-coverage-cell--settlement-only { background: rgba(183, 138, 73, .045); }
+.municipality-coverage-table .municipality-coverage-cell--missing { background: rgba(120, 126, 120, .025); }
+
+
+/* Official urban/rural population composition */
+.population-composition-table { min-width: 900px; }
+.population-composition-table thead th { white-space: normal; }
+.population-composition-table .number-cell { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.population-composition-track { display: flex; width: min(250px, 100%); height: 9px; margin: 2px 0 6px; overflow: hidden; border: 1px solid #e0dacb; border-radius: 99px; background: #f1ecdf; }
+.population-composition-track span { display: block; height: 100%; min-width: 0; }
+.population-composition-urban, .population-composition-legend-urban { background: #3d7050; }
+.population-composition-rural, .population-composition-legend-rural { background: #b78a49; }
+.population-composition-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 9px 18px; margin-top: 14px; color: #728071; font-size: 10px; line-height: 1.6; }
+.population-composition-footer > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.population-composition-footer i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.population-composition-footer p { flex-basis: 100%; margin: 0; }
+.population-composition-footer a { color: var(--forest); text-decoration: underline; text-underline-offset: 2px; }
+
+
+/* Forecast: transparent coverage of verified municipal data */
+.forecast-coverage-panel { margin: 18px 0 22px; padding: 20px; border: 1px solid #e1ddcf; border-radius: 16px; background: rgba(255, 255, 255, .58); }
+.forecast-coverage-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; margin-bottom: 15px; }
+.forecast-coverage-heading h3 { margin: 0; color: var(--ink, #34382f); font-size: 17px; }
+.forecast-coverage-heading p { max-width: 780px; margin: 6px 0 0; color: #737b70; font-size: 11px; line-height: 1.6; }
+.forecast-coverage-status { flex: 0 0 auto; padding: 6px 9px; border: 1px solid #ded8c8; border-radius: 99px; color: #7b796c; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.forecast-coverage-status.is-connected { border-color: #c4d4c2; color: #3d7050; background: rgba(61, 112, 80, .06); }
+.forecast-coverage-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.forecast-coverage-card { min-width: 0; padding: 13px 12px 12px; border: 1px solid #e9e4d8; border-radius: 12px; background: #fbfaf6; }
+.forecast-coverage-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; color: #4d594b; font-size: 11px; font-weight: 800; }
+.forecast-coverage-card-top strong { color: var(--forest, #315d42); font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.forecast-coverage-track { height: 5px; margin: 11px 0 10px; overflow: hidden; border-radius: 99px; background: #e9e6dc; }
+.forecast-coverage-track i { display: block; height: 100%; border-radius: inherit; background: #628568; transition: width .2s ease; }
+.forecast-coverage-card p { min-height: 49px; margin: 0 0 9px; color: #7a8076; font-size: 10px; line-height: 1.5; }
+.forecast-coverage-card small { color: #686f65; font-size: 9px; line-height: 1.5; }
+.forecast-coverage-footnote { margin: 13px 0 0; color: #7a8076; font-size: 10px; line-height: 1.6; }
+@media (max-width: 1100px) { .forecast-coverage-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 680px) {
+  .forecast-coverage-panel { padding: 14px; }
+  .forecast-coverage-heading { flex-direction: column; gap: 9px; }
+  .forecast-coverage-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .forecast-coverage-card p { min-height: 0; }
+}
+@media (max-width: 420px) { .forecast-coverage-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.forecast-coverage-status.is-stale { border-color: #dfc99f; color: #87642d; background: rgba(190, 145, 65, .08); }

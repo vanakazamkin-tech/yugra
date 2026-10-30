@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import data from '../data/municipalities-detailed.json';
 import { UgraMap, UgraMapList } from './components/UgraMap';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { fetchMunicipalities } from './lib/municipalities';
-import Forecasting from './components/Forecasting';
+const Forecasting = lazy(() => import('./components/Forecasting'));
 import { FALLBACK_DATA_SOURCES, fetchOfficialData, DATA_CATEGORY_LABELS, DATA_STATUS_LABELS } from './lib/officialData';
 
 const Icon = ({ name, className = '' }) => {
@@ -95,6 +95,7 @@ const OFFICIAL_RISK_SIGNAL_SERIES = [
   { code: 'own_production_shipments_q1', label: 'Отгрузка продукции · I квартал', unit: 'тыс. руб.', period: 'Q1', definition: 'Накопительный номинальный объём отгрузки собственной продукции, работ и услуг за январь–март, без субъектов малого предпринимательства. Не скорректирован на инфляцию.' },
   { code: 'resale_goods_q1', label: 'Продажа перепроданных товаров · I квартал', unit: 'тыс. руб.', period: 'Q1', definition: 'Накопительный номинальный объём продажи товаров несобственного производства за январь–март, без субъектов малого предпринимательства. Не скорректирован на инфляцию.' },
   { code: 'fixed_capital_investment_enterprises_non_sme', label: 'Инвестиции организаций без субъектов МСП · год', unit: 'тыс. руб.', period: 'annual', definition: 'Годовой объём инвестиций организаций на территории Сургута, без субъектов малого предпринимательства. Это не только бюджетные средства и не реальный объём после инфляции.' },
+  { code: 'fixed_capital_investment_non_mining', label: 'Инвестиции в основной капитал без добычи · год', unit: 'руб.', period: 'annual', definition: 'Исторические муниципальные значения за 2022–2023 годы из отчёта рейтинга. Исключён вид деятельности «Добыча полезных ископаемых»; не смешивать с общими инвестициями.' },
   { code: 'fixed_capital_investment_local_budget', label: 'Инвестиции за счёт местного бюджета · год', unit: 'тыс. руб.', period: 'annual', definition: 'Годовой объём инвестиций за счёт местного бюджета. Это отдельная бюджетная составляющая, не общая сумма всех инвестиций.' },
 ];
 const OFFICIAL_TREND_SERIES = [
@@ -111,6 +112,7 @@ const OFFICIAL_TREND_SERIES = [
   { code: 'resale_goods_q3', title: 'Продажа товаров несобственного производства', periodLabel: 'Девять месяцев', unit: 'тыс. руб.', definition: 'Накопительный итог за январь–сентябрь, без субъектов малого предпринимательства.' },
   { code: 'resale_goods_annual', title: 'Продажа товаров несобственного производства', periodLabel: 'За год', unit: 'тыс. руб.', definition: 'Итог января–декабря, без субъектов малого предпринимательства.' },
   { code: 'fixed_capital_investment_local_budget', title: 'Инвестиции за счёт средств местного бюджета', periodLabel: 'За год', unit: 'тыс. руб.', definition: 'Отдельная статья муниципальных бюджетных вложений; не общий объём всех инвестиций.' },
+  { code: 'fixed_capital_investment_non_mining', title: 'Инвестиции в основной капитал без добычи', periodLabel: 'За год', unit: 'руб.', definition: 'Исторический муниципальный ряд за 2022–2023 годы из рейтингового отчёта; исключён вид деятельности «Добыча полезных ископаемых».' },
   { code: 'fixed_capital_investment_enterprises_non_sme', title: 'Инвестиции организаций без субъектов малого предпринимательства', periodLabel: 'За год', unit: 'тыс. руб.', definition: 'Общий объём инвестиций организаций на территории муниципалитета, без субъектов малого предпринимательства; не смешивать с вложениями местного бюджета.' },
   { code: 'investment_per_capita_no_budget', title: 'Инвестиции на душу населения без бюджетных средств', periodLabel: 'За год', unit: 'руб./чел.', definition: 'Объём инвестиций в основной капитал на душу населения без бюджетных средств; доступные наблюдения относятся к 2021 и 2024 годам.' },
   { code: 'avg_monthly_salary_large_medium_nco', title: 'Среднемесячная зарплата в крупных и средних организациях и НКО', periodLabel: 'За год', unit: 'руб.', definition: 'Среднемесячная номинальная зарплата работников крупных и средних предприятий и НКО; доступные наблюдения относятся к 2021 и 2024 годам.' },
@@ -118,6 +120,8 @@ const OFFICIAL_TREND_SERIES = [
 const OFFICIAL_COMPARISON_SERIES = [
   { code: 'average_employees_q1', label: 'Численность работников · I квартал', unit: 'человек', definition: 'Среднесписочная численность работников организаций без субъектов малого предпринимательства; накопительный показатель за январь–март.' },
   { code: 'average_employees_h1', label: 'Численность работников · полугодие', unit: 'человек', definition: 'Среднесписочная численность работников организаций без субъектов малого предпринимательства; январь–июнь.' },
+  { code: 'fixed_capital_investment_non_mining', label: 'Инвестиции без добычи · год', unit: 'руб.', definition: 'Инвестиции в основной капитал без вида деятельности «Добыча полезных ископаемых», исторические значения 2022–2023 годов.' },
+  { code: 'sme_employment_share', label: 'Доля занятости в МСП · год', unit: '%', definition: 'Доля среднесписочной численности работников МСП (без внешних совместителей) в общей среднесписочной численности работников предприятий и организаций (без внешних совместителей); не уровень безработицы.' },
   { code: 'average_monthly_salary_q1', label: 'Среднемесячная зарплата · I квартал', unit: 'руб.', definition: 'Среднемесячная начисленная зарплата работников организаций без субъектов малого предпринимательства за январь–март.' },
   { code: 'average_monthly_salary_h1', label: 'Среднемесячная зарплата · полугодие', unit: 'руб.', definition: 'Среднемесячная начисленная зарплата работников организаций без субъектов малого предпринимательства за январь–июнь.' },
   { code: 'retail_turnover_q1', label: 'Оборот розничной торговли · I квартал', unit: 'тыс. руб.', definition: 'Накопительный оборот розничной торговли без субъектов малого предпринимательства за январь–март.' },
@@ -140,9 +144,14 @@ const OFFICIAL_COMPARISON_SERIES = [
 const DEFAULT_COMPARE_IDS = ['surgutsky', 'khanty-mansiysk', 'surgut'];
 const DEFAULT_REPORT_FIELDS = ['score', 'rank2024', 'investments', 'growthPercent', 'smeCount', 'assessmentScore'];
 
-const metricValue = (municipality, key) => METRIC_BY_KEY[key]?.get(municipality) ?? '';
 const metricText = (municipality, key) => METRIC_BY_KEY[key]?.format(municipality) ?? '';
-const csvEscape = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+const csvEscape = (value) => {
+  let text = String(value ?? '');
+  // Prefix risky text values so spreadsheet applications do not execute them as formulas.
+  const first = text.trimStart()[0];
+  if (typeof value === 'string' && ['=', '+', '-', '@', '\t', '\r'].includes(first)) text = "'" + text;
+  return `"${text.replaceAll('"', '""')}"`;
+};
 const downloadCsv = (items, fields, filename) => {
   const headers = ['Муниципальное образование', 'Группа', ...fields.map((key) => METRIC_BY_KEY[key]?.label || key)];
   const rows = items.map((item) => [item.name, `Группа ${item.group2024}`, ...fields.map((key) => metricText(item, key))]);
@@ -175,8 +184,12 @@ export const InvestmentDetails = () => {
   const [facilitySearch, setFacilitySearch] = useState('');
   const [indicatorSearch, setIndicatorSearch] = useState('');
   const [indicatorMunicipalityFilter, setIndicatorMunicipalityFilter] = useState('all');
+  const [indicatorYearFilter, setIndicatorYearFilter] = useState('all');
+  const [sourceSearch, setSourceSearch] = useState('');
+  const [sourceStatusFilter, setSourceStatusFilter] = useState('all');
   const [officialDataStatus, setOfficialDataStatus] = useState(isSupabaseConfigured ? 'loading' : 'offline');
   const [officialDataError, setOfficialDataError] = useState('');
+  const [officialDataSyncedAt, setOfficialDataSyncedAt] = useState(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
@@ -227,7 +240,11 @@ export const InvestmentDetails = () => {
     }
 
     let cancelled = false;
+    let officialRequestInFlight = false;
     const loadOfficialData = async () => {
+      if (cancelled || officialRequestInFlight) return;
+      officialRequestInFlight = true;
+      setOfficialDataStatus('loading');
       try {
         const result = await fetchOfficialData(supabase);
         if (cancelled) return;
@@ -238,11 +255,14 @@ export const InvestmentDetails = () => {
         setFuelPrices(result.fuelPrices || []);
         setFacilities(result.facilities || []);
         setOfficialDataStatus('connected');
+        setOfficialDataSyncedAt(new Date());
         setOfficialDataError('');
       } catch (error) {
         if (cancelled) return;
         setOfficialDataStatus('error');
         setOfficialDataError(error?.message || 'Не удалось загрузить каталог официальных данных');
+      } finally {
+        officialRequestInFlight = false;
       }
     };
 
@@ -420,8 +440,15 @@ export const InvestmentDetails = () => {
     const scopePriority = (item) => (
       item.geographic_level === 'municipality' || item.indicator_code === 'population_municipality' || item.indicator_code === 'population_municipality_history' ? 0 : 1
     );
+    const indicatorPriority = (item) => (
+      item.indicator_code === 'population_municipality' ? 0
+        : item.indicator_code === 'population_municipality_history' ? 1
+          : 2
+    );
     candidates.sort((a, b) =>
-      scopePriority(a) - scopePriority(b) || Number(b.reference_year) - Number(a.reference_year)
+      scopePriority(a) - scopePriority(b)
+        || Number(b.reference_year) - Number(a.reference_year)
+        || indicatorPriority(a) - indicatorPriority(b)
     );
     candidates.forEach((item) => {
       if (!chosen.has(item.municipality_id)) chosen.set(item.municipality_id, item);
@@ -450,15 +477,25 @@ export const InvestmentDetails = () => {
       return counts;
     }, {});
     const makePillar = (key, title, description, codes, includePrograms = false) => {
-      const rows = officialIndicators.filter((item) => codes.includes(item.indicator_code));
-      const municipalIndicatorRows = rows.filter((item) => (item.geographic_level || 'municipality') === 'municipality');
-      const covered = new Set(municipalIndicatorRows.map((item) => item.municipality_id));
-      if (includePrograms) programExecution.forEach((item) => covered.add(item.municipality_id));
-      const years = rows.map((item) => Number(item.reference_year)).filter(Number.isFinite);
+      const rows = officialIndicators.filter((item) =>
+        item.verification_status === 'verified'
+        && (item.geographic_level || 'municipality') === 'municipality'
+        && codes.includes(item.indicator_code)
+      );
+      const programs = includePrograms
+        ? programExecution.filter((item) => item.verification_status === 'verified' && item.municipality_id)
+        : [];
+      const covered = new Set(rows.map((item) => item.municipality_id).filter(Boolean));
+      programs.forEach((item) => covered.add(item.municipality_id));
+      const programYears = programs
+        .map((item) => Number(String(item.report_date || '').slice(0, 4)))
+        .filter((year) => Number.isInteger(year) && year >= 1900 && year <= 2200);
+      const years = rows.map((item) => Number(item.reference_year)).filter(Number.isFinite).concat(programYears);
       const periods = new Set(rows.map((item) => item.reference_period || 'annual'));
+      if (programs.length) periods.add('program_report');
       return {
         key, title, description,
-        rows: rows.length + (includePrograms ? programExecution.length : 0),
+        rows: rows.length + programs.length,
         municipalityCount: covered.size,
         firstYear: years.length ? Math.min(...years) : null,
         lastYear: years.length ? Math.max(...years) : null,
@@ -473,14 +510,120 @@ export const InvestmentDetails = () => {
       latestYear: latestYear || null,
       pendingSources: (sourceCounts.identified || 0) + (sourceCounts.ready_for_import || 0) + (sourceCounts.access_issue || 0),
       pillars: [
-        makePillar('employment', 'Занятость', 'Среднесписочная численность работников в обследуемых организациях; это не полный показатель занятости всего населения.', ['average_employees_q1', 'average_employees_h1']),
-        makePillar('income', 'Доходы и заработная плата', 'Есть отдельные показатели зарплаты; полного муниципального ряда доходов населения пока нет.', ['average_monthly_salary_q1', 'average_monthly_salary_h1', 'avg_monthly_salary_large_medium_nco']),
-        makePillar('budget', 'Местный бюджет', 'Есть вложения за счёт местного бюджета и отдельные отчёты муниципальных программ, но не полная панель доходов и расходов.', ['fixed_capital_investment_local_budget'], true),
-        makePillar('migration', 'Миграция', 'Сопоставимый подтверждённый муниципальный ряд прибывших и выбывших пока не импортирован.', ['migration_arrivals', 'migration_departures', 'migration_balance']),
-        makePillar('investment', 'Инвестиции', 'Доступны отдельные значения инвестиций организаций и инвестиций на душу населения; охват периодами различается.', ['fixed_capital_investment_enterprises_non_sme', 'investment_per_capita_no_budget']),
+        makePillar('population', 'Население', 'Общая численность по всем 22 муниципалитетам за 2022–2025 годы; отдельный длительный ряд по Сургуту и городское/сельское разбиение там, где оно опубликовано.', ['population_municipality', 'population_municipality_history', 'population_urban_municipality', 'population_rural_municipality']),
+        makePillar('employment', 'Занятость', 'Есть среднесписочная численность работников и историческая доля работников МСП за 2022–2023 годы; это не полный показатель занятости населения.', [...OFFICIAL_EMPLOYMENT_SECTORS.map(({ code }) => code), 'average_employees_q1', 'average_employees_h1', 'average_employees_q3', 'average_employees_annual', 'sme_employment_share']),
+        makePillar('income', 'Доходы и заработная плата', 'Есть отдельные показатели начисленной заработной платы за разные периоды; полного муниципального ряда располагаемых доходов населения пока нет.', ['average_monthly_salary_q1', 'average_monthly_salary_h1', 'average_monthly_salary_q3', 'average_monthly_salary_annual', 'avg_monthly_salary_large_medium_nco']),
+        makePillar('budget', 'Местный бюджет', 'Есть сопоставимые показатели исполнения доходов и расходов за 9 месяцев 2024 и 2025 годов по всем 22 муниципалитетам, а также безвозмездные поступления и фонд оплаты труда за 9 месяцев 2025 года; это не годовые итоги и не полная бюджетная панель.', ['budget_total_revenue', 'budget_revenue_excluding_grants', 'budget_tax_non_tax_revenue', 'budget_total_expenditure', 'budget_intergovernmental_transfers', 'budget_payroll_fund'], true),
+        makePillar('migration', 'Миграция', 'Есть отдельные подтверждённые ряды по Сургуту, Ханты-Мансийску, Ханты-Мансийскому району и Нефтеюганску; по Сургуту доступны компоненты миграционного прироста. Сопоставимой панели по всем 22 муниципалитетам пока нет.', ['migration_net_total', 'migration_net_domestic', 'migration_net_international', 'migration_net_interregional', 'migration_net_intraregional', 'migration_growth_municipal_report', 'migration_rate_per_1000', 'migration_arrivals', 'migration_departures', 'migration_balance', 'rosstat_migration_8112021', 'rosstat_migration_8112022', 'rosstat_migration_8112023']),
+        makePillar('investment', 'Инвестиции', 'Есть исторические муниципальные значения инвестиций без добычи за 2022–2023 годы и отдельные более поздние наблюдения; периоды и определения нужно сопоставлять.', ['fixed_capital_investment_non_mining', 'fixed_capital_investment_enterprises_non_sme', 'fixed_capital_investment_local_budget', 'investment_per_capita_no_budget']),
       ],
     };
   }, [officialIndicators, officialDataSources, programExecution]);
+
+
+  const officialMunicipalCoverage = useMemo(() => {
+    const verified = officialIndicators.filter((item) => item.verification_status === 'verified');
+    const municipalityRows = verified.filter((item) => (item.geographic_level || 'municipality') === 'municipality');
+    const settlementPopulationIds = new Set(verified
+      .filter((item) => item.indicator_code === 'population_settlement' && item.geographic_level === 'settlement')
+      .map((item) => item.municipality_id));
+    const categoryDefinitions = [
+      {
+        key: 'population',
+        label: 'Население',
+        matches: (item) => ['population_municipality', 'population_municipality_history', 'population_total', 'population_urban_municipality', 'population_rural_municipality'].includes(item.indicator_code),
+      },
+      {
+        key: 'investment',
+        label: 'Инвестиции',
+        matches: (item) => String(item.indicator_code || '').toLowerCase().includes('investment')
+          || String(item.indicator_name || '').toLocaleLowerCase('ru-RU').includes('инвестици'),
+      },
+      {
+        key: 'salary',
+        label: 'Зарплата',
+        matches: (item) => /salary|wage/i.test(String(item.indicator_code || ''))
+          || String(item.indicator_name || '').toLocaleLowerCase('ru-RU').includes('заработн'),
+      },
+      {
+        key: 'employment',
+        label: 'Занятость',
+        matches: (item) => String(item.indicator_code || '').startsWith('employees_')
+          || String(item.indicator_code || '').startsWith('average_employees_')
+          || item.indicator_code === 'sme_employment_share',
+      },
+      {
+        key: 'budget',
+        label: 'Местный бюджет',
+        matches: (item) => String(item.indicator_code || '').startsWith('budget_')
+          || String(item.indicator_name || '').toLocaleLowerCase('ru-RU').includes('бюджет'),
+      },
+      {
+        key: 'entrepreneurship',
+        label: 'Предпринимательство',
+        matches: (item) => String(item.indicator_code || '').startsWith('registered_')
+          || String(item.indicator_code || '').toLowerCase().includes('sme')
+          || String(item.indicator_name || '').toLocaleLowerCase('ru-RU').includes('индивидуальных предпринимател'),
+      },
+    ];
+    const rows = municipalities.map((municipality) => {
+      const categories = categoryDefinitions.map((category) => {
+        const allRecords = municipalityRows.filter((item) =>
+          item.municipality_id === municipality.id && category.matches(item)
+        );
+        // When canonical municipal totals exist, do not double-count the same years
+        // from the historical city-specific series in this coverage summary.
+        const hasCanonicalPopulation = category.key === 'population'
+          && allRecords.some((item) => item.indicator_code === 'population_municipality');
+        const records = hasCanonicalPopulation
+          ? allRecords.filter((item) => item.indicator_code !== 'population_municipality_history')
+          : allRecords;
+        const years = records.map((item) => Number(item.reference_year)).filter(Number.isFinite);
+        const settlementOnly = category.key === 'population' && records.length === 0 && settlementPopulationIds.has(municipality.id);
+        return {
+          key: category.key,
+          recordsCount: records.length,
+          firstYear: years.length ? Math.min(...years) : null,
+          lastYear: years.length ? Math.max(...years) : null,
+          status: records.length ? 'covered' : settlementOnly ? 'settlement-only' : 'missing',
+        };
+      });
+      return { id: municipality.id, name: municipality.name, categories };
+    }).sort((a, b) => a.name.localeCompare(b.name, 'ru-RU'));
+    const categories = categoryDefinitions.map((category) => ({
+      key: category.key,
+      label: category.label,
+      coveredCount: rows.filter((row) => row.categories.find((cell) => cell.key === category.key)?.recordsCount > 0).length,
+    }));
+    return { rows, categories };
+  }, [municipalities, officialIndicators]);
+
+
+  const officialMunicipalPopulationMix = useMemo(() => {
+    const sourceId = 'rosstat_hmao_municipal_population_2022_2025';
+    const rowsByMunicipality = new Map();
+    officialIndicators
+      .filter((item) => item.source_id === sourceId
+        && Number(item.reference_year) === 2025
+        && ['population_municipality', 'population_urban_municipality', 'population_rural_municipality'].includes(item.indicator_code)
+        && (item.geographic_level || 'municipality') === 'municipality')
+      .forEach((item) => {
+        if (!rowsByMunicipality.has(item.municipality_id)) rowsByMunicipality.set(item.municipality_id, {});
+        const values = rowsByMunicipality.get(item.municipality_id);
+        if (item.indicator_code === 'population_municipality') values.total = numericValue(item.value);
+        if (item.indicator_code === 'population_urban_municipality') values.urban = numericValue(item.value);
+        if (item.indicator_code === 'population_rural_municipality') values.rural = numericValue(item.value);
+        values.name = item.geographic_name || municipalities.find((m) => m.id === item.municipality_id)?.name || item.municipality_id;
+      });
+    return [...rowsByMunicipality.entries()]
+      .filter(([, item]) => item.total != null && item.urban != null && item.rural != null && item.total === item.urban + item.rural)
+      .map(([id, item]) => ({
+        id, ...item,
+        urbanShare: item.urban / item.total * 100,
+        ruralShare: item.rural / item.total * 100,
+      }))
+      .sort((a, b) => b.ruralShare - a.ruralShare || a.name.localeCompare(b.name, 'ru-RU'));
+  }, [officialIndicators, municipalities]);
 
   const filteredFacilities = useMemo(() => {
     const query = facilitySearch.trim().toLocaleLowerCase('ru-RU');
@@ -496,6 +639,7 @@ export const InvestmentDetails = () => {
     const query = indicatorSearch.trim().toLocaleLowerCase('ru-RU');
     return [...officialIndicators]
       .filter((item) => indicatorMunicipalityFilter === 'all' || item.municipality_id === indicatorMunicipalityFilter)
+      .filter((item) => indicatorYearFilter === 'all' || String(item.reference_year) === indicatorYearFilter)
       .filter((item) => {
         const text = [item.geographic_name, item.indicator_name, item.municipality_id, item.unit, item.notes]
           .filter(Boolean).join(' ').toLocaleLowerCase('ru-RU');
@@ -504,7 +648,16 @@ export const InvestmentDetails = () => {
       .sort((a, b) => Number(b.reference_year) - Number(a.reference_year)
         || String(b.reference_period || '').localeCompare(String(a.reference_period || ''))
         || String(a.geographic_name || '').localeCompare(String(b.geographic_name || ''), 'ru-RU'));
-  }, [officialIndicators, indicatorSearch, indicatorMunicipalityFilter]);
+  }, [officialIndicators, indicatorSearch, indicatorMunicipalityFilter, indicatorYearFilter]);
+
+  const filteredDataSources = useMemo(() => {
+    const query = sourceSearch.trim().toLocaleLowerCase('ru-RU');
+    return [...officialDataSources]
+      .filter((source) => sourceStatusFilter === 'all' || (source.import_status || 'identified') === sourceStatusFilter)
+      .filter((source) => !query || [source.name, source.description, source.category, source.coverage, source.format]
+        .filter(Boolean).join(' ').toLocaleLowerCase('ru-RU').includes(query))
+      .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ru-RU'));
+  }, [officialDataSources, sourceSearch, sourceStatusFilter]);
 
   const programExecutionSummary = useMemo(() => ({
     count: programExecution.length,
@@ -830,13 +983,82 @@ export const InvestmentDetails = () => {
   }), [municipalities, riskYellowThreshold, riskGreenThreshold]);
 
   const pillarCoverage = useMemo(() => {
-    const idsFor = (codes) => new Set(officialIndicators.filter((item) => codes.includes(item.indicator_code)).map((item) => item.municipality_id));
+    // Coverage is calculated only from verified municipal-level observations.
+    // Settlement-level values and unverified concept data must not inflate it.
+    const verifiedMunicipalRows = officialIndicators.filter((item) =>
+      item.verification_status === 'verified'
+      && (item.geographic_level || 'municipality') === 'municipality'
+      && item.municipality_id
+      && numericValue(item.value) != null
+    );
+    const verifiedPrograms = programExecution.filter((item) => item.verification_status === 'verified');
+
+    const makePillar = (key, title, description, matches, includePrograms = false) => {
+      const rows = verifiedMunicipalRows.filter(matches);
+      const programs = includePrograms ? verifiedPrograms : [];
+      const ids = new Set(rows.map((item) => item.municipality_id));
+      programs.forEach((item) => {
+        if (item.municipality_id) ids.add(item.municipality_id);
+      });
+      return {
+        key,
+        title,
+        description,
+        ids,
+        municipalityCount: ids.size,
+        observationCount: rows.length + programs.length,
+      };
+    };
+
     return [
-      { key: 'employment', title: 'Занятость', description: 'Среднесписочная численность работников и рынок труда', ids: idsFor(['average_employees_q1']) },
-      { key: 'income', title: 'Доходы населения', description: 'Заработная плата и связанные показатели доходов', ids: idsFor(['average_monthly_salary_q1', 'avg_monthly_salary_large_medium_nco']) },
-      { key: 'budget', title: 'Местный бюджет', description: 'В прототипе есть только отдельные отчёты по муниципальным программам, не полная бюджетная панель', ids: new Set(programExecution.map((item) => item.municipality_id)) },
-      { key: 'migration', title: 'Миграция', description: 'Официальный сопоставимый муниципальный ряд пока не импортирован', ids: new Set() },
-      { key: 'investment', title: 'Инвестиции', description: 'Есть отдельные официальные оценки инвестиций на душу населения', ids: idsFor(['investment_per_capita_no_budget']) },
+      makePillar(
+        'employment',
+        'Занятость',
+        'Среднесписочная численность работников и отраслевые данные. Это не полная оценка занятости всего населения.',
+        (item) => String(item.indicator_code || '').startsWith('average_employees_')
+          || String(item.indicator_code || '').startsWith('employees_')
+          || item.indicator_code === 'sme_employment_share'
+      ),
+      makePillar(
+        'income',
+        'Доходы населения',
+        'Пока представлены отдельные показатели начисленной заработной платы; полного ряда располагаемых доходов населения нет.',
+        (item) => /salary|wage/i.test(String(item.indicator_code || ''))
+          || String(item.indicator_name || '').toLocaleLowerCase('ru-RU').includes('заработн')
+      ),
+      makePillar(
+        'budget',
+        'Местный бюджет',
+        'Есть отдельные инвестиции за счёт местного бюджета и подтверждённые отчёты по муниципальным программам. Это не полная панель доходов и расходов.',
+        () => false,
+        true
+      ),
+      makePillar(
+        'migration',
+        'Миграция',
+        'Есть отдельные подтверждённые ряды по Сургуту, Ханты-Мансийску, Ханты-Мансийскому району и Нефтеюганску; по Сургуту доступны компоненты миграционного прироста. Сопоставимой панели по всем 22 муниципалитетам пока нет.',
+        (item) => [
+          'migration_net_total',
+          'migration_net_domestic',
+          'migration_net_international',
+          'migration_net_interregional',
+          'migration_net_intraregional',
+          'migration_growth_municipal_report',
+          'migration_rate_per_1000',
+          'migration_arrivals',
+          'migration_departures',
+          'migration_balance',
+          'rosstat_migration_8112021',
+          'rosstat_migration_8112022',
+          'rosstat_migration_8112023',
+        ].includes(item.indicator_code)
+      ),
+      makePillar(
+        'investment',
+        'Инвестиции',
+        'Доступны отдельные подтверждённые оценки инвестиций организаций; охват муниципалитетов и периодов пока неполный.',
+        (item) => ['fixed_capital_investment_non_mining', 'fixed_capital_investment_enterprises_non_sme', 'fixed_capital_investment_local_budget', 'investment_per_capita_no_budget'].includes(item.indicator_code)
+      ),
     ];
   }, [officialIndicators, programExecution]);
 
@@ -909,7 +1131,12 @@ export const InvestmentDetails = () => {
         item.notes || '',
       ];
     });
-    const escape = (value) => '"' + String(value == null ? '' : value).replaceAll('"', '""') + '"';
+    const escape = (value) => {
+      let text = String(value == null ? '' : value);
+      const first = text.trimStart()[0];
+      if (typeof value === 'string' && ['=', '+', '-', '@', '\t', '\r'].includes(first)) text = "'" + text;
+      return '"' + text.replaceAll('"', '""') + '"';
+    };
     const csv = '\uFEFF' + [headers, ...rows].map((row) => row.map(escape).join(';')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     const anchor = document.createElement('a');
@@ -929,7 +1156,12 @@ export const InvestmentDetails = () => {
       sector.sharePercent == null ? '' : sector.sharePercent,
       sector.item?.source_id || '', sector.item?.source_url || '', sector.item?.notes || '',
     ]);
-    const escape = (value) => '"' + String(value == null ? '' : value).replaceAll('"','""') + '"';
+    const escape = (value) => {
+      let text = String(value == null ? '' : value);
+      const first = text.trimStart()[0];
+      if (typeof value === 'string' && ['=', '+', '-', '@', '\t', '\r'].includes(first)) text = "'" + text;
+      return '"' + text.replaceAll('"', '""') + '"';
+    };
     const csv = '\uFEFF' + [headers, ...rows].map((row)=>row.map(escape).join(';')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
     const anchor = document.createElement('a');
@@ -954,7 +1186,12 @@ export const InvestmentDetails = () => {
       item.source_url || '',
       item.notes || '',
     ]);
-    const escape = (value) => '"' + String(value == null ? '' : value).replaceAll('"','""') + '"';
+    const escape = (value) => {
+      let text = String(value == null ? '' : value);
+      const first = text.trimStart()[0];
+      if (typeof value === 'string' && ['=', '+', '-', '@', '\t', '\r'].includes(first)) text = "'" + text;
+      return '"' + text.replaceAll('"', '""') + '"';
+    };
     const csv = '\uFEFF' + [headers, ...rows].map((row)=>row.map(escape).join(';')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
     const anchor = document.createElement('a');
@@ -989,7 +1226,12 @@ export const InvestmentDetails = () => {
       item.source_url,
       item.notes || '',
     ]);
-    const escape = (value) => '"' + String(value == null ? '' : value).replaceAll('"', '""') + '"';
+    const escape = (value) => {
+      let text = String(value == null ? '' : value);
+      const first = text.trimStart()[0];
+      if (typeof value === 'string' && ['=', '+', '-', '@', '\t', '\r'].includes(first)) text = "'" + text;
+      return '"' + text.replaceAll('"', '""') + '"';
+    };
     const csv = '\uFEFF' + [headers, ...rows].map((row) => row.map(escape).join(';')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     const anchor = document.createElement('a');
@@ -1013,7 +1255,12 @@ export const InvestmentDetails = () => {
       item.source_id || '',
       item.source_url || '',
     ]);
-    const escape = (value) => '"' + String(value == null ? '' : value).replaceAll('"', '""') + '"';
+    const escape = (value) => {
+      let text = String(value == null ? '' : value);
+      const first = text.trimStart()[0];
+      if (typeof value === 'string' && ['=', '+', '-', '@', '\t', '\r'].includes(first)) text = "'" + text;
+      return '"' + text.replaceAll('"', '""') + '"';
+    };
     const csv = '\uFEFF' + [headers, ...rows].map((row) => row.map(escape).join(';')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     const anchor = document.createElement('a');
@@ -1292,9 +1539,12 @@ export const InvestmentDetails = () => {
               <div><span className="eyebrow"><span className="eyebrow-diamond"/> ЦЕНТР ДАННЫХ</span><h1>Источники и проверенные показатели</h1><p>Официальные наблюдения отделены от демонстрационного набора. Здесь видно покрытие, происхождение данных и наборы, подготовленные к импорту.</p></div>
               <div className="data-page-hero-actions">
                 <span className={`official-status-chip official-status--${officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
+                {officialDataSyncedAt && <span className="official-data-updated">Обновлено: {new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(officialDataSyncedAt)}</span>}
+                <button className="outline-button" onClick={() => setSyncAttempt((attempt) => attempt + 1)} disabled={officialDataStatus === 'loading'}><Icon name="refresh"/>Обновить данные</button>
                 <a className="outline-button data-dictionary-link" href="/data-dictionary.md" download="yugra-data-dictionary.md"><Icon name="download"/>Скачать словарь данных</a>
               </div>
             </section>
+            {officialDataStatus === 'error' && <div className="data-load-error" role="alert"><div><strong>Не удалось обновить официальный слой</strong><p>{officialDataError || 'Проверьте соединение с базой и повторите попытку.'}</p>{officialDataSyncedAt && <small>На экране остаются данные последней успешной загрузки.</small>}</div><button type="button" className="outline-button" onClick={() => setSyncAttempt((attempt) => attempt + 1)}><Icon name="refresh"/>Повторить загрузку</button></div>}
             <div className="data-page-summary"><article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong></article><article><span>Проверенных наблюдений</span><strong>{officialDataSummary.recordCount}</strong></article><article><span>Инвестиционных площадок</span><strong>{officialDataSummary.investmentSiteCount}</strong></article><article><span>Отчётов по программам</span><strong>{programExecution.length}</strong></article><article><span>Записей цен на топливо</span><strong>{fuelPrices.length}</strong></article><article><span>Школ и детсадов</span><strong>{facilities.length}</strong></article></div>
             <section className="data-quality-panel panel" aria-labelledby="data-quality-title">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="data-quality-title">Качество и покрытие данных</h2><p>Фактический охват подключённой базы; демонстрационные поля рейтинга здесь не учитываются</p></div></div><span className="section-tag">ОФИЦИАЛЬНЫЙ СЛОЙ</span></div>
@@ -1312,6 +1562,59 @@ export const InvestmentDetails = () => {
               </article>)}</div>
               <p className="data-quality-footnote">Покрытие означает наличие хотя бы одного наблюдения по группе, а не полноту набора. Для сравнения проверяйте единицы измерения, методику, период, территориальный уровень и первоисточник.</p>
             </section>
+            <section className="municipality-coverage-panel panel" aria-labelledby="municipality-coverage-title">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="table"/></span><div><h2 id="municipality-coverage-title">Покрытие официальными данными по муниципалитетам</h2><p>Приоритет расширения базы: население, инвестиции, зарплата, занятость и предпринимательство</p></div></div>
+                <span className="section-tag">{officialMunicipalCoverage.rows.length} ТЕРРИТОРИЙ</span>
+              </div>
+              <div className="table-scroll">
+                <table className="ranking-table municipality-coverage-table">
+                  <thead><tr>
+                    <th>Муниципалитет</th>
+                    {officialMunicipalCoverage.categories.map((category) => <th key={category.key}>{category.label}<small className="cell-subnote">{category.coveredCount}/{municipalities.length} на уровне МО</small></th>)}
+                  </tr></thead>
+                  <tbody>{officialMunicipalCoverage.rows.map((municipality) => <tr key={municipality.id}>
+                    <td className="municipality-cell"><strong>{municipality.name}</strong></td>
+                    {municipality.categories.map((cell) => <td key={cell.key} className={`municipality-coverage-cell municipality-coverage-cell--${cell.status}`}>
+                      <strong className={`municipality-coverage-status municipality-coverage-status--${cell.status}`}>{cell.status === 'covered' ? 'Есть на уровне МО' : cell.status === 'settlement-only' ? 'Только поселение' : 'Нет'}</strong>
+                      <small className="cell-subnote">{cell.recordsCount > 0
+                        ? cell.recordsCount + ' набл. · ' + (cell.firstYear === cell.lastYear ? cell.lastYear : cell.firstYear + '–' + cell.lastYear)
+                        : cell.status === 'settlement-only' ? 'Не заменяет данные всего района' : 'Нет подтверждённых наблюдений'}</small>
+                    </td>)}
+                  </tr>)}</tbody>
+                </table>
+              </div>
+              <p className="data-quality-footnote">Считаются только наблюдения со статусом проверки «verified» на муниципальном уровне. Для населения отдельно показано, когда есть данные лишь по населённому пункту: их нельзя подставлять вместо данных всего района. Наличие наблюдений не означает полный ряд или сопоставимость периодов.</p>
+            </section>
+            {officialMunicipalPopulationMix.length > 0 && <section className="population-composition-panel panel" aria-labelledby="population-composition-title">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="population-composition-title">Городское и сельское население</h2><p>Официальное разбиение на 1 января 2025 года · только территории, где в источнике указаны обе составляющие</p></div></div>
+                <span className="section-tag">{officialMunicipalPopulationMix.length} ТЕРРИТОРИЙ</span>
+              </div>
+              <div className="table-scroll">
+                <table className="ranking-table population-composition-table">
+                  <thead><tr><th>Муниципалитет</th><th>Всего жителей</th><th>Городское / сельское население</th><th>Городское</th><th>Сельское</th></tr></thead>
+                  <tbody>{officialMunicipalPopulationMix.map((item) => <tr key={item.id}>
+                    <td className="municipality-cell"><strong>{item.name}</strong></td>
+                    <td className="number-cell">{formatNumber(item.total)}</td>
+                    <td>
+                      <div className="population-composition-track" role="img" aria-label={item.name + ': ' + formatNumber(item.urbanShare, 1) + '% городского и ' + formatNumber(item.ruralShare, 1) + '% сельского населения'}>
+                        <span className="population-composition-urban" style={{ width: item.urbanShare + '%' }} />
+                        <span className="population-composition-rural" style={{ width: item.ruralShare + '%' }} />
+                      </div>
+                      <small className="cell-subnote">{formatNumber(item.urbanShare, 1)}% городское · {formatNumber(item.ruralShare, 1)}% сельское</small>
+                    </td>
+                    <td className="number-cell">{formatNumber(item.urban)}</td>
+                    <td className="number-cell">{formatNumber(item.rural)}</td>
+                  </tr>)}</tbody>
+                </table>
+              </div>
+              <div className="population-composition-footer">
+                <span><i className="population-composition-legend-urban" /> Городское население</span>
+                <span><i className="population-composition-legend-rural" /> Сельское население</span>
+                <p>Источник: <a href="https://72.rosstat.gov.ru/ofs_demp_hmao" target="_blank" rel="noreferrer">Тюменьстат, официальный XLSX</a>. Территории без одной из составляющих не включены в диаграмму; пустые значения не заменяются нулём.</p>
+              </div>
+            </section>}
             {surgutPopulationTrend.rows.length > 1 && <section className="population-trend-panel panel" aria-labelledby="population-trend-title">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="population-trend-title">Историческая динамика населения Сургута</h2><p>Официальный годовой ряд Росстата · численность на 1 января</p></div></div><span className="section-tag">{surgutPopulationTrend.rows.length} НАБЛЮДЕНИЙ</span></div>
               <div className="population-trend-kpis"><article><span>Начало ряда</span><strong>{formatNumber(surgutPopulationTrend.first.value)} чел.</strong><small>{surgutPopulationTrend.first.reference_year} год</small></article><article><span>Последнее значение</span><strong>{formatNumber(surgutPopulationTrend.latest.value)} чел.</strong><small>{surgutPopulationTrend.latest.reference_year} год</small></article><article><span>Изменение за период</span><strong>{formatNumber((surgutPopulationTrend.latest.value/surgutPopulationTrend.first.value-1)*100,1)}%</strong><small>за весь доступный ряд, не годовой темп</small></article></div>
@@ -1361,7 +1664,7 @@ export const InvestmentDetails = () => {
                   <article><span>Изменение к первому периоду</span><strong className={surgutComparableTrend.latest.numericValue>=surgutComparableTrend.first.numericValue?'trend-positive':'trend-negative'}>{formatNumber((surgutComparableTrend.latest.numericValue/surgutComparableTrend.first.numericValue-1)*100,1)}%</strong><small>между первым и последним доступным периодом</small></article>
                 </div>
                 <div className="population-trend-chart-wrap">
-                  <svg className="population-trend-chart" viewBox="0 0 800 220" role="img" aria-label={`Динамика показателя «${surgutComparableTrend.title}», ${surgutComparableTrend.periodLabel}, 2024–2026`}>
+                  <svg className="population-trend-chart" viewBox="0 0 800 220" role="img" aria-label={`Динамика показателя «${surgutComparableTrend.title}», ${surgutComparableTrend.periodLabel}, ${surgutComparableTrend.first?.reference_year ?? '—'}–${surgutComparableTrend.latest?.reference_year ?? '—'}`}>
                     <line x1="44" y1="168" x2="756" y2="168" stroke="#d9d9ca" strokeWidth="1"/>
                     <line x1="44" y1="112" x2="756" y2="112" stroke="#e5e3d7" strokeWidth="1" strokeDasharray="4 5"/>
                     <line x1="44" y1="56" x2="756" y2="56" stroke="#e5e3d7" strokeWidth="1" strokeDasharray="4 5"/>
@@ -1464,8 +1767,9 @@ export const InvestmentDetails = () => {
               <div className="official-indicator-toolbar">
                 <label className="search-box"><Icon name="search"/><input value={indicatorSearch} onChange={(event) => setIndicatorSearch(event.target.value)} placeholder="Поиск показателя, города или единицы…" aria-label="Поиск официальных показателей"/></label>
                 <label className="select-field"><span>Муниципалитет</span><select value={indicatorMunicipalityFilter} onChange={(event) => setIndicatorMunicipalityFilter(event.target.value)}><option value="all">Все территории</option>{municipalities.slice().sort((a,b) => a.name.localeCompare(b.name,'ru-RU')).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
+                <label className="select-field"><span>Год</span><select value={indicatorYearFilter} onChange={(event) => setIndicatorYearFilter(event.target.value)}><option value="all">Все годы</option>{[...new Set(officialIndicators.map((item) => String(item.reference_year)).filter((year) => year && year !== 'undefined'))].sort((a,b) => Number(b)-Number(a)).map((year) => <option key={year} value={year}>{year}</option>)}</select></label>
                 <button type="button" className="outline-button" onClick={downloadFilteredOfficialIndicatorsCsv} disabled={filteredOfficialIndicators.length === 0}><Icon name="download"/>CSV · {filteredOfficialIndicators.length}</button>
-                <button type="button" className="outline-button" onClick={() => {setIndicatorSearch('');setIndicatorMunicipalityFilter('all');}}><Icon name="refresh"/>Сбросить</button>
+                <button type="button" className="outline-button" onClick={() => {setIndicatorSearch('');setIndicatorMunicipalityFilter('all');setIndicatorYearFilter('all');}}><Icon name="refresh"/>Сбросить</button>
               </div>
               <div className="official-indicator-table-wrap">
                 <table className="fuel-prices-table official-indicator-table">
@@ -1623,7 +1927,7 @@ export const InvestmentDetails = () => {
 
           </section>}
 
-          {activeTab === 'forecast' && <Forecasting municipalities={municipalities} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} />}
+          {activeTab === 'forecast' && <Suspense fallback={<section className="panel full-panel" role="status"><p>Загружаем модуль прогнозирования…</p></section>}><Forecasting municipalities={municipalities} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} officialIndicators={officialIndicators} programExecution={programExecution} officialDataStatus={officialDataStatus} officialDataSyncedAt={officialDataSyncedAt} /></Suspense>}
 
           {activeTab === 'map' && <section className="panel full-panel">
             <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="map"/></span><div><h2>Муниципальная карта Югры</h2><p>Выберите территорию на карте или в списке</p></div></div><button className="outline-button" onClick={() => setIsMapListOpen(!isMapListOpen)}>{isMapListOpen ? 'Скрыть список' : 'Показать список'}</button></div>
@@ -1680,7 +1984,7 @@ export const InvestmentDetails = () => {
             </section>
             <section className="risk-pillars panel">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Пять групп показателей проекта</h2><p>Покрытие официальными данными в текущем прототипе</p></div></div><button className="outline-button" onClick={()=>navigateToTab('data')}>Открыть центр данных <Icon name="arrow"/></button></div>
-              <div className="risk-pillar-grid">{pillarCoverage.map((pillar)=><article className="risk-pillar-card" key={pillar.key}><span className="risk-pillar-number">{String(['employment','income','budget','migration','investment'].indexOf(pillar.key)+1).padStart(2,'0')}</span><strong>{pillar.title}</strong><span className="risk-pillar-coverage">{pillar.ids.size} {pillar.ids.size===1?'территория':'территорий'} с данными</span><div className="risk-pillar-track"><i style={{width:Math.min(100,pillar.ids.size/municipalities.length*100)+'%'}}/></div><p>{pillar.description}</p></article>)}</div>
+              <div className="risk-pillar-grid">{pillarCoverage.map((pillar)=><article className="risk-pillar-card" key={pillar.key}><span className="risk-pillar-number">{String(['employment','income','budget','migration','investment'].indexOf(pillar.key)+1).padStart(2,'0')}</span><strong>{pillar.title}</strong><span className="risk-pillar-coverage">{pillar.municipalityCount} из {municipalities.length} муниципалитетов</span><div className="risk-pillar-track"><i style={{width:Math.min(100,pillar.municipalityCount/Math.max(1,municipalities.length)*100)+'%'}}/></div><span className="risk-pillar-coverage">{pillar.observationCount} подтверждённых наблюдений</span><p>{pillar.description}</p></article>)}</div>
             </section>
             <section className="risk-table-panel panel">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="table"/></span><div><h2>Список территорий</h2><p>Цветовая зона использует только демонстрационный балл</p></div></div><label className="search-box risk-search"><Icon name="search"/><input value={riskSearch} onChange={(event)=>setRiskSearch(event.target.value)} placeholder="Найти муниципалитет…" aria-label="Поиск территории в светофоре"/></label></div>
@@ -1833,14 +2137,21 @@ export const InvestmentDetails = () => {
 
             <section className="about-section panel">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2>Источники и методика</h2><p>Приоритет — первичные, проверяемые и сопоставимые данные</p></div></div></div>
+              <div className="source-catalog-toolbar">
+                <label className="search-box"><Icon name="search"/><input value={sourceSearch} onChange={(event) => setSourceSearch(event.target.value)} placeholder="Найти источник, тему или территорию…" aria-label="Поиск по каталогу источников"/></label>
+                <label className="select-field"><span>Статус импорта</span><select value={sourceStatusFilter} onChange={(event) => setSourceStatusFilter(event.target.value)}><option value="all">Все статусы</option><option value="imported">Импортирован</option><option value="partially_imported">Частично импортирован</option><option value="ready_for_import">Готов к импорту</option><option value="identified">Выявлен</option><option value="access_issue">Проблема доступа</option></select></label>
+                <span className="section-tag">{filteredDataSources.length} ИЗ {officialDataSources.length}</span>
+                <button type="button" className="outline-button" onClick={() => { setSourceSearch(''); setSourceStatusFilter('all'); }}><Icon name="refresh"/>Сбросить</button>
+              </div>
               <div className="about-source-list">
-                {officialDataSources.map((source) => <a key={source.id} href={source.url} target="_blank" rel="noreferrer">
+                {filteredDataSources.map((source) => <a key={source.id} href={source.url} target="_blank" rel="noreferrer">
                   <strong>{source.name}</strong>
                   <span>{source.description}</span>
                   <span className="source-coverage">{source.coverage || source.format || 'Покрытие уточняется'}</span>
                   <span className={`source-status source-status--${source.import_status || 'identified'}`}>{DATA_STATUS_LABELS[source.import_status] || 'Статус проверяется'}</span>
                   <span className="source-item-link">Открыть источник ↗</span>
                 </a>)}
+                {filteredDataSources.length === 0 && <div className="empty-state"><span>Источники не найдены</span><p>Измените запрос или сбросьте фильтры каталога.</p></div>}
               </div>
               <div className="about-methodology"><h3>Правила публикации данных</h3><ol>
                 <li>Для каждого значения сохраняются источник, год наблюдения, единица измерения и дата загрузки.</li>

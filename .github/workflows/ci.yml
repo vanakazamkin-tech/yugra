@@ -2,7 +2,7 @@ name: Build verification
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/municipal-data-coverage-matrix]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -25,5 +25,11 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Check migration staging script syntax
+        run: node --check scripts/prepare-rosstat-migration-import.mjs
+      - name: Test migration staging filters
+        run: node scripts/test-rosstat-migration-staging.mjs
+      - name: Test forecast coverage classification
+        run: node scripts/test-forecast-coverage.mjs
       - name: Build production bundle
         run: npm run build
