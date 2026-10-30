@@ -480,15 +480,25 @@ export const InvestmentDetails = () => {
       return counts;
     }, {});
     const makePillar = (key, title, description, codes, includePrograms = false) => {
-      const rows = officialIndicators.filter((item) => codes.includes(item.indicator_code));
-      const municipalIndicatorRows = rows.filter((item) => (item.geographic_level || 'municipality') === 'municipality');
-      const covered = new Set(municipalIndicatorRows.map((item) => item.municipality_id));
-      if (includePrograms) programExecution.forEach((item) => covered.add(item.municipality_id));
-      const years = rows.map((item) => Number(item.reference_year)).filter(Number.isFinite);
+      const rows = officialIndicators.filter((item) =>
+        item.verification_status === 'verified'
+        && (item.geographic_level || 'municipality') === 'municipality'
+        && codes.includes(item.indicator_code)
+      );
+      const programs = includePrograms
+        ? programExecution.filter((item) => item.verification_status === 'verified' && item.municipality_id)
+        : [];
+      const covered = new Set(rows.map((item) => item.municipality_id).filter(Boolean));
+      programs.forEach((item) => covered.add(item.municipality_id));
+      const programYears = programs
+        .map((item) => Number(String(item.report_date || '').slice(0, 4)))
+        .filter((year) => Number.isInteger(year) && year >= 1900 && year <= 2200);
+      const years = rows.map((item) => Number(item.reference_year)).filter(Number.isFinite).concat(programYears);
       const periods = new Set(rows.map((item) => item.reference_period || 'annual'));
+      if (programs.length) periods.add('program_report');
       return {
         key, title, description,
-        rows: rows.length + (includePrograms ? programExecution.length : 0),
+        rows: rows.length + programs.length,
         municipalityCount: covered.size,
         firstYear: years.length ? Math.min(...years) : null,
         lastYear: years.length ? Math.max(...years) : null,
