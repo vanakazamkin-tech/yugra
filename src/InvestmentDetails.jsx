@@ -498,11 +498,11 @@ export const InvestmentDetails = () => {
       pendingSources: (sourceCounts.identified || 0) + (sourceCounts.ready_for_import || 0) + (sourceCounts.access_issue || 0),
       pillars: [
         makePillar('population', 'Население', 'Общая численность по всем 22 муниципалитетам за 2022–2025 годы; отдельный длительный ряд по Сургуту и городское/сельское разбиение там, где оно опубликовано.', ['population_municipality', 'population_municipality_history', 'population_urban_municipality', 'population_rural_municipality']),
-        makePillar('employment', 'Занятость', 'Среднесписочная численность работников в обследуемых организациях; это не полный показатель занятости всего населения.', ['average_employees_q1', 'average_employees_h1']),
-        makePillar('income', 'Доходы и заработная плата', 'Есть отдельные показатели зарплаты; полного муниципального ряда доходов населения пока нет.', ['average_monthly_salary_q1', 'average_monthly_salary_h1', 'avg_monthly_salary_large_medium_nco']),
-        makePillar('budget', 'Местный бюджет', 'Есть вложения за счёт местного бюджета и отдельные отчёты муниципальных программ, но не полная панель доходов и расходов.', ['fixed_capital_investment_local_budget'], true),
-        makePillar('migration', 'Миграция', 'Сопоставимый подтверждённый муниципальный ряд прибывших и выбывших пока не импортирован.', ['migration_arrivals', 'migration_departures', 'migration_balance']),
-        makePillar('investment', 'Инвестиции', 'Доступны отдельные значения инвестиций организаций и инвестиций на душу населения; охват периодами различается.', ['fixed_capital_investment_enterprises_non_sme', 'investment_per_capita_no_budget']),
+        makePillar('employment', 'Занятость', 'Есть среднесписочная численность работников и историческая доля работников МСП за 2022–2023 годы; это не полный показатель занятости населения.', [...OFFICIAL_EMPLOYMENT_SECTORS.map(({ code }) => code), 'average_employees_q1', 'average_employees_h1', 'average_employees_q3', 'average_employees_annual', 'sme_employment_share']),
+        makePillar('income', 'Доходы и заработная плата', 'Есть отдельные показатели начисленной заработной платы за разные периоды; полного муниципального ряда располагаемых доходов населения пока нет.', ['average_monthly_salary_q1', 'average_monthly_salary_h1', 'average_monthly_salary_q3', 'average_monthly_salary_annual', 'avg_monthly_salary_large_medium_nco']),
+        makePillar('budget', 'Местный бюджет', 'Есть отдельные отчёты по исполнению муниципальных программ; это прокси, а не полная панель доходов и расходов бюджета.', [], true),
+        makePillar('migration', 'Миграция', 'Сопоставимые подтверждённые муниципальные ряды прибывших, выбывших и миграционного баланса пока не загружены.', ['migration_arrivals', 'migration_departures', 'migration_balance', 'rosstat_migration_8112021', 'rosstat_migration_8112022', 'rosstat_migration_8112023']),
+        makePillar('investment', 'Инвестиции', 'Есть исторические муниципальные значения инвестиций без добычи за 2022–2023 годы и отдельные более поздние наблюдения; периоды и определения нужно сопоставлять.', ['fixed_capital_investment_non_mining', 'fixed_capital_investment_enterprises_non_sme', 'fixed_capital_investment_local_budget', 'investment_per_capita_no_budget']),
       ],
     };
   }, [officialIndicators, officialDataSources, programExecution]);
@@ -536,7 +536,8 @@ export const InvestmentDetails = () => {
         key: 'employment',
         label: 'Занятость',
         matches: (item) => String(item.indicator_code || '').startsWith('employees_')
-          || String(item.indicator_code || '').startsWith('average_employees_'),
+          || String(item.indicator_code || '').startsWith('average_employees_')
+          || item.indicator_code === 'sme_employment_share',
       },
       {
         key: 'entrepreneurship',
@@ -997,6 +998,7 @@ export const InvestmentDetails = () => {
         'Среднесписочная численность работников и отраслевые данные. Это не полная оценка занятости всего населения.',
         (item) => String(item.indicator_code || '').startsWith('average_employees_')
           || String(item.indicator_code || '').startsWith('employees_')
+          || item.indicator_code === 'sme_employment_share'
       ),
       makePillar(
         'income',
@@ -1009,7 +1011,7 @@ export const InvestmentDetails = () => {
         'budget',
         'Местный бюджет',
         'Есть отдельные инвестиции за счёт местного бюджета и подтверждённые отчёты по муниципальным программам. Это не полная панель доходов и расходов.',
-        (item) => item.indicator_code === 'fixed_capital_investment_local_budget',
+        () => false,
         true
       ),
       makePillar(
@@ -1029,7 +1031,7 @@ export const InvestmentDetails = () => {
         'investment',
         'Инвестиции',
         'Доступны отдельные подтверждённые оценки инвестиций организаций; охват муниципалитетов и периодов пока неполный.',
-        (item) => ['fixed_capital_investment_enterprises_non_sme', 'investment_per_capita_no_budget'].includes(item.indicator_code)
+        (item) => ['fixed_capital_investment_non_mining', 'fixed_capital_investment_enterprises_non_sme', 'fixed_capital_investment_local_budget', 'investment_per_capita_no_budget'].includes(item.indicator_code)
       ),
     ];
   }, [officialIndicators, programExecution]);
