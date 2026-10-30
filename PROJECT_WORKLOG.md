@@ -317,3 +317,10 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Миграции `20261030135524_import_khanty_mansiysk_migration_2019_2022.sql` и `20261030135600_import_khanty_mansiysk_migration_2023.sql`; readback подтвердил 5 строк. Документация `docs/KHANTY_MANSIYSK_MIGRATION_2019_2023_IMPORT.md`.
 - Историческое миграционное покрытие теперь 2/22 муниципалитетов (Сургут и Ханты-Мансийск); покрытие за 2025 год остаётся 0/22, так как по этим источникам нет фактического значения за 2025 год.
 - Текущий аудит: 1 001 verified observation, 149 indicator codes, 81 source, 38 used sources, 340 code/source/geography combinations; duplicate logical keys = 0.
+
+
+### 2026-10-30 — миграция Ханты-Мансийского района
+- По официальной странице администрации района импортировано сальдо миграции: 152 человека за 2023 год и 170 человек за 2024 год. Эти значения не являются числами прибывших/выбывших; значение за 2025 год на странице отсутствует.
+- Миграция `20261030135819_import_hmrn_migration_2023_2024.sql`, GitHub commit `530e918`; readback подтвердил две строки. Документация `docs/HMRN_MIGRATION_2023_2024_IMPORT.md`, commit `a4cb8cb`.
+- Историческое миграционное покрытие расширено до 3/22 муниципалитетов: Сургут, Ханты-Мансийск и Ханты-Мансийский район. Покрытие за 2025 год остаётся 0/22.
+- Общий аудит: 1 003 verified observations, 149 indicator codes, 82 sources, 39 used sources, 341 code/source/geography combinations; duplicate logical keys = 0.
