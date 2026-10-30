@@ -309,3 +309,11 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Миграция `20261030135214_import_rosstat_surgut_migration_2021_2023.sql`, GitHub commit `fc97030`; readback подтвердил 15 строк. Документация `docs/SURGUT_MIGRATION_2021_2023_IMPORT.md`, commit `f5d2fdf`.
 - В `scripts/test-forecast-coverage.mjs` добавлен регрессионный тест классификации `migration_net_total`; commit `29bd9f8`.
 - В 2025 году миграционное покрытие по-прежнему 0/22; историческое покрытие теперь 1/22 (Сургут, 2021–2023). Общий аудит: 996 verified observations, 149 indicator codes, 79 sources, 36 used sources, 338 code/source/geography combinations; duplicate logical keys = 0.
+
+
+### 2026-10-30 — историческая миграция Ханты-Мансийска
+- Импортировано сальдо миграции за 2019–2022 годы из официального отчёта администрации города: 1 374; 1 007; 2 338; 373 человека соответственно.
+- Добавлено отчётное значение за 2023 год — 1 357 человек — из более позднего официального прогноза СЭР, где 2023 год выделен как отчётный. Ожидаемое значение 1 069 из более раннего отчёта не использовано; оценка 2024 и прогнозы 2025–2027 не импортированы как факт.
+- Миграции `20261030135524_import_khanty_mansiysk_migration_2019_2022.sql` и `20261030135600_import_khanty_mansiysk_migration_2023.sql`; readback подтвердил 5 строк. Документация `docs/KHANTY_MANSIYSK_MIGRATION_2019_2023_IMPORT.md`.
+- Историческое миграционное покрытие теперь 2/22 муниципалитетов (Сургут и Ханты-Мансийск); покрытие за 2025 год остаётся 0/22, так как по этим источникам нет фактического значения за 2025 год.
+- Текущий аудит: 1 001 verified observation, 149 indicator codes, 81 source, 38 used sources, 340 code/source/geography combinations; duplicate logical keys = 0.
