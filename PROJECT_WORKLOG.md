@@ -366,3 +366,10 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Покрытие местного бюджета за 2025 год увеличено до 5 из 22 муниципалитетов.
 - Текущая контрольная точка Supabase: 1 038 verified observations, 163 indicator codes, 87 sources, 44 used sources, 374 code/source/geography combinations; duplicate logical keys = 0.
 - Coverage helper дополнен классификацией созданных рабочих мест в группу занятости. Тестовая фикстура исправлена; проверка CI запущена на commit `e266fe1`.
+
+
+### 2026-10-30 — Югорск: уточнение бюджета по решению Думы № 36
+- Округлённые бюджетные значения из публичного отчёта заменены точными суммами из решения Думы города Югорска от 28.04.2026 № 36: доходы 7 985 228 861,27 руб., расходы 8 216 170 778,34 руб., дефицит 230 941 917,07 руб.
+- Три строки обновлены на месте, без добавления дубликатов. Арифметическая проверка расходов минус доходы = дефицит пройдена.
+- Источник `ugorsk_budget_execution_2025`, миграция `20261030203000_correct_ugorsk_budget_execution_2025_exact_values.sql`, GitHub commit `6c3b677`; документация `docs/UGORSK_BUDGET_2025_CORRECTION.md`, commit `83df53b`.
+- Контрольная точка после замены: 1 038 verified observations, 163 indicator codes, 87 sources, 44 used sources, 374 code/source/geography combinations; duplicate logical keys = 0.
