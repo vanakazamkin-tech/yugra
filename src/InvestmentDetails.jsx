@@ -515,7 +515,7 @@ export const InvestmentDetails = () => {
         makePillar('employment', 'Занятость', 'Есть среднесписочная численность работников и историческая доля работников МСП за 2022–2023 годы; это не полный показатель занятости населения.', [...OFFICIAL_EMPLOYMENT_SECTORS.map(({ code }) => code), 'average_employees_q1', 'average_employees_h1', 'average_employees_q3', 'average_employees_annual', 'sme_employment_share']),
         makePillar('income', 'Доходы и заработная плата', 'Есть отдельные показатели начисленной заработной платы за разные периоды; полного муниципального ряда располагаемых доходов населения пока нет.', ['average_monthly_salary_q1', 'average_monthly_salary_h1', 'average_monthly_salary_q3', 'average_monthly_salary_annual', 'avg_monthly_salary_large_medium_nco']),
         makePillar('budget', 'Местный бюджет', 'Есть сопоставимые показатели исполнения доходов и расходов за 9 месяцев 2024 и 2025 годов по всем 22 муниципалитетам, а также безвозмездные поступления и фонд оплаты труда за 9 месяцев 2025 года; это не годовые итоги и не полная бюджетная панель.', ['budget_total_revenue', 'budget_revenue_excluding_grants', 'budget_tax_non_tax_revenue', 'budget_total_expenditure', 'budget_intergovernmental_transfers', 'budget_payroll_fund'], true),
-        makePillar('migration', 'Миграция', 'Сопоставимые подтверждённые муниципальные ряды прибывших, выбывших и миграционного баланса пока не загружены.', ['migration_arrivals', 'migration_departures', 'migration_balance', 'rosstat_migration_8112021', 'rosstat_migration_8112022', 'rosstat_migration_8112023']),
+        makePillar('migration', 'Миграция', 'Есть отдельные подтверждённые ряды по Сургуту, Ханты-Мансийску, Ханты-Мансийскому району и Нефтеюганску; по Сургуту доступны компоненты миграционного прироста. Сопоставимой панели по всем 22 муниципалитетам пока нет.', ['migration_net_total', 'migration_net_domestic', 'migration_net_international', 'migration_net_interregional', 'migration_net_intraregional', 'migration_growth_municipal_report', 'migration_rate_per_1000', 'migration_arrivals', 'migration_departures', 'migration_balance', 'rosstat_migration_8112021', 'rosstat_migration_8112022', 'rosstat_migration_8112023']),
         makePillar('investment', 'Инвестиции', 'Есть исторические муниципальные значения инвестиций без добычи за 2022–2023 годы и отдельные более поздние наблюдения; периоды и определения нужно сопоставлять.', ['fixed_capital_investment_non_mining', 'fixed_capital_investment_enterprises_non_sme', 'fixed_capital_investment_local_budget', 'investment_per_capita_no_budget']),
       ],
     };
@@ -1037,8 +1037,15 @@ export const InvestmentDetails = () => {
       makePillar(
         'migration',
         'Миграция',
-        'Сопоставимые подтверждённые муниципальные ряды прибывших, выбывших и миграционного баланса пока не загружены.',
+        'Есть отдельные подтверждённые ряды по Сургуту, Ханты-Мансийску, Ханты-Мансийскому району и Нефтеюганску; по Сургуту доступны компоненты миграционного прироста. Сопоставимой панели по всем 22 муниципалитетам пока нет.',
         (item) => [
+          'migration_net_total',
+          'migration_net_domestic',
+          'migration_net_international',
+          'migration_net_interregional',
+          'migration_net_intraregional',
+          'migration_growth_municipal_report',
+          'migration_rate_per_1000',
           'migration_arrivals',
           'migration_departures',
           'migration_balance',
