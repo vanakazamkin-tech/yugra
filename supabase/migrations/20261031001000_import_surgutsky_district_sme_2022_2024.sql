@@ -1,0 +1,12 @@
+-- Import verified factual SME density values for Surgutsky municipal district
+-- from table 21 of the Khanty-Mansi Autonomous Okrug report approved by
+-- Government Order No. 349-rp dated 2025-07-29. Forecast values excluded.
+insert into data_sources (id,name,category,url,description,format,coverage,update_frequency,import_status,notes)
+values ('ugra_municipal_efficiency_349rp_2024_surgut_raion','Сводный доклад Правительства Югры об эффективности муниципалитетов за 2024 год — Сургутский район','regional_official_report','https://base.garant.ru/412531694/b89690251be5277812a78962f6302560/','Таблица 21: фактические значения числа субъектов МСП на 10 тыс. жителей за 2022–2024 годы.','HTML','Сургутский район','ежегодно','partially_imported','Импортированы фактические значения 2022–2024; плановые значения 2025–2027 исключены.')
+on conflict (id) do nothing;
+insert into municipality_indicators (municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,verification_status,notes,geographic_level,geographic_name)
+values
+('surgutsky','sme_per_10k','Число субъектов малого и среднего предпринимательства в расчёте на 10 тыс. человек населения',2022,'annual',195.6,'единиц','ugra_municipal_efficiency_349rp_2024_surgut_raion','https://base.garant.ru/412531694/b89690251be5277812a78962f6302560/','verified','Таблица 21 сводного доклада по распоряжению Правительства ХМАО — Югры от 29.07.2025 № 349-рп. Фактическое значение; плановые годы исключены.','municipality','Сургутский район'),
+('surgutsky','sme_per_10k','Число субъектов малого и среднего предпринимательства в расчёте на 10 тыс. человек населения',2023,'annual',210.0,'единиц','ugra_municipal_efficiency_349rp_2024_surgut_raion','https://base.garant.ru/412531694/b89690251be5277812a78962f6302560/','verified','Таблица 21 сводного доклада по распоряжению Правительства ХМАО — Югры от 29.07.2025 № 349-рп. Фактическое значение; плановые годы исключены.','municipality','Сургутский район'),
+('surgutsky','sme_per_10k','Число субъектов малого и среднего предпринимательства в расчёте на 10 тыс. человек населения',2024,'annual',226.0,'единиц','ugra_municipal_efficiency_349rp_2024_surgut_raion','https://base.garant.ru/412531694/b89690251be5277812a78962f6302560/','verified','Таблица 21 сводного доклада по распоряжению Правительства ХМАО — Югры от 29.07.2025 № 349-рп. Фактическое значение; плановые годы исключены.','municipality','Сургутский район')
+on conflict do nothing;
