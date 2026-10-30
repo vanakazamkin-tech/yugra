@@ -14,6 +14,7 @@
  * Optional explicit header overrides:
  *   --year=Год --municipality=Муниципальное образование --value=Значение
  *   --indicator=Номер показателя в БД ПМО --region=Регион --unit=Единица измерения
+ *   --source-id=tochno_bdmo_2026 --source-url=https://tochno.st/datasets/bdmo
  */
 
 import fs from 'node:fs/promises';
@@ -33,6 +34,8 @@ if (!inputPath || args.includes('--help')) {
 
 const delimiter = option('delimiter', ';');
 const outputPath = option('out', 'migration-review.json');
+const sourceId = option('source-id', 'rosstat_municipal');
+const sourceUrl = option('source-url', 'https://rosstat.gov.ru/storage/mediabank/MUNST.htm');
 if (delimiter.length !== 1) throw new Error('--delimiter must be one character');
 
 function parseCsv(text, sep) {
@@ -206,8 +209,8 @@ for (const [dataRowIndex, raw] of parsed.slice(1).entries()) {
     value,
     unit: get('unit') || 'человек',
     source_row_number: sourceRowNumber,
-    source_id: 'rosstat_municipal',
-    source_url: 'https://rosstat.gov.ru/storage/mediabank/MUNST.htm',
+    source_id: sourceId,
+    source_url: sourceUrl,
     verification_status: 'REVIEW_REQUIRED',
     notes: 'Подготовлено из выгрузки для проверки. Сверить значение, код показателя, год и границы муниципалитета с исходной БД ПМО Росстата перед подтверждением.',
     source_row: row,
