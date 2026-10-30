@@ -514,7 +514,7 @@ export const InvestmentDetails = () => {
         makePillar('population', 'Население', 'Общая численность по всем 22 муниципалитетам за 2022–2025 годы; отдельный длительный ряд по Сургуту и городское/сельское разбиение там, где оно опубликовано.', ['population_municipality', 'population_municipality_history', 'population_urban_municipality', 'population_rural_municipality']),
         makePillar('employment', 'Занятость', 'Есть среднесписочная численность работников и историческая доля работников МСП за 2022–2023 годы; это не полный показатель занятости населения.', [...OFFICIAL_EMPLOYMENT_SECTORS.map(({ code }) => code), 'average_employees_q1', 'average_employees_h1', 'average_employees_q3', 'average_employees_annual', 'sme_employment_share']),
         makePillar('income', 'Доходы и заработная плата', 'Есть отдельные показатели начисленной заработной платы за разные периоды; полного муниципального ряда располагаемых доходов населения пока нет.', ['average_monthly_salary_q1', 'average_monthly_salary_h1', 'average_monthly_salary_q3', 'average_monthly_salary_annual', 'avg_monthly_salary_large_medium_nco']),
-        makePillar('budget', 'Местный бюджет', 'Есть отдельные отчёты по исполнению муниципальных программ; это прокси, а не полная панель доходов и расходов бюджета.', [], true),
+        makePillar('budget', 'Местный бюджет', 'Есть сопоставимые показатели исполнения доходов и расходов за 9 месяцев 2024 и 2025 годов по всем 22 муниципалитетам; это не годовые итоги и не полная бюджетная панель.', ['budget_total_revenue', 'budget_revenue_excluding_grants', 'budget_tax_non_tax_revenue', 'budget_total_expenditure'], true),
         makePillar('migration', 'Миграция', 'Сопоставимые подтверждённые муниципальные ряды прибывших, выбывших и миграционного баланса пока не загружены.', ['migration_arrivals', 'migration_departures', 'migration_balance', 'rosstat_migration_8112021', 'rosstat_migration_8112022', 'rosstat_migration_8112023']),
         makePillar('investment', 'Инвестиции', 'Есть исторические муниципальные значения инвестиций без добычи за 2022–2023 годы и отдельные более поздние наблюдения; периоды и определения нужно сопоставлять.', ['fixed_capital_investment_non_mining', 'fixed_capital_investment_enterprises_non_sme', 'fixed_capital_investment_local_budget', 'investment_per_capita_no_budget']),
       ],
@@ -552,6 +552,12 @@ export const InvestmentDetails = () => {
         matches: (item) => String(item.indicator_code || '').startsWith('employees_')
           || String(item.indicator_code || '').startsWith('average_employees_')
           || item.indicator_code === 'sme_employment_share',
+      },
+      {
+        key: 'budget',
+        label: 'Местный бюджет',
+        matches: (item) => String(item.indicator_code || '').startsWith('budget_')
+          || String(item.indicator_name || '').toLocaleLowerCase('ru-RU').includes('бюджет'),
       },
       {
         key: 'entrepreneurship',
