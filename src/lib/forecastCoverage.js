@@ -2,7 +2,7 @@ const CATEGORY_DEFINITIONS = [
   {
     key: 'employment',
     label: 'Занятость',
-    description: 'Среднесписочная численность работников, отраслевые ряды и историческая доля занятости в МСП; показатели имеют разные определения и периоды.',
+    description: 'Среднесписочная численность работников, отраслевые ряды, историческая доля занятости в МСП и зарегистрированная безработица; показатели имеют разные определения и периоды.',
   },
   {
     key: 'income',
@@ -36,7 +36,7 @@ function classifyIndicator(item) {
   if (/budget|revenue|expenditure|исполнени[ея].{0,30}программ|бюджет|расходы бюджета|доходы бюджета/.test(text)) return 'budget';
   // Salary labels often also contain the word "работников"; classify income before employment.
   if (/salary|wage|income|заработн|оплат[аы] труда|доход населения/.test(text)) return 'income';
-  if (/employee|employment|employees|работник|занятост/.test(text)) return 'employment';
+  if (/employee|employment|employees|unemploy|unemployment|работник|занятост|безработ/.test(text)) return 'employment';
   return null;
 }
 
