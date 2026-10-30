@@ -2,6 +2,22 @@
 -- Values are cumulative January–September amounts, in thousand rubles.
 -- Source: https://www.dumahmao.ru/povest/0750_1/17/23.pdf
 
+INSERT INTO public.data_sources
+(id,name,category,url,description,format,coverage,update_frequency,import_status,last_checked_at,notes)
+VALUES (
+'duma_hmao_municipal_budget_9m_2025',
+'Дума Югры — исполнение бюджетов муниципальных образований за 9 месяцев 2025 года, приложение 1',
+'municipal_budget',
+'https://www.dumahmao.ru/povest/0750_1/17/23.pdf',
+'Сопоставимые показатели исполнения местных бюджетов за январь–сентябрь 2024 и 2025 годов по 22 муниципальным образованиям.',
+'PDF','22 муниципальных образования ХМАО — Югры; 9 месяцев 2024 и 2025 годов','ежеквартально','imported',now(),
+'176 наблюдений; 4 показателя; тыс. руб.; 9-месячные значения не являются годовыми итогами.'
+)
+ON CONFLICT (id) DO UPDATE SET
+name=EXCLUDED.name,category=EXCLUDED.category,url=EXCLUDED.url,description=EXCLUDED.description,
+format=EXCLUDED.format,coverage=EXCLUDED.coverage,update_frequency=EXCLUDED.update_frequency,
+import_status=EXCLUDED.import_status,last_checked_at=EXCLUDED.last_checked_at,notes=EXCLUDED.notes,updated_at=now();
+
 WITH raw(municipality_id,geographic_name,rev24,rev25,rev_ex24,rev_ex25,tax24,tax25,exp24,exp25) AS (
 VALUES
 ('nefteyugansk','Нефтеюганск',9168021.3,9432101.5,5057435.2,4754735,4660639.9,4376846.2,8159564.8,9189493.7),
