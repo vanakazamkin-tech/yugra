@@ -36,7 +36,7 @@ function classifyIndicator(item) {
   if (/budget|revenue|expenditure|исполнени[ея].{0,30}программ|бюджет|расходы бюджета|доходы бюджета/.test(text)) return 'budget';
   // Salary labels often also contain the word "работников"; classify income before employment.
   if (/salary|wage|income|заработн|оплат[аы] труда|доход населения/.test(text)) return 'income';
-  if (/employee|employment|employees|unemploy|unemployment|работник|занятост|безработ/.test(text)) return 'employment';
+  if (/employee|employment|employees|unemploy|unemployment|job|jobs|работник|занятост|безработ|рабоч(?:ее|их) мест/.test(text)) return 'employment';
   return null;
 }
 
