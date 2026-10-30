@@ -300,3 +300,12 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Источник `municipal_ser_surgut_2025` переведён из `identified` в `partially_imported`. Миграция `20261030134859_import_surgut_ser_2025_income_investment_consumer_market.sql`, GitHub commit `cbbf71d`. Документация: `docs/SURGUT_SER_2025_PARTIAL_IMPORT.md`, commit `f2ef899`.
 - Срез 2025 года по пяти группам после импорта: занятость 14/22, доходы 12/22, бюджет 2/22, миграция 0/22, инвестиции 10/22. Это присутствие показателей, а не гарантия сопоставимости рядов.
 - Общий read-only аудит: 981 verified observations, 144 indicator codes, 78 sources, 35 used sources, 333 code/source/geography combinations; duplicate logical keys = 0.
+
+
+### 2026-10-30 — первый муниципальный ряд миграции из БД ПМО Росстата
+- В муниципальном паспорте Росстата Сургута обнаружен и извлечён раздел «Миграционный прирост» с историческими значениями 2021–2023 годов. Импортировано 15 наблюдений: общий прирост, внутрироссийское сальдо, внутрирегиональный, межрегиональный и международный компоненты.
+- Проверка арифметики: внутрирегиональный + межрегиональный = внутрироссийский; внутрироссийский + международный = общий прирост для всех трёх лет.
+- В официальной таблице 2024–2025 значения пустые; эти периоды не заполнены нулями. Источник `rosstat_surgut_migration_2012_2023` создан как отдельный от источника численности населения.
+- Миграция `20261030135214_import_rosstat_surgut_migration_2021_2023.sql`, GitHub commit `fc97030`; readback подтвердил 15 строк. Документация `docs/SURGUT_MIGRATION_2021_2023_IMPORT.md`, commit `f5d2fdf`.
+- В `scripts/test-forecast-coverage.mjs` добавлен регрессионный тест классификации `migration_net_total`; commit `29bd9f8`.
+- В 2025 году миграционное покрытие по-прежнему 0/22; историческое покрытие теперь 1/22 (Сургут, 2021–2023). Общий аудит: 996 verified observations, 149 indicator codes, 79 sources, 36 used sources, 338 code/source/geography combinations; duplicate logical keys = 0.
