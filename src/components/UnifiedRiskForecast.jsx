@@ -61,7 +61,7 @@ function buildSeries(rows) {
     const changePercent = previous && previous.numericValue !== 0 ? (latest.numericValue / previous.numericValue - 1) * 100 : null;
     const direction = directionFor(latest);
     const adverse = changePercent == null || direction === 'context' ? null : (direction === 'lower' ? changePercent > 5 : changePercent < -5);
-    series.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, name: latest.indicator_name, unit: latest.unit, pillar: classify(latest), direction, rows: items, latest, previous, changePercent, adverse });
+    series.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code || 'unknown', name: latest.indicator_name || latest.indicator_code || 'Показатель без названия', unit: latest.unit || '—', pillar: classify(latest), direction, rows: items, latest, previous, changePercent, adverse });
   });
   return series;
 }
@@ -132,7 +132,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     return { ...m, signals, comparable, adverse, level };
   }).sort((a,b) => {
     const priority = { red: 0, yellow: 1, green: 2, unknown: 3 };
-    return priority[a.level] - priority[b.level] || b.adverse.length - a.adverse.length || a.name.localeCompare(b.name, 'ru-RU');
+    return priority[a.level] - priority[b.level] || b.adverse.length - a.adverse.length || String(a.name || a.id || '').localeCompare(String(b.name || b.id || ''), 'ru-RU');
   }), [municipalities, series]);
 
   const pillarStats = useMemo(() => PILLARS.map((p) => {
@@ -160,7 +160,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
       const key = s.code + '|' + s.unit;
       if (!map.has(key)) map.set(key, { key, code: s.code, unit: s.unit, name: s.name, pillar: s.pillar });
     });
-    return [...map.values()].sort((a,b) => a.pillar.title.localeCompare(b.pillar.title, 'ru-RU') || a.name.localeCompare(b.name, 'ru-RU'));
+    return [...map.values()].sort((a,b) => a.pillar.title.localeCompare(b.pillar.title, 'ru-RU') || String(a.name || a.code || '').localeCompare(String(b.name || b.code || ''), 'ru-RU'));
   }, [series, category, municipalityId]);
   const activeIndicator = indicatorOptions.find((x) => x.key === selectedIndicator) || indicatorOptions[0] || null;
   const forecastMunicipalityId = municipalityId === 'ALL' ? (series.find((s) => activeIndicator && s.code === activeIndicator.code && s.unit === activeIndicator.unit)?.municipalityId || municipalities[0]?.id || '') : municipalityId;
@@ -189,7 +189,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
   const coverageCount = new Set(municipalRows.map((i) => i.municipality_id)).size;
   const latestYear = officialIndicators.reduce((max, i) => Math.max(max, Number(i.reference_year) || 0), 0) || null;
   const totalVerified = municipalRows.length;
-  const filteredRisks = visibleRisks.filter((m) => !search || m.name.toLocaleLowerCase('ru-RU').includes(search.toLocaleLowerCase('ru-RU')));
+  const filteredRisks = visibleRisks.filter((m) => !search || String(m.name || m.id || '').toLocaleLowerCase('ru-RU').includes(search.toLocaleLowerCase('ru-RU')));
   const filteredIndicators = filteredSeries.slice().sort((a,b) => b.latest.order - a.latest.order || a.name.localeCompare(b.name, 'ru-RU'));
   const syncLabel = officialDataSyncedAt ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(officialDataSyncedAt)) : null;
 
