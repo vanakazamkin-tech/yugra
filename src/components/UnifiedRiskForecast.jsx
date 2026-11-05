@@ -141,20 +141,26 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     const rows = series.filter((s) => s.pillar.key === p.key);
     return { ...p, seriesCount: rows.length, municipalities: new Set(rows.map((s) => s.municipalityId)).size, adverseCount: rows.filter((s) => s.adverse === true).length };
   }), [series]);
+  const visibleRisks = useMemo(() => municipalityRisks.map((m) => {
+    const signals = category === 'ALL' ? m.signals : m.signals.filter((s) => s.pillar.key === category);
+    const comparable = signals.filter((s) => s.adverse != null);
+    const adverse = comparable.filter((s) => s.adverse);
+    return { ...m, signals, comparable, adverse, level: riskLevel(signals) };
+  }).filter((m) => municipalityId === 'ALL' || m.id === municipalityId), [municipalityRisks, category, municipalityId]);
   const counts = useMemo(() => ({
-    red: municipalityRisks.filter((m) => m.level === 'red').length,
-    yellow: municipalityRisks.filter((m) => m.level === 'yellow').length,
-    green: municipalityRisks.filter((m) => m.level === 'green').length,
-    unknown: municipalityRisks.filter((m) => m.level === 'unknown').length,
-  }), [municipalityRisks]);
+    red: visibleRisks.filter((m) => m.level === 'red').length,
+    yellow: visibleRisks.filter((m) => m.level === 'yellow').length,
+    green: visibleRisks.filter((m) => m.level === 'green').length,
+    unknown: visibleRisks.filter((m) => m.level === 'unknown').length,
+  }), [visibleRisks]);
   const indicatorOptions = useMemo(() => {
     const map = new Map();
-    series.forEach((s) => {
+    series.filter((s) => (category === 'ALL' || s.pillar.key === category) && (municipalityId === 'ALL' || s.municipalityId === municipalityId)).forEach((s) => {
       const key = s.code + '|' + s.unit;
       if (!map.has(key)) map.set(key, { key, code: s.code, unit: s.unit, name: s.name, pillar: s.pillar });
     });
     return [...map.values()].sort((a,b) => a.pillar.title.localeCompare(b.pillar.title, 'ru-RU') || a.name.localeCompare(b.name, 'ru-RU'));
-  }, [series]);
+  }, [series, category, municipalityId]);
   const activeIndicator = indicatorOptions.find((x) => x.key === selectedIndicator) || indicatorOptions[0] || null;
   const forecastMunicipalityId = municipalityId === 'ALL' ? (series.find((s) => activeIndicator && s.code === activeIndicator.code && s.unit === activeIndicator.unit)?.municipalityId || municipalities[0]?.id || '') : municipalityId;
   const forecastSeries = activeIndicator ? series.filter((s) => s.municipalityId === forecastMunicipalityId && s.code === activeIndicator.code && s.unit === activeIndicator.unit).sort((a,b) => b.latest.order - a.latest.order)[0] : null;
@@ -174,7 +180,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
   const coverageCount = new Set(municipalRows.map((i) => i.municipality_id)).size;
   const latestYear = officialIndicators.reduce((max, i) => Math.max(max, Number(i.reference_year) || 0), 0) || null;
   const totalVerified = municipalRows.length;
-  const filteredRisks = municipalityRisks.filter((m) => (municipalityId === 'ALL' || m.id === municipalityId) && (!search || m.name.toLocaleLowerCase('ru-RU').includes(search.toLocaleLowerCase('ru-RU'))));
+  const filteredRisks = visibleRisks.filter((m) => !search || m.name.toLocaleLowerCase('ru-RU').includes(search.toLocaleLowerCase('ru-RU')));
   const filteredIndicators = filteredSeries.slice().sort((a,b) => b.latest.order - a.latest.order || a.name.localeCompare(b.name, 'ru-RU'));
   const syncLabel = officialDataSyncedAt ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(officialDataSyncedAt)) : null;
 
