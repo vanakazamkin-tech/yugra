@@ -448,21 +448,18 @@ export const InvestmentDetails = () => {
   const populationByMunicipality = useMemo(() => {
     const chosen = new Map();
     const candidates = officialIndicators.filter((item) =>
-      ['population_municipality', 'population_settlement', 'population_municipality_history'].includes(item.indicator_code)
+      item.verification_status === 'verified'
+      && item.geographic_level === 'municipality'
+      && item.municipality_id != null
+      && ['population_municipality', 'population_municipality_history'].includes(item.indicator_code)
+      && Number.isInteger(Number(item.reference_year))
       && numericValue(item.value) != null
     );
-    const scopePriority = (item) => (
-      item.geographic_level === 'municipality' || item.indicator_code === 'population_municipality' || item.indicator_code === 'population_municipality_history' ? 0 : 1
-    );
-    const indicatorPriority = (item) => (
-      item.indicator_code === 'population_municipality' ? 0
-        : item.indicator_code === 'population_municipality_history' ? 1
-          : 2
-    );
+    const indicatorPriority = (item) => item.indicator_code === 'population_municipality' ? 0 : 1;
     candidates.sort((a, b) =>
-      scopePriority(a) - scopePriority(b)
-        || Number(b.reference_year) - Number(a.reference_year)
+      Number(b.reference_year) - Number(a.reference_year)
         || indicatorPriority(a) - indicatorPriority(b)
+        || String(a.reference_period || '').localeCompare(String(b.reference_period || ''))
     );
     candidates.forEach((item) => {
       if (!chosen.has(item.municipality_id)) chosen.set(item.municipality_id, item);
@@ -692,8 +689,22 @@ export const InvestmentDetails = () => {
   const modalOfficialIndicators = useMemo(() => {
     if (!activeModalItem) return [];
     return officialIndicators
-      .filter((item) => item.municipality_id === activeModalItem.id)
-      .sort((a, b) => Number(b.reference_year) - Number(a.reference_year) || a.indicator_name.localeCompare(b.indicator_name, 'ru-RU'));
+      .filter((item) => {
+        const year = Number(item.reference_year);
+        return item.municipality_id === activeModalItem.id
+          && item.verification_status === 'verified'
+          && ['municipality', 'settlement', 'region'].includes(item.geographic_level)
+          && Number.isInteger(year)
+          && year >= 1900
+          && year <= new Date().getFullYear() + 1
+          && numericValue(item.value) != null
+          && String(item.indicator_code || '').trim() !== '';
+      })
+      .slice()
+      .sort((a, b) => Number(b.reference_year) - Number(a.reference_year)
+        || String(a.reference_period || '').localeCompare(String(b.reference_period || ''))
+        || String(a.geographic_level || '').localeCompare(String(b.geographic_level || ''))
+        || String(a.indicator_name || '').localeCompare(String(b.indicator_name || ''), 'ru-RU'));
   }, [officialIndicators, activeModalItem]);
 
   const surgutPopulationTrend = useMemo(() => {
