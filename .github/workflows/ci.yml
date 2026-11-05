@@ -37,5 +37,7 @@ jobs:
         run: node scripts/test-official-comparison-gates.mjs
       - name: Test analytical report official-data gates
         run: node scripts/test-report-official-data-gates.mjs
+      - name: Test municipality passport data integrity
+        run: node scripts/test-municipality-passport-gates.mjs
       - name: Build production bundle
         run: npm run build
