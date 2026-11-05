@@ -535,6 +535,73 @@ export const FALLBACK_DATA_SOURCES = [
   },
 ];
 
+
+const isHttpSourceUrl = (value) => {
+  if (typeof value !== 'string' || !value.trim()) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:';
+  } catch {
+    return false;
+  }
+};
+
+const isValidIsoDate = (value) => {
+  if (typeof value !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
+const isOptionalNonNegativeNumber = (value) => value == null || (value !== '' && Number.isFinite(Number(value)) && Number(value) >= 0);
+
+/**
+ * Keep verified rows only when their identity, territory and provenance are usable.
+ * This is a presentation/read gate; it never edits or deletes database rows.
+ */
+export function validateOfficialOperationalRecords({ investmentSites = [], programExecution = [], facilities = [] } = {}) {
+  const sites = investmentSites.filter((item) =>
+    item?.verification_status === 'verified'
+    && typeof item.municipality_id === 'string' && item.municipality_id.trim() !== ''
+    && typeof item.name === 'string' && item.name.trim() !== ''
+    && isHttpSourceUrl(item.source_url)
+    && isOptionalNonNegativeNumber(item.area_hectares)
+  );
+
+  const programs = programExecution.filter((item) => {
+    const budgets = [item?.approved_budget_thousand, item?.revised_budget_thousand, item?.executed_budget_thousand];
+    const validBudgets = budgets.every((value) => isOptionalNonNegativeNumber(value));
+    const hasAtLeastOneBudget = budgets.some((value) => value != null && value !== '');
+    const execution = item?.execution_percent;
+    const validExecution = execution == null || (execution !== '' && Number.isFinite(Number(execution)) && Number(execution) >= 0 && Number(execution) <= 100);
+    return item?.verification_status === 'verified'
+      && typeof item.municipality_id === 'string' && item.municipality_id.trim() !== ''
+      && typeof item.program_name === 'string' && item.program_name.trim() !== ''
+      && isValidIsoDate(item.report_date)
+      && validBudgets && hasAtLeastOneBudget
+      && validExecution
+      && isHttpSourceUrl(item.source_url);
+  });
+
+  const validFacilities = facilities.filter((item) => {
+    const hasLatitude = item?.latitude != null && item.latitude !== '';
+    const hasLongitude = item?.longitude != null && item.longitude !== '';
+    const coordinatesValid = hasLatitude === hasLongitude && (!hasLatitude
+      || (Number.isFinite(Number(item.latitude)) && Number(item.latitude) >= -90 && Number(item.latitude) <= 90
+        && Number.isFinite(Number(item.longitude)) && Number(item.longitude) >= -180 && Number(item.longitude) <= 180));
+    return item?.verification_status === 'verified'
+      && typeof item.municipality_id === 'string' && item.municipality_id.trim() !== ''
+      && (typeof item.name_short === 'string' && item.name_short.trim() !== ''
+        || typeof item.name_full === 'string' && item.name_full.trim() !== '')
+      && ['school', 'preschool'].includes(item.facility_category)
+      && isHttpSourceUrl(item.source_url)
+      && isOptionalNonNegativeNumber(item.annual_attendance)
+      && (item.staffing_percent == null || (Number.isFinite(Number(item.staffing_percent)) && Number(item.staffing_percent) >= 0 && Number(item.staffing_percent) <= 100))
+      && coordinatesValid;
+  });
+
+  return { investmentSites: sites, programExecution: programs, facilities: validFacilities };
+}
+
 async function fetchAllRows(buildQuery, pageSize = 500) {
   const rows = [];
   for (let offset = 0; ; offset += pageSize) {
@@ -588,13 +655,14 @@ export async function fetchOfficialData(client) {
       .order('id', { ascending: true })),
   ]);
 
+  const operationalRecords = validateOfficialOperationalRecords({ investmentSites, programExecution, facilities });
   return {
     sources: sources.length ? sources : FALLBACK_DATA_SOURCES,
     indicators,
-    investmentSites,
-    programExecution,
+    investmentSites: operationalRecords.investmentSites,
+    programExecution: operationalRecords.programExecution,
     fuelPrices,
-    facilities,
+    facilities: operationalRecords.facilities,
   };
 }
 
