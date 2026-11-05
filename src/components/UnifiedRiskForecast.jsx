@@ -54,7 +54,7 @@ function buildSeries(rows) {
     groups.get(key).push({ ...row, numericValue: value, order: periodOrder(row) });
   });
   const series = [];
-  groups.forEach((items) => {
+  groups.forEach((items, key) => {
     items.sort((a, b) => a.order - b.order || String(a.reference_period).localeCompare(String(b.reference_period)));
     const latest = items[items.length - 1];
     const previous = items.length > 1 ? items[items.length - 2] : null;
@@ -146,7 +146,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     return { ...m, signals, comparable, adverse, level: riskLevel(signals) };
   }).filter((m) => municipalityId === 'ALL' || m.id === municipalityId).sort((a, b) => {
     const priority = { red: 0, yellow: 1, green: 2, unknown: 3 };
-    return priority[a.level] - priority[b.level] || b.adverse.length - a.adverse.length || a.name.localeCompare(b.name, 'ru-RU');
+    return priority[a.level] - priority[b.level] || b.adverse.length - a.adverse.length || String(a.name || a.id || a.code || '').localeCompare(String(b.name || b.id || b.code || ''), 'ru-RU');
   }), [municipalityRisks, category, municipalityId]);
   const counts = useMemo(() => ({
     red: visibleRisks.filter((m) => m.level === 'red').length,
@@ -190,7 +190,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
   const latestYear = officialIndicators.reduce((max, i) => Math.max(max, Number(i.reference_year) || 0), 0) || null;
   const totalVerified = municipalRows.length;
   const filteredRisks = visibleRisks.filter((m) => !search || String(m.name || m.id || '').toLocaleLowerCase('ru-RU').includes(search.toLocaleLowerCase('ru-RU')));
-  const filteredIndicators = filteredSeries.slice().sort((a,b) => b.latest.order - a.latest.order || a.name.localeCompare(b.name, 'ru-RU'));
+  const filteredIndicators = filteredSeries.slice().sort((a,b) => b.latest.order - a.latest.order || String(a.name || a.id || a.code || '').localeCompare(String(b.name || b.id || b.code || ''), 'ru-RU'));
   const syncLabel = officialDataSyncedAt ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(officialDataSyncedAt)) : null;
 
   const exportCsv = (rows, fileName) => {
