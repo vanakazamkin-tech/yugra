@@ -2,265 +2,276 @@ import React, { useEffect, useMemo, useState } from 'react';
 import './UnifiedRiskForecast.css';
 
 const PILLARS = [
-  { key: 'employment', title: 'Занятость', match: /(employ|employee|unemploy|среднесписочн|численность занятых|численность работников|занятост|безработ)/i, direction: 'higher', note: 'Рабочие места, занятость, безработица и кадровая обеспеченность' },
-  { key: 'income', title: 'Доходы населения', match: /(salary|wage|income|зарплат|заработ|доход насел|пенси|среднемесячная оплата труда)/i, direction: 'higher', note: 'Заработная плата и доступные показатели доходов' },
-  { key: 'budget', title: 'Местный бюджет', match: /(budget|revenue|expenditure|debt|deficit|бюджет|доходы бюджета|расходы бюджета|исполнени.*программ)/i, direction: 'higher', note: 'Доходы, расходы, исполнение программ и бюджетная устойчивость' },
-  { key: 'migration', title: 'Миграция', match: /(migration|migrat|arrival|departure|миграц|прибывш|выбывш)/i, direction: 'context', note: 'Прибытие, выбытие и миграционное сальдо; покрытие пока ограничено' },
-  { key: 'investment', title: 'Инвестиции', match: /(investment|capital_investment|инвестици|капиталовлож)/i, direction: 'higher', note: 'Инвестиции в основной капитал и инвестиционная активность' },
-  { key: 'business', title: 'Предпринимательство', match: /(sme|small_business|entrepreneur|business|организац|предприним|мсп)/i, direction: 'higher', note: 'Количество субъектов МСП, оборот и деловая активность' },
-  { key: 'production', title: 'Производство и рынок', match: /(production|shipment|turnover|retail|goods|продукц|отгруж|оборот|торговл|ярмарк)/i, direction: 'higher', note: 'Отгрузка, оборот торговли, услуг и промышленная активность' },
-  { key: 'demography', title: 'Демография', match: /(population|birth|death|населен|рождаем|смертн)/i, direction: 'context', note: 'Численность и структура населения; уровень географии проверяется отдельно' },
-  { key: 'infrastructure', title: 'Инфраструктура', match: /(facility|school|preschool|road|housing|network|учрежден|школ|дорог|жиль|сет)/i, direction: 'context', note: 'Инфраструктурные объекты и качество среды' },
+  { key: 'employment', title: 'Занятость', match: /(employ|employee|unemploy|работник|занят|безработ|кадр)/i, note: 'Рабочие места и занятость' },
+  { key: 'income', title: 'Доходы населения', match: /(salary|wage|income|зарплат|заработ|доход насел|среднедушев)/i, note: 'Заработная плата и денежные доходы' },
+  { key: 'budget', title: 'Местный бюджет', match: /(budget|revenue|expenditure|debt|deficit|бюджет|доходы бюджета|расходы бюджета|исполнени.*программ)/i, note: 'Доходы, расходы и исполнение программ' },
+  { key: 'migration', title: 'Миграция', match: /(migration|migrat|arrival|departure|миграц|прибывш|выбывш)/i, note: 'Прибытие, выбытие и миграционное сальдо' },
+  { key: 'investment', title: 'Инвестиции', match: /(investment|capital_investment|инвестици|капиталовлож)/i, note: 'Инвестиции в основной капитал' },
+  { key: 'business', title: 'Предпринимательство', match: /(sme|small_business|entrepreneur|business|предприним|мсп)/i, note: 'Число субъектов МСП и занятость в МСП' },
+  { key: 'production', title: 'Производство и рынок', match: /(production|shipment|turnover|retail|goods|продукц|отгруж|оборот|торговл|ярмарк)/i, note: 'Производство, торговля и услуги' },
+  { key: 'demography', title: 'Демография', match: /(population|birth|death|населен|рождаем|смертн)/i, note: 'Численность и структура населения' },
+  { key: 'infrastructure', title: 'Инфраструктура', match: /(facility|school|preschool|road|housing|network|учрежден|школ|дорог|жиль|сет)/i, note: 'Инфраструктурные объекты и среда' },
 ];
 const number = (v) => v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v);
 const fmt = (v, digits = 1) => v == null || !Number.isFinite(Number(v)) ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: digits }).format(Number(v));
-const signed = (v) => v == null ? '—' : (v > 0 ? '+' : '') + fmt(v, 1) + '%';
-const classify = (row) => PILLARS.find((p) => p.match.test((row.indicator_code || '') + ' ' + (row.indicator_name || ''))) || { key: 'other', title: 'Прочие показатели', direction: 'context', note: 'Дополнительные показатели проекта' };
+const pct = (v) => v == null ? '—' : (v > 0 ? '+' : '') + fmt(v, 1) + '%';
+const safeText = (v) => String(v ?? '').trim();
+const classify = (row) => PILLARS.find((p) => p.match.test(safeText(row.indicator_code) + ' ' + safeText(row.indicator_name))) || { key: 'other', title: 'Прочие показатели', note: 'Дополнительные показатели проекта' };
 const directionFor = (row) => {
-  const s = ((row.indicator_code || '') + ' ' + (row.indicator_name || '')).toLowerCase();
-  if (/(unemploy|безработ|debt|deficit|arrears|noncompliant|выбывш|смертн|аварийн|износ|просроч)/i.test(s)) return 'lower';
-  if (/(migration|миграц|population|населен)/i.test(s)) return 'context';
-  return classify(row).direction;
+  const s = (safeText(row.indicator_code) + ' ' + safeText(row.indicator_name)).toLowerCase();
+  if (/(unemploy|безработ|debt|deficit|arrears|просроч|аварийн|износ|смертн|выбывш)/i.test(s)) return 'lower';
+  if (/(employment|employee|работник|занят|salary|wage|income|зарплат|заработ|доход насел|investment|инвестици|sme|предприним|мсп)/i.test(s)) return 'higher';
+  // Для миграции, численности населения, бюджетных сумм и оборотов направление само по себе не означает улучшение.
+  return 'context';
 };
-const comparableSignature = (row) => {
-  const p = String(row.reference_period || '');
-  const q = p.match(/-Q([1-4])/i);
-  const h = p.match(/-H([12])/i);
-  const d = p.match(/-\d{2}-\d{2}$/);
+const signature = (row) => {
+  const p = safeText(row.reference_period);
+  const q = p.match(/-Q([1-4])/i), h = p.match(/-H([12])/i);
   if (q) return 'Q' + q[1];
   if (h) return 'H' + h[1];
-  if (d) return p.slice(5);
-  return 'annual';
+  if (/annual|год|^\d{4}$/.test(p.toLowerCase())) return 'annual';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(p)) return 'date';
+  return p || 'annual';
 };
 const periodOrder = (row) => {
-  const p = String(row.reference_period || row.reference_year || '');
-  const q = p.match(/(\d{4}).*?Q([1-4])/i);
-  const h = p.match(/(\d{4}).*?H([12])/i);
+  const p = safeText(row.reference_period || row.reference_year);
+  const year = Number(row.reference_year) || Number(p.slice(0, 4)) || 0;
+  const q = p.match(/Q([1-4])/i), h = p.match(/H([12])/i);
+  if (q) return year * 10 + Number(q[1]);
+  if (h) return year * 10 + Number(h[1]) * 5;
   const d = p.match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (q) return Number(q[1]) * 10 + Number(q[2]);
-  if (h) return Number(h[1]) * 10 + Number(h[2]);
   if (d) return Number(d[1]) * 10000 + Number(d[2]) * 100 + Number(d[3]);
-  return Number(row.reference_year) || 0;
+  return year;
 };
 function buildSeries(rows) {
   const groups = new Map();
-  rows.forEach((row) => {
-    if (row.verification_status && row.verification_status !== 'verified') return;
+  (Array.isArray(rows) ? rows : []).forEach((row) => {
+    if (!row || (row.verification_status && row.verification_status !== 'verified')) return;
     if ((row.geographic_level || 'municipality') !== 'municipality') return;
     const value = number(row.value);
-    if (value == null) return;
-    const key = [row.municipality_id, row.indicator_code, row.unit, comparableSignature(row)].join('|');
+    if (value == null || !safeText(row.municipality_id) || !safeText(row.indicator_code)) return;
+    const key = [row.municipality_id, row.indicator_code, row.unit || '', signature(row)].join('|');
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push({ ...row, numericValue: value, order: periodOrder(row) });
   });
-  const series = [];
+  const result = [];
   groups.forEach((items, key) => {
-    items.sort((a, b) => a.order - b.order || String(a.reference_period).localeCompare(String(b.reference_period)));
-    const latest = items[items.length - 1];
-    const previous = items.length > 1 ? items[items.length - 2] : null;
-    const changePercent = previous && previous.numericValue !== 0 ? (latest.numericValue / previous.numericValue - 1) * 100 : null;
+    const unique = new Map();
+    items.forEach((item) => {
+      const natural = [item.reference_year, item.reference_period, item.source_id].join('|');
+      if (!unique.has(natural) || new Date(item.retrieved_at || 0) > new Date(unique.get(natural).retrieved_at || 0)) unique.set(natural, item);
+    });
+    const points = [...unique.values()].sort((a, b) => a.order - b.order);
+    if (!points.length) return;
+    const latest = points[points.length - 1];
+    const previous = points.length > 1 ? points[points.length - 2] : null;
+    const change = previous ? latest.numericValue - previous.numericValue : null;
+    const changePercent = previous && previous.numericValue !== 0 ? change / Math.abs(previous.numericValue) * 100 : null;
     const direction = directionFor(latest);
-    const adverse = changePercent == null || direction === 'context' ? null : (direction === 'lower' ? changePercent > 5 : changePercent < -5);
-    series.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code || 'unknown', name: latest.indicator_name || latest.indicator_code || 'Показатель без названия', unit: latest.unit || '—', pillar: classify(latest), direction, rows: items, latest, previous, changePercent, adverse });
+    const adverse = change == null || direction === 'context' ? null : direction === 'lower' ? change > 0 : change < 0;
+    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse });
   });
-  return series;
+  return result;
 }
-const RISK_LABEL = { red: 'Высокое внимание', yellow: 'Наблюдение', green: 'Стабильно по сигналам', unknown: 'Недостаточно данных' };
-function riskLevel(signals) {
-  const comparable = signals.filter((s) => s.adverse != null);
-  const adverse = comparable.filter((s) => s.adverse).length;
-  if (comparable.length < 2) return 'unknown';
-  if (adverse >= 2 && adverse / comparable.length >= 0.4) return 'red';
-  if (adverse >= 1) return 'yellow';
-  return comparable.length >= 3 ? 'green' : 'unknown';
+const RISK = {
+  critical: { label: 'Несколько ухудшений', short: 'Высокое внимание', color: 'red' },
+  watch: { label: 'Есть ухудшения', short: 'Наблюдение', color: 'yellow' },
+  stable: { label: 'Негативных сигналов нет', short: 'Без сигналов', color: 'green' },
+  insufficient: { label: 'Недостаточно данных', short: 'Нет оценки', color: 'neutral' },
+};
+function assess(signals) {
+  const usable = signals.filter((s) => s.adverse !== null);
+  const bad = usable.filter((s) => s.adverse);
+  if (usable.length < 2) return { level: 'insufficient', usable, bad };
+  if (bad.length >= 3) return { level: 'critical', usable, bad };
+  if (bad.length > 0) return { level: 'watch', usable, bad };
+  return { level: 'stable', usable, bad };
 }
 const DEFAULT_SCENARIOS = [
-  { key: 'pessimistic', title: 'Стресс-сценарий', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty: 18, description: 'Ухудшение внешней конъюнктуры, рост издержек и усиление кадрового дефицита.' },
-  { key: 'base', title: 'Базовый сценарий', investment_growth_rate: 4, sme_growth_rate: 3, score_growth_rate: 1.5, uncertainty: 7, description: 'Продолжение наблюдаемых тенденций без дополнительных шоков.' },
-  { key: 'optimistic', title: 'Благоприятный сценарий', investment_growth_rate: 8, sme_growth_rate: 6, score_growth_rate: 3, uncertainty: 12, description: 'Улучшение деловой активности и реализация мер поддержки.' },
+  { key: 'cautious', title: 'Стрессовый', summary: 'Неблагоприятные внешние условия и рост издержек.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18 },
+  { key: 'base', title: 'Базовый', summary: 'Продолжение наблюдаемых тенденций при текущих условиях.', investment_growth_rate: 4, sme_growth_rate: 3, score_growth_rate: 1.5, uncertainty_rate: 7 },
+  { key: 'ambitious', title: 'Благоприятный', summary: 'Улучшение инвестиционной активности и деловой среды.', investment_growth_rate: 8, sme_growth_rate: 6, score_growth_rate: 3, uncertainty_rate: 12 },
 ];
+const periodLabel = (row) => safeText(row?.reference_period) || String(row?.reference_year || '—');
+const directionText = (s) => s.direction === 'higher' ? 'снижение — негативный сигнал' : s.direction === 'lower' ? 'рост — негативный сигнал' : 'изменение требует контекста';
 
-export default function UnifiedRiskForecast({ municipalities = [], officialIndicators = [], programExecution = [], supabase, isSupabaseConfigured, officialDataStatus = 'offline', officialDataSyncedAt = null, investmentSites = [], fuelPrices = [], facilities = [] }) {
-  const [mode, setMode] = useState('monitor');
+export default function UnifiedRiskForecast({ municipalities = [], officialIndicators = [], programExecution = [], supabase, isSupabaseConfigured, officialDataStatus = 'offline', officialDataSyncedAt = null }) {
+  const [tab, setTab] = useState('overview');
   const [municipalityId, setMunicipalityId] = useState('ALL');
-  const [category, setCategory] = useState('ALL');
   const [search, setSearch] = useState('');
-  const [selectedIndicator, setSelectedIndicator] = useState('');
+  const [selectedMunicipality, setSelectedMunicipality] = useState('');
+  const [selectedSeriesKey, setSelectedSeriesKey] = useState('');
   const [horizon, setHorizon] = useState(3);
-  const [shock, setShock] = useState(0);
+  const [extraShock, setExtraShock] = useState(0);
   const [scenarios, setScenarios] = useState(DEFAULT_SCENARIOS);
-  const [scenarioSource, setScenarioSource] = useState('локальные шаблоны');
+  const [scenarioSource, setScenarioSource] = useState('встроенные шаблоны');
+  const [scenarioError, setScenarioError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
-    async function load() {
+    async function loadScenarios() {
       if (!supabase || !isSupabaseConfigured) return;
-      const result = await supabase.from('forecast_scenarios').select('key,title,summary,investment_growth_rate,sme_growth_rate,score_growth_rate,uncertainty_rate,display_order').eq('is_active', true).order('display_order', { ascending: true });
-      if (cancelled || result.error || !Array.isArray(result.data) || !result.data.length) return;
-      setScenarios(result.data.map((s) => ({ key: s.key === 'cautious' ? 'pessimistic' : s.key === 'ambitious' ? 'optimistic' : s.key, title: s.title, description: s.summary, investment_growth_rate: Number(s.investment_growth_rate || 0), sme_growth_rate: Number(s.sme_growth_rate || 0), score_growth_rate: Number(s.score_growth_rate || 0), uncertainty: Number(s.uncertainty_rate || 5) })));
-      setScenarioSource('Supabase');
+      try {
+        const { data, error } = await supabase.from('forecast_scenarios').select('key,title,summary,investment_growth_rate,sme_growth_rate,score_growth_rate,uncertainty_rate,display_order').eq('is_active', true).order('display_order', { ascending: true });
+        if (cancelled) return;
+        if (error) throw error;
+        if (Array.isArray(data) && data.length) {
+          setScenarios(data);
+          setScenarioSource('Supabase');
+        }
+      } catch (error) {
+        if (!cancelled) setScenarioError(error?.message || 'Не удалось загрузить параметры сценариев');
+      }
     }
-    load();
+    loadScenarios();
     return () => { cancelled = true; };
   }, [supabase, isSupabaseConfigured]);
 
-  const indicatorRows = useMemo(() => officialIndicators.concat((programExecution || []).map((item) => ({
-    municipality_id: item.municipality_id,
-    indicator_code: 'municipal_program_execution_rate',
-    indicator_name: 'Исполнение муниципальных программ',
-    reference_year: Number(String(item.report_date || '').slice(0, 4)) || null,
-    reference_period: item.report_date || '',
-    value: item.execution_percent,
-    unit: '%',
-    source_url: item.source_url,
-    verification_status: item.verification_status,
-    geographic_level: 'municipality',
-  }))), [officialIndicators, programExecution]);
-  const series = useMemo(() => buildSeries(indicatorRows), [indicatorRows]);
-  const municipalityName = useMemo(() => new Map(municipalities.map((m) => [m.id, m.name])), [municipalities]);
-  const filteredSeries = useMemo(() => series.filter((s) =>
+  const rows = useMemo(() => [
+    ...(Array.isArray(officialIndicators) ? officialIndicators : []),
+    ...(Array.isArray(programExecution) ? programExecution : []).map((item) => ({
+      municipality_id: item.municipality_id, indicator_code: 'municipal_program_execution_rate',
+      indicator_name: 'Исполнение муниципальных программ', reference_year: Number(String(item.report_date || '').slice(0, 4)) || null,
+      reference_period: item.report_date || '', value: item.execution_percent, unit: '%',
+      source_url: item.source_url, source_id: item.source_id, verification_status: item.verification_status, geographic_level: 'municipality',
+    })),
+  ], [officialIndicators, programExecution]);
+  const series = useMemo(() => buildSeries(rows), [rows]);
+  const municipalityNames = useMemo(() => new Map(municipalities.map((m) => [m.id, m.name])), [municipalities]);
+  const visibleSeries = useMemo(() => series.filter((s) =>
     (municipalityId === 'ALL' || s.municipalityId === municipalityId)
-    && (category === 'ALL' || s.pillar.key === category)
-    && (!search || (s.name + ' ' + s.code + ' ' + (municipalityName.get(s.municipalityId) || '')).toLowerCase().includes(search.toLowerCase()))
-  ), [series, municipalityId, category, search, municipalityName]);
-
-  const municipalityRisks = useMemo(() => municipalities.map((m) => {
-    const signals = series.filter((s) => s.municipalityId === m.id);
-    const comparable = signals.filter((s) => s.adverse != null);
-    const adverse = comparable.filter((s) => s.adverse);
-    const level = riskLevel(signals);
-    return { ...m, signals, comparable, adverse, level };
-  }).sort((a,b) => {
-    const priority = { red: 0, yellow: 1, green: 2, unknown: 3 };
-    return priority[a.level] - priority[b.level] || b.adverse.length - a.adverse.length || String(a.name || a.id || '').localeCompare(String(b.name || b.id || ''), 'ru-RU');
+    && (!search || (s.name + ' ' + s.code + ' ' + (municipalityNames.get(s.municipalityId) || '')).toLowerCase().includes(search.toLowerCase()))
+  ), [series, municipalityId, search, municipalityNames]);
+  const municipalityAnalysis = useMemo(() => municipalities.map((m) => {
+    const own = series.filter((s) => s.municipalityId === m.id);
+    const assessment = assess(own);
+    const pillars = PILLARS.map((p) => ({ ...p, series: own.filter((s) => s.pillar.key === p.key) })).filter((p) => p.series.length);
+    return { ...m, own, pillars, ...assessment, coverage: own.length };
+  }).sort((a, b) => {
+    const priority = { critical: 0, watch: 1, stable: 2, insufficient: 3 };
+    return priority[a.level] - priority[b.level] || b.bad.length - a.bad.length || String(a.name || a.id).localeCompare(String(b.name || b.id), 'ru-RU');
   }), [municipalities, series]);
-
-  const pillarStats = useMemo(() => PILLARS.map((p) => {
-    const rows = series.filter((s) => s.pillar.key === p.key);
-    return { ...p, seriesCount: rows.length, municipalities: new Set(rows.map((s) => s.municipalityId)).size, adverseCount: rows.filter((s) => s.adverse === true).length };
-  }), [series]);
-  const visibleRisks = useMemo(() => municipalityRisks.map((m) => {
-    const signals = category === 'ALL' ? m.signals : m.signals.filter((s) => s.pillar.key === category);
-    const comparable = signals.filter((s) => s.adverse != null);
-    const adverse = comparable.filter((s) => s.adverse);
-    return { ...m, signals, comparable, adverse, level: riskLevel(signals) };
-  }).filter((m) => municipalityId === 'ALL' || m.id === municipalityId).sort((a, b) => {
-    const priority = { red: 0, yellow: 1, green: 2, unknown: 3 };
-    return priority[a.level] - priority[b.level] || b.adverse.length - a.adverse.length || String(a.name || a.id || a.code || '').localeCompare(String(b.name || b.id || b.code || ''), 'ru-RU');
-  }), [municipalityRisks, category, municipalityId]);
-  const counts = useMemo(() => ({
-    red: visibleRisks.filter((m) => m.level === 'red').length,
-    yellow: visibleRisks.filter((m) => m.level === 'yellow').length,
-    green: visibleRisks.filter((m) => m.level === 'green').length,
-    unknown: visibleRisks.filter((m) => m.level === 'unknown').length,
-  }), [visibleRisks]);
-  const indicatorOptions = useMemo(() => {
-    const map = new Map();
-    series.filter((s) => (category === 'ALL' || s.pillar.key === category) && (municipalityId === 'ALL' || s.municipalityId === municipalityId)).forEach((s) => {
-      const key = s.code + '|' + s.unit;
-      if (!map.has(key)) map.set(key, { key, code: s.code, unit: s.unit, name: s.name, pillar: s.pillar });
-    });
-    return [...map.values()].sort((a,b) => a.pillar.title.localeCompare(b.pillar.title, 'ru-RU') || String(a.name || a.code || '').localeCompare(String(b.name || b.code || ''), 'ru-RU'));
-  }, [series, category, municipalityId]);
-  const activeIndicator = indicatorOptions.find((x) => x.key === selectedIndicator) || indicatorOptions[0] || null;
-  const forecastMunicipalityId = municipalityId === 'ALL' ? (series.find((s) => activeIndicator && s.code === activeIndicator.code && s.unit === activeIndicator.unit)?.municipalityId || municipalities[0]?.id || '') : municipalityId;
-  const forecastSeries = activeIndicator ? series.filter((s) => s.municipalityId === forecastMunicipalityId && s.code === activeIndicator.code && s.unit === activeIndicator.unit).sort((a,b) => b.latest.order - a.latest.order)[0] : null;
-  const baseline = forecastSeries?.latest?.numericValue ?? null;
-  const observedTrend = forecastSeries?.changePercent;
-  const annualTrend = observedTrend == null ? 0 : Math.max(-50, Math.min(50, observedTrend));
-  const rateField = activeIndicator?.pillar.key === 'investment' ? 'investment_growth_rate' : activeIndicator?.pillar.key === 'business' ? 'sme_growth_rate' : 'score_growth_rate';
-  const forecastRows = baseline != null ? scenarios.map((s) => {
-    const rate = annualTrend + Number(s[rateField] || 0) + shock;
-    const uncertainty = Math.abs(Number(s.uncertainty || 5));
-    const lowRate = rate - uncertainty;
-    const highRate = rate + uncertainty;
-    return {
-      key: s.key,
-      title: s.title,
-      rate,
-      value: baseline * Math.pow(Math.max(0.01, 1 + rate / 100), horizon),
-      lowValue: baseline * Math.pow(Math.max(0.01, 1 + lowRate / 100), horizon),
-      highValue: baseline * Math.pow(Math.max(0.01, 1 + highRate / 100), horizon),
-      uncertainty,
-    };
+  const filteredMunicipalities = municipalityAnalysis.filter((m) => municipalityId === 'ALL' || m.id === municipalityId);
+  const counts = {
+    critical: filteredMunicipalities.filter((m) => m.level === 'critical').length,
+    watch: filteredMunicipalities.filter((m) => m.level === 'watch').length,
+    stable: filteredMunicipalities.filter((m) => m.level === 'stable').length,
+    insufficient: filteredMunicipalities.filter((m) => m.level === 'insufficient').length,
+  };
+  const pillarSummary = PILLARS.map((p) => {
+    const group = series.filter((s) => s.pillar.key === p.key);
+    return { ...p, count: group.length, territories: new Set(group.map((s) => s.municipalityId)).size, deteriorating: group.filter((s) => s.adverse === true).length };
+  });
+  const selected = municipalityAnalysis.find((m) => m.id === (selectedMunicipality || municipalityId)) || municipalityAnalysis[0];
+  const forecastOptions = useMemo(() => series.filter((s) => s.points.length >= 2 && signature(s.latest) === 'annual'), [series]);
+  const forecastSeries = forecastOptions.find((s) => s.key === selectedSeriesKey) || forecastOptions.find((s) => s.municipalityId === (municipalityId === 'ALL' ? selected?.id : municipalityId)) || forecastOptions[0] || null;
+  const forecastMunicipality = forecastSeries ? municipalityNames.get(forecastSeries.municipalityId) || forecastSeries.municipalityId : '—';
+  const history = forecastSeries?.points || [];
+  const annualRates = history.slice(1).map((p, i) => {
+    const previous = history[i];
+    const gap = (Number(p.reference_year) || p.order) - (Number(previous.reference_year) || previous.order);
+    return gap > 0 && previous.numericValue !== 0 ? (Math.pow(Math.abs(p.numericValue / previous.numericValue), 1 / gap) * Math.sign(p.numericValue / previous.numericValue) - 1) * 100 : null;
+  }).filter((v) => Number.isFinite(v));
+  const observedRate = annualRates.length ? annualRates[annualRates.length - 1] : 0;
+  const stableRate = annualRates.length ? annualRates.reduce((a, b) => a + b, 0) / annualRates.length : 0;
+  const baseRate = annualRates.length > 1 ? stableRate * 0.5 + observedRate * 0.5 : observedRate;
+  const scenarioField = forecastSeries?.pillar.key === 'investment' ? 'investment_growth_rate' : forecastSeries?.pillar.key === 'business' ? 'sme_growth_rate' : 'score_growth_rate';
+  const forecastRows = forecastSeries ? scenarios.map((s) => {
+    const assumption = Number(s[scenarioField] ?? 0);
+    const rate = baseRate + assumption + extraShock;
+    const value = forecastSeries.latest.numericValue * Math.pow(Math.max(0.01, 1 + rate / 100), horizon);
+    const uncertainty = Math.max(0, Number(s.uncertainty_rate ?? 0));
+    return { ...s, rate, value, low: forecastSeries.latest.numericValue * Math.pow(Math.max(0.01, 1 + (rate - uncertainty) / 100), horizon), high: forecastSeries.latest.numericValue * Math.pow(Math.max(0.01, 1 + (rate + uncertainty) / 100), horizon) };
   }) : [];
-  const maxForecast = Math.max(1, ...forecastRows.map((r) => r.value));
-  const municipalRows = officialIndicators.filter((i) => i.verification_status === 'verified' && (i.geographic_level || 'municipality') === 'municipality');
-  const coverageCount = new Set(municipalRows.map((i) => i.municipality_id)).size;
-  const latestYear = officialIndicators.reduce((max, i) => Math.max(max, Number(i.reference_year) || 0), 0) || null;
-  const totalVerified = municipalRows.length;
-  const filteredRisks = visibleRisks.filter((m) => !search || String(m.name || m.id || '').toLocaleLowerCase('ru-RU').includes(search.toLocaleLowerCase('ru-RU')));
-  const filteredIndicators = filteredSeries.slice().sort((a,b) => b.latest.order - a.latest.order || String(a.name || a.id || a.code || '').localeCompare(String(b.name || b.id || b.code || ''), 'ru-RU'));
+  const lastYear = forecastSeries?.latest?.reference_year || '—';
   const syncLabel = officialDataSyncedAt ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(officialDataSyncedAt)) : null;
 
-  const exportCsv = (rows, fileName) => {
-    const quote = (v) => {
-      let value = String(v == null ? '' : v);
-      if (typeof v === 'string' && /^[\s]*[=+\-@\t\r]/.test(value)) value = "'" + value;
-      return '"' + value.replaceAll('"', '""') + '"';
+  const exportCsv = (data, name) => {
+    const escape = (v) => {
+      let x = String(v ?? '');
+      if (typeof v === 'string' && /^[\\s]*[=+\\-@\\t\\r]/.test(x)) x = "'" + x;
+      return '"' + x.replaceAll('"', '""') + '"';
     };
-    const csv = '\uFEFF' + rows.map((r) => r.map(quote).join(';')).join('\r\n');
+    const csv = '\uFEFF' + data.map((r) => r.map(escape).join(';')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-    const a = document.createElement('a'); a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   };
 
-  return (
-    <section className="panel full-panel unified-system">
-      <header className="unified-hero"><div><span className="eyebrow">МОНИТОРИНГ УСТОЙЧИВОСТИ · 22 МУНИЦИПАЛИТЕТА</span><h1>Единая система рисков и прогнозирования</h1><p>Мониторинг подтверждённых показателей, ранние сигналы ухудшения и сценарный анализ на горизонте до трёх лет.</p></div><span className="concept-corner">КОНЦЕПТ</span></header>
-      <div className="unified-warning"><strong>Статус аналитики: пилотная система.</strong> Используются подтверждённые муниципальные наблюдения. Региональные и городские рейтинги не смешиваются с муниципальными рядами. Риск — сигнал для внимания, а не вероятность кризиса; прогноз — сценарная оценка, а не официальный прогноз.</div>
-      <div className="unified-toolbar">
-        <div className="unified-tabs" role="tablist" aria-label="Раздел единой системы">
-          <button className={mode === 'monitor' ? 'active' : ''} onClick={() => setMode('monitor')}>Мониторинг рисков</button>
-          <button className={mode === 'forecast' ? 'active' : ''} onClick={() => setMode('forecast')}>Сценарный прогноз</button>
-          <button className={mode === 'indicators' ? 'active' : ''} onClick={() => setMode('indicators')}>Все показатели</button>
-        </div>
-        <div className="unified-filters">
-          <select value={municipalityId} onChange={(e) => setMunicipalityId(e.target.value)} aria-label="Муниципалитет"><option value="ALL">Все муниципалитеты</option>{municipalities.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select>
-          <select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Группа показателей"><option value="ALL">Все группы</option>{PILLARS.map((p) => <option key={p.key} value={p.key}>{p.title}</option>)}</select>
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск показателя или территории…" aria-label="Поиск"/>
-        </div>
+  return <section className="panel full-panel unified-system">
+    <header className="unified-hero">
+      <div><span className="eyebrow">АНАЛИТИКА МУНИЦИПАЛИТЕТОВ ЮГРЫ · 22 ТЕРРИТОРИИ</span><h1>Риски и сценарное прогнозирование</h1><p>Отслеживайте ухудшения, находите их причины и оценивайте возможную траекторию развития на основе подтверждённых муниципальных данных.</p></div>
+      <span className="concept-corner">АНАЛИТИЧЕСКИЙ ПИЛОТ</span>
+    </header>
+    <div className="unified-warning"><strong>Важно о методике.</strong> Это система раннего выявления сигналов, а не вероятность кризиса. В анализ попадают только подтверждённые муниципальные наблюдения. Региональные/городские рейтинги, неподтверждённые значения и данные другого уровня географии исключены. Номинальные доходы не корректируются на инфляцию, если в источнике нет реального индекса.</div>
+    <nav className="unified-tabs" aria-label="Разделы аналитики">
+      <button className={tab === 'overview' ? 'active' : ''} onClick={() => setTab('overview')}>Общая картина</button>
+      <button className={tab === 'municipality' ? 'active' : ''} onClick={() => setTab('municipality')}>Разбор муниципалитета</button>
+      <button className={tab === 'forecast' ? 'active' : ''} onClick={() => setTab('forecast')}>Сценарный прогноз</button>
+      <button className={tab === 'indicators' ? 'active' : ''} onClick={() => setTab('indicators')}>Показатели и данные</button>
+    </nav>
+    <div className="unified-filters">
+      <label>Территория<select value={municipalityId} onChange={(e) => { setMunicipalityId(e.target.value); setSelectedMunicipality(e.target.value === 'ALL' ? '' : e.target.value); }}><option value="ALL">Все муниципалитеты</option>{municipalities.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
+      <label className="unified-search">Поиск<input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Показатель или муниципалитет"/></label>
+    </div>
+
+    {tab === 'overview' && <>
+      <div className="unified-kpis">
+        <article className="risk-kpi risk-kpi-red"><div><small>НЕСКОЛЬКО УХУДШЕНИЙ</small><strong>{counts.critical}</strong><span>муниципалитетов с 3+ негативными сигналами</span></div></article>
+        <article className="risk-kpi risk-kpi-yellow"><div><small>ЕСТЬ УХУДШЕНИЯ</small><strong>{counts.watch}</strong><span>хотя бы один негативный сигнал</span></div></article>
+        <article className="risk-kpi risk-kpi-green"><div><small>БЕЗ НЕГАТИВНЫХ СИГНАЛОВ</small><strong>{counts.stable}</strong><span>не менее двух оцениваемых рядов</span></div></article>
+        <article className="risk-kpi risk-kpi-neutral"><div><small>НЕДОСТАТОЧНО ДАННЫХ</small><strong>{counts.insufficient}</strong><span>нельзя надёжно оценить динамику</span></div></article>
       </div>
+      <section className="unified-section">
+        <div className="unified-section-head"><div><h2>Где ситуация требует внимания</h2><p>Список отсортирован по числу одновременно ухудшающихся направлений. Нажмите на территорию для подробного разбора.</p></div><button className="outline-button" onClick={() => exportCsv([['Муниципалитет','Статус','Оцениваемых рядов','Негативных сигналов','Показатели'], ...filteredMunicipalities.map((m) => [m.name,RISK[m.level].label,m.usable.length,m.bad.length,m.bad.map((s) => s.name).join(', ')])], 'yugra-risk-overview.csv')}>Экспорт CSV</button></div>
+        <div className="table-scroll"><table className="ranking-table risk-table"><thead><tr><th>Муниципалитет</th><th>Сигнал системы</th><th>Рядов с направлением</th><th>Ухудшений</th><th>Что ухудшается</th><th></th></tr></thead><tbody>
+          {filteredMunicipalities.map((m) => <tr key={m.id}><td><strong>{m.name}</strong></td><td><span className={'risk-zone-badge risk-zone-' + (m.level === 'critical' ? 'red' : m.level === 'watch' ? 'yellow' : m.level === 'stable' ? 'green' : 'unknown')}>{RISK[m.level].label}</span></td><td>{m.usable.length}</td><td>{m.bad.length}</td><td>{m.bad.slice(0,3).map((s) => s.name).join('; ') || 'Нет подтверждённого ухудшения по оцениваемым рядам'}</td><td><button className="outline-button" onClick={() => { setSelectedMunicipality(m.id); setTab('municipality'); }}>Разобрать</button></td></tr>)}
+        </tbody></table></div>
+      </section>
+      <section className="unified-section">
+        <div className="unified-section-head"><div><h2>Покрытие ключевых направлений</h2><p>Показывает, где есть подтверждённые ряды, а где выводы пока ограничены отсутствием данных.</p></div><span>{rows.filter((r) => r.verification_status === 'verified' && (r.geographic_level || 'municipality') === 'municipality').length.toLocaleString('ru-RU')} подтверждённых наблюдений</span></div>
+        <div className="unified-pillar-grid">{pillarSummary.filter((p) => ['employment','income','budget','migration','investment'].includes(p.key)).map((p) => <article className="unified-pillar" key={p.key}><strong>{p.title}</strong><div className="unified-track"><i style={{width: Math.min(100,p.territories / Math.max(1,municipalities.length) * 100) + '%'}}/></div><p><b>{p.territories}/{municipalities.length}</b> территорий · {p.count} временных рядов</p><small>{p.deteriorating} негативных сигналов · {p.note}</small></article>)}</div>
+      </section>
+      <section className="unified-section">
+        <div className="unified-section-head"><div><h2>Сигналы, требующие проверки</h2><p>Показываем изменение только там, где направление показателя можно интерпретировать. Для контекстных рядов изменение не окрашивается как «хорошее» или «плохое».</p></div><span>{visibleSeries.filter((s) => s.adverse === true).length} негативных сигналов</span></div>
+        <div className="table-scroll"><table className="ranking-table"><thead><tr><th>Муниципалитет</th><th>Направление</th><th>Показатель</th><th>Было</th><th>Стало</th><th>Изменение</th><th>Период</th></tr></thead><tbody>{visibleSeries.filter((s) => s.adverse !== null).sort((a,b) => Number(b.adverse)-Number(a.adverse) || Math.abs(b.changePercent || 0)-Math.abs(a.changePercent || 0)).slice(0,60).map((s) => <tr key={s.key}><td>{municipalityNames.get(s.municipalityId) || s.municipalityId}</td><td>{s.pillar.title}</td><td>{s.name}</td><td>{fmt(s.previous?.numericValue,2)} {s.unit}</td><td>{fmt(s.latest.numericValue,2)} {s.unit}</td><td className={s.adverse ? 'trend-negative' : 'trend-positive'}>{pct(s.changePercent)}</td><td>{periodLabel(s.previous)} → {periodLabel(s.latest)}</td></tr>)}</tbody></table>{visibleSeries.every((s) => s.adverse === null) && <p className="empty-state">Для выбранных фильтров пока нет рядов с однозначным направлением.</p>}</div>
+      </section>
+    </>}
 
-      {mode === 'monitor' && <>
-        <div className="unified-kpis">
-          <article className="risk-kpi risk-kpi-red"><span className="risk-dot"/><div><small>ВЫСОКОЕ ВНИМАНИЕ</small><strong>{counts.red}</strong><span>несколько негативных сигналов</span></div></article>
-          <article className="risk-kpi risk-kpi-yellow"><span className="risk-dot"/><div><small>ТРЕБУЮТ НАБЛЮДЕНИЯ</small><strong>{counts.yellow}</strong><span>есть ухудшающаяся динамика</span></div></article>
-          <article className="risk-kpi risk-kpi-green"><span className="risk-dot"/><div><small>БЕЗ НЕГАТИВНЫХ СИГНАЛОВ</small><strong>{counts.green}</strong><span>достаточно сопоставимых рядов</span></div></article>
-          <article className="risk-kpi risk-kpi-neutral"><span className="risk-dot"/><div><small>НЕДОСТАТОЧНО ДАННЫХ</small><strong>{counts.unknown}</strong><span>нельзя достоверно классифицировать</span></div></article>
-        </div>
-        <section className="unified-section">
-          <div className="unified-section-head"><div><h2>Пять основных направлений проекта</h2><p>Дополнительные показатели также доступны в полном реестре.</p></div><span>{totalVerified.toLocaleString('ru-RU')} подтверждённых наблюдений</span></div>
-          <div className="unified-pillar-grid">{pillarStats.filter((p) => ['employment','income','budget','migration','investment'].includes(p.key)).map((p) => <article className="unified-pillar" key={p.key}><div><strong>{p.title}</strong><span>{p.municipalities}/{municipalities.length}</span></div><div className="unified-track"><i style={{ width: Math.min(100, p.municipalities / Math.max(1, municipalities.length) * 100) + '%' }}/></div><p>{p.seriesCount} рядов · {p.adverseCount} сигналов ухудшения</p><small>{p.note}</small></article>)}</div>
-        </section>
-        <section className="unified-section">
-          <div className="unified-section-head"><div><h2>Матрица рисков муниципалитетов</h2><p>Зона формируется по динамике сопоставимых периодов, а не по старому демонстрационному баллу.</p></div><button className="outline-button" onClick={() => exportCsv([['Муниципалитет','Уровень внимания','Сопоставимых сигналов','Негативных сигналов','Показатели с ухудшением'], ...filteredRisks.map((m) => [m.name,RISK_LABEL[m.level],m.comparable.length,m.adverse.length,m.adverse.map((s) => s.name).join(', ')])], 'yugra-risk-monitor.csv')}>Экспорт CSV</button></div>
-          <div className="table-scroll"><table className="ranking-table risk-table"><thead><tr><th>Муниципалитет</th><th>Статус</th><th>Сигналы</th><th>Ухудшения</th><th>Что требует внимания</th></tr></thead><tbody>{filteredRisks.map((m) => <tr key={m.id}><td>{m.name}</td><td><span className={'risk-zone-badge risk-zone-' + m.level}>{RISK_LABEL[m.level]}</span></td><td>{m.comparable.length}</td><td>{m.adverse.length}</td><td>{m.adverse.slice(0, 3).map((s) => s.name).join('; ') || (m.level === 'unknown' ? 'Недостаточно сопоставимых рядов' : 'Негативных сигналов не выявлено')}</td></tr>)}</tbody></table></div>
-        </section>
-        <section className="unified-section">
-          <div className="unified-section-head"><div><h2>Ранние сигналы</h2><p>Изменения относительно предыдущего сопоставимого периода. Порог ±5% — технический фильтр пилота.</p></div><span>{filteredIndicators.length} рядов</span></div>
-          <div className="table-scroll"><table className="ranking-table"><thead><tr><th>Муниципалитет</th><th>Направление</th><th>Показатель</th><th>Последнее значение</th><th>Изменение</th><th>Период</th><th>Источник</th></tr></thead><tbody>{filteredIndicators.filter((s) => s.adverse != null).sort((a,b) => Number(b.adverse)-Number(a.adverse) || Math.abs(b.changePercent)-Math.abs(a.changePercent)).slice(0,100).map((s) => <tr key={s.key}><td>{municipalityName.get(s.municipalityId) || s.municipalityId}</td><td>{s.pillar.title}</td><td>{s.name}</td><td>{fmt(s.latest.numericValue,2)} {s.unit}</td><td className={s.adverse ? 'trend-negative' : 'trend-positive'}>{signed(s.changePercent)}</td><td>{s.latest.reference_period || s.latest.reference_year}</td><td>{s.latest.source_url ? <a href={s.latest.source_url} target="_blank" rel="noreferrer">Источник ↗</a> : '—'}</td></tr>)}</tbody></table></div>
-        </section>
+    {tab === 'municipality' && <section className="unified-section">
+      <div className="unified-section-head"><div><h2>Паспорт рисков территории</h2><p>Конкретные изменения, контекст показателей и ограничения данных.</p></div><select value={selected?.id || ''} onChange={(e) => setSelectedMunicipality(e.target.value)}>{municipalities.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></div>
+      {selected && <>
+        <div className="municipality-risk-summary"><div><span>Сигнал системы</span><strong>{RISK[selected.level].label}</strong></div><div><span>Рядов с понятным направлением</span><strong>{selected.usable.length}</strong></div><div><span>Негативных изменений</span><strong>{selected.bad.length}</strong></div><div><span>Всего подтверждённых рядов</span><strong>{selected.coverage}</strong></div></div>
+        <div className="unified-explanation"><h3>Что это означает</h3><p>{selected.level === 'critical' ? 'Одновременно ухудшаются несколько показателей. Это основание для предметной проверки причин и подготовки мер реагирования, но не доказательство кризиса.' : selected.level === 'watch' ? 'Есть отдельные негативные изменения. Нужно проверить источник, устойчивость тенденции и связь с другими показателями.' : selected.level === 'stable' ? 'Среди показателей с однозначным направлением негативных изменений не выявлено. Это не означает отсутствие проблем: часть показателей контекстная, а полнота данных ограничена.' : 'Подтверждённых сопоставимых рядов с однозначным направлением недостаточно. Системе нельзя присваивать территории благополучный статус; приоритет — сбор и проверка данных.'}</p></div>
+        <h3>Негативные сигналы</h3>
+        {selected.bad.length ? <div className="unified-signal-list">{selected.bad.map((s) => <article key={s.key}><div><strong>{s.name}</strong><span>{s.pillar.title}</span></div><b>{pct(s.changePercent)}</b><p>{fmt(s.previous?.numericValue,2)} → {fmt(s.latest.numericValue,2)} {s.unit} · {periodLabel(s.previous)} → {periodLabel(s.latest)}</p><small>Интерпретация: {directionText(s)}. Проверьте методику и первоисточник перед управленческим решением.</small>{s.latest.source_url && <a href={s.latest.source_url} target="_blank" rel="noreferrer">Открыть первоисточник ↗</a>}</article>)}</div> : <p className="empty-state">По текущим подтверждённым рядам негативные сигналы не выявлены либо данных недостаточно.</p>}
+        <h3>Все направления и ограничения</h3>
+        <div className="unified-pillar-grid">{PILLARS.map((p) => { const items = selected.own.filter((s) => s.pillar.key === p.key); return <article className="unified-pillar" key={p.key}><strong>{p.title}</strong><p>{items.length ? items.length + ' временных рядов' : 'Нет подтверждённых рядов'}</p><small>{items.filter((s) => s.adverse === true).length} ухудшений · {items.filter((s) => s.direction === 'context').length} контекстных показателей</small></article>; })}</div>
       </>}
+    </section>}
 
-      {mode === 'forecast' && <section className="unified-section unified-forecast">
-        <div className="unified-section-head"><div><h2>Сценарное прогнозирование показателей</h2><p>Выберите показатель и муниципалитет — система построит три траектории.</p></div><span>Сценарии: {scenarioSource}</span></div>
-        <div className="unified-forecast-controls">
-          <label>Показатель<select value={activeIndicator?.key || ''} onChange={(e) => setSelectedIndicator(e.target.value)}>{indicatorOptions.map((i) => <option key={i.key} value={i.key}>{i.pillar.title} · {i.name} ({i.unit})</option>)}</select></label>
-          <label>Горизонт<select value={horizon} onChange={(e) => setHorizon(Number(e.target.value))}><option value={1}>1 год</option><option value={2}>2 года</option><option value={3}>3 года</option></select></label>
-          <label>Сценарное отклонение от тренда <strong>{shock > 0 ? '+' : ''}{fmt(shock,1)} п.п.</strong><input type="range" min="-15" max="15" step="0.5" value={shock} onChange={(e) => setShock(Number(e.target.value))}/></label>
-        </div>
-        <div className="unified-base-card"><div><span>Муниципалитет расчёта</span><strong>{municipalityName.get(forecastMunicipalityId) || '—'}</strong></div><div><span>Последнее подтверждённое значение</span><strong>{fmt(baseline,2)} {forecastSeries?.unit || ''}</strong></div><div><span>Наблюдаемое изменение</span><strong>{signed(observedTrend)}</strong></div><div><span>Базовый период</span><strong>{forecastSeries?.latest?.reference_period || forecastSeries?.latest?.reference_year || '—'}</strong></div></div>
-        {forecastRows.length ? <div className="unified-scenario-grid">{forecastRows.map((r) => <article key={r.key} className={'unified-scenario scenario-' + r.key}><span>{r.title}</span><strong>{fmt(r.value,2)} <small>{forecastSeries?.unit}</small></strong><p>{r.rate > 0 ? '+' : ''}{fmt(r.rate,1)}% в год · диапазон {fmt(r.lowValue,2)}–{fmt(r.highValue,2)} · горизонт {horizon} г.</p><div className="unified-track"><i style={{ width: Math.max(2, r.value / maxForecast * 100) + '%' }}/></div></article>)}</div> : <div className="empty-state"><span>Нет выбранного ряда для прогноза</span><p>Для выбранного показателя и территории пока нет подтверждённого значения.</p></div>}
-        <div className="unified-method-note"><strong>Как читать расчёт.</strong> Если доступны два сопоставимых периода, базовая траектория продолжает наблюдаемое изменение; при отсутствии истории используется нулевой тренд и это не считается статистическим прогнозом. Стресс- и благоприятная траектории задают диапазон чувствительности. Это what-if модель, не прогноз вероятности.</div>
-        <div className="unified-method-note"><strong>Параметры сценариев.</strong> Темп для инвестиций берётся из инвестиционного допущения, для предпринимательства — из допущения по МСП, для остальных показателей — из общего сценарного темпа. Наблюдаемая динамика и пользовательский шок добавляются отдельно. Диапазон чувствительности рассчитывается по неопределённости каждого сценария. Источник настроек: {scenarioSource}.</div>
-      </section>}
+    {tab === 'forecast' && <section className="unified-section unified-forecast">
+      <div className="unified-section-head"><div><h2>Сценарное прогнозирование</h2><p>Траектория рассчитывается отдельно по выбранному годовому ряду. Выберите территорию и показатель.</p></div><span>Параметры: {scenarioSource}</span></div>
+      <div className="unified-forecast-controls">
+        <label>Муниципалитет<select value={forecastSeries?.municipalityId || ''} onChange={(e) => { const found = forecastOptions.find((s) => s.municipalityId === e.target.value && s.key === forecastSeries?.key); setSelectedSeriesKey(found?.key || forecastOptions.find((s) => s.municipalityId === e.target.value)?.key || ''); }}><option value="">Выберите территорию</option>{municipalities.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
+        <label>Показатель<select value={forecastSeries?.key || ''} onChange={(e) => setSelectedSeriesKey(e.target.value)}>{forecastOptions.map((s) => <option key={s.key} value={s.key}>{s.name} · {s.unit} ({municipalityNames.get(s.municipalityId) || s.municipalityId})</option>)}</select></label>
+        <label>Горизонт: {horizon} года<input type="range" min="1" max="3" step="1" value={horizon} onChange={(e) => setHorizon(Number(e.target.value))}/></label>
+        <label>Дополнительный шок: {extraShock > 0 ? '+' : ''}{fmt(extraShock,1)} п.п.<input type="range" min="-15" max="15" step="0.5" value={extraShock} onChange={(e) => setExtraShock(Number(e.target.value))}/></label>
+      </div>
+      {forecastSeries ? <>
+        <div className="unified-base-card"><div><span>Последнее фактическое значение</span><strong>{fmt(forecastSeries.latest.numericValue,2)} {forecastSeries.unit}</strong></div><div><span>Последний год</span><strong>{lastYear}</strong></div><div><span>Наблюдений в ряду</span><strong>{history.length}</strong></div><div><span>Средний исторический темп</span><strong>{pct(stableRate)}</strong></div></div>
+        <div className="unified-explanation"><h3>Как читать прогноз</h3><p>Базовая динамика оценивается по среднему годовому темпу доступных фактических наблюдений. Сценарные параметры из {scenarioSource} задают дополнительное отклонение для инвестиций, МСП или общего индекса. Для остальных показателей используется только наблюдаемая динамика и пользовательский шок. Это анализ чувствительности, не обученная модель и не вероятность наступления сценария.</p></div>
+        <div className="unified-scenario-grid">{forecastRows.map((r) => <article key={r.key} className={'unified-scenario scenario-' + r.key}><span>{r.title}</span><strong>{fmt(r.value,2)} <small>{forecastSeries.unit}</small></strong><p>{pct(r.rate)} в год · диапазон {fmt(r.low,2)}–{fmt(r.high,2)} · через {horizon} г.</p><div className="unified-track"><i style={{width: Math.max(2,Math.min(100,Math.abs(r.value)/(Math.max(1,...forecastRows.map((x) => Math.abs(x.value))))*100)) + '%'}}/></div><small>{r.summary || ''}</small></article>)}</div>
+        {history.length < 3 && <div className="unified-warning"><strong>Ограниченная история.</strong> В ряду только два наблюдения. Темп между ними нестабилен и не позволяет проверить качество прогноза на прошлых периодах. Используйте сценарии как ориентир чувствительности.</div>}
+        <div className="table-scroll"><table className="ranking-table"><thead><tr><th>Фактический год</th><th>Фактическое значение</th><th>Изменение к предыдущему году</th></tr></thead><tbody>{history.map((p,i) => <tr key={i}><td>{p.reference_year || periodLabel(p)}</td><td>{fmt(p.numericValue,2)} {forecastSeries.unit}</td><td>{i ? pct((p.numericValue/history[i-1].numericValue-1)*100) : 'Базовое наблюдение'}</td></tr>)}</tbody></table></div>
+      </> : <div className="empty-state"><strong>Пока нет подходящего ряда для прогноза</strong><p>Для сценарного расчёта нужны минимум два подтверждённых годовых наблюдения одного показателя в одном муниципалитете и одной единице измерения. Квартальные, полугодовые и городские данные не смешиваются с годовыми муниципальными рядами.</p></div>}
+      {scenarioError && <p className="unified-muted">Не удалось загрузить параметры сценариев из базы: {scenarioError}. Используются встроенные шаблоны.</p>}
+    </section>}
 
-      {mode === 'indicators' && <section className="unified-section">
-        <div className="unified-section-head"><div><h2>Полный реестр отслеживаемых показателей</h2><p>Подтверждённые муниципальные наблюдения с периодом, единицей и первоисточником.</p></div><button className="outline-button" onClick={() => exportCsv([['Муниципалитет','Группа','Показатель','Код','Значение','Единица','Год','Период','Источник'], ...filteredIndicators.map((s) => [municipalityName.get(s.municipalityId) || s.municipalityId,s.pillar.title,s.name,s.code,s.latest.numericValue,s.unit,s.latest.reference_year,s.latest.reference_period,s.latest.source_url])], 'yugra-indicator-register.csv')}>Экспорт реестра CSV</button></div>
-        <div className="table-scroll"><table className="ranking-table"><thead><tr><th>Муниципалитет</th><th>Группа</th><th>Показатель</th><th>Значение</th><th>Единица</th><th>Период</th><th>Изменение</th><th>Источник</th></tr></thead><tbody>{filteredIndicators.map((s) => <tr key={s.key}><td>{municipalityName.get(s.municipalityId) || s.municipalityId}</td><td>{s.pillar.title}</td><td>{s.name}<small className="unified-code">{s.code}</small></td><td>{fmt(s.latest.numericValue,2)}</td><td>{s.unit}</td><td>{s.latest.reference_period || s.latest.reference_year}</td><td className={s.adverse === true ? 'trend-negative' : s.changePercent != null ? 'trend-positive' : ''}>{signed(s.changePercent)}</td><td>{s.latest.source_url ? <a href={s.latest.source_url} target="_blank" rel="noreferrer">Открыть ↗</a> : '—'}</td></tr>)}</tbody></table>{filteredIndicators.length === 0 && <div className="empty-state"><span>Нет показателей по заданным фильтрам</span><p>Измените территорию, группу или поисковый запрос.</p></div>}</div>
-      </section>}
-
-      <footer className="unified-footer"><span>Охват: {coverageCount} из {municipalities.length} муниципалитетов · {totalVerified} подтверждённых наблюдений · последний год в базе: {latestYear || '—'}</span><span>{syncLabel ? 'Обновлено ' + syncLabel : officialDataStatus === 'connected' ? 'Данные загружены из Supabase' : 'Состояние синхронизации не подтверждено'}</span><span>Дополнительный контекст: {investmentSites.length} инвестплощадок · {fuelPrices.length} наблюдений цен · {facilities.length} объектов инфраструктуры · {programExecution.length} бюджетных отчётов. Эти наборы не смешиваются с основным рейтингом без сопоставимой методики.</span></footer>
-    </section>
-  );
+    {tab === 'indicators' && <section className="unified-section">
+      <div className="unified-section-head"><div><h2>Реестр показателей и качество данных</h2><p>Здесь видно, на каких фактах основан анализ и почему по некоторым направлениям вывод невозможен.</p></div><button className="outline-button" onClick={() => exportCsv([['Муниципалитет','Группа','Показатель','Код','Последнее значение','Единица','Период','Изменение','Источник'], ...visibleSeries.map((s) => [municipalityNames.get(s.municipalityId) || s.municipalityId,s.pillar.title,s.name,s.code,s.latest.numericValue,s.unit,periodLabel(s.latest),pct(s.changePercent),s.latest.source_url])], 'yugra-indicators.csv')}>Экспорт CSV</button></div>
+      <div className="table-scroll"><table className="ranking-table"><thead><tr><th>Муниципалитет</th><th>Группа</th><th>Показатель</th><th>Последнее значение</th><th>Период</th><th>Изменение</th><th>Направление</th><th>Источник</th></tr></thead><tbody>{visibleSeries.filter((s) => !search || s.name.toLowerCase().includes(search.toLowerCase()) || s.code.toLowerCase().includes(search.toLowerCase())).map((s) => <tr key={s.key}><td>{municipalityNames.get(s.municipalityId) || s.municipalityId}</td><td>{s.pillar.title}</td><td>{s.name}<small>{s.code}</small></td><td>{fmt(s.latest.numericValue,2)} {s.unit}</td><td>{periodLabel(s.latest)}</td><td>{pct(s.changePercent)}</td><td>{directionText(s)}</td><td>{s.latest.source_url ? <a href={s.latest.source_url} target="_blank" rel="noreferrer">Первоисточник ↗</a> : 'Не указан'}</td></tr>)}</tbody></table></div>
+      <div className="unified-warning"><strong>Правило качества.</strong> Отсутствие данных не считается нулём и не даёт положительную оценку. Рейтинги и агрегированные оценки не подменяют исходные муниципальные показатели. Сравнивать можно только одинаковые коды, единицы, периоды и уровень географии.</div>
+    </section>}
+    <footer className="unified-footer"><span>В анализе: {series.length} подтверждённых временных рядов · {rows.filter((r) => r.verification_status === 'verified' && (r.geographic_level || 'municipality') === 'municipality').length} наблюдений</span><span>{syncLabel ? 'Обновлено ' + syncLabel : officialDataStatus === 'connected' ? 'Данные из Supabase' : 'Синхронизация не подтверждена'}</span><span>Концептуальная аналитика. Перед решением проверяйте первоисточник, сопоставимость и полноту ряда.</span></footer>
+  </section>;
 }
