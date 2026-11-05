@@ -144,7 +144,10 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     const comparable = signals.filter((s) => s.adverse != null);
     const adverse = comparable.filter((s) => s.adverse);
     return { ...m, signals, comparable, adverse, level: riskLevel(signals) };
-  }).filter((m) => municipalityId === 'ALL' || m.id === municipalityId), [municipalityRisks, category, municipalityId]);
+  }).filter((m) => municipalityId === 'ALL' || m.id === municipalityId).sort((a, b) => {
+    const priority = { red: 0, yellow: 1, green: 2, unknown: 3 };
+    return priority[a.level] - priority[b.level] || b.adverse.length - a.adverse.length || a.name.localeCompare(b.name, 'ru-RU');
+  }), [municipalityRisks, category, municipalityId]);
   const counts = useMemo(() => ({
     red: visibleRisks.filter((m) => m.level === 'red').length,
     yellow: visibleRisks.filter((m) => m.level === 'yellow').length,
