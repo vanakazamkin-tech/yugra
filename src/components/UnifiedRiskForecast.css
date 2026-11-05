@@ -41,3 +41,7 @@
 .unified-system .empty-state{padding:22px;border-radius:10px;background:var(--surface-soft,#f7f6f1);color:var(--text-secondary,#777);line-height:1.6}
 @media(max-width:900px){.unified-system .municipality-risk-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.unified-system .unified-pillar-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:650px){.unified-system .unified-tabs{width:100%;display:grid;grid-template-columns:1fr 1fr}.unified-system .unified-tabs button{font-size:11px;padding:9px 7px}.unified-system .unified-filters{display:grid;grid-template-columns:1fr}.unified-system .unified-filters label,.unified-system .unified-filters select,.unified-system .unified-filters input,.unified-system .unified-search input{width:100%;min-width:0}.unified-system .municipality-risk-summary,.unified-system .unified-signal-list,.unified-system .unified-forecast-controls{grid-template-columns:1fr}.unified-system .unified-pillar-grid{grid-template-columns:1fr 1fr}.unified-system .unified-kpis{grid-template-columns:1fr 1fr}}
+
+.unified-system .unified-muted{font-size:12px;line-height:1.55;color:var(--text-secondary,#777);margin-top:10px}
+.unified-system .unified-section .table-scroll{max-width:100%;overflow-x:auto}
+.unified-system .unified-section table td{vertical-align:top}
