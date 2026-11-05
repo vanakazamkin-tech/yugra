@@ -1896,7 +1896,7 @@ export const InvestmentDetails = () => {
                       <span><small>Исполнено</small><strong>{formatNumber(item.executed_budget_thousand / 1000, 2)} млн ₽</strong></span>
                       <span><small>Доля исполнения</small><strong>{formatNumber(item.execution_percent, 1)}%</strong></span>
                     </div>
-                    <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a>
+                    {item.source_url ? <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a> : <span>Источник не указан</span>}
                   </article>;
                 })}
               </div>
