@@ -22,10 +22,12 @@ const classify = (row) => {
   return PILLARS.find((p) => p.match.test(text)) || { key: 'other', title: 'Прочие показатели', note: 'Дополнительные показатели проекта' };
 };
 const directionFor = (row) => {
-  const s = (safeText(row.indicator_code) + ' ' + safeText(row.indicator_name)).toLowerCase();
-  if (/(unemploy|безработ|debt|deficit|arrears|просроч|аварийн|износ|смертн|выбывш)/i.test(s)) return 'lower';
-  if (/(employment|employee|работник|занят|salary|wage|income|зарплат|заработ|доход насел|investment|инвестици|sme|предприним|мсп)/i.test(s)) return 'higher';
-  // Для миграции, численности населения, бюджетных сумм и оборотов направление само по себе не означает улучшение.
+  const code = safeText(row.indicator_code).toLowerCase();
+  const s = (code + ' ' + safeText(row.indicator_name)).toLowerCase();
+  // Направление задаётся только для показателей, где знак изменения можно объяснить без скрытых допущений.
+  if (/(unemploy|registered_unemployed|poverty|below_poverty|death_rate|mortality|noncompliant_roads|arrears|deficit|debt|аварийн|износ|смертн|бедност|безработ|не отвечающ.*норматив)/i.test(s)) return 'lower';
+  if (/(employment_share|sme_per_10k|real_disposable_income|real_income|industrial_production_index|physical_index|productivity|уровень занятости|доля занятых|индекс физического объём|индекс физического объем|реальн.*доход)/i.test(s)) return 'higher';
+  // Абсолютные номинальные суммы, зарплаты без дефлятора, численность, миграция и обороты требуют контекста.
   return 'context';
 };
 const signature = (row) => {
@@ -166,6 +168,15 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     const group = series.filter((s) => s.pillar.key === p.key);
     return { ...p, count: group.length, territories: new Set(group.map((s) => s.municipalityId)).size, deteriorating: group.filter((s) => s.adverse === true).length };
   });
+  const coreCoverage = useMemo(() => {
+    const core = ['employment','income','budget','migration','investment'];
+    return core.map((key) => {
+      const pillar = PILLARS.find((p) => p.key === key);
+      const items = series.filter((s) => s.pillar.key === key);
+      const territories = new Set(items.map((s) => s.municipalityId));
+      return { ...pillar, territories: territories.size, rows: items.length, missing: municipalities.filter((m) => !territories.has(m.id)).map((m) => m.name) };
+    });
+  }, [series, municipalities]);
   const selected = municipalityAnalysis.find((m) => m.id === (selectedMunicipality || municipalityId)) || municipalityAnalysis[0];
   const forecastOptions = useMemo(() => series.filter((s) => s.points.length >= 2 && signature(s.latest) === 'annual' && s.latest.numericValue > 0), [series]);
   const forecastSeries = forecastOptions.find((s) => s.key === selectedSeriesKey) || forecastOptions.find((s) => s.municipalityId === (municipalityId === 'ALL' ? selected?.id : municipalityId)) || forecastOptions[0] || null;
@@ -235,6 +246,11 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
       <section className="unified-section">
         <div className="unified-section-head"><div><h2>Покрытие ключевых направлений</h2><p>Показывает, где есть подтверждённые ряды, а где выводы пока ограничены отсутствием данных.</p></div><span>{rows.filter((r) => r.verification_status === 'verified' && (r.geographic_level || 'municipality') === 'municipality').length.toLocaleString('ru-RU')} подтверждённых наблюдений</span></div>
         <div className="unified-pillar-grid">{pillarSummary.filter((p) => ['employment','income','budget','migration','investment'].includes(p.key)).map((p) => <article className="unified-pillar" key={p.key}><strong>{p.title}</strong><div className="unified-track"><i style={{width: Math.min(100,p.territories / Math.max(1,municipalities.length) * 100) + '%'}}/></div><p><b>{p.territories}/{municipalities.length}</b> территорий · {p.count} временных рядов</p><small>{p.deteriorating} негативных сигналов · {p.note}</small></article>)}</div>
+      </section>
+      <section className="unified-section">
+        <div className="unified-section-head"><div><h2>Покрытие ключевых направлений по территориям</h2><p>Показывает реальное наличие подтверждённых рядов, а не оценку благополучия. Нажмите на направление, чтобы отфильтровать реестр.</p></div><span>{municipalities.length} муниципалитетов в справочнике</span></div>
+        <div className="table-scroll"><table className="ranking-table"><thead><tr><th>Направление</th><th>Территорий с данными</th><th>Временных рядов</th><th>Где пока нет данных</th></tr></thead><tbody>{coreCoverage.map((p) => <tr key={p.key}><td><strong>{p.title}</strong></td><td>{p.territories}/{municipalities.length}</td><td>{p.rows}</td><td>{p.missing.length ? p.missing.join(', ') : 'Покрытие по всем территориям'}</td></tr>)}</tbody></table></div>
+        <p className="unified-muted">Наличие хотя бы одного ряда не означает наличие полной временной истории или сопоставимости всех муниципалитетов. Перед сравнением учитывайте единицы, период и методику.</p>
       </section>
       <section className="unified-section">
         <div className="unified-section-head"><div><h2>Сигналы, требующие проверки</h2><p>Показываем изменение только там, где направление показателя можно интерпретировать. Для контекстных рядов изменение не окрашивается как «хорошее» или «плохое».</p></div><span>{visibleSeries.filter((s) => s.adverse === true).length} негативных сигналов</span></div>
