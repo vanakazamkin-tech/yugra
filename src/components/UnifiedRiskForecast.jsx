@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { isEligibleAnnualForecastSeries } from '../lib/forecastCoverage.js';
 import './UnifiedRiskForecast.css';
 
 const PILLARS = [
@@ -181,18 +182,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     });
   }, [series, municipalities]);
   const selected = municipalityAnalysis.find((m) => m.id === (selectedMunicipality || municipalityId)) || municipalityAnalysis[0];
-  const forecastOptions = useMemo(() => series.filter((s) => {
-    if (s.points.length < 2 || signature(s.latest) !== 'annual') return false;
-    // Forecast only strictly positive annual series with valid, strictly increasing years.
-    let previousYear = null;
-    for (const point of s.points) {
-      const year = Number(point.reference_year);
-      if (!Number.isInteger(year) || year < 1900 || year > new Date().getFullYear() + 1) return false;
-      if (!(point.numericValue > 0) || (previousYear !== null && year <= previousYear)) return false;
-      previousYear = year;
-    }
-    return true;
-  }), [series]);
+  const forecastOptions = useMemo(() => series.filter((s) => signature(s.latest) === 'annual' && isEligibleAnnualForecastSeries(s)), [series]);
   const forecastSeries = forecastOptions.find((s) => s.key === selectedSeriesKey) || forecastOptions.find((s) => s.municipalityId === (municipalityId === 'ALL' ? selected?.id : municipalityId)) || forecastOptions[0] || null;
   const forecastMunicipality = forecastSeries ? municipalityNames.get(forecastSeries.municipalityId) || forecastSeries.municipalityId : '—';
   const history = forecastSeries?.points || [];
