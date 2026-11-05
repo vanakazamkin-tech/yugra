@@ -223,11 +223,18 @@ export const InvestmentDetails = () => {
       }
     };
 
+    const syncWhenActive = () => {
+      if (document.visibilityState === 'visible') syncMunicipalities();
+    };
     syncMunicipalities();
     const intervalId = window.setInterval(syncMunicipalities, 60_000);
+    document.addEventListener('visibilitychange', syncWhenActive);
+    window.addEventListener('online', syncMunicipalities);
     return () => {
       cancelled = true;
       window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', syncWhenActive);
+      window.removeEventListener('online', syncMunicipalities);
     };
     // lastSyncedAt не включается намеренно: интервал должен создаваться один раз.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -266,11 +273,18 @@ export const InvestmentDetails = () => {
       }
     };
 
+    const refreshOfficialDataWhenActive = () => {
+      if (document.visibilityState === 'visible') loadOfficialData();
+    };
     loadOfficialData();
     const intervalId = window.setInterval(loadOfficialData, 300_000);
+    document.addEventListener('visibilitychange', refreshOfficialDataWhenActive);
+    window.addEventListener('online', loadOfficialData);
     return () => {
       cancelled = true;
       window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', refreshOfficialDataWhenActive);
+      window.removeEventListener('online', loadOfficialData);
     };
   }, [syncAttempt]);
 
