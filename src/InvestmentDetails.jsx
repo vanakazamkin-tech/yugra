@@ -670,13 +670,19 @@ export const InvestmentDetails = () => {
       .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ru-RU'));
   }, [officialDataSources, sourceSearch, sourceStatusFilter]);
 
-  const programExecutionSummary = useMemo(() => ({
-    count: programExecution.length,
-    latest: programExecution.length ? programExecution[0] : null,
-    averageExecution: programExecution.length
-      ? programExecution.reduce((sum, item) => sum + Number(item.execution_percent || 0), 0) / programExecution.length
-      : null,
-  }), [programExecution]);
+  const programExecutionSummary = useMemo(() => {
+    const executionValues = programExecution
+      .map((item) => numericValue(item.execution_percent))
+      .filter((value) => value != null && value >= 0 && value <= 100);
+    return {
+      count: programExecution.length,
+      latest: programExecution.length ? programExecution[0] : null,
+      averageExecution: executionValues.length
+        ? executionValues.reduce((sum, value) => sum + value, 0) / executionValues.length
+        : null,
+      executionCoverage: executionValues.length,
+    };
+  }, [programExecution]);
 
   const investmentSiteSummary = useMemo(() => {
     const greenfield = investmentSites.filter((site) => site.site_type?.toLocaleLowerCase('ru-RU') === 'гринфилд');
