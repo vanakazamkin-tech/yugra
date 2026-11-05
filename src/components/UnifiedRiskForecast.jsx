@@ -75,9 +75,9 @@ function riskLevel(signals) {
   return comparable.length >= 3 ? 'green' : 'unknown';
 }
 const DEFAULT_SCENARIOS = [
-  { key: 'pessimistic', title: 'Стресс-сценарий', adjustment: -5, uncertainty: 8, description: 'Ухудшение внешней конъюнктуры, рост издержек и усиление кадрового дефицита.' },
-  { key: 'base', title: 'Базовый сценарий', adjustment: 0, uncertainty: 4, description: 'Продолжение наблюдаемой динамики без дополнительных шоков.' },
-  { key: 'optimistic', title: 'Благоприятный сценарий', adjustment: 5, uncertainty: 4, description: 'Улучшение деловой активности и реализация мер поддержки.' },
+  { key: 'pessimistic', title: 'Стресс-сценарий', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty: 18, description: 'Ухудшение внешней конъюнктуры, рост издержек и усиление кадрового дефицита.' },
+  { key: 'base', title: 'Базовый сценарий', investment_growth_rate: 4, sme_growth_rate: 3, score_growth_rate: 1.5, uncertainty: 7, description: 'Продолжение наблюдаемых тенденций без дополнительных шоков.' },
+  { key: 'optimistic', title: 'Благоприятный сценарий', investment_growth_rate: 8, sme_growth_rate: 6, score_growth_rate: 3, uncertainty: 12, description: 'Улучшение деловой активности и реализация мер поддержки.' },
 ];
 
 export default function UnifiedRiskForecast({ municipalities = [], officialIndicators = [], programExecution = [], supabase, isSupabaseConfigured, officialDataStatus = 'offline', officialDataSyncedAt = null, investmentSites = [], fuelPrices = [], facilities = [] }) {
@@ -87,7 +87,6 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
   const [search, setSearch] = useState('');
   const [selectedIndicator, setSelectedIndicator] = useState('');
   const [horizon, setHorizon] = useState(3);
-  const [scenarioKey, setScenarioKey] = useState('base');
   const [shock, setShock] = useState(0);
   const [scenarios, setScenarios] = useState(DEFAULT_SCENARIOS);
   const [scenarioSource, setScenarioSource] = useState('локальные шаблоны');
@@ -98,9 +97,8 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
       if (!supabase || !isSupabaseConfigured) return;
       const result = await supabase.from('forecast_scenarios').select('key,title,summary,investment_growth_rate,sme_growth_rate,score_growth_rate,uncertainty_rate,display_order').eq('is_active', true).order('display_order', { ascending: true });
       if (cancelled || result.error || !Array.isArray(result.data) || !result.data.length) return;
-      setScenarios(result.data.map((s) => ({ key: s.key, title: s.title, description: s.summary, adjustment: Number(s.score_growth_rate || 0), uncertainty: Number(s.uncertainty_rate || 5) })));
+      setScenarios(result.data.map((s) => ({ key: s.key === 'cautious' ? 'pessimistic' : s.key === 'ambitious' ? 'optimistic' : s.key, title: s.title, description: s.summary, investment_growth_rate: Number(s.investment_growth_rate || 0), sme_growth_rate: Number(s.sme_growth_rate || 0), score_growth_rate: Number(s.score_growth_rate || 0), uncertainty: Number(s.uncertainty_rate || 5) })));
       setScenarioSource('Supabase');
-      if (result.data.some((s) => s.key === 'base')) setScenarioKey('base');
     }
     load();
     return () => { cancelled = true; };
@@ -164,17 +162,25 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
   const activeIndicator = indicatorOptions.find((x) => x.key === selectedIndicator) || indicatorOptions[0] || null;
   const forecastMunicipalityId = municipalityId === 'ALL' ? (series.find((s) => activeIndicator && s.code === activeIndicator.code && s.unit === activeIndicator.unit)?.municipalityId || municipalities[0]?.id || '') : municipalityId;
   const forecastSeries = activeIndicator ? series.filter((s) => s.municipalityId === forecastMunicipalityId && s.code === activeIndicator.code && s.unit === activeIndicator.unit).sort((a,b) => b.latest.order - a.latest.order)[0] : null;
-  const scenario = scenarios.find((s) => s.key === scenarioKey) || scenarios[0];
   const baseline = forecastSeries?.latest?.numericValue ?? null;
   const observedTrend = forecastSeries?.changePercent;
   const annualTrend = observedTrend == null ? 0 : Math.max(-50, Math.min(50, observedTrend));
-  const baseRate = annualTrend + shock + Number(scenario?.adjustment || 0);
-  const uncertainty = Math.abs(Number(scenario?.uncertainty || 5));
-  const forecastRows = scenario && baseline != null ? [
-    { key: 'pessimistic', title: 'Стресс', rate: baseRate - uncertainty, value: baseline * Math.pow(Math.max(0.01, 1 + (baseRate - uncertainty) / 100), horizon) },
-    { key: 'base', title: 'Базовый', rate: baseRate, value: baseline * Math.pow(Math.max(0.01, 1 + baseRate / 100), horizon) },
-    { key: 'optimistic', title: 'Благоприятный', rate: baseRate + uncertainty, value: baseline * Math.pow(Math.max(0.01, 1 + (baseRate + uncertainty) / 100), horizon) },
-  ] : [];
+  const rateField = activeIndicator?.pillar.key === 'investment' ? 'investment_growth_rate' : activeIndicator?.pillar.key === 'business' ? 'sme_growth_rate' : 'score_growth_rate';
+  const forecastRows = baseline != null ? scenarios.map((s) => {
+    const rate = annualTrend + Number(s[rateField] || 0) + shock;
+    const uncertainty = Math.abs(Number(s.uncertainty || 5));
+    const lowRate = rate - uncertainty;
+    const highRate = rate + uncertainty;
+    return {
+      key: s.key,
+      title: s.title,
+      rate,
+      value: baseline * Math.pow(Math.max(0.01, 1 + rate / 100), horizon),
+      lowValue: baseline * Math.pow(Math.max(0.01, 1 + lowRate / 100), horizon),
+      highValue: baseline * Math.pow(Math.max(0.01, 1 + highRate / 100), horizon),
+      uncertainty,
+    };
+  }) : [];
   const maxForecast = Math.max(1, ...forecastRows.map((r) => r.value));
   const municipalRows = officialIndicators.filter((i) => i.verification_status === 'verified' && (i.geographic_level || 'municipality') === 'municipality');
   const coverageCount = new Set(municipalRows.map((i) => i.municipality_id)).size;
@@ -241,10 +247,9 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
           <label>Сценарное отклонение от тренда <strong>{shock > 0 ? '+' : ''}{fmt(shock,1)} п.п.</strong><input type="range" min="-15" max="15" step="0.5" value={shock} onChange={(e) => setShock(Number(e.target.value))}/></label>
         </div>
         <div className="unified-base-card"><div><span>Муниципалитет расчёта</span><strong>{municipalityName.get(forecastMunicipalityId) || '—'}</strong></div><div><span>Последнее подтверждённое значение</span><strong>{fmt(baseline,2)} {forecastSeries?.unit || ''}</strong></div><div><span>Наблюдаемое изменение</span><strong>{signed(observedTrend)}</strong></div><div><span>Базовый период</span><strong>{forecastSeries?.latest?.reference_period || forecastSeries?.latest?.reference_year || '—'}</strong></div></div>
-        {forecastRows.length ? <div className="unified-scenario-grid">{forecastRows.map((r) => <article key={r.key} className={'unified-scenario scenario-' + r.key}><span>{r.title}</span><strong>{fmt(r.value,2)} <small>{forecastSeries?.unit}</small></strong><p>{r.rate > 0 ? '+' : ''}{fmt(r.rate,1)}% в год · горизонт {horizon} г.</p><div className="unified-track"><i style={{ width: Math.max(2, r.value / maxForecast * 100) + '%' }}/></div></article>)}</div> : <div className="empty-state"><span>Нет выбранного ряда для прогноза</span><p>Для выбранного показателя и территории пока нет подтверждённого значения.</p></div>}
+        {forecastRows.length ? <div className="unified-scenario-grid">{forecastRows.map((r) => <article key={r.key} className={'unified-scenario scenario-' + r.key}><span>{r.title}</span><strong>{fmt(r.value,2)} <small>{forecastSeries?.unit}</small></strong><p>{r.rate > 0 ? '+' : ''}{fmt(r.rate,1)}% в год · диапазон {fmt(r.lowValue,2)}–{fmt(r.highValue,2)} · горизонт {horizon} г.</p><div className="unified-track"><i style={{ width: Math.max(2, r.value / maxForecast * 100) + '%' }}/></div></article>)}</div> : <div className="empty-state"><span>Нет выбранного ряда для прогноза</span><p>Для выбранного показателя и территории пока нет подтверждённого значения.</p></div>}
         <div className="unified-method-note"><strong>Как читать расчёт.</strong> Если доступны два сопоставимых периода, базовая траектория продолжает наблюдаемое изменение; при отсутствии истории используется нулевой тренд и это не считается статистическим прогнозом. Стресс- и благоприятная траектории задают диапазон чувствительности. Это what-if модель, не прогноз вероятности.</div>
-        <div className="unified-section-head"><div><h3>Допущения сценариев</h3><p>Настройки из базы сценариев проекта.</p></div><select value={scenarioKey} onChange={(e) => setScenarioKey(e.target.value)}>{scenarios.map((s) => <option key={s.key} value={s.key}>{s.title}</option>)}</select></div>
-        <p>{scenario?.description || 'Сценарные допущения загружены из базы проекта.'}</p>
+        <div className="unified-method-note"><strong>Параметры сценариев.</strong> Темп для инвестиций берётся из инвестиционного допущения, для предпринимательства — из допущения по МСП, для остальных показателей — из общего сценарного темпа. Наблюдаемая динамика и пользовательский шок добавляются отдельно. Диапазон чувствительности рассчитывается по неопределённости каждого сценария. Источник настроек: {scenarioSource}.</div>
       </section>}
 
       {mode === 'indicators' && <section className="unified-section">
