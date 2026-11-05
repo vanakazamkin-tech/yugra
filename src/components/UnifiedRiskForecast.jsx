@@ -193,7 +193,8 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
   const exportCsv = (data, name) => {
     const escape = (v) => {
       let x = String(v ?? '');
-      if (typeof v === 'string' && /^[\\s]*[=+\\-@\\t\\r]/.test(x)) x = "'" + x;
+      const first = x.trimStart()[0];
+      if (typeof v === 'string' && ['=', '+', '-', '@'].includes(first) || first === String.fromCharCode(9) || first === String.fromCharCode(13)) x = "'" + x;
       return '"' + x.replaceAll('"', '""') + '"';
     };
     const csv = '\uFEFF' + data.map((r) => r.map(escape).join(';')).join('\r\n');
