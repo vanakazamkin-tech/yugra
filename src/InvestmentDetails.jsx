@@ -877,10 +877,14 @@ export const InvestmentDetails = () => {
     const periods = new Map();
     officialIndicators.filter((item) =>
       item.indicator_code === series.code
-      && (item.geographic_level || 'municipality') === geographyLevel
+      && item.verification_status === 'verified'
+      && item.geographic_level === geographyLevel
+      && item.municipality_id != null
+      && String(item.municipality_id).trim() !== ''
+      && (!item.unit || item.unit === series.unit)
       && numericValue(item.value) != null
     ).forEach((item) => {
-      const periodKey = `${item.reference_year}|${item.reference_period || 'annual'}`;
+      const periodKey = `${item.reference_year}|${item.reference_period || 'annual'}|${item.unit || series.unit}`;
       if (!periods.has(periodKey)) periods.set(periodKey, new Set());
       periods.get(periodKey).add(item.municipality_id);
     });
@@ -896,10 +900,13 @@ export const InvestmentDetails = () => {
     const seen = new Map();
     officialIndicators.filter((item) =>
       item.indicator_code === effectiveOfficialComparisonCode
-      && (item.geographic_level || 'municipality') === geographyLevel
+      && item.verification_status === 'verified'
+      && item.geographic_level === geographyLevel
+      && item.municipality_id != null
+      && String(item.municipality_id).trim() !== ''
       && numericValue(item.value) != null
     ).forEach((item) => {
-      const key = String(item.reference_year) + '|' + String(item.reference_period || 'annual');
+      const key = String(item.reference_year) + '|' + String(item.reference_period || 'annual') + '|' + String(item.unit || '');
       if (!seen.has(key)) seen.set(key, {
         key,
         year: Number(item.reference_year),
@@ -933,8 +940,12 @@ export const InvestmentDetails = () => {
     const geographyLevel = officialComparisonConfig.geographicLevel || 'municipality';
     return officialIndicators.filter((item) =>
       item.indicator_code === effectiveOfficialComparisonCode
-      && (item.geographic_level || 'municipality') === geographyLevel
-      && `${item.reference_year}|${item.reference_period || 'annual'}` === effectiveOfficialComparisonPeriod
+      && item.verification_status === 'verified'
+      && item.geographic_level === geographyLevel
+      && item.municipality_id != null
+      && String(item.municipality_id).trim() !== ''
+      && `${item.reference_year}|${item.reference_period || 'annual'}|${item.unit || ''}` === effectiveOfficialComparisonPeriod
+      && (!item.unit || item.unit === officialComparisonConfig.unit)
       && numericValue(item.value) != null
     ).map((item) => ({
       ...item,
