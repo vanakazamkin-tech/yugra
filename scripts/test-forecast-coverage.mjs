@@ -37,3 +37,12 @@ assert.equal(byKey.migration.municipalityCount, 2);
 assert.equal(byKey.migration.observationCount, 2);
 assert.equal(byKey.migration.latestYear, 2023);
 console.log('Forecast coverage classification test passed.');
+
+
+import { isEligibleAnnualForecastSeries } from '../src/lib/forecastCoverage.js';
+assert.equal(isEligibleAnnualForecastSeries({ points: [{reference_year:2022,numericValue:100},{reference_year:2024,numericValue:110}] }, 2026), true);
+assert.equal(isEligibleAnnualForecastSeries({ points: [{reference_year:2024,numericValue:10}] }, 2026), false);
+assert.equal(isEligibleAnnualForecastSeries({ points: [{reference_year:2022,numericValue:100},{reference_year:2023,numericValue:0}] }, 2026), false);
+assert.equal(isEligibleAnnualForecastSeries({ points: [{reference_year:2023,numericValue:100},{reference_year:2023,numericValue:110}] }, 2026), false);
+assert.equal(isEligibleAnnualForecastSeries({ points: [{reference_year:2027,numericValue:100},{reference_year:2028,numericValue:110}] }, 2026), false);
+console.log('Annual forecast eligibility tests passed.');
