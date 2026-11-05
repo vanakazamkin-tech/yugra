@@ -106,7 +106,19 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     return () => { cancelled = true; };
   }, [supabase, isSupabaseConfigured]);
 
-  const series = useMemo(() => buildSeries(officialIndicators), [officialIndicators]);
+  const indicatorRows = useMemo(() => officialIndicators.concat((programExecution || []).map((item) => ({
+    municipality_id: item.municipality_id,
+    indicator_code: 'municipal_program_execution_rate',
+    indicator_name: 'Исполнение муниципальных программ',
+    reference_year: Number(String(item.report_date || '').slice(0, 4)) || null,
+    reference_period: item.report_date || '',
+    value: item.execution_percent,
+    unit: '%',
+    source_url: item.source_url,
+    verification_status: item.verification_status,
+    geographic_level: 'municipality',
+  }))), [officialIndicators, programExecution]);
+  const series = useMemo(() => buildSeries(indicatorRows), [indicatorRows]);
   const municipalityName = useMemo(() => new Map(municipalities.map((m) => [m.id, m.name])), [municipalities]);
   const filteredSeries = useMemo(() => series.filter((s) =>
     (municipalityId === 'ALL' || s.municipalityId === municipalityId)
@@ -144,13 +156,13 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     return [...map.values()].sort((a,b) => a.pillar.title.localeCompare(b.pillar.title, 'ru-RU') || a.name.localeCompare(b.name, 'ru-RU'));
   }, [series]);
   const activeIndicator = indicatorOptions.find((x) => x.key === selectedIndicator) || indicatorOptions[0] || null;
-  const forecastMunicipalityId = municipalityId === 'ALL' ? (municipalities[0]?.id || '') : municipalityId;
+  const forecastMunicipalityId = municipalityId === 'ALL' ? (series.find((s) => activeIndicator && s.code === activeIndicator.code && s.unit === activeIndicator.unit)?.municipalityId || municipalities[0]?.id || '') : municipalityId;
   const forecastSeries = activeIndicator ? series.filter((s) => s.municipalityId === forecastMunicipalityId && s.code === activeIndicator.code && s.unit === activeIndicator.unit).sort((a,b) => b.latest.order - a.latest.order)[0] : null;
   const scenario = scenarios.find((s) => s.key === scenarioKey) || scenarios[0];
   const baseline = forecastSeries?.latest?.numericValue ?? null;
   const observedTrend = forecastSeries?.changePercent;
   const annualTrend = observedTrend == null ? 0 : Math.max(-50, Math.min(50, observedTrend));
-  const baseRate = annualTrend + shock;
+  const baseRate = annualTrend + shock + Number(scenario?.adjustment || 0);
   const uncertainty = Math.abs(Number(scenario?.uncertainty || 5));
   const forecastRows = scenario && baseline != null ? [
     { key: 'pessimistic', title: 'Стресс', rate: baseRate - uncertainty, value: baseline * Math.pow(Math.max(0.01, 1 + (baseRate - uncertainty) / 100), horizon) },
