@@ -16,7 +16,11 @@ const number = (v) => v == null || v === '' || !Number.isFinite(Number(v)) ? nul
 const fmt = (v, digits = 1) => v == null || !Number.isFinite(Number(v)) ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: digits }).format(Number(v));
 const pct = (v) => v == null ? '—' : (v > 0 ? '+' : '') + fmt(v, 1) + '%';
 const safeText = (v) => String(v ?? '').trim();
-const classify = (row) => PILLARS.find((p) => p.match.test(safeText(row.indicator_code) + ' ' + safeText(row.indicator_name))) || { key: 'other', title: 'Прочие показатели', note: 'Дополнительные показатели проекта' };
+const classify = (row) => {
+  const text = safeText(row.indicator_code) + ' ' + safeText(row.indicator_name);
+  if (/(sme|small_business|entrepreneur|мсп|предприним)/i.test(text)) return PILLARS.find((p) => p.key === 'business');
+  return PILLARS.find((p) => p.match.test(text)) || { key: 'other', title: 'Прочие показатели', note: 'Дополнительные показатели проекта' };
+};
 const directionFor = (row) => {
   const s = (safeText(row.indicator_code) + ' ' + safeText(row.indicator_name)).toLowerCase();
   if (/(unemploy|безработ|debt|deficit|arrears|просроч|аварийн|износ|смертн|выбывш)/i.test(s)) return 'lower';
@@ -83,7 +87,7 @@ function assess(signals) {
   const usable = signals.filter((s) => s.adverse !== null);
   const bad = usable.filter((s) => s.adverse);
   if (usable.length < 2) return { level: 'insufficient', usable, bad };
-  if (bad.length >= 3) return { level: 'critical', usable, bad };
+  if (bad.length >= 3 && new Set(bad.map((s) => s.pillar.key)).size >= 2) return { level: 'critical', usable, bad };
   if (bad.length > 0) return { level: 'watch', usable, bad };
   return { level: 'stable', usable, bad };
 }
@@ -163,7 +167,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     return { ...p, count: group.length, territories: new Set(group.map((s) => s.municipalityId)).size, deteriorating: group.filter((s) => s.adverse === true).length };
   });
   const selected = municipalityAnalysis.find((m) => m.id === (selectedMunicipality || municipalityId)) || municipalityAnalysis[0];
-  const forecastOptions = useMemo(() => series.filter((s) => s.points.length >= 2 && signature(s.latest) === 'annual'), [series]);
+  const forecastOptions = useMemo(() => series.filter((s) => s.points.length >= 2 && signature(s.latest) === 'annual' && s.latest.numericValue > 0), [series]);
   const forecastSeries = forecastOptions.find((s) => s.key === selectedSeriesKey) || forecastOptions.find((s) => s.municipalityId === (municipalityId === 'ALL' ? selected?.id : municipalityId)) || forecastOptions[0] || null;
   const forecastMunicipality = forecastSeries ? municipalityNames.get(forecastSeries.municipalityId) || forecastSeries.municipalityId : '—';
   const history = forecastSeries?.points || [];
@@ -175,9 +179,9 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
   const observedRate = annualRates.length ? annualRates[annualRates.length - 1] : 0;
   const stableRate = annualRates.length ? annualRates.reduce((a, b) => a + b, 0) / annualRates.length : 0;
   const baseRate = annualRates.length > 1 ? stableRate * 0.5 + observedRate * 0.5 : observedRate;
-  const scenarioField = forecastSeries?.pillar.key === 'investment' ? 'investment_growth_rate' : forecastSeries?.pillar.key === 'business' ? 'sme_growth_rate' : 'score_growth_rate';
+  const scenarioField = forecastSeries?.pillar.key === 'investment' ? 'investment_growth_rate' : forecastSeries?.pillar.key === 'business' ? 'sme_growth_rate' : null;
   const forecastRows = forecastSeries ? scenarios.map((s) => {
-    const assumption = Number(s[scenarioField] ?? 0);
+    const assumption = scenarioField ? Number(s[scenarioField] ?? 0) : 0;
     const rate = baseRate + assumption + extraShock;
     const value = forecastSeries.latest.numericValue * Math.pow(Math.max(0.01, 1 + rate / 100), horizon);
     const uncertainty = Math.max(0, Number(s.uncertainty_rate ?? 0));
@@ -259,7 +263,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
       </div>
       {forecastSeries ? <>
         <div className="unified-base-card"><div><span>Последнее фактическое значение</span><strong>{fmt(forecastSeries.latest.numericValue,2)} {forecastSeries.unit}</strong></div><div><span>Последний год</span><strong>{lastYear}</strong></div><div><span>Наблюдений в ряду</span><strong>{history.length}</strong></div><div><span>Средний исторический темп</span><strong>{pct(stableRate)}</strong></div></div>
-        <div className="unified-explanation"><h3>Как читать прогноз</h3><p>Базовая динамика оценивается по среднему годовому темпу доступных фактических наблюдений. Сценарные параметры из {scenarioSource} задают дополнительное отклонение для инвестиций, МСП или общего индекса. Для остальных показателей используется только наблюдаемая динамика и пользовательский шок. Это анализ чувствительности, не обученная модель и не вероятность наступления сценария.</p></div>
+        <div className="unified-explanation"><h3>Как читать прогноз</h3><p>Базовая динамика оценивается по среднему годовому темпу доступных фактических наблюдений. Сценарные параметры из {scenarioSource} задают дополнительное отклонение только для инвестиций и показателей МСП. Для остальных показателей используется только наблюдаемая динамика и пользовательский шок, чтобы не переносить неподходящие допущения на другие экономические величины. Это анализ чувствительности, не обученная модель и не вероятность наступления сценария.</p></div>
         <div className="unified-scenario-grid">{forecastRows.map((r) => <article key={r.key} className={'unified-scenario scenario-' + r.key}><span>{r.title}</span><strong>{fmt(r.value,2)} <small>{forecastSeries.unit}</small></strong><p>{pct(r.rate)} в год · диапазон {fmt(r.low,2)}–{fmt(r.high,2)} · через {horizon} г.</p><div className="unified-track"><i style={{width: Math.max(2,Math.min(100,Math.abs(r.value)/(Math.max(1,...forecastRows.map((x) => Math.abs(x.value))))*100)) + '%'}}/></div><small>{r.summary || ''}</small></article>)}</div>
         {history.length < 3 && <div className="unified-warning"><strong>Ограниченная история.</strong> В ряду только два наблюдения. Темп между ними нестабилен и не позволяет проверить качество прогноза на прошлых периодах. Используйте сценарии как ориентир чувствительности.</div>}
         <div className="table-scroll"><table className="ranking-table"><thead><tr><th>Фактический год</th><th>Фактическое значение</th><th>Изменение к предыдущему году</th></tr></thead><tbody>{history.map((p,i) => <tr key={i}><td>{p.reference_year || periodLabel(p)}</td><td>{fmt(p.numericValue,2)} {forecastSeries.unit}</td><td>{i ? pct((p.numericValue/history[i-1].numericValue-1)*100) : 'Базовое наблюдение'}</td></tr>)}</tbody></table></div>
