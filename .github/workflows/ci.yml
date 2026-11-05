@@ -35,5 +35,7 @@ jobs:
         run: node scripts/test-risk-data-gates.mjs
       - name: Test official comparison comparability
         run: node scripts/test-official-comparison-gates.mjs
+      - name: Test analytical report official-data gates
+        run: node scripts/test-report-official-data-gates.mjs
       - name: Build production bundle
         run: npm run build
