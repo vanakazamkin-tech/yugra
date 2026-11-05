@@ -52,8 +52,10 @@ const periodOrder = (row) => {
 function buildSeries(rows) {
   const groups = new Map();
   (Array.isArray(rows) ? rows : []).forEach((row) => {
-    if (!row || (row.verification_status && row.verification_status !== 'verified')) return;
-    if ((row.geographic_level || 'municipality') !== 'municipality') return;
+    // Риск-оценка строится только на явно подтверждённых муниципальных наблюдениях.
+    // Отсутствующий статус или геоуровень не считаются подтверждением.
+    if (!row || row.verification_status !== 'verified') return;
+    if (row.geographic_level !== 'municipality') return;
     const value = number(row.value);
     if (value == null || !safeText(row.municipality_id) || !safeText(row.indicator_code)) return;
     const key = [row.municipality_id, row.indicator_code, row.unit || '', signature(row)].join('|');
