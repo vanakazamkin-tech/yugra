@@ -66,7 +66,8 @@ function buildSeries(rows) {
   groups.forEach((items, key) => {
     const unique = new Map();
     items.forEach((item) => {
-      const natural = [item.reference_year, item.reference_period, item.source_id].join('|');
+      // Один временной срез не должен превращаться в несколько точек из-за разных источников.
+      const natural = [item.reference_year, signature(item)].join('|');
       if (!unique.has(natural) || new Date(item.retrieved_at || 0) > new Date(unique.get(natural).retrieved_at || 0)) unique.set(natural, item);
     });
     const points = [...unique.values()].sort((a, b) => a.order - b.order);
@@ -180,7 +181,18 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     });
   }, [series, municipalities]);
   const selected = municipalityAnalysis.find((m) => m.id === (selectedMunicipality || municipalityId)) || municipalityAnalysis[0];
-  const forecastOptions = useMemo(() => series.filter((s) => s.points.length >= 2 && signature(s.latest) === 'annual' && s.latest.numericValue > 0), [series]);
+  const forecastOptions = useMemo(() => series.filter((s) => {
+    if (s.points.length < 2 || signature(s.latest) !== 'annual') return false;
+    // Forecast only strictly positive annual series with valid, strictly increasing years.
+    let previousYear = null;
+    for (const point of s.points) {
+      const year = Number(point.reference_year);
+      if (!Number.isInteger(year) || year < 1900 || year > new Date().getFullYear() + 1) return false;
+      if (!(point.numericValue > 0) || (previousYear !== null && year <= previousYear)) return false;
+      previousYear = year;
+    }
+    return true;
+  }), [series]);
   const forecastSeries = forecastOptions.find((s) => s.key === selectedSeriesKey) || forecastOptions.find((s) => s.municipalityId === (municipalityId === 'ALL' ? selected?.id : municipalityId)) || forecastOptions[0] || null;
   const forecastMunicipality = forecastSeries ? municipalityNames.get(forecastSeries.municipalityId) || forecastSeries.municipalityId : '—';
   const history = forecastSeries?.points || [];
