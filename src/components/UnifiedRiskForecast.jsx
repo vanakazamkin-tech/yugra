@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import './UnifiedRiskForecast.css';
 
 const PILLARS = [
-  { key: 'employment', title: 'Занятость', match: /(employ|employee|unemploy|работник|занятост|безработ)/i, direction: 'higher', note: 'Рабочие места, занятость, безработица и кадровая обеспеченность' },
-  { key: 'income', title: 'Доходы населения', match: /(salary|wage|income|зарплат|заработ|доход насел|пенси)/i, direction: 'higher', note: 'Заработная плата и доступные показатели доходов' },
+  { key: 'employment', title: 'Занятость', match: /(employ|employee|unemploy|среднесписочн|численность занятых|численность работников|занятост|безработ)/i, direction: 'higher', note: 'Рабочие места, занятость, безработица и кадровая обеспеченность' },
+  { key: 'income', title: 'Доходы населения', match: /(salary|wage|income|зарплат|заработ|доход насел|пенси|среднемесячная оплата труда)/i, direction: 'higher', note: 'Заработная плата и доступные показатели доходов' },
   { key: 'budget', title: 'Местный бюджет', match: /(budget|revenue|expenditure|debt|deficit|бюджет|доходы бюджета|расходы бюджета|исполнени.*программ)/i, direction: 'higher', note: 'Доходы, расходы, исполнение программ и бюджетная устойчивость' },
   { key: 'migration', title: 'Миграция', match: /(migration|migrat|arrival|departure|миграц|прибывш|выбывш)/i, direction: 'context', note: 'Прибытие, выбытие и миграционное сальдо; покрытие пока ограничено' },
   { key: 'investment', title: 'Инвестиции', match: /(investment|capital_investment|инвестици|капиталовлож)/i, direction: 'higher', note: 'Инвестиции в основной капитал и инвестиционная активность' },
