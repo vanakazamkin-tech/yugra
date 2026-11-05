@@ -14,4 +14,10 @@ assert.match(selector, /year <= new Date\(\)\.getFullYear\(\) \+ 1/);
 assert.match(selector, /numericValue\(item\.value\) != null/);
 assert.match(selector, /String\(item\.indicator_code \|\| ''\)\.trim\(\) !== ''/);
 assert.doesNotMatch(selector, /item\.geographic_level\s*\|\|\s*'municipality'/);
+
+for (const label of ['Средний демо-балл', 'Демо-объём инвестиций', 'Демо-субъекты МСП', 'Средняя демо-оценка бизнеса']) {
+  assert.ok(source.includes(label), `report aggregate must visibly identify ${label} as conceptual demo data`);
+}
+assert.match(source, /сумма только по доступным значениям/);
+
 console.log('Analytical report official-data gates passed.');
