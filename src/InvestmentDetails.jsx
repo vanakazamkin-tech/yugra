@@ -1111,11 +1111,25 @@ export const InvestmentDetails = () => {
   }, [reportItems]);
   const reportOfficialIndicators = useMemo(() => {
     const ids = new Set(reportItems.map((item) => item.id));
+    const allowedGeographies = new Set(['municipality', 'settlement', 'region']);
     return officialIndicators
-      .filter((item) => ids.has(item.municipality_id) && item.verification_status === 'verified')
+      .filter((item) => {
+        const year = Number(item.reference_year);
+        return ids.has(item.municipality_id)
+          && item.verification_status === 'verified'
+          && allowedGeographies.has(item.geographic_level)
+          && item.municipality_id != null
+          && String(item.municipality_id).trim() !== ''
+          && Number.isInteger(year)
+          && year >= 1900
+          && year <= new Date().getFullYear() + 1
+          && numericValue(item.value) != null
+          && String(item.indicator_code || '').trim() !== '';
+      })
       .slice()
       .sort((a,b) => Number(b.reference_year)-Number(a.reference_year)
         || String(b.reference_period || '').localeCompare(String(a.reference_period || ''))
+        || String(a.geographic_level || '').localeCompare(String(b.geographic_level || ''))
         || String(a.indicator_name || '').localeCompare(String(b.indicator_name || ''), 'ru-RU'));
   }, [reportItems, officialIndicators]);
   const comparisonMetricDef = METRIC_BY_KEY[comparisonMetric] || METRICS[0];
@@ -1404,7 +1418,7 @@ export const InvestmentDetails = () => {
         {reportIncludeTable && <><h2>Детализация показателей</h2>{renderReportTable()}</>}
         {reportIncludeOfficialData && <section className="print-official-data">
           <h2>Проверенные официальные наблюдения ({reportOfficialIndicators.length})</h2>
-          <p>Отдельный слой фактических данных с первоисточниками. Географический уровень указан в каждой строке; поселковые данные не трактуются автоматически как данные всего района.</p>
+          <p>Отдельный слой фактических данных: только проверенные наблюдения с явным территориальным уровнем, корректным годом и числовым значением. Муниципальные, поселковые и региональные записи не объединяются в один территориальный итог; единица измерения и период указаны отдельно.</p>
           {reportOfficialIndicators.length ? <table className="report-official-data-table">
             <thead><tr><th>Территория / уровень</th><th>Показатель</th><th>Значение</th><th>Период</th><th>Примечание / источник</th></tr></thead>
             <tbody>{reportOfficialIndicators.map((item) => {
