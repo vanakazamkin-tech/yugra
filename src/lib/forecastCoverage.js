@@ -88,3 +88,22 @@ export function buildForecastCoverage(indicators = [], programExecution = [], mu
     };
   });
 }
+
+
+/**
+ * Forecast eligibility is deliberately strict: at least two positive annual
+ * observations, with valid and strictly increasing calendar years.
+ */
+export function isEligibleAnnualForecastSeries(series, currentYear = new Date().getFullYear()) {
+  if (!series || !Array.isArray(series.points) || series.points.length < 2) return false;
+  let previousYear = null;
+  for (const point of series.points) {
+    const year = Number(point?.reference_year);
+    const value = Number(point?.numericValue ?? point?.value);
+    if (!Number.isInteger(year) || year < 1900 || year > currentYear + 1) return false;
+    if (!Number.isFinite(value) || value <= 0) return false;
+    if (previousYear !== null && year <= previousYear) return false;
+    previousYear = year;
+  }
+  return true;
+}
