@@ -1380,10 +1380,10 @@ export const InvestmentDetails = () => {
   const renderReportSummary = () => (
     <div className="report-summary-grid">
       <div><span>Муниципалитеты в отчёте</span><strong>{reportSummary.count}</strong></div>
-      <div><span>Средний итоговый балл</span><strong>{formatNumber(reportSummary.avgScore, 1)}</strong></div>
-      <div><span>Объём инвестиций</span><strong>{formatNumber(reportSummary.investments, 1)} <small>млрд ₽</small></strong><small>данные по {reportSummary.investmentCoverage} из {reportSummary.count}</small></div>
-      <div><span>Субъекты МСП</span><strong>{formatNumber(reportSummary.sme)}</strong><small>данные по {reportSummary.smeCoverage} из {reportSummary.count}</small></div>
-      <div><span>Средняя оценка бизнеса</span><strong>{formatNumber(reportSummary.avgAssessment, 2)} <small>/ 5</small></strong></div>
+      <div><span>Средний демо-балл</span><strong>{formatNumber(reportSummary.avgScore, 1)}</strong></div>
+      <div><span>Демо-объём инвестиций</span><strong>{formatNumber(reportSummary.investments, 1)} <small>млрд ₽</small></strong><small>демо-значения по {reportSummary.investmentCoverage} из {reportSummary.count} муниципалитетов; сумма только по доступным значениям</small></div>
+      <div><span>Демо-субъекты МСП</span><strong>{formatNumber(reportSummary.sme)}</strong><small>демо-значения по {reportSummary.smeCoverage} из {reportSummary.count} муниципалитетов; сумма только по доступным значениям</small></div>
+      <div><span>Средняя демо-оценка бизнеса</span><strong>{formatNumber(reportSummary.avgAssessment, 2)} <small>/ 5</small></strong></div>
     </div>
   );
 
