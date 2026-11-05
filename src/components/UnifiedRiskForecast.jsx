@@ -123,7 +123,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
   const filteredSeries = useMemo(() => series.filter((s) =>
     (municipalityId === 'ALL' || s.municipalityId === municipalityId)
     && (category === 'ALL' || s.pillar.key === category)
-    && (!search || ((s.name + ' ' + s.code + ' ' + (municipalityName.get(s.municipalityId) || '')).toLocaleLowerCase('ru-RU').includes(search.toLocaleLowerCase('ru-RU')))
+    && (!search || (s.name + ' ' + s.code + ' ' + (municipalityName.get(s.municipalityId) || '')).toLowerCase().includes(search.toLowerCase()))
   ), [series, municipalityId, category, search, municipalityName]);
 
   const municipalityRisks = useMemo(() => municipalities.map((m) => {
