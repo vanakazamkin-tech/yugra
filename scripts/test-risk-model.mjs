@@ -188,8 +188,25 @@ assert.notEqual(economyHeavy.byMunicipality[1].score, labourHeavy.byMunicipality
 assert.ok(Math.abs(economyHeavy.pillars.reduce((sum, pillar) => sum + pillar.weight, 0) - 1) < 1e-9,
   'configured weights must normalize to 100 percent');
 assert.equal(economyHeavy.byMunicipality[1].availableWeight, 100,
-  'coverage must use the normalized configured weights');
-console.log('OK: configurable pillar weights normalize and recalculate the index.');
+  'configured weight coverage must use normalized user weights');
+assert.equal(economyHeavy.byMunicipality[1].baseCoverage, 40,
+  'fixed data coverage must remain based on the default methodology weights');
+
+const lowBaseFixture = ['demography', 'budget'].flatMap((code) =>
+  [1, 2, 3].map((municipalityId) => ({
+    municipalityId, code, unit: '%', direction: 'higher', adverse: null,
+    pillar: { key: code }, points: [{}],
+    latest: { numericValue: municipalityId * 10, reference_year: 2025, reference_period: 'annual' },
+  }))
+);
+const lowBaseModel = buildRiskModel(partialMunicipalities.slice(0, 3), lowBaseFixture, {
+  economy: 0, labour: 0, demography: 50, finance: 50, social: 0, infrastructure: 0,
+});
+assert.equal(lowBaseModel.byMunicipality[1].availableWeight, 100);
+assert.equal(lowBaseModel.byMunicipality[1].baseCoverage, 30);
+assert.equal(lowBaseModel.byMunicipality[1].score, null,
+  'user weight tuning must not bypass the fixed minimum data coverage');
+console.log('OK: configurable weights normalize while fixed data coverage and score eligibility remain stable.');
 
 
 
