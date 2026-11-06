@@ -634,3 +634,40 @@ PR #9 был перебазирован на текущий main `9f99481a384386
 PR #10 после очередного обновления head `593f3b3...` снова mergeable=true и его текущий CI success. PR #13 fail-open regression исправлен и проверен успешным forecast test/build run. PR #11 повторно прошёл migration integration.
 
 Последний QA docs commit `9599abc...` сам прошёл build job #42285675779 success. Vercel всё ещё сообщает `build-rate-limit`; это не результат GitHub build и не deployment. Общая сборка после semantic merge всех веток, browser E2E, responsive/accessibility и production Supabase validation ещё не выполнены.
+
+## QA-цикл: повторная проверка после новых commits (07.11.2026)
+
+### Текущие головы PR и CI
+
+| PR | Head SHA | CI | Дополнительное состояние |
+|---|---|---|---|
+| #8 | cfc4b1e90624df25d1d7d6261d9cd9b0c48ff427 | #42285552549 success | base актуальный main |
+| #9 | eeedd2d3c0e4fa56c8e1107aa4ab459a10c930fb | #42285480380 success | Draft; base актуальный main |
+| #10 | 312a1402517045bc2e73857bb103d286830c8588 | #42285817027 success | Draft; base актуальный main |
+| #11 | 4910b700c0a1967c7f738b0e114eccf77b29707e | #42285887441 failure | build failed; migration integration success |
+| #12 | f04809605f5a051abbeb3fe4f2cbda52bf2fa41a | #42285790649 success | Draft |
+| #13 | f51af582125a5daeb57ab827e77751e1e575cd67 | no run found for current head | mergeable=false; no current CI |
+
+PR #8/#9/#10 основаны на main 9f99481a3843862a17fd9cf640fee48b4ef901ba (behind 0). PR #11/#12/#13 основаны на fa006173aa096188a2f4eef0d2cb4bcfe135ae1c (behind 5). Сравнение с main: PR #11 ahead 128 / behind 5; PR #12 ahead 47 / behind 5; PR #13 ahead 55 / behind 5.
+
+### PR #11 — новый blocker в Rosstat coverage audit
+
+В run #42285887441:
+- data-migrations-integration — success;
+- build — failure в шаге Test data provenance and source catalog contracts.
+
+Лог указывает на scripts/test-data-quality-contract.mjs:57: тест ищет строку с пробелами verification_status <> 'verified', тогда как SQL записан без пробелов verification_status<>'verified'. Это поверхностное несовпадение regex и форматирования, но просмотр SQL обнаружил важный semantic defect: в PostgreSQL предикат verification_status <> 'verified' не считает NULL-статусы непроверенными (UNKNOWN). В результате nonverified_rows может не включать записи без статуса.
+
+В PR #11 оставлен blocker: использовать NULL-safe predicate, например verification_status IS DISTINCT FROM 'verified', и изменить тест так, чтобы проверялась семантика, включая NULL, а не форматирование пробелов. Не ослаблять тест простым удалением assertion.
+
+### PR #13 — новый head без CI
+
+Текущий head f51af582125a5daeb57ab827e77751e1e575cd67 не имеет обнаруженного workflow run; PR metadata показывает mergeable=false. Старый success на 494beff... не подтверждает новый SHA. В PR #13 оставлено замечание: устранить merge state, синхронизировать с main и повторить CI; сохранить fail-closed исправление forecast index mode.
+
+### PR #10 и #12
+
+PR #10 обновил head до 312a140...; текущий CI #42285817027 success. PR #12 head f048096... прошёл GitHub Actions #42285790649 success. Vercel build-rate-limit не является GitHub build result.
+
+## Обновлённый вердикт
+
+На этом снимке зелёные CI PR #8/#9/#10/#12; PR #11 имеет реальное падение build при успешной migration integration; PR #13 имеет новый head без CI и mergeable=false. Общая интеграционная сборка не сформирована. Ни одна из этих проверок не подтверждает production Supabase migration или production deployment. Browser E2E, responsive/accessibility остаются невыполненными.
