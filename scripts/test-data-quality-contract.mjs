@@ -59,7 +59,8 @@ assert.match(rosstatCoverageAudit, /8010001/, 'Rosstat coverage audit must inclu
 assert.match(rosstatCoverageAudit, /missing_municipalities/, 'Rosstat coverage audit must expose municipality gaps');
 assert.match(rosstatCoverageAudit, /rosstat_hmao_municipal_monitoring_2023_2025/, 'Rosstat coverage audit must expose municipal monitoring source readiness');
 assert.match(rosstatCoverageAudit, /rosstat_oktmo_open_data_2026_10/, 'Rosstat coverage audit must expose official OKTMO source readiness');
-assert.match(rosstatCoverageAudit, /verification_status <> 'verified'/, 'Rosstat coverage audit must distinguish non-verified observations');
+assert.equal([...rosstatCoverageAudit.matchAll(/verification_status IS DISTINCT FROM 'verified'/g)].length, 2, 'Rosstat coverage audit must count both unverified and NULL statuses as non-verified');
+assert.doesNotMatch(rosstatCoverageAudit, /verification_status\\s*<>\\s*'verified'/i, 'Rosstat coverage audit must not silently omit NULL verification statuses');
 assert.doesNotMatch(rosstatCoverageAudit, /\b(insert\s+into|update\s+public\.|delete\s+from|truncate|alter\s+table|drop\s+table)\b/i, 'Rosstat coverage audit must remain read-only');
 console.log('Rosstat BD PMO coverage audit contract checks passed.');
 
