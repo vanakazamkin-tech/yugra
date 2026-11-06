@@ -100,6 +100,9 @@ assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2022, reference
 assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2022, reference_period: '2022-Q1', numericValue: 100 }, { reference_year: 2024, reference_period: '2024-Q1', numericValue: 80 }], 'higher'), 0, 'a missing year must break the same-quarter warning streak');
 assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2023, reference_period: '2023-H1', numericValue: 10 }, { reference_year: 2024, reference_period: '2024-H1', numericValue: 12 }], 'lower'), 1, 'same-half-year year-over-year deterioration must activate the streak');
 assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2024, reference_period: '2024-01-01', numericValue: 100 }, { reference_year: 2024, reference_period: '2024-06-01', numericValue: 80 }], 'higher'), 0, 'unknown date cadence must not create an early warning');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2022, reference_period: '2022-Q1', numericValue: 100 }, { reference_year: 2023, reference_period: '2023-Q2', numericValue: 80 }], 'higher'), 0, 'different quarters across adjacent years must not be treated as comparable');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2022, reference_period: '2022-H1', numericValue: 100 }, { reference_year: 2023, reference_period: '2023-H2', numericValue: 80 }], 'higher'), 0, 'different half-years across adjacent years must not be treated as comparable');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2022, reference_period: 'annual', numericValue: 100 }, { reference_year: 2023, reference_period: '2023-Q1', numericValue: 80 }], 'higher'), 0, 'annual and quarterly observations must not be compared');
 const noWarning = assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 'labour')]);
 assert.equal(noWarning.earlyWarning, false, 'no adverse streak must not produce an early warning');
 
