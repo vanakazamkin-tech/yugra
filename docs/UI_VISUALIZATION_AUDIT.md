@@ -239,3 +239,10 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - The focus treatment uses the existing warm-gold interface accent and a subtle drop shadow; it does not change the map's default appearance.
 - Pointer focus that is not keyboard-visible does not retain the focus outline.
 - Static source inspection confirms the selectors cover the SVG targets created by `UgraMap`. Browser and assistive-technology verification are still required.
+
+## Risk passport selector accessible name (7 November 2026)
+
+- Added an explicit accessible name to the municipality selector in the risk passport section: `Выбрать муниципалитет для паспорта рисков`.
+- The control's value, selected municipality state, options, layout, and risk calculations are unchanged.
+- Source inspection identified this as the standalone selector in the risk passport heading; the other risk/forecast selectors remain associated with visible labels or explicit accessible names.
+- Browser and screen-reader verification remain outstanding.
