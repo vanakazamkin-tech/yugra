@@ -400,6 +400,19 @@ export function deriveMunicipalIndicators(rows = []) {
     const annualized = (Math.pow(Number(last.value) / Number(first.value), 1 / span) - 1) * 100;
     push(last, 'derived_population_growth_rate', 'Среднегодовое изменение численности населения за доступный период', annualized, '% в год', 'Расчёт по сопоставимым годовым срезам на 1 января; не заменяет полный демографический баланс рождаемости, смертности и миграции.');
   }
+
+  // Абсолютное сальдо миграции приводится к масштабу территории, но остаётся
+  // контекстным: муниципальные источники и полнота охвата пока неоднородны.
+  const annualMigration = uniqueByMunicipalityYear('migration_net_total',
+    (row) => comparablePeriod(row) === 'annual');
+  for (const [key, migration] of annualMigration) {
+    const population = januaryPopulation.get(key);
+    if (!population || Number(population.value) <= 0) continue;
+    push(migration, 'derived_migration_net_per_1000', 'Миграционный прирост на 1000 жителей',
+      Number(migration.value) / Number(population.value) * 1000, 'чел. на 1000 жителей',
+      'Контекстный показатель: абсолютное миграционное сальдо пересчитано на численность населения на 1 января того же года. Не включается в интегральный индекс до подтверждения единой методики и сопоставимости муниципальных источников.',
+      migration.reference_period || 'annual');
+  }
   return derived;
 }
 
