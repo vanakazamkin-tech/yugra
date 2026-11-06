@@ -5,6 +5,7 @@ on:
     branches: [main, feature/municipal-data-coverage-matrix, 'fix/**']
   # Keep incremental fix branches covered by the same regression and build checks.
   # Classification tests protect geography, sector semantics, and the six-pillar mapping.
+  # The same workflow is used for data-classification and risk-chain regression updates.
   pull_request:
     branches: [main]
   workflow_dispatch:
