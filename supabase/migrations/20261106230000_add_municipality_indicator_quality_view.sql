@@ -99,3 +99,4 @@ comment on view public.municipality_indicator_quality_issues is
  'Read-only quality diagnostics. Cross-source disagreements and noncanonical period labels are review flags, not automatic corrections. Bare years are accepted as annual labels. Negative values are not globally rejected because valid growth/decline indicators may be negative.';
 
 revoke all on table public.municipality_indicator_quality_issues from public, anon, authenticated;
+grant select on table public.municipality_indicator_quality_issues to service_role;
