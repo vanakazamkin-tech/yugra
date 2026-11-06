@@ -18,8 +18,9 @@ create table public.municipality_indicators (
  notes text,created_at timestamptz not null default now(),updated_at timestamptz not null default now(),
  geographic_level text not null default 'municipality',geographic_name text,reference_period text not null default 'annual'
 );
-create unique index municipality_indicators_observation_unique on public.municipality_indicators
- (municipality_id,indicator_code,reference_year,reference_period,source_id);
+alter table public.municipality_indicators
+ add constraint municipality_indicators_observation_unique
+ unique (municipality_id,indicator_code,reference_year,reference_period,source_id);
 insert into public.data_sources(id,name,category,url,description) values
  ('src-primary','Primary test source','official','https://example.test/primary','Disposable fixture'),
  ('src-secondary','Secondary test source','official','https://example.test/secondary','Disposable fixture');
