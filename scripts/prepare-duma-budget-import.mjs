@@ -37,6 +37,7 @@ function parseCsv(text) {
   let row = [];
   let cell = '';
   let quoted = false;
+  let closedQuote = false;
   for (let i = 0; i < text.length; i += 1) {
     const char = text[i];
     if (quoted) {
@@ -45,11 +46,30 @@ function parseCsv(text) {
         i += 1;
       } else if (char === '"') {
         quoted = false;
+        closedQuote = true;
       } else {
         cell += char;
       }
+    } else if (closedQuote) {
+      if (char === ';') {
+        row.push(cell);
+        cell = '';
+        closedQuote = false;
+      } else if (char === '\n') {
+        row.push(cell.replace(/\r$/, ''));
+        if (row.some((value) => value.trim() !== '')) rows.push(row);
+        row = [];
+        cell = '';
+        closedQuote = false;
+      } else if (char === '\r' && text[i + 1] === '\n') {
+        // Accept CRLF after a closing quoted field; the following LF ends the row.
+      } else {
+        throw new Error('CSV contains unexpected characters after a closing quote');
+      }
     } else if (char === '"' && cell.length === 0) {
       quoted = true;
+    } else if (char === '"') {
+      throw new Error('CSV contains a quote inside an unquoted field');
     } else if (char === ';') {
       row.push(cell);
       cell = '';
