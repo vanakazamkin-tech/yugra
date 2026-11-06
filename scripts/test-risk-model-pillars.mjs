@@ -11,6 +11,7 @@ assert.equal(directionForRiskIndicator({ indicator_code: 'sme_employment_share',
 assert.equal(directionForRiskIndicator({ indicator_code: 'derived_budget_transfer_dependency', indicator_name: 'Доля безвозмездных поступлений в общих доходах бюджета' }), 'lower', 'transfer dependency remains a lower-is-better signal');
 assert.equal(directionForRiskIndicator({ indicator_code: 'migration_balance', indicator_name: 'Миграционное сальдо' }), 'higher', 'positive migration balance is a higher-is-better signal');
 assert.equal(directionForRiskIndicator({ indicator_code: 'network_needs_replacement_share', indicator_name: 'Доля сетей, нуждающихся в замене' }), 'lower', 'a higher share of networks needing replacement is adverse');
+assert.equal(directionForRiskIndicator({ indicator_code: 'roads_in_normative_condition', indicator_name: 'Доля дорог в нормативном состоянии' }), 'higher', 'a higher share of roads in normative condition is favourable');
 
 // Period metadata is mandatory: year alone must never be silently promoted to annual.
 assert.equal(parseRiskPeriod({ reference_year: 2024, reference_period: '' }), null);
