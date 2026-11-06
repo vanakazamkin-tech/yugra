@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { buildRiskModel, canonicalIndicatorCode, deriveMunicipalIndicators } from '../src/lib/riskModel.js';
+import { buildRiskModel, canonicalIndicatorCode, deriveMunicipalIndicators, indicatorDirection, indicatorMethodFor } from '../src/lib/riskModel.js';
 
 const municipalities = [1, 2, 3].map((id) => ({ id, name: 'Муниципалитет ' + id }));
 for (const alias of ['kogalym', 'langepas', 'pyt_yah', 'raduzhny', 'surgut']) {
@@ -8,7 +8,16 @@ for (const alias of ['kogalym', 'langepas', 'pyt_yah', 'raduzhny', 'surgut']) {
 }
 assert.equal(canonicalIndicatorCode('registered_unemployment_rate'), 'registered_unemployment_rate',
   'unrelated indicator codes must remain unchanged');
+assert.equal(indicatorDirection({ indicator_code: 'sme_per_10k' }), 'higher');
+assert.equal(indicatorDirection({ indicator_code: 'derived_budget_own_revenue_share' }), 'higher');
+assert.equal(indicatorDirection({ indicator_code: 'registered_unemployment_rate' }), 'lower');
+assert.equal(indicatorDirection({ indicator_code: 'registered_unemployed_count' }), 'context',
+  'absolute unemployment counts must not be treated as comparable rates');
+assert.equal(indicatorDirection({ indicator_code: 'sme_employment_share' }), 'context',
+  'structural SME employment share must remain contextual');
+assert.ok(indicatorMethodFor({ indicator_code: 'sme_per_10k' }).rationale.length > 0);
 console.log('OK: equivalent municipal SME-density aliases are harmonized without changing unrelated indicators.');
+console.log('OK: indicator direction is assigned only by explicit reviewed rules with documented caveats.');
 
 const indicators = [
   ['investment', 'economy'], ['business', 'economy'], ['production', 'economy'],
