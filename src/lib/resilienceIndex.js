@@ -34,11 +34,11 @@ export function percentileScore(value, peers, direction = 'higher') {
 }
 
 function keyOf(row) {
-  return [String(row.municipality_id), String(row.indicator_code), String(row.reference_year), String(row.reference_period || 'annual')].join('|');
+  return [String(row.municipality_id), String(row.indicator_code), String(row.reference_year), String(row.reference_period ?? '')].join('|');
 }
 
 function comparableGroupKey(row) {
-  return [String(row.indicator_code), String(row.reference_year), String(row.reference_period || 'annual'), String(row.unit || '')].join('|');
+  return [String(row.indicator_code), String(row.reference_year), String(row.reference_period ?? ''), String(row.unit || '')].join('|');
 }
 
 function summarize(values) {
@@ -83,7 +83,7 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
     && Number.isInteger(year)
     && period.trim() !== ''
     && Number(row.reference_year) === year
-    && String(row.reference_period || 'annual') === period
+    && String(row.reference_period ?? '') === period
     && isFiniteValue(row.value)
     && definitionByCode.has(String(row.indicator_code))
     && row.municipality_id != null
@@ -98,7 +98,11 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
   const uniqueRows = targetRows.filter((row) => !duplicateSet.has(keyOf(row)));
 
   const groups = new Map();
+  const unitsByIndicator = new Map();
   for (const row of uniqueRows) {
+    const code = String(row.indicator_code);
+    if (!unitsByIndicator.has(code)) unitsByIndicator.set(code, new Set());
+    unitsByIndicator.get(code).add(String(row.unit).trim());
     const key = comparableGroupKey(row);
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(row);
@@ -111,7 +115,8 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
     const definition = definitionByCode.get(String(group[0].indicator_code));
     const peerValues = group.map((row) => Number(row.value));
     const distribution = summarize(peerValues);
-    const usable = distinctMunicipalities.size >= minPeers;
+    const inconsistentUnits = (unitsByIndicator.get(String(definition.code))?.size || 0) > 1;
+    const usable = distinctMunicipalities.size >= minPeers && !inconsistentUnits;
     indicatorDiagnostics.push({
       code: definition.code,
       pillar: definition.pillar,
@@ -119,7 +124,7 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
       municipalityCount: distinctMunicipalities.size,
       comparable: usable,
       distribution,
-      reason: usable ? null : 'insufficient_peer_coverage',
+      reason: inconsistentUnits ? 'inconsistent_units_across_municipalities' : usable ? null : 'insufficient_peer_coverage',
       groupKey,
     });
     if (!usable) continue;
