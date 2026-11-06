@@ -28,7 +28,9 @@ period_labels as (
     id, municipality_id, indicator_code, reference_year, reference_period,
     unit, source_id, geographic_level, coalesce(geographic_name, '') as geographic_name
   from public.municipality_indicators
-  where reference_period !~ '^(annual|[0-9]{4}-Q[1-4]|[0-9]{4}-H[1-2]|[0-9]{4}-[0-9]{2}-[0-9]{2})$'
+  -- A bare year is a valid annual label in the existing dataset.
+  -- Flag only genuinely noncanonical labels for manual source review.
+  where reference_period !~ '^(annual|[0-9]{4}|[0-9]{4}-Q[1-4]|[0-9]{4}-H[1-2]|[0-9]{4}-[0-9]{2}-[0-9]{2})$'
 ),
 review_backlog as (
   select
@@ -94,6 +96,6 @@ select
 from review_backlog r;
 
 comment on view public.municipality_indicator_quality_issues is
- 'Read-only quality diagnostics. Cross-source disagreements and noncanonical period labels are review flags, not automatic corrections. Negative values are not globally rejected because valid growth/decline indicators may be negative.';
+ 'Read-only quality diagnostics. Cross-source disagreements and noncanonical period labels are review flags, not automatic corrections. Bare years are accepted as annual labels. Negative values are not globally rejected because valid growth/decline indicators may be negative.';
 
 revoke all on table public.municipality_indicator_quality_issues from public, anon, authenticated;
