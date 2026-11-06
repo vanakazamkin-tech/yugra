@@ -4,7 +4,7 @@
 **QA branch:** `feat/qa-testing`  
 **Baseline:** `main` at `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`  
 **QA PR:** [#12](https://github.com/vanakazamkin-tech/yugra/pull/12), draft, not merged  
-**Last verified QA head:** `e32748f23997470f9b17735449313a45668a6d59`
+**Last verified QA head:** `0541e7dfd0df998a51e9ba0fdee715644f797405`
 
 ## Scope and integrity
 
@@ -38,10 +38,10 @@
 
 ## CI verification
 
-Verified on QA head `c749ee0a46267252daf25a3e3468f517cbda35be`:
+Verified on QA head `0541e7dfd0df998a51e9ba0fdee715644f797405`:
 
-- **QA branch verification** — [GitHub Actions run #42271362101](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271362101): completed successfully on QA head `0c51274b914dff66635a36287b9d30e0d2141fa0`.
-- **Build verification** — [GitHub Actions run #42271371312](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271371312): pull-request build verification was in progress at last check; previous QA-head production build passed in run [#42271362101](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271362101).
+- **QA branch verification** — [GitHub Actions run #42272528323](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272528323): completed successfully on QA head `0541e7dfd0df998a51e9ba0fdee715644f797405`.
+- **Build verification** — [GitHub Actions run #42272538576](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272538576): completed successfully on the same QA head.
   - dependency installation: success;
   - migration staging syntax and filters: success;
   - forecast coverage classification: success;
@@ -75,17 +75,17 @@ Read-only inspection of project `dmbikidqikjupkghywbz`:
 ## Pull-request review notes
 
 - **#8 — index methodology:** adds a separate strict six-pillar module and deterministic tests. It is not wired into the user-facing rating. This is the correct safety boundary until indicator definitions and methodology are approved. Build verification passed; this confirms branch tests/build, not methodological approval or production integration. Do not call it a production index.
-- **#9 — risks:** addresses the unknown-direction coverage defect and adds repeated-deterioration explanations. Build verification passed on current head `e609ccd724f0bfc85d16e66cf3e529cad00c0db1` (run [#42272418856](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272418856)). Unknown-direction handling is explicit, but the two timeline edge cases remain unresolved: blank period becomes annual, and `reference_year` overrides a contradictory year embedded in `reference_period`.
-- **#10 — UI:** additive visualization changes; source review reports no calculation or data-access changes. Build verification passed. Browser-level visual and interaction testing remains outstanding.
-- **#11 — data quality:** current PR head `67822e2abf5dd554659f56f79398f05973397183`; latest Build verification runs [#42272279171](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272279171) and [#42272270803](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272270803) succeeded. A prior run on head `3701436` failed because a test asserted an obsolete period-regex contract; the PR was updated and the latest head passes. The disposable PostgreSQL integration job also passed migration reapplication, privilege, and uniqueness checks. This does not authorize applying migrations to production.
+- **#9 — risks:** current head `efe34ddfe0ded3d46ac3674eb36b4b7896fa0270`; Build verification [#42272582437](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272582437) passed. Unknown-direction handling is explicit, but the two timeline edge cases remain unresolved: blank period becomes annual, and `reference_year` overrides a contradictory year embedded in `reference_period`. Unknown-direction handling is explicit, but the two timeline edge cases remain unresolved: blank period becomes annual, and `reference_year` overrides a contradictory year embedded in `reference_period`.
+- **#10 — UI:** current head `1447e97b92094daf50765a94adc8ab6797832cc7`; Build verification [#42272584819](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272584819) passed. Additive visualization changes; source review reports no calculation or data-access changes. Browser-level visual and interaction testing remains outstanding.
+- **#11 — data quality:** current PR head `a16c80b9557084842911b3d3aa6ad53e2b0f690d`; Build verification [#42272618590](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272618590) passed. The migration suite checks provenance backfill idempotency, source-observation uniqueness, caller-safe diagnostic view access, and no automatic rewriting of observations. A prior run on head `3701436` failed because a test asserted an obsolete period-regex contract; the PR was updated and the latest head passes. The disposable PostgreSQL integration job also passed migration reapplication, privilege, and uniqueness checks. This does not authorize applying migrations to production.
 - **#13 — forecasting:** current PR head `40abd4f39e719429cded4090cf606470f5d8779e`; Build verification run [#42268245956](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268245956) succeeded. Conceptual model remains assumption-driven; whitespace numeric parsing finding above needs owner review.
 - **#12 — QA:** consolidated regression runner, isolated QA workflow, and this audit record. Draft only; no merge.
 
 Latest branch-head CI rechecks (6 Nov 2026):
-- PR #8 head `4cbebd7dd0ca36259c196e6ce9b3a5d8d00f46d6`: Build verification run [#42272287510](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272287510) — success.
-- PR #9 head `e609ccd724f0bfc85d16e66cf3e529cad00c0db1`: Build verification run [#42272418856](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272418856) — success. The missing-period and contradictory-year edge cases remain present at this head.
-- PR #10 head `0b9570a3ad6efb0a401ab4a5be56ca22562c8f17`: Build verification run [#42272286876](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272286876) — success.
-- PR #11 head `67822e2abf5dd554659f56f79398f05973397183`: Build verification runs [#42272279171](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272279171) and [#42272270803](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272270803) — success; prior failure on preceding head is superseded.
+- PR #8 head `9eb4f0f5c123d21556ef43e271c8f6c076b2a876`: Build verification run [#42272723480](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272723480) — in progress at last check.
+- PR #9 head `efe34ddfe0ded3d46ac3674eb36b4b7896fa0270`: Build verification run [#42272582437](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272582437) — success. Missing-period and contradictory-year edge cases remain.
+- PR #10 head `1447e97b92094daf50765a94adc8ab6797832cc7`: Build verification run [#42272584819](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272584819) — success.
+- PR #11 head `a16c80b9557084842911b3d3aa6ad53e2b0f690d`: Build verification run [#42272618590](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272618590) — success.
 - PR #13 head `40abd4f39e719429cded4090cf606470f5d8779e`: Build verification run [#42268245956](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268245956) — success.
 
 ## Verification limitations
