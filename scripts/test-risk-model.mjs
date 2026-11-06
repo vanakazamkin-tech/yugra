@@ -19,6 +19,11 @@ assert.equal(indicatorDirection({ indicator_code: 'fixed_capital_investment_grow
   'investment growth series with mixed municipal definitions must not be compared');
 assert.equal(indicatorDirection({ indicator_code: 'real_disposable_income_index' }), 'context',
   'real disposable and real cash income indices must not be merged under one common score');
+const sectorEmploymentMethod = indicatorMethodFor({ indicator_code: 'employees_healthcare' });
+assert.equal(sectorEmploymentMethod.direction, 'context',
+  'sectoral employee headcounts must remain contextual without a common denominator');
+assert.match(sectorEmploymentMethod.limitation, /только два муниципалитета/,
+  'sectoral employee headcounts must disclose their current two-municipality coverage');
 assert.equal(indicatorDirection({ indicator_code: 'average_monthly_salary_annual' }), 'higher',
   'full-year municipal nominal salary may be used as a qualified income proxy');
 assert.equal(indicatorDirection({ indicator_code: 'average_monthly_salary_q1' }), 'context',
