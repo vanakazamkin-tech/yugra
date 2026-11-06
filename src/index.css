@@ -2181,3 +2181,154 @@ img { max-width:100%; }
 @media(prefers-reduced-motion:reduce) {
   .municipality-modal * { scroll-behavior:auto!important; transition-duration:.01ms!important; }
 }
+
+
+/* YUGRA / concept art direction — northern editorial, forest ink and living ornament */
+:root {
+  --forest-ink:#172f26;
+  --forest-deep:#203d30;
+  --moss:#536b4d;
+  --birch-paper:#f5f0e5;
+  --warm-paper:#fbf8f0;
+  --copper:#b58a52;
+  --copper-light:#d7bd8d;
+}
+body { background:#eee9dc; color:#26392e; }
+.site-shell { width:min(100% - 52px,1540px); padding-bottom:28px; }
+.site-header {
+  position:relative; overflow:hidden; align-items:center; gap:24px;
+  min-height:88px; padding:15px clamp(18px,2.4vw,34px);
+  border:1px solid rgba(215,189,141,.36); border-radius:3px 20px 3px 20px;
+  background:linear-gradient(108deg,#172f26 0%,#234432 58%,#1b382c 100%);
+  box-shadow:0 15px 38px rgba(25,43,32,.18);
+}
+.site-header::before {
+  content:''; position:absolute; inset:0 auto 0 0; width:9px;
+  background:url('/images/khanty-birch-motif-forest.png') center/cover repeat-y;
+  opacity:.8; pointer-events:none;
+}
+.site-header::after {
+  content:''; position:absolute; right:0; top:0; width:32%; height:100%;
+  background:url('/images/khanty-birch-motif-forest.png') right center/auto 180% repeat-x;
+  opacity:.11; mix-blend-mode:screen; pointer-events:none;
+}
+.brand-lockup,.main-nav,.header-motto { position:relative; z-index:1; }
+.brand-emblem { width:52px; height:52px; padding:5px; border:1px solid rgba(215,189,141,.58); border-radius:50%; background:rgba(255,255,255,.07); }
+.brand-emblem img { filter:drop-shadow(0 2px 5px rgba(0,0,0,.25)); }
+.brand-title { color:#fff8e9; font:600 25px/1 'Playfair Display',Georgia,serif; letter-spacing:.14em; }
+.brand-subtitle { color:#d7bd8d; font-size:9px; letter-spacing:.16em; text-transform:uppercase; }
+.main-nav { gap:4px; }
+.nav-item { color:rgba(250,246,234,.76); border:1px solid transparent; border-radius:3px 10px 3px 10px; font-size:11px; letter-spacing:.015em; }
+.nav-item .ui-icon { opacity:.82; }
+.nav-item:hover { color:#fff8e9; border-color:rgba(215,189,141,.3); background:rgba(255,255,255,.07); }
+.nav-item.active { color:#fff8e9; border-color:rgba(215,189,141,.55); background:rgba(215,189,141,.12); box-shadow:inset 0 -2px var(--copper-light); }
+.header-motto { color:#d7bd8d; font-size:8px; letter-spacing:.18em; }
+.concept-corner { color:#f0dfbd; border-color:rgba(215,189,141,.55); }
+.ornament-divider { height:15px; margin:10px 0 15px; background:url('/images/khanty-birch-motif.png') center/auto 100% repeat-x; opacity:.75; }
+.sync-status { border-radius:2px 9px 2px 9px; border-color:#d9cbb4; background:rgba(250,247,239,.86); }
+.intro-panel {
+  position:relative; overflow:hidden; isolation:isolate;
+  padding:clamp(28px,4.4vw,62px);
+  border:1px solid #294b38; border-radius:4px 24px 4px 24px;
+  background:
+    linear-gradient(112deg,rgba(20,46,35,.98) 0%,rgba(29,61,45,.96) 48%,rgba(31,59,44,.82) 100%),
+    url('/images/khanty-birch-motif-forest.png') center/cover;
+  box-shadow:0 22px 55px rgba(30,48,35,.17);
+}
+.intro-panel::before {
+  content:''; position:absolute; z-index:-1; inset:0;
+  background:url('/images/khanty-birch-motif-forest.png') right center/auto 125% repeat-x;
+  opacity:.14; mix-blend-mode:screen; pointer-events:none;
+}
+.intro-panel::after {
+  content:''; position:absolute; z-index:-1; left:0; bottom:0; width:100%; height:10px;
+  background:url('/images/khanty-birch-motif.png') center/auto 100% repeat-x; opacity:.9;
+}
+.intro-top { grid-template-columns:minmax(0,1.12fr) minmax(300px,.88fr); gap:clamp(28px,5vw,76px); align-items:center; }
+.intro-copy .eyebrow { color:#d9bd8b; letter-spacing:.2em; font-size:10px; }
+.eyebrow-diamond { background:#c69b5e; box-shadow:0 0 0 4px rgba(198,155,94,.14); }
+.intro-copy h1 {
+  max-width:720px; margin:23px 0 17px; color:#fff9ed;
+  font:500 clamp(38px,5.2vw,70px)/.99 'Playfair Display',Georgia,serif;
+  letter-spacing:-.045em; text-wrap:balance;
+}
+.intro-copy h1 em { color:#d8bd8e; font-weight:500; }
+.intro-copy > p { max-width:510px; color:rgba(250,246,234,.76); font-size:14px; line-height:1.85; }
+.intro-art { height:clamp(245px,29vw,360px); max-width:none; padding:10px; border:1px solid rgba(220,192,145,.55); border-radius:2px 22px 2px 22px; background:rgba(242,231,207,.09); box-shadow:0 20px 50px rgba(0,0,0,.22); transform:rotate(1.2deg); }
+.intro-art-image { height:100%; border:1px solid rgba(240,222,188,.48); overflow:hidden; }
+.intro-art-image img { width:100%; height:100%; object-fit:cover; object-position:center 40%; filter:sepia(.12) contrast(1.06) saturate(.82); }
+.intro-art-caption { right:18px; bottom:18px; left:18px; padding:10px 12px; border:1px solid rgba(230,211,174,.35); background:rgba(23,47,38,.86); color:#f4e8cf; backdrop-filter:blur(8px); }
+.intro-art-caption span { letter-spacing:.13em; text-transform:uppercase; font-size:9px; }
+.intro-art-caption img { width:28px; height:28px; }
+.catalog-toolbar { margin-top:clamp(25px,3vw,42px); padding-top:23px; border-top:1px solid rgba(226,208,171,.25); }
+.search-box { min-height:48px; border:1px solid rgba(226,208,171,.34); border-radius:3px 10px 3px 10px; background:rgba(255,255,255,.08); color:#e6d7b9; }
+.search-box input { color:#fff8eb; }
+.search-box input::placeholder { color:rgba(250,246,234,.48); }
+.filter-caption { color:#d6c5a2; }
+.filter-pill { border-color:rgba(226,208,171,.32); background:rgba(255,255,255,.07); color:#f0e5d0; }
+.filter-pill.selected { border-color:#d4b77e; background:rgba(212,183,126,.17); color:#fff7e8; }
+.slice-bar { border-color:rgba(226,208,171,.23); }
+.slice-label { color:#d7bd8d; }
+.slice-chip { border-color:rgba(226,208,171,.3); background:rgba(255,255,255,.06); color:rgba(250,246,234,.78); }
+.slice-chip.active { border-color:#d4b77e; background:rgba(212,183,126,.17); color:#fff7e8; }
+.filter-toggle,.text-action { color:#e2c995; }
+.advanced-filter-grid { border-color:rgba(226,208,171,.25); background:rgba(255,255,255,.06); }
+.advanced-filter-grid label span { color:#d6c5a2; }
+.advanced-filter-grid input { border-color:rgba(226,208,171,.3); background:rgba(255,255,255,.08); color:#fff8eb; }
+.active-filter-summary { color:#eee1c8; }
+.stats-grid { gap:12px; margin-top:17px; }
+.metric-card {
+  position:relative; overflow:hidden; min-height:128px; padding:20px;
+  border:1px solid #ded1ba; border-radius:3px 15px 3px 15px;
+  background:linear-gradient(145deg,#fffdf8,#f4eee1);
+  box-shadow:0 9px 25px rgba(41,55,40,.055);
+}
+.metric-card::after { content:''; position:absolute; right:-24px; bottom:-33px; width:100px; height:100px; border:1px solid rgba(181,138,82,.22); transform:rotate(45deg); }
+.metric-icon { width:42px; height:42px; border:1px solid #d9c8a9; border-radius:50%; background:#f1eadb; color:#426348; }
+.metric-copy strong { color:#234b36; font:600 31px 'Playfair Display',Georgia,serif; }
+.metric-label { color:#7b806e; letter-spacing:.12em; font-size:9px; }
+.metric-index { color:#b69a6d; font:italic 14px 'Playfair Display',Georgia,serif; }
+.panel,.map-panel,.ranking-panel { border-radius:4px 16px 4px 16px; border-color:#ded2be; box-shadow:0 10px 28px rgba(41,55,40,.055); }
+.section-heading h2 { color:#254a36; font:600 clamp(20px,2.3vw,28px)/1.12 'Playfair Display',Georgia,serif; letter-spacing:-.02em; }
+.heading-icon { border-radius:50%; background:#e9eddf; color:#426348; }
+.section-tag { border-color:#d9c8a9; background:#f3eddf; color:#8a744d; letter-spacing:.14em; }
+.map-stage { border:1px solid #d9cfbc; border-radius:3px 13px 3px 13px; background:radial-gradient(ellipse at 50% 45%,#fffdf7 0%,#f0eadc 72%,#e8dfcd 100%); }
+.ranking-table th { background:#eee7d8; color:#6e765f; letter-spacing:.1em; }
+.ranking-table tbody tr:hover { background:#f3eddf; }
+.insight-card { border-radius:3px 13px 3px 13px; border-color:#ded2be; background:linear-gradient(145deg,#fffdf8,#f4eee1); }
+.site-footer { position:relative; overflow:hidden; margin-top:26px; padding:23px 26px; border:1px solid rgba(215,189,141,.34); border-radius:3px 17px 3px 17px; background:#1d3a2d; color:#e9dfc9; }
+.site-footer::after { content:''; position:absolute; right:0; bottom:0; width:35%; height:100%; background:url('/images/khanty-birch-motif-forest.png') right center/auto 170% repeat-x; opacity:.12; pointer-events:none; }
+.site-footer .footer-brand,.site-footer > p,.site-footer .footer-right { position:relative; z-index:1; }
+.site-footer .footer-brand strong { color:#fff8e9; font:600 22px 'Playfair Display',Georgia,serif; letter-spacing:.12em; }
+.site-footer .footer-brand small,.site-footer .footer-right { color:#d7bd8d; }
+.site-footer .footer-emblem { border-color:rgba(215,189,141,.5); background:rgba(255,255,255,.06); }
+.site-footer .footer-ornament { background:url('/images/khanty-birch-motif.png') center/auto 100% repeat-x; }
+button,a { transition:color .2s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease,transform .2s ease; }
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible { outline-color:#b58a52; }
+@media(max-width:1050px) {
+ .site-shell { width:min(100% - 32px,1540px); }
+ .site-header { gap:12px; }
+ .intro-top { grid-template-columns:minmax(0,1fr) minmax(250px,.8fr); gap:28px; }
+ .intro-copy h1 { font-size:clamp(36px,5vw,56px); }
+}
+@media(max-width:760px) {
+ .site-shell { width:min(100% - 20px,1540px); }
+ .site-header { padding:13px 15px; }
+ .intro-panel { padding:24px 18px 28px; }
+ .intro-top { grid-template-columns:1fr; gap:22px; }
+ .intro-copy h1 { margin:17px 0 12px; font-size:clamp(36px,10vw,52px); }
+ .intro-art { height:230px; transform:none; }
+ .catalog-toolbar { grid-template-columns:1fr; }
+ .metric-card { min-height:105px; padding:14px; }
+ .metric-copy strong { font-size:24px; }
+ .site-footer { padding:18px; }
+}
+@media(prefers-reduced-motion:no-preference) {
+ .intro-art { animation:yugra-art-arrive .8s cubic-bezier(.2,.7,.2,1) both; }
+ .metric-card,.panel { animation:yugra-rise .55s ease both; }
+ .metric-card:nth-child(2) { animation-delay:.06s; }
+ .metric-card:nth-child(3) { animation-delay:.12s; }
+ .metric-card:nth-child(4) { animation-delay:.18s; }
+ @keyframes yugra-art-arrive { from { opacity:0; transform:translateY(12px) rotate(1.2deg); } to { opacity:1; transform:translateY(0) rotate(1.2deg); } }
+ @keyframes yugra-rise { from { opacity:.65; translate:0 8px; } to { opacity:1; translate:0 0; } }
+}
