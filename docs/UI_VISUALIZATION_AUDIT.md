@@ -98,3 +98,11 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - The active-filter summary announces the filtered municipality count through a polite status region when the selected search/slice changes.
 - The forecast-horizon selector is exposed as a named group associated with its visible label; the selected horizon remains exposed through `aria-pressed`.
 - No filter predicates, data values, forecast formulas, or visual styles were changed.
+
+
+## Modal keyboard focus coverage (6 November 2026)
+
+- The municipality passport modal focus trap now includes native disclosure summaries (`<summary>`) and editable content controls in its focusable-element scan.
+- Disabled controls are excluded using the native `:disabled` state, including controls disabled by a parent fieldset.
+- Elements inside any `aria-hidden="true"`, `hidden`, or `inert` ancestor are excluded, not only elements carrying the attribute themselves.
+- Escape handling, focus containment, scroll locking, and restoration to the opener remain unchanged.
