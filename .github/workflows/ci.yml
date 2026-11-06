@@ -41,6 +41,8 @@ jobs:
         run: node scripts/test-risk-model-pillars.mjs
       - name: Test six-pillar resilience index methodology
         run: node scripts/test-resilience-index.mjs
+      - name: Validate Rosstat municipality crosswalk
+        run: node scripts/validate-rosstat-crosswalk.mjs
       - name: Test official comparison comparability
         run: node scripts/test-official-comparison-gates.mjs
       - name: Test analytical report official-data gates
