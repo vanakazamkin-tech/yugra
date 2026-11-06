@@ -4,7 +4,9 @@ begin
  if to_regclass('private.municipality_indicator_source_links') is null then raise exception 'provenance table missing'; end if;
  select count(*) into link_count from private.municipality_indicator_source_links;
  if link_count<>1 then raise exception 'expected one backfilled provenance link, got %',link_count; end if;
- if to_regclass('public.municipality_indicators_observation_unique') is not null then raise exception 'legacy unique index remains'; end if;
+ if to_regclass('public.municipality_indicators_observation_unique') is not null
+    or exists (select 1 from pg_constraint where conrelid='public.municipality_indicators'::regclass and conname='municipality_indicators_observation_unique')
+ then raise exception 'legacy unique index/constraint remains'; end if;
  if to_regclass('public.uq_municipality_indicators_source_observation') is null then raise exception 'new full unique index missing'; end if;
  select count(*) into metadata_count from information_schema.columns where table_schema='public' and table_name='data_sources'
  and column_name in ('data_owner','temporal_coverage','data_type','access_restrictions','retrieved_at');
