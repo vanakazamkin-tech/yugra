@@ -2118,18 +2118,36 @@ export const InvestmentDetails = () => {
             </div>
           </section>}
           {activeTab === 'about' && <section className="about-page">
-            <section className="about-hero panel">
-              <span className="eyebrow"><span className="eyebrow-diamond"/> О ПРОЕКТЕ</span>
-              <div className="about-hero-layout">
-                <div>
-                  <h1>Югра — концепт аналитической платформы</h1>
-                  <p>Концепт платформы раннего выявления социально-экономических рисков по 22 муниципальным образованиям Югры для Департамента экономического развития округа и муниципальных администраций. Целевая идея — единая база показателей, светофор рисков и сценарии на 1–3 года, включая санкционный стресс. Сейчас сайт демонстрирует продуктовую логику; доступ к полным рядам и научно проверенная прогнозная модель ещё не реализованы.</p>
-                </div>
-                <div className="about-stamp"><strong>DEMO</strong><span>КОНЦЕПТ</span><span>НЕ ОФИЦИАЛЬНАЯ СТАТИСТИКА</span></div>
+            <section className="concept-showcase panel">
+              <div className="concept-showcase-copy">
+                <span className="eyebrow"><span className="eyebrow-diamond"/> ЦИФРОВАЯ ЮГРА · ПРОДУКТОВАЯ КОНЦЕПЦИЯ</span>
+                <h1>От разрозненных показателей — <em>к целостному взгляду на развитие Югры.</em></h1>
+                <p className="concept-lead">Единое цифровое пространство для изучения муниципалитетов, сопоставления территорий и обсуждения возможных сценариев социально-экономического развития.</p>
+                <div className="concept-hero-actions"><button className="primary-button" onClick={() => navigateToTab('catalog')}>Открыть платформу <Icon name="arrow"/></button><button className="outline-button" onClick={() => navigateToTab('risk')}>Посмотреть прогноз <Icon name="chart"/></button></div>
+                <div className="concept-hero-meta"><span>КОНЦЕПТ ПРОДУКТА</span><span>ХАНТЫ · МАНСИ · ЮГРА</span><span>22 МУНИЦИПАЛИТЕТА</span></div>
               </div>
-              <div className="concept-warning"><Icon name="info"/><p><strong>Внимание: демонстрационная версия.</strong> Часть показателей в текущем наборе предназначена для демонстрации интерфейса и логики аналитики; она не подтверждена первичными официальными источниками. Не используйте значения, рейтинг и прогноз для принятия решений до проверки и замены исходных данных.</p></div>
+              <div className="concept-visual">
+                <div className="concept-visual-top"><span>YUGRA / ANALYTICS</span><span>2026</span></div>
+                <div className="concept-orbit concept-orbit-one"></div><div className="concept-orbit concept-orbit-two"></div>
+                <div className="concept-visual-core"><img src="/images/khanty-prosperity-seal.svg" alt="Орнаментальный знак Югры"/><strong>ЮГРА</strong><small>ЕДИНАЯ СРЕДА АНАЛИЗА</small></div>
+                <div className="concept-float-card concept-float-top"><span>ТЕРРИТОРИИ</span><strong>22</strong><small>муниципалитета округа</small></div>
+                <div className="concept-float-card concept-float-bottom"><span>СЦЕНАРИИ</span><strong>1—3 <i>года</i></strong><small>варианты развития</small></div>
+                <div className="concept-visual-caption">ЛЮДИ · ЗЕМЛЯ · БУДУЩЕЕ</div>
+              </div>
+              <div className="concept-showcase-bottom"><div><strong>01</strong><span>Единая картина<br/>по территориям</span></div><div><strong>02</strong><span>Сравнение<br/>и аналитика</span></div><div><strong>03</strong><span>Сценарное<br/>планирование</span></div><div><strong>04</strong><span>Поддержка<br/>решений</span></div></div>
             </section>
-
+            <section className="concept-modules">
+              <div className="concept-section-heading"><div><span className="eyebrow"><span className="eyebrow-diamond"/> КАК УСТРОЕНА ПЛАТФОРМА</span><h2>Четыре инструмента — один рабочий контур</h2><p>От обзора территории до аргументированного сценария действий.</p></div><span className="concept-section-index">ПРОДУКТОВАЯ АРХИТЕКТУРА / 2026</span></div>
+              <div className="concept-module-grid">
+                <button className="concept-module concept-module-map" onClick={() => navigateToTab('map')}><span className="concept-module-number">01 / ОБЗОР</span><span className="concept-module-icon"><Icon name="map"/></span><strong>Территории на карте</strong><p>Муниципальная карта, паспорта территорий и быстрый переход от округа к отдельному муниципалитету.</p><span className="concept-module-link">Исследовать карту <Icon name="arrow"/></span></button>
+                <button className="concept-module concept-module-compare" onClick={() => navigateToTab('compare')}><span className="concept-module-number">02 / АНАЛИЗ</span><span className="concept-module-icon"><Icon name="compare"/></span><strong>Сравнение потенциала</strong><p>Сопоставление выбранных муниципалитетов, динамики показателей и различий между территориями.</p><span className="concept-module-link">Сравнить территории <Icon name="arrow"/></span></button>
+                <button className="concept-module concept-module-risk" onClick={() => navigateToTab('risk')}><span className="concept-module-number">03 / СЦЕНАРИИ</span><span className="concept-module-icon"><Icon name="chart"/></span><strong>Риски и прогноз</strong><p>Сигналы внимания, сценарии на 1–3 года и настройка предположений для проверки гипотез.</p><span className="concept-module-link">Открыть сценарии <Icon name="arrow"/></span></button>
+                <button className="concept-module concept-module-report" onClick={() => navigateToTab('reports')}><span className="concept-module-number">04 / РЕЗУЛЬТАТ</span><span className="concept-module-icon"><Icon name="file"/></span><strong>Аналитические материалы</strong><p>Конструктор отчётов, выбор показателей и подготовка материалов для обсуждения решений.</p><span className="concept-module-link">Собрать отчёт <Icon name="arrow"/></span></button>
+              </div>
+            </section>
+            <section className="concept-flow panel"><div className="concept-flow-heading"><span className="eyebrow"><span className="eyebrow-diamond"/> ЛОГИКА РАБОТЫ</span><h2>Путь от вопроса к решению</h2></div><div className="concept-flow-steps"><div><span>01</span><strong>Собрать</strong><small>Показатели и контекст территории</small></div><i>→</i><div><span>02</span><strong>Сопоставить</strong><small>Муниципалитеты и периоды</small></div><i>→</i><div><span>03</span><strong>Смоделировать</strong><small>Возможные сценарии развития</small></div><i>→</i><div><span>04</span><strong>Обсудить</strong><small>Выводы и варианты действий</small></div></div></section>
+            <section className="concept-principles"><div><span className="eyebrow"><span className="eyebrow-diamond"/> ПРИНЦИПЫ КОНЦЕПТА</span><h2>Не просто красивые графики.<br/><em>Понятная логика анализа.</em></h2></div><div className="concept-principle-list"><article><strong>Прозрачность</strong><p>У каждого показателя предполагаются источник, период, единица измерения и территория.</p></article><article><strong>Сопоставимость</strong><p>Сравнение учитывает различия муниципалитетов, периоды наблюдений и доступность данных.</p></article><article><strong>Сценарность</strong><p>Прогнозный блок помогает обсуждать последствия предположений, а не выдаёт будущее за факт.</p></article></div></section>
+            <section className="concept-disclaimer panel"><span className="concept-disclaimer-mark"><Icon name="info"/></span><div><strong>Это концепт будущей аналитической платформы</strong><p>Текущая версия показывает структуру продукта и логику его инструментов. Часть чисел и оценок носит демонстрационный характер; сценарии являются исследовательскими предположениями, а не подтверждённым прогнозом.</p></div><span className="concept-disclaimer-stamp">CONCEPT<br/>EDITION 2026</span></section>
             <section className="about-section panel">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Что умеет прототип</h2><p>Функции, которые готовятся к работе с проверенной статистикой</p></div></div></div>
               <div className="about-capability-grid">
