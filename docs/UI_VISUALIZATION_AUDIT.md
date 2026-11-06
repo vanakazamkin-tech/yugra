@@ -285,3 +285,7 @@ This review is based on source inspection, not live assistive-technology or touc
 ## Explicit empty state for the forecast investment chart (7 November 2026)
 
 Source review found that the investment chart could render as an empty region when a selected municipality or filtered result set had no usable investment baseline. The table already explained missing results, but the chart did not. The chart now shows an explicit message that modelled investment values are unavailable for the current selection and clarifies that missing source data does not mean zero investment. No calculation, filtering, source, or dataset behavior was changed. CI validates the production build; visual browser verification remains outstanding.
+
+## Explicit empty states in risk signal and indicator tables (7 November 2026)
+
+The risk overview previously used one generic empty message both when no confirmed series matched the current territory/search filters and when matching series existed but their direction could not be classified. These states are now distinguished. The indicator registry also renders an accessible empty row when no verified series match the selected filters, rather than leaving a header-only table. No risk classification, indicator selection, or source data logic was changed. Browser and screen-reader verification remain outstanding.
