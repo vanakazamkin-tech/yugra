@@ -2,7 +2,7 @@ name: Build verification
 
 on:
   push:
-    branches: [main, feature/municipal-data-coverage-matrix, 'fix/**']
+    branches: [main, feature/municipal-data-coverage-matrix, 'fix/**', feat/data-quality]
   # Keep incremental fix branches covered by the same regression and build checks.
   # Classification tests protect geography, sector semantics, and the six-pillar mapping.
   # The same workflow is used for data-classification and risk-chain regression updates.
@@ -88,44 +88,11 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106230000_add_municipality_indicator_quality_view.sql
       - name: Apply source catalog metadata migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql
-      - name: Verify migration effects and uniqueness behavior
+      - name: Reapply migrations to verify idempotency
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106230000_add_municipality_indicator_quality_view.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql
+      - name: Verify migration effects, security grants, and uniqueness behavior
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_assertions.sql
 
-  data-migrations-integration:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: yugra_migration_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d yugra_migration_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      PGHOST: localhost
-      PGPORT: 5432
-      PGUSER: postgres
-      PGPASSWORD: postgres
-      PGDATABASE: yugra_migration_test
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          persist-credentials: false
-      - name: Bootstrap disposable PostgreSQL fixture
-        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_bootstrap.sql
-      - name: Apply provenance migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql
-      - name: Apply diagnostics view migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106230000_add_municipality_indicator_quality_view.sql
-      - name: Apply source metadata migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql
-      - name: Verify migration behavior
-        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_assertions.sql
