@@ -140,6 +140,7 @@ with used_sources as (
   union select source_id from public.municipality_legacy_snapshots
   union select source_id from public.external_rating_catalog where source_id is not null
   union select source_id from public.municipality_indicator_import_staging
+  union select source_id from public.municipality_indicator_import_review
 )
 select ds.import_status,count(*) total_sources,
   count(*) filter(where u.source_id is not null) referenced_anywhere,
@@ -216,3 +217,36 @@ from public.municipality_indicators
 where reference_period !~ '^(annual|[0-9]{4}|[0-9]{4}-Q[1-4]|[0-9]{4}-H[1-2]|[0-9]{4}-[0-9]{2}-[0-9]{2})$'
 group by reference_period
 order by rows desc,reference_period;
+
+
+-- Source-reference integrity by relation. This intentionally enumerates every
+-- public table that currently carries source_id; a zero-orphan result does not
+-- prove that the source metadata itself is complete or authoritative.
+with source_refs as (
+  select 'external_rating_catalog'::text relation,source_id
+    from public.external_rating_catalog where source_id is not null
+  union all select 'fuel_price_observations',source_id
+    from public.fuel_price_observations where source_id is not null
+  union all select 'investment_sites',source_id
+    from public.investment_sites where source_id is not null
+  union all select 'municipal_facilities',source_id
+    from public.municipal_facilities where source_id is not null
+  union all select 'municipal_program_execution',source_id
+    from public.municipal_program_execution where source_id is not null
+  union all select 'municipality_indicator_import_review',source_id
+    from public.municipality_indicator_import_review where source_id is not null
+  union all select 'municipality_indicator_import_staging',source_id
+    from public.municipality_indicator_import_staging where source_id is not null
+  union all select 'municipality_indicators',source_id
+    from public.municipality_indicators where source_id is not null
+  union all select 'municipality_legacy_snapshots',source_id
+    from public.municipality_legacy_snapshots where source_id is not null
+)
+select r.relation,count(*) source_references,
+  count(*) filter(where ds.id is not null) matched_catalog_entries,
+  count(*) filter(where ds.id is null) orphan_source_references,
+  count(distinct r.source_id) distinct_sources
+from source_refs r
+left join public.data_sources ds on ds.id=r.source_id
+group by r.relation
+order by r.relation;
