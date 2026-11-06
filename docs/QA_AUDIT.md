@@ -680,3 +680,39 @@ PR #10 обновил head до 312a140...; текущий CI #42285817027 succe
 - PR #13 head теперь 218fa6313ebba37bb458075e43e470b9c5939832, mergeable=true; новый run #42286049731. Его build job завершилась success. Полный статус run на момент снимка ещё in_progress; повторно проверить итоговое состояние перед финальным sign-off.
 
 Последний QA docs commit: 5c027ce2a38559a26b3dc3f53c2d4a1662661726. Combined status показывает только Vercel build-rate-limit failure; отдельный GitHub Actions run для документационного коммита не обнаружен. Это ограничение Vercel не трактуется как провал QA test suite.
+
+
+## QA-цикл: повторная верификация всех шести PR (07.11.2026)
+
+### Последние проверенные CI runs
+
+| PR | Проверенный head | Run | Итог |
+|---|---|---|---|
+| #8 | 78094b364bd973fdd3ed16db2f519bcad1ac6b96 | #42286139831 | build success |
+| #9 | 8b4e7b1f65d98c36f05cc69a79d81c6a10661820 | #42286208062 | build success |
+| #10 | 738e0b3edaed415e04dfbc83c365bcb70c918eb0 | #42286181854 | build success |
+| #11 | eaad092b5feb50a85f19f90f839bbc8af2db7759 | #42286287600 | build success; data-migrations-integration success |
+| #12 | 0318ba2112279eff0345797fa7ba3d4e26059ff7 | #42286157146 | build success |
+| #13 | 4eff3db8bed6578c23ea287d57171f9c845a059b | #42286181361 | build success |
+
+Все шесть PR имеют mergeable=true в последнем полученном PR snapshot. PR #9/#10/#12 остаются draft. Это не равнозначно общему интеграционному sign-off.
+
+### PR #11 — CI исправлен, semantic QA blocker остаётся
+
+Повторно проверен более новый head `eaad092b5feb50a85f19f90f839bbc8af2db7759`, CI #42286287600 (обе jobs success). Но просмотрены фактические файлы этого SHA: в `supabase/audits/rosstat-bd-pmo-coverage-readonly.sql` строки 24 и 57 всё ещё используют `verification_status <> 'verified'`; тест в `scripts/test-data-quality-contract.mjs:57` проверяет только текстовый regex. PostgreSQL не включает NULL в результат `<> 'verified'`, поэтому missing verification status не учитывается в `nonverified_rows`.
+
+Повторный комментарий оставлен в PR #11 (comment id 6694428657): заменить на NULL-safe `IS DISTINCT FROM 'verified'` и добавить assertion для NULL. Статус PR #11: CI green, semantic QA blocker OPEN. Нельзя считать его полностью проверенным только на основании зелёного CI.
+
+### PR #13 — fail-closed forecast mode сохранён
+
+На head `4eff3db8bed6578c23ea287d57171f9c845a059b` build success (#42286181361). Фактический код `forecastModel.js` сохраняет fail-closed логику: при явно запрошенном `scoreSource: 'resilience-index'` результат берётся только из complete результата при approved контракте с непустой версией; иначе score null, без fallback на `municipality.score`. В `forecastModel.test.js` остаётся regression assertion для candidate contract. Это подтверждает локальный контракт модели, но не общий UI/model integration E2E.
+
+### Синхронизация с main и интеграционные риски
+
+На момент сравнения PR #11/#12/#13 всё ещё имеют base `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`, отстающий от main на 5 commits. Их сравнение с main: #11 ahead 135 / behind 5; #12 ahead 49 / behind 5; #13 ahead 60 / behind 5. PR #8/#9/#10 основаны на актуальном main snapshot `9f99481a3843862a17fd9cf640fee48b4ef901ba` (behind 0).
+
+Ранее выявленные межветочные пересечения остаются обязательными для интеграции вручную: INDEX_METHODOLOGY.md (#8/#13), UnifiedRiskForecast.jsx (#9/#10), Forecasting.jsx (#10/#13), package.json и .github/workflows/ci.yml (#10/#11/#13). Перед интеграцией нужен общий CI с набором тестов всех направлений, а не последовательное принятие несовместимых файлов одной ветки.
+
+### Обновлённый вердикт
+
+Все шесть индивидуальных GitHub Actions runs зелёные на перечисленных SHA. Однако PR #11 содержит подтверждённый SQL NULL-semantics defect, поэтому его semantic QA gate не пройден. Нет общей интеграционной сборки, browser E2E, проверки responsive/accessibility, production Supabase validation или production deployment. Vercel build-rate-limit остаётся внешним ограничением и не засчитывается как успешный deployment.
