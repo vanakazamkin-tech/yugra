@@ -67,5 +67,36 @@ const conflictingBudgetFixture = [
 ];
 assert.equal(deriveMunicipalIndicators(conflictingBudgetFixture).length, 0,
   'derived budget ratios must not use arbitrary values when source observations conflict');
+
 console.log('OK: conflicting duplicate source observations are excluded from derived calculations.');
+
+const demographicFixture = [
+  { municipality_id: 'north-town', indicator_code: 'population_municipality', reference_year: 2022, reference_period: '2022-01-01', value: 100, unit: 'человек', verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'north-town', indicator_code: 'population_municipality', reference_year: 2023, reference_period: '2023-01-01', value: 110, unit: 'человек', verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'north-town', indicator_code: 'population_municipality', reference_year: 2023, reference_period: '2023-Q3', value: 900, unit: 'человек', verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'north-town', indicator_code: 'fixed_capital_investment_non_mining', reference_year: 2022, reference_period: 'annual', value: 1000, unit: 'руб.', verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'north-town', indicator_code: 'fixed_capital_investment_non_mining', reference_year: 2023, reference_period: 'annual', value: 2200, unit: 'руб.', verification_status: 'verified', geographic_level: 'municipality' },
+];
+const demographicDerived = deriveMunicipalIndicators(demographicFixture);
+const populationGrowth = demographicDerived.find((row) => row.indicator_code === 'derived_population_growth_rate');
+assert.ok(populationGrowth, 'annual Jan 1 population snapshots should produce a demographic trend');
+assert.ok(Math.abs(populationGrowth.value - 10) < 1e-9,
+  'population trend must use annual Jan 1 snapshots and ignore quarterly observations');
+const investmentPerCapita = demographicDerived.filter((row) => row.indicator_code === 'derived_investment_per_capita');
+assert.equal(investmentPerCapita.length, 2,
+  'annual investment flows should align with same-year Jan 1 population snapshots');
+assert.deepEqual(investmentPerCapita.map((row) => row.value).sort((a, b) => a - b), [10, 20]);
+console.log('OK: demographic trends use annual snapshots; investment intensity aligns same-year population denominators.');
+
+const conflictingPopulationFixture = [
+  { municipality_id: 'conflict-population', indicator_code: 'population_municipality', reference_year: 2022, reference_period: '2022-01-01', value: 100, verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'conflict-population', indicator_code: 'population_municipality', reference_year: 2023, reference_period: '2023-01-01', value: 110, verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'conflict-population', indicator_code: 'population_municipality', reference_year: 2023, reference_period: '2023-01-01', value: 115, verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'conflict-population', indicator_code: 'fixed_capital_investment_non_mining', reference_year: 2023, reference_period: 'annual', value: 2300, verification_status: 'verified', geographic_level: 'municipality' },
+];
+assert.equal(deriveMunicipalIndicators(conflictingPopulationFixture)
+  .filter((row) => ['derived_population_growth_rate', 'derived_investment_per_capita'].includes(row.indicator_code)).length, 0,
+  'conflicting annual population values must not be used in trends or per-capita calculations');
+console.log('OK: conflicting annual population snapshots are excluded from derived indicators.');
+
 
