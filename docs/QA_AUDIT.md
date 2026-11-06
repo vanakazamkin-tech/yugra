@@ -151,3 +151,107 @@ GitHub Actions build не заменяет эти проверки. Vercel build
 - Локальные тесты и локальный build: не запускались.
 - Количество внутренних assertions/test cases по workflow summary не раскрывается; точное число пройденных тест-кейсов не заявляется.
 - Браузерные E2E: 0 подтверждённых сценариев в рамках этой проверки.
+
+
+---
+
+# Дополнение к аудиту — повторная проверка новых head (07.11.2026)
+
+Этот раздел **заменяет устаревшие статусы** выше для PR #8–#13. Старые SHA и выводы сохраняются только как история предыдущего раунда.
+
+## A. Новые актуальные SHA и состояния
+
+| PR | Новый head SHA | mergeable | Последний доступный GitHub Actions |
+|---|---|---|---|
+| #8 | `6f24555c1e759e03d904a46ef7a1040b0dd408a9` | true | #42282309934 — Build verification success |
+| #9 | `e20ff6902495ded93c5f00a00558fcb70fb71d54` | true | #42282678637 — failure |
+| #10 | `5bf032b6cede6697b83ef09afdc4cdcb435832cb` | true | #42282537205 — Build verification success |
+| #11 | `82d7822f210beb4fa5564eddd6a667b2ad64506a` | true | #42282687228 — build success + data-migrations-integration success |
+| #12 | `bb955fb3dd2359badbefba9f2e9b6ad563aa9018` | true | #42282496573 — Build verification success |
+| #13 | `d6863eae3902f241076d7f530bc19f20b9de5c64` | true | #42282662820 — failure |
+
+У всех шести SHA status context Vercel сообщает `build-rate-limit`. Это внешний лимит Vercel; он не заменяет GitHub Actions.
+
+## B. Повторная проверка DEF-RISK-001/002 — исправлены
+
+В новом PR #9:
+- `parseRiskPeriod()` в `src/lib/riskModel.js` требует явный `reference_period`;
+- один `reference_year` не преобразуется автоматически в annual;
+- несоответствие года в поле и метке периода возвращает null;
+- `buildRiskSeries()` в `src/lib/riskSeries.js` использует проверенную периодичность для сопоставления, change и adverse streak;
+- тесты в `scripts/test-risk-model-pillars.mjs` покрывают пустой период, отсутствие периода, конфликт года/периода, неизвестную частоту, разрывы, conflicting duplicates и adverse streak.
+
+**Вердикт:** исходные два дефекта закрыты на уровне кода и регрессионных тестов нового head PR #9.
+
+## C. Новый CI failure PR #9 — устаревший тест, не подтверждённый бизнес-дефект
+
+Run #42282678637 падает на шаге `Test risk data provenance and geography gates`.
+
+Файл `scripts/test-risk-data-gates.mjs` ищет литерал `row.verification_status !== 'verified'` в `src/components/UnifiedRiskForecast.jsx`. Проверка была перенесена в `src/lib/riskSeries.js`, где реально выполняются:
+- `row.verification_status !== 'verified'`;
+- `row.geographic_level !== 'municipality'`.
+
+То есть тест привязан к старому местоположению реализации. Нельзя просто удалить проверки или ослабить фильтр. Нужно переписать тест на актуальный модуль/поведение и повторить CI.
+
+**Статус:** PR #9 блокируется красным CI до исправления теста. Это дефект тестовой инфраструктуры направления #3, а не подтверждение того, что текущий fail-closed фильтр отсутствует.
+
+## D. Новый дефект PR #13 — summarizeForecast падает
+
+**DEF-FORECAST-001 — HIGH.**
+
+Файл: `src/lib/forecastModel.js:155`, функция `summarizeForecast()`.
+
+Код возвращает:
+`investmentCoverage: investmentRows.length`
+
+Переменная `investmentRows` внутри функции не объявлена. Поэтому каждый вызов `summarizeForecast()` приводит к `ReferenceError`, включая пустой массив и обычные данные.
+
+Run #42282662820:
+- `npm test` запущен;
+- всего 18 тестов;
+- 15 passed;
+- 3 failed;
+- все три отказа связаны с `ReferenceError: investmentRows is not defined` на строке 155;
+- шаг `Run forecast model unit tests` завершился failure.
+
+**Ожидаемое исправление:** считать покрытие по безопасному массиву строк с конечным `projectedInvestments`, включая явный ноль, но исключая null/undefined/невалидные значения; не подменять ошибку нулём. После исправления повторить полный test suite и production build.
+
+**Статус:** открыт, высокий приоритет, блокирует прогнозную сводку.
+
+## E. Актуальная QA-ветка
+
+QA PR #12 остаётся на head:
+`bb955fb3dd2359badbefba9f2e9b6ad563aa9018`.
+
+Run #42282496573 завершился success. Он выполнил девять интеграционных/контрактных проверок и production build. В этом workflow run не было отдельного шага `npm test`; поэтому этот run не подтверждает полный Node unit-test suite QA branch.
+
+Изменения QA runner и документации остаются в `feat/qa-testing`. Бизнес-логику PR #9/#13 QA не менял.
+
+## F. Актуальные совместимость и merge-readiness
+
+На новых головах все PR сообщают `mergeable=true`, но базы неодинаковы:
+- PR #8 и #10 используют base `9f99481a3843862a17fd9cf640fee48b4ef901ba`;
+- PR #9, #11, #12 и #13 используют base `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`.
+
+Это требует согласования единого base перед общей интеграцией. Само значение `mergeable=true` не подтверждает корректность содержимого и не устраняет CI failures.
+
+**Новые блокирующие условия:**
+1. PR #9: обновить устаревший `test-risk-data-gates.mjs`, сохранив fail-closed тестирование, и получить зелёный CI.
+2. PR #13: исправить undefined `investmentRows`; повторить unit tests и build.
+3. Согласовать общий base/main для шести направлений.
+4. Разрешить пересечения `.github/workflows/ci.yml`, `package.json`, `Forecasting.jsx`, `UnifiedRiskForecast.jsx` в общем merge candidate.
+5. На итоговом кандидате выполнить общий CI, migration integration, браузерные E2E и responsive checks.
+
+PR #8, #10, #11 и #12 имеют успешные Build verification на указанных выше SHA; PR #11 также прошёл отдельную data-migrations-integration. Это не равнозначно полной браузерной и production проверке.
+
+## G. Итог после повторного раунда
+
+**Объединение всех шести направлений всё ещё не разрешено.**
+
+- Исходные проблемы временных периодов PR #9: исправлены и покрыты тестами.
+- Исходная проблема whitespace coercion PR #13: исправление сохраняется, тесты на пустые/пробельные строки и ноль присутствуют; однако новый дефект в `summarizeForecast()` блокирует PR.
+- UNIQUE constraint миграция PR #11: предыдущая проверка остаётся положительной; новый integration run также успешен.
+- PR #8: mergeable true, Build verification success.
+- PR #9: красный CI из-за устаревшего теста.
+- PR #13: красный CI из-за реального runtime дефекта.
+- Browser E2E, production Supabase, local build и Vercel deployment в этом раунде не выполнены.
