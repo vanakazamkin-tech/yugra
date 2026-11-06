@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:data-quality": "node scripts/test-data-quality-migration.mjs && node scripts/test-source-catalog-migration.mjs && node scripts/test-data-quality-contract.mjs"
+    "test:data-quality": "node scripts/test-data-quality-migration.mjs && node scripts/test-source-catalog-migration.mjs && node scripts/test-data-quality-contract.mjs && node scripts/test-duma-budget-import.mjs"
   },
   "dependencies": {
     "react": "^18.2.0",
