@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { isEligibleAnnualForecastSeries } from '../lib/forecastCoverage.js';
-import { buildRiskModel, MODEL_PILLARS, RISK_CHAINS } from '../lib/riskModel.js';
+import { buildRiskModel, deriveMunicipalIndicators, MODEL_PILLARS, RISK_CHAINS } from '../lib/riskModel.js';
 import './UnifiedRiskForecast.css';
 
 const PILLARS = [
@@ -28,8 +28,8 @@ const directionFor = (row) => {
   const code = safeText(row.indicator_code).toLowerCase();
   const s = (code + ' ' + safeText(row.indicator_name)).toLowerCase();
   // Направление задаётся только для показателей, где знак изменения можно объяснить без скрытых допущений.
-  if (/(unemploy|registered_unemployed|poverty|below_poverty|death_rate|mortality|noncompliant_roads|arrears|deficit|debt|аварийн|износ|смертн|бедност|безработ|не отвечающ.*норматив)/i.test(s)) return 'lower';
-  if (/(employment_share|sme_per_10k|real_disposable_income|real_income|industrial_production_index|physical_index|productivity|уровень занятости|доля занятых|индекс физического объём|индекс физического объем|реальн.*доход)/i.test(s)) return 'higher';
+  if (/(unemploy|registered_unemployed|poverty|below_poverty|death_rate|mortality|noncompliant_roads|arrears|deficit|debt|budget_transfer_dependency|аварийн|износ|смертн|бедност|безработ|не отвечающ.*норматив)/i.test(s)) return 'lower';
+  if (/(employment_share|sme_per_10k|real_disposable_income|real_income|industrial_production_index|physical_index|productivity|budget_own_revenue_share|budget_balance_ratio|population_growth_rate|investment_per_capita|уровень занятости|доля занятых|индекс физического объём|индекс физического объем|реальн.*доход)/i.test(s)) return 'higher';
   // Абсолютные номинальные суммы, зарплаты без дефлятора, численность, миграция и обороты требуют контекста.
   return 'context';
 };
@@ -140,7 +140,8 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     return () => { cancelled = true; };
   }, [supabase, isSupabaseConfigured]);
 
-  const rows = useMemo(() => [
+  const rows = useMemo(() => {
+    const base = [
     ...(Array.isArray(officialIndicators) ? officialIndicators : []),
     ...(Array.isArray(programExecution) ? programExecution : []).map((item) => ({
       municipality_id: item.municipality_id, indicator_code: 'municipal_program_execution_rate',
@@ -148,7 +149,9 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
       reference_period: item.report_date || '', value: item.execution_percent, unit: '%',
       source_url: item.source_url, source_id: item.source_id, verification_status: item.verification_status, geographic_level: 'municipality',
     })),
-  ], [officialIndicators, programExecution]);
+    ];
+    return [...base, ...deriveMunicipalIndicators(base)];
+  }, [officialIndicators, programExecution]);
   const series = useMemo(() => buildSeries(rows), [rows]);
   const riskModel = useMemo(() => buildRiskModel(municipalities, series), [municipalities, series]);
   const municipalityNames = useMemo(() => new Map(municipalities.map((m) => [m.id, m.name])), [municipalities]);
