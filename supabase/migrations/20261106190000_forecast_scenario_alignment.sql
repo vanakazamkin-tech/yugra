@@ -19,6 +19,8 @@ alter table public.forecast_scenarios
   );
 
 update public.forecast_scenarios set
+  title = case key when 'cautious' then 'Стрессовый' else title end,
+  summary = case key when 'cautious' then 'Неблагоприятные допущения: снижение экспортной выручки, усиление издержек и кадрового дефицита.' else summary end,
   export_shock_pct = case key when 'cautious' then -10 when 'ambitious' then 4 else 0 end,
   cost_pressure_pct = case key when 'cautious' then 8 when 'ambitious' then -2 else 0 end,
   labor_shortage_pct = case key when 'cautious' then 6 when 'ambitious' then -2 else 0 end,
