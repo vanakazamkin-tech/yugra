@@ -309,3 +309,7 @@ The forecast investment chart container previously retained `role=list` and a li
 ## Live announcement of risk-workspace filter results (7 November 2026)
 
 The shared municipality and text filters in the risk workspace now expose the current number of matching indicator series in a polite live status region. The search field also has an explicit accessible name. This makes changes to the selected territory or search query perceivable without requiring a screen-reader user to navigate the indicator content manually. Filtering logic and risk calculations are unchanged.
+
+## Mandatory concept-data disclaimer in report output (7 November 2026)
+
+The report preview and print/PDF document now always state that summary scores and derived values come from the project's conceptual dataset and are not official statistics, and that new official statistical series have not yet been uploaded. The notice remains present even when the optional extended methodology section is disabled. When selected, verified official observations continue to appear as a separate layer with source, period, and geographic level. The report CSV already includes a per-row `Статус данных` column marking demonstration values as non-official; this behavior is unchanged.
