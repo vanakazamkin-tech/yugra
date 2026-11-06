@@ -192,26 +192,63 @@ export function deriveMunicipalIndicators(rows = []) {
     if (base && total > 0 && finite(expenditure) && expenditure > 0) {
       push(base, 'derived_budget_balance_ratio', 'Отношение доходов к расходам бюджета', (total - expenditure) / expenditure * 100, '%', 'Положительное значение означает превышение доходов над расходами в пределах данного отчётного периода; требуется сверка методики исполнения бюджета.', base.reference_period || 'annual');
     }
-    const investment = bucket.fixed_capital_investment_non_mining;
-    const population = bucket.population_municipality;
-    if (investment && population && Number(population.value) > 0) {
-      push(investment, 'derived_investment_per_capita', 'Инвестиции в основной капитал без добычи на одного жителя', Number(investment.value) / Number(population.value), 'руб./чел.', 'Номинальная интенсивность инвестиций; не является реальным темпом роста и не скорректирована на инфляцию.', investment.reference_period || 'annual');
-    }
   }
 
-  const populationByMunicipality = new Map();
-  for (const row of verified.filter((item) => item.indicator_code === 'population_municipality')) {
-    if (!populationByMunicipality.has(row.municipality_id)) populationByMunicipality.set(row.municipality_id, []);
-    populationByMunicipality.get(row.municipality_id).push(row);
+  // Для интенсивности инвестиций сопоставляем годовой поток инвестиций
+  // с населением на 1 января того же года. Это разные типы периода,
+  // но методологически совместимые годовой поток и начальный запас населения.
+  const uniqueByMunicipalityYear = (code, acceptPeriod) => {
+    const grouped = new Map();
+    for (const row of verified.filter((item) => item.indicator_code === code && acceptPeriod(item))) {
+      const key = row.municipality_id + '|' + Number(row.reference_year);
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(row);
+    }
+    const result = new Map();
+    for (const [key, candidates] of grouped) {
+      if (new Set(candidates.map((item) => Number(item.value))).size !== 1) continue;
+      result.set(key, [...candidates].sort((a, b) =>
+        new Date(b.retrieved_at || 0).getTime() - new Date(a.retrieved_at || 0).getTime()
+      )[0]);
+    }
+    return result;
+  };
+  const annualInvestment = uniqueByMunicipalityYear('fixed_capital_investment_non_mining',
+    (row) => comparablePeriod(row) === 'annual');
+  const januaryPopulation = uniqueByMunicipalityYear('population_municipality',
+    (row) => /^\\d{4}-01-01$/.test(String(row.reference_period || '')));
+  for (const [key, investment] of annualInvestment) {
+    const population = januaryPopulation.get(key);
+    if (!population || Number(population.value) <= 0) continue;
+    push(investment, 'derived_investment_per_capita', 'Инвестиции в основной капитал без добычи на одного жителя',
+      Number(investment.value) / Number(population.value), 'руб./чел.',
+      'Номинальная интенсивность инвестиций; годовой поток сопоставлен с численностью населения на 1 января того же года; показатель не скорректирован на инфляцию.',
+      investment.reference_period || 'annual');
   }
-  for (const history of populationByMunicipality.values()) {
-    const points = history.sort((a, b) => Number(a.reference_year) - Number(b.reference_year));
+
+  // Динамика численности рассчитывается только по сопоставимым годовым
+  // срезам на 1 января. Квартальные наблюдения и конфликтующие значения
+  // не должны превращаться в фиктивный годовой темп.
+  const populationByMunicipality = new Map();
+  for (const row of verified.filter((item) => item.indicator_code === 'population_municipality'
+    && /^\\d{4}-01-01$/.test(String(item.reference_period || '')))) {
+    if (!populationByMunicipality.has(row.municipality_id)) populationByMunicipality.set(row.municipality_id, new Map());
+    const byYear = populationByMunicipality.get(row.municipality_id);
+    const year = Number(row.reference_year);
+    if (!byYear.has(year)) byYear.set(year, []);
+    byYear.get(year).push(row);
+  }
+  for (const byYear of populationByMunicipality.values()) {
+    const points = [...byYear.entries()].flatMap(([year, candidates]) => {
+      if (new Set(candidates.map((item) => Number(item.value))).size !== 1) return [];
+      return [{ ...candidates[0], reference_year: year }];
+    }).sort((a, b) => Number(a.reference_year) - Number(b.reference_year));
     const first = points[0], last = points[points.length - 1];
     if (points.length < 2 || Number(first.value) <= 0) continue;
     const span = Number(last.reference_year) - Number(first.reference_year);
     if (span <= 0) continue;
     const annualized = (Math.pow(Number(last.value) / Number(first.value), 1 / span) - 1) * 100;
-    push(last, 'derived_population_growth_rate', 'Среднегодовое изменение численности населения за доступный период', annualized, '% в год', 'Расчёт по крайним доступным годам; не заменяет полный демографический баланс рождаемости, смертности и миграции.');
+    push(last, 'derived_population_growth_rate', 'Среднегодовое изменение численности населения за доступный период', annualized, '% в год', 'Расчёт по сопоставимым годовым срезам на 1 января; не заменяет полный демографический баланс рождаемости, смертности и миграции.');
   }
   return derived;
 }
