@@ -68,7 +68,7 @@ export function createForecastIndexOptions({
       incompleteCount += 1;
       continue;
     }
-    if (!isFiniteIndex(result.index)) {
+    if (String(result.municipalityId ?? '').trim() !== id || !isFiniteIndex(result.index)) {
       indexResults[id] = { status: 'invalid_index_result', index: null };
       invalidCount += 1;
       continue;
