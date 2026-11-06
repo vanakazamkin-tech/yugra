@@ -10,7 +10,7 @@ assert.match(migration, /create schema if not exists private/i);
 assert.match(migration, /create table if not exists private\.municipality_indicator_source_links/i);
 assert.match(migration, /references public\.municipality_indicators\(id\)/i);
 assert.match(migration, /references public\.data_sources\(id\)/i);
-assert.match(migration, /source_role in \('primary', 'input', 'methodology', 'validation', 'context'\)/i);
+assert.match(migration, /source_role in \\(\\s*'primary',\\s*'input',\\s*'methodology',\\s*'validation',\\s*'context'\\s*\\)/i);
 assert.match(migration, /source_url_snapshot text not null/i);
 assert.match(migration, /alter table private\.municipality_indicator_source_links enable row level security/i);
 assert.match(migration, /revoke all privileges on table private\.municipality_indicator_source_links\s+from public, anon, authenticated/i);
