@@ -1,5 +1,10 @@
-do $$
-declare link_count integer; metadata_count integer;
+do $
+declare
+ link_count integer;
+ metadata_count integer;
+ index_unique boolean;
+ index_key_count integer;
+ index_definition text;
 begin
  if to_regclass('private.municipality_indicator_source_links') is null then raise exception 'provenance table missing'; end if;
  select count(*) into link_count from private.municipality_indicator_source_links;
@@ -8,6 +13,31 @@ begin
     or exists (select 1 from pg_constraint where conrelid='public.municipality_indicators'::regclass and conname='municipality_indicators_observation_unique')
  then raise exception 'legacy unique index/constraint remains'; end if;
  if to_regclass('public.uq_municipality_indicators_source_observation') is null then raise exception 'new full unique index missing'; end if;
+ select i.indisunique, i.indnkeyatts, pg_get_indexdef(i.indexrelid)
+ into index_unique, index_key_count, index_definition
+ from pg_index i
+ where i.indexrelid = 'public.uq_municipality_indicators_source_observation'::regclass;
+ if index_unique is distinct from true or index_key_count <> 8 then
+   raise exception 'new observation identity index must be unique with 8 key fields; got unique=%, key_fields=%',
+     index_unique, index_key_count;
+ end if;
+ if index_definition not like '%municipality_id%'
+    or index_definition not like '%indicator_code%'
+    or index_definition not like '%reference_year%'
+    or index_definition not like '%reference_period%'
+    or index_definition not like '%unit%'
+    or index_definition not like '%geographic_level%'
+    or index_definition not like '%geographic_name%'
+    or index_definition not like '%source_id%' then
+   raise exception 'new observation identity index definition is incomplete: %', index_definition;
+ end if;
+ if not exists (
+   select 1 from private.municipality_indicator_source_links
+   where source_url_snapshot = 'https://example.test/primary'
+     and source_role = 'primary'
+ ) then
+   raise exception 'primary source URL snapshot was not preserved during provenance backfill';
+ end if;
  select count(*) into metadata_count from information_schema.columns where table_schema='public' and table_name='data_sources'
  and column_name in ('data_owner','temporal_coverage','data_type','access_restrictions','retrieved_at');
  if metadata_count<>5 then raise exception 'expected 5 metadata columns, got %',metadata_count; end if;
