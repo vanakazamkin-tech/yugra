@@ -1,0 +1,23 @@
+project_municipality_id,project_name,rosstat_municipality_name,oktmo_code,municipality_type,valid_from,valid_to,source_file,source_document_url,source_file_sha256,verified_at,match_status,review_note
+surgutsky,Сургутский район,,,,,,,,,,pending_official_match,Do not infer code from name
+khanty-mansiysk,Ханты-Мансийск,,,,,,,,,,pending_official_match,
+beloyarsky-raion,Белоярский район,,,,,,,,,,pending_official_match,
+nizhnevartovsky-raion,Нижневартовский район,,,,,,,,,,pending_official_match,
+uray,Урай,,,,,,,,,,pending_official_match,
+nizhnevartovsk,Нижневартовск,,,,,,,,,,pending_official_match,
+kondinsky-raion,Кондинский район,,,,,,,,,,pending_official_match,
+langepas,Лангепас,,,,,,,,,,pending_official_match,
+october-raion,Октябрьский район,,,,,,,,,,pending_official_match,Check official spelling and municipal status
+berezovsky-raion,Берёзовский район,,,,,,,,,,pending_official_match,
+pyt-yah,Пыть-Ях,,,,,,,,,,pending_official_match,
+raduzhny,Радужный,,,,,,,,,,pending_official_match,
+megion,Мегион,,,,,,,,,,pending_official_match,
+pokachi,Покачи,,,,,,,,,,pending_official_match,
+ugorsk,Югорск,,,,,,,,,,pending_official_match,
+surgut,Сургут,,,,,,,,,,pending_official_match,
+nefteyugansk,Нефтеюганск,,,,,,,,,,pending_official_match,
+kogalym,Когалым,,,,,,,,,,pending_official_match,
+nefteyugansky-raion,Нефтеюганский район,,,,,,,,,,pending_official_match,
+nyagan-city,Нягань,,,,,,,,,,pending_official_match,
+khanty-mansiysky-raion,Ханты-Мансийский район,,,,,,,,,,pending_official_match,
+sovetsky-raion,Советский район,,,,,,,,,,pending_official_match,

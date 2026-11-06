@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "validate:rosstat-crosswalk": "node scripts/validate-rosstat-crosswalk.mjs"
   },
   "dependencies": {
     "react": "^18.2.0",
