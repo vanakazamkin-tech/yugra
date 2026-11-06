@@ -58,3 +58,12 @@ assert.equal(derivedBudget.find((row) => row.reference_period === 'annual').valu
 assert.equal(derivedBudget.find((row) => row.reference_period === '2025-Q3').value, 40);
 console.log('OK: derived budget indicators preserve source reporting periods and do not mix annual and quarterly data.');
 
+const conflictingBudgetFixture = [
+  { municipality_id: 'conflict-town', indicator_code: 'budget_total_revenue', reference_year: 2025, reference_period: '2025-Q3', value: 100, unit: 'тыс. руб.', verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'conflict-town', indicator_code: 'budget_total_revenue', reference_year: 2025, reference_period: '2025-Q3', value: 120, unit: 'тыс. руб.', verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'conflict-town', indicator_code: 'budget_revenue_excluding_grants', reference_year: 2025, reference_period: '2025-Q3', value: 50, unit: 'тыс. руб.', verification_status: 'verified', geographic_level: 'municipality' },
+];
+assert.equal(deriveMunicipalIndicators(conflictingBudgetFixture).length, 0,
+  'derived budget ratios must not use arbitrary values when source observations conflict');
+console.log('OK: conflicting duplicate source observations are excluded from derived calculations.');
+
