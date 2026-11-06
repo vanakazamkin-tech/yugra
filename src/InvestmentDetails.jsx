@@ -153,8 +153,8 @@ const csvEscape = (value) => {
   return `"${text.replaceAll('"', '""')}"`;
 };
 const downloadCsv = (items, fields, filename) => {
-  const headers = ['Муниципальное образование', 'Группа', ...fields.map((key) => METRIC_BY_KEY[key]?.label || key)];
-  const rows = items.map((item) => [item.name, `Группа ${item.group2024}`, ...fields.map((key) => metricText(item, key))]);
+  const headers = ['Муниципальное образование', 'Группа', 'Статус данных', ...fields.map((key) => METRIC_BY_KEY[key]?.label || key)];
+  const rows = items.map((item) => [item.name, `Группа ${item.group2024}`, 'Демонстрационные значения — не официальная статистика', ...fields.map((key) => metricText(item, key))]);
   const content = '\uFEFF' + [headers, ...rows].map((row) => row.map(csvEscape).join(';')).join('\r\n');
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
