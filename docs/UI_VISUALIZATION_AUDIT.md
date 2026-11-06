@@ -120,3 +120,9 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 
 - The map's show/hide list control now exposes its expanded/collapsed state through `aria-expanded`.
 - The state follows the existing map-list visibility state and does not change the layout, map interactions, or selection behavior.
+
+## Analytics section switcher semantics (6 November 2026)
+
+- The in-place analytics section switcher is now represented as a named control group rather than a navigation landmark with page-current states.
+- Each section button exposes its selected state through `aria-pressed`, synchronized with the existing active section.
+- The existing section switching, visual classes, content, and analytical behavior are unchanged.
