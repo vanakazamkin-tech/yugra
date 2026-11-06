@@ -171,6 +171,21 @@ assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(false, '
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour'), riskSignal(true, 'finance')]).level, 'critical', 'three negative signals across two or more pillars are red by default');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'economy'), riskSignal(true, 'economy')]).level, 'watch', 'multiple signals in one pillar do not satisfy the default cross-pillar red threshold');
 assert.equal(assessRiskSignals([riskSignal(true, 'health'), riskSignal(true, 'education'), riskSignal(true, 'social'), riskSignal(false, 'finance')]).level, 'watch', 'health, education and social subcategories count as one social direction, not three');
+const complementaryBudgetSignals = assessRiskSignals([
+  { code: 'derived_budget_own_revenue_share', signalFamily: 'budget_revenue_structure', adverse: true, pillar: { key: 'budget' } },
+  { code: 'derived_budget_transfer_dependency', signalFamily: 'budget_revenue_structure', adverse: true, pillar: { key: 'budget' } },
+  { code: 'employment_rate', adverse: true, pillar: { key: 'employment' } },
+]);
+assert.equal(complementaryBudgetSignals.usableCount, 2, 'complementary own-revenue and transfer shares count as one independent signal family');
+assert.equal(complementaryBudgetSignals.level, 'watch', 'a complementary budget pair plus one labour signal must not falsely satisfy the three-signal critical threshold');
+const conflictingBudgetSignals = assessRiskSignals([
+  { code: 'derived_budget_own_revenue_share', signalFamily: 'budget_revenue_structure', adverse: true, pillar: { key: 'budget' } },
+  { code: 'derived_budget_transfer_dependency', signalFamily: 'budget_revenue_structure', adverse: false, pillar: { key: 'budget' } },
+  { code: 'employment_rate', adverse: false, pillar: { key: 'employment' } },
+]);
+assert.equal(conflictingBudgetSignals.level, 'insufficient', 'contradictory signals from one dependent family must be quarantined');
+assert.deepEqual(conflictingBudgetSignals.conflictingSignalFamilies, ['budget_revenue_structure']);
+
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 2, criticalSignals: 2, criticalPillars: 2 }).level, 'critical', 'custom thresholds must recalculate the traffic-light status');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 3, criticalSignals: 2, criticalPillars: 2 }).level, 'insufficient', 'the minimum coverage threshold must take precedence over negative signals');
 
