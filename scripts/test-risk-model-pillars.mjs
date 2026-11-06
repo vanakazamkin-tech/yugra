@@ -6,6 +6,7 @@ import { assessRiskSignals, buildRiskModel, countConsecutiveAdverseIntervals, DE
 assert.equal(directionForRiskIndicator({ indicator_code: 'derived_investment_per_capita', indicator_name: 'Инвестиции в основной капитал без добычи на одного жителя' }), 'context', 'nominal per-capita investment must not be treated as real growth without a deflator');
 assert.equal(directionForRiskIndicator({ indicator_code: 'fixed_capital_investment_growth_preliminary', indicator_name: 'Индекс физического объёма инвестиций в основной капитал' }), 'higher', 'physical-volume investment index can be evaluated directionally');
 assert.equal(directionForRiskIndicator({ indicator_code: 'average_monthly_salary_annual', indicator_name: 'Среднемесячная номинальная заработная плата' }), 'context', 'nominal salary without inflation adjustment must remain contextual');
+assert.equal(directionForRiskIndicator({ indicator_code: 'sme_employment_share', indicator_name: 'Доля среднесписочной численности работников МСП в численности работников всех предприятий и организаций' }), 'context', 'SME employment share is not an automatically positive diversification signal');
 assert.equal(directionForRiskIndicator({ indicator_code: 'derived_budget_transfer_dependency', indicator_name: 'Доля безвозмездных поступлений в общих доходах бюджета' }), 'lower', 'transfer dependency remains a lower-is-better signal');
 
 
