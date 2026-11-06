@@ -273,7 +273,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
             <article><span>Средний модельный балл</span><strong>{fmt(avgScore, 1)}</strong><em>данные по {scoreCoverage} из {forecasts.length} территорий</em></article>
           </div>
           <div className="forecast-chart-head"><div><h4>Инвестиции по территориям</h4><p>Модельные значения, млрд ₽</p></div><span>Показано {chartRows.length} территорий с данными</span></div>
-          <div className="forecast-bars" role="list" aria-label="Модельный объём инвестиций по муниципалитетам, млрд рублей">{chartRows.map((row) => <div className="forecast-bar-row" role="listitem" key={row.id}><span title={row.name}>{row.name}</span><div className="forecast-bar-track" aria-hidden="true"><i style={{ width: Math.max(1, row.projectedInvestments / maxInvestments * 100) + '%' }} /></div><strong>{fmt(row.projectedInvestments, 1)}</strong></div>)}</div>
+          <div className="forecast-bars" role="list" aria-label="Модельный объём инвестиций по муниципалитетам, млрд рублей">{chartRows.length ? chartRows.map((row) => <div className="forecast-bar-row" role="listitem" key={row.id}><span title={row.name}>{row.name}</span><div className="forecast-bar-track" aria-hidden="true"><i style={{ width: Math.max(1, row.projectedInvestments / maxInvestments * 100) + '%' }} /></div><strong>{fmt(row.projectedInvestments, 1)}</strong></div>) : <div className="empty-state"><strong>Нет доступных модельных значений инвестиций</strong><p>Для выбранной территории или текущего фильтра исходные данные не загружены. Это не означает нулевой объём инвестиций.</p></div>}</div>
         </div>
       </div>
 
