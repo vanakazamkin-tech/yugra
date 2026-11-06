@@ -13,9 +13,9 @@ const run = {
   referencePeriod: 'year',
   indexScale: '0–100 percentile score',
   results: {
-    a: { status: 'complete', index: 88.5 },
-    b: { status: 'insufficient_coverage', index: null },
-    c: { status: 'complete', index: 101 },
+    a: { municipalityId: 'a', status: 'complete', index: 88.5 },
+    b: { municipalityId: 'b', status: 'insufficient_coverage', index: null },
+    c: { municipalityId: 'c', status: 'complete', index: 101 },
   },
 };
 
@@ -109,4 +109,23 @@ test('adapter rejects malformed run result collections', () => {
   });
   assert.equal(options.indexContract.status, 'candidate');
   assert.equal(options.diagnostics.reason, 'calculated_index_results_required');
+});
+
+
+test('adapter rejects a complete result whose embedded municipality identity does not match its key', () => {
+  const options = createForecastIndexOptions({
+    indexRun: {
+      ...run,
+      results: {
+        ...run.results,
+        a: { municipalityId: 'b', status: 'complete', index: 88.5 },
+      },
+    },
+    municipalities,
+    indexContract: contract,
+    referenceYear: 2025,
+    referencePeriod: 'year',
+  });
+  assert.deepEqual(options.indexResults.a, { status: 'invalid_index_result', index: null });
+  assert.equal(options.diagnostics.invalidCount, 2);
 });
