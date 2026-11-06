@@ -246,3 +246,14 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - The control's value, selected municipality state, options, layout, and risk calculations are unchanged.
 - Source inspection identified this as the standalone selector in the risk passport heading; the other risk/forecast selectors remain associated with visible labels or explicit accessible names.
 - Browser and screen-reader verification remain outstanding.
+
+## Accessibility follow-up review (7 November 2026)
+
+A source-level review of the shared municipality passport dialog and analytical controls confirmed the following existing safeguards:
+
+- The municipality passport dialog has `role="dialog"`, `aria-modal="true"`, a programmatic title and description, initial focus placement, Escape-to-close behavior, Tab/Shift+Tab focus containment, body-scroll locking, and focus restoration to the invoking element.
+- Analytical tables are placed in labelled, keyboard-focusable horizontal-scroll regions; table headers use column scope.
+- The forecasting and risk controls use visible label associations or explicit accessible names. The risk passport's previously unnamed municipality selector now has an explicit Russian accessible name.
+- The visualization stylesheet includes a reduced-motion media query and visible focus styling.
+
+This was a static source review only. It does not replace keyboard-only, screen-reader, zoom, or real-device browser testing. The relevant CI run for commit `747bad35f3dd7790d693689355e532af4d5d9b90` completed successfully, including map coverage validation and the production bundle build.
