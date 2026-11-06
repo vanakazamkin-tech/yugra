@@ -194,7 +194,16 @@ export const INDICATOR_METHODS = {
   },
 };
 export function indicatorMethodFor(row) {
-  return INDICATOR_METHODS[canonicalIndicatorCode(row?.indicator_code)] || null;
+  const code = canonicalIndicatorCode(row?.indicator_code);
+  if (/^employees_[a-z0-9_]+$/.test(code)) {
+    return {
+      direction: 'context',
+      pillar: 'employment',
+      rationale: 'Среднесписочная численность работников организаций по отдельному виду экономической деятельности за указанный период.',
+      limitation: 'Абсолютная численность зависит от размера муниципалитета и не является уровнем занятости или долей отрасли. Текущий набор охватывает только два муниципалитета и организации без субъектов малого предпринимательства; без единого знаменателя и полного охвата не используется для межмуниципального ранжирования.',
+    };
+  }
+  return INDICATOR_METHODS[code] || null;
 }
 export function indicatorDirection(row) {
   return indicatorMethodFor(row)?.direction || 'context';
