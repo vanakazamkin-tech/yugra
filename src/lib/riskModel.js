@@ -25,10 +25,12 @@ const clamp = (v, min = 0, max = 100) => Math.max(min, Math.min(max, v));
 export function parseRiskPeriod(point = {}) {
   const period = String(point?.reference_period ?? '').trim();
   if (!period) return null;
-  const declaredYear = Number(point?.reference_year);
+  const rawYear = point?.reference_year;
+  const hasDeclaredYear = rawYear != null && String(rawYear).trim() !== '';
+  const declaredYear = Number(rawYear);
   const yearFromLabel = Number(period.match(/^(\d{4})(?=$|[-_\s])/i)?.[1]);
-  const year = Number.isInteger(declaredYear) && declaredYear >= 1900 && declaredYear <= 2200
-    ? declaredYear : yearFromLabel;
+  if (hasDeclaredYear && (!Number.isInteger(declaredYear) || declaredYear < 1900 || declaredYear > 2200)) return null;
+  const year = hasDeclaredYear ? declaredYear : yearFromLabel;
   if (!Number.isInteger(year) || year < 1900 || year > 2200) return null;
   if (yearFromLabel && yearFromLabel !== year) return null;
   const quarter = period.match(/^(?:\d{4}[-_\s]?)?Q([1-4])$/i);
@@ -135,7 +137,7 @@ function percentile(value, values, higherIsBetter) {
 export function buildRiskModel(municipalities = [], series = []) {
   const comparable = new Map();
   for (const item of series) {
-    if (!item || item.direction === 'context' || !finite(item.latest?.numericValue)) continue;
+    if (!item || !['higher', 'lower'].includes(item.direction) || !finite(item.latest?.numericValue)) continue;
     const pillarKey = MODEL_PILLAR_BY_SERIES[item.pillar?.key];
     if (!pillarKey) continue;
     const parsedPeriod = parseRiskPeriod(item.latest);
