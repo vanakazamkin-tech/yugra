@@ -1,4 +1,4 @@
-import { parseRiskPeriod, countConsecutiveAdverseIntervals } from './riskModel.js';
+import { parseRiskPeriod, countConsecutiveAdverseIntervals, DEFAULT_RISK_THRESHOLDS } from './riskModel.js';
 import { classify } from './indicatorClassification.js';
 import { directionForRiskIndicator, riskSignalFamilyFor } from './riskDirection.js';
 
@@ -14,7 +14,7 @@ const periodOrder = (row) => {
   const parsed = parseRiskPeriod(row);
   return parsed ? parsed.year * 10 + parsed.slot : Number.NEGATIVE_INFINITY;
 };
-export function buildRiskSeries(rows) {
+export function buildRiskSeries(rows, thresholds = DEFAULT_RISK_THRESHOLDS) {
   const groups = new Map();
   (Array.isArray(rows) ? rows : []).forEach((row) => {
     if (!row || row.verification_status !== 'verified' || row.geographic_level !== 'municipality') return;
@@ -78,6 +78,8 @@ export function buildRiskSeries(rows) {
     const changePercent = comparable && previous.numericValue !== 0 ? change / Math.abs(previous.numericValue) * 100 : null;
     const direction = directionFor(latest);
     const adverse = change == null || direction === 'context' ? null : direction === 'lower' ? change > 0 : change < 0;
+    const sharpChangeThreshold = Number.isFinite(Number(thresholds?.sharpChangePercent)) ? Math.max(1, Math.min(100, Number(thresholds.sharpChangePercent))) : DEFAULT_RISK_THRESHOLDS.sharpChangePercent;
+    const sharpChange = adverse === true && changePercent != null && Math.abs(changePercent) >= sharpChangeThreshold;
     const adverseStreak = conflictAfterLatest ? 0 : countConsecutiveAdverseIntervals(points, direction);
     const sourcePresent = Boolean(latest.source_id || latest.source_url || (Array.isArray(latest.source_ids) && latest.source_ids.length) || (Array.isArray(latest.source_urls) && latest.source_urls.length));
     const historyConsistent = points.length >= 3 && points.slice(1).every((point, index) => {
@@ -102,7 +104,7 @@ export function buildRiskSeries(rows) {
       confidenceLabel = 'Средняя';
       confidenceReason = 'Источник указан; последнее изменение сопоставимо, но история короткая.';
     }
-    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, signalFamily: riskSignalFamilyFor(latest.indicator_code), name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, adverseStreak, excludedConflictingPeriods, conflictAfterLatest, confidenceLevel, confidenceLabel, confidenceReason });
+    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, signalFamily: riskSignalFamilyFor(latest.indicator_code), name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, sharpChange, sharpChangeThreshold, adverseStreak, excludedConflictingPeriods, conflictAfterLatest, confidenceLevel, confidenceLabel, confidenceReason });
   });
   return result;
 }
