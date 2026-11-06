@@ -422,3 +422,49 @@ Browser E2E, production Supabase migration и production deployment по-пре�
 - PR #13: ahead 36, behind 5.
 
 Новый Build verification для QA audit commit `c1a54af...`, run #42283752642, завершился success.
+
+
+---
+
+# Дополнение к аудиту — повторная проверка heads после новых коммитов (07.11.2026)
+
+## Актуальные состояния на момент проверки
+
+| PR | Проверенный head | GitHub Actions | Отставание от main |
+|---|---|---|---|
+| #8 | `2f9eac33e38134e80b738ccd57308596e35d5905` | #42283777199 success | 0 |
+| #9 | `a0ee7f1bb016eac96aa667d0ca769fe4dcca31a0` | #42284060237 success | 5 |
+| #10 | `8960e057f694f2f290bff42e1add99c238ca049c` | #42283895151 success | 0 |
+| #11 | `9bb4b4547aea9e214478200f28601db8fc9295af` | #42283880579 success | 5 |
+| #12 | `2c2c42ca79936f8f7b5f6b7bf5790aa2097b3040` | #42283907948 success | 5 |
+| #13 | `0f239796f024b1418a382355f1a797a82344d002` | не обнаружен для этого SHA | 5 |
+
+PR #11 run #42283880579 включает успешные jobs `build` и `data-migrations-integration`. PR #9 run #42284060237 — success. PR #13 получил новый head после предыдущего успешного CI; его старый успешный прогон не считается проверкой нового SHA.
+
+## Интеграционная база не обновлена
+
+Текущий main на момент проверки: `9f99481a3843862a17fd9cf640fee48b4ef901ba`.
+PR #9/#11/#12/#13 всё ещё имеют merge base `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c` и отстают от main на пять commits.
+
+Точные compare counts:
+- PR #9: ahead 103 / behind 5.
+- PR #11: ahead 114 / behind 5.
+- PR #12: ahead 40 / behind 5.
+- PR #13: ahead 41 / behind 5.
+
+PR #13 в последнем PR metadata ответе GitHub показывал `mergeable=false`. В PR #13 оставлен комментарий с просьбой разрешить конфликт/проверить merge state, обновиться от актуального main и запустить CI на новом SHA.
+
+## Текущие пересечения файлов
+
+- PR #8 / #13: `docs/INDEX_METHODOLOGY.md`.
+- PR #9 / #10: `src/components/UnifiedRiskForecast.jsx`.
+- PR #11 / #13: `.github/workflows/ci.yml`, `package.json`.
+- PR #10 / #13: `src/components/Forecasting.jsx`.
+
+## Дополнительная рекомендация к тестированию PR #9
+
+Текущий provenance/geography test теперь смотрит в правильный модуль `src/lib/riskSeries.js`, а CI проходит. Однако это статическая проверка исходного текста. Рекомендовано добавить runtime regression tests для `buildRiskSeries()`: пропускать только verified municipality observations, исключать missing/unverified provenance и неверный/отсутствующий geographic level, а также проверять отсутствие мутации входного массива. Замечание оставлено в PR #9; это улучшение покрытия, не текущий CI blocker.
+
+## Вердикт
+
+На момент этого снимка пять из шести последних heads имеют успешный GitHub Actions; PR #13 обновился после своего успешного CI и нуждается в новом прогоне. Четыре PR (#9/#11/#12/#13) по-прежнему требуют синхронизации с main. Общая интеграция не подтверждена. Browser E2E, responsive/accessibility проверки, production Supabase migration и production deployment не выполнены.
