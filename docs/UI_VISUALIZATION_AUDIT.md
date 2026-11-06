@@ -89,3 +89,12 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Forecast horizon buttons expose the selected horizon through `aria-pressed`.
 - Sections in the unified risk-analysis navigation expose the active section with `aria-current="page"`.
 - These changes add state information for assistive technology without changing filter behavior, forecast calculations, risk logic, or visual styling.
+
+
+## Accessible filter groups and result announcements (6 November 2026)
+
+- Municipality-group filters and quick analytical slices are now exposed as named control groups.
+- Education-facility type filters are exposed as a named group.
+- The active-filter summary announces the filtered municipality count through a polite status region when the selected search/slice changes.
+- The forecast-horizon selector is exposed as a named group associated with its visible label; the selected horizon remains exposed through `aria-pressed`.
+- No filter predicates, data values, forecast formulas, or visual styles were changed.
