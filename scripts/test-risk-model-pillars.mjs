@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { classify } from '../src/lib/indicatorClassification.js';
-import { buildRiskModel, MODEL_PILLARS } from '../src/lib/riskModel.js';
+import { buildRiskModel, deriveMunicipalIndicators, MODEL_PILLARS } from '../src/lib/riskModel.js';
 
 assert.equal(classify({ indicator_code: 'healthcare_facilities', indicator_name: 'Медицинские организации' }).key, 'health');
 assert.equal(classify({ indicator_code: 'hospital_beds', indicator_name: 'Количество больничных коек' }).key, 'health');
@@ -78,5 +78,43 @@ assert.deepEqual(serviceRisk.hits, ['budget', 'social'], 'health and education m
 const insufficient = buildRiskModel(municipalities, series.filter((item) => item.pillar.key === 'investment'));
 assert.equal(insufficient.byMunicipality.m1.score, null, 'one 20% pillar must not produce a resilience score');
 assert.equal(MODEL_PILLARS.find((pillar) => pillar.key === 'social').weight, 0.15, 'the existing social weight must remain unchanged');
+
+const sourceRow = (indicator_code, value, reference_period, unit = 'тыс. руб.', overrides = {}) => ({
+  municipality_id: 'm1',
+  indicator_code,
+  indicator_name: indicator_code,
+  reference_year: 2024,
+  reference_period,
+  value,
+  unit,
+  verification_status: 'verified',
+  geographic_level: 'municipality',
+  ...overrides,
+});
+const derivedRows = deriveMunicipalIndicators([
+  sourceRow('budget_total_revenue', 100, '2024-Q2'),
+  sourceRow('budget_revenue_excluding_grants', 40, '2024-Q2'),
+  sourceRow('budget_total_expenditure', 80, '2024-Q2'),
+  sourceRow('budget_total_revenue', 200, '2024-Q3'),
+  sourceRow('budget_revenue_excluding_grants', 60, '2024-Q3'),
+  sourceRow('budget_intergovernmental_transfers', 50, '2024-Q3'),
+  sourceRow('budget_total_expenditure', 180, '2024-Q3'),
+  sourceRow('fixed_capital_investment_non_mining', 1000, 'annual', 'руб.'),
+  sourceRow('population_municipality', 10, '2024-01-01', 'человек'),
+  sourceRow('population_municipality', 9, '2022-01-01', 'человек', { reference_year: 2022 }),
+  sourceRow('budget_total_revenue', 100, '2024-Q3', 'руб.', { municipality_id: 'm2' }),
+  sourceRow('budget_revenue_excluding_grants', 40, '2024-Q3', 'тыс. руб.', { municipality_id: 'm2' }),
+  sourceRow('budget_total_revenue', 999, '2024-Q3', 'тыс. руб.', { verification_status: 'needs_review' }),
+  sourceRow('budget_revenue_excluding_grants', 999, '2024-Q3', 'тыс. руб.', { geographic_level: 'settlement' }),
+]);
+const ownRevenueShares = derivedRows.filter((row) => row.indicator_code === 'derived_budget_own_revenue_share');
+assert.deepEqual(ownRevenueShares.map((row) => [row.reference_period, row.value]), [['2024-Q2', 40], ['2024-Q3', 30]], 'budget ratios must remain separated by reporting period');
+assert.equal(derivedRows.find((row) => row.indicator_code === 'derived_budget_transfer_dependency')?.reference_period, '2024-Q3', 'transfer dependency must retain its source quarter');
+assert.deepEqual(derivedRows.filter((row) => row.indicator_code === 'derived_budget_balance_ratio').map((row) => [row.reference_period, Number(row.value.toFixed(4))]), [['2024-Q2', 25], ['2024-Q3', 11.1111]], 'budget balance must use values from the same quarter');
+assert.equal(derivedRows.find((row) => row.indicator_code === 'derived_investment_per_capita')?.value, 100, 'annual investment must join to the unique population snapshot for the same year');
+assert.equal(derivedRows.find((row) => row.indicator_code === 'derived_population_growth_rate')?.reference_period, 'annual', 'population growth is explicitly annualized');
+assert.equal(derivedRows.some((row) => row.municipality_id === 'm2' && row.indicator_code === 'derived_budget_own_revenue_share'), false, 'ratios with incompatible units must not be calculated');
+assert.equal(derivedRows.some((row) => row.value === 999), false, 'unverified and settlement-level rows must not enter derived municipal indicators');
+
 
 console.log('Indicator classification and resilience model pillar tests passed.');
