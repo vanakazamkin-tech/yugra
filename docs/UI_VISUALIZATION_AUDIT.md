@@ -317,3 +317,7 @@ The report preview and print/PDF document now always state that summary scores a
 ## Explicit empty states in printed report output (7 November 2026)
 
 The print/PDF report now handles two incomplete configurations explicitly: when the selected chart metric has no values in the report selection, it prints a clear explanation instead of an empty chart area; when no detail fields are selected, it prints a notice instead of a table containing only municipality metadata. Existing preview behavior, selection logic, calculations, and CSV export are unchanged.
+
+## Comparison picker search feedback and empty state (7 November 2026)
+
+The municipality comparison picker now announces the number of matching municipalities as the search query changes, exposes the selected-territory counter as a polite live status, and shows a clear message when no municipality matches. This prevents an empty picker from appearing broken and makes search feedback perceivable to assistive technology. Selection limits and comparison calculations are unchanged.
