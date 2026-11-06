@@ -269,3 +269,15 @@ This is a source-level accessibility fix; keyboard operation still requires manu
 The application already exposed a visible-on-focus “Перейти к содержимому” skip link targeting the main landmark. The target `<main id="main-content">` was not explicitly programmatically focusable. Added `tabIndex={-1}` so keyboard and assistive-technology users can move focus to the main content when activating the skip link. This does not add a persistent tab stop or change the visual design.
 
 Source-level check only; verify actual focus behavior in supported browsers during manual keyboard testing.
+
+## Map interaction and live-status accessibility review (7 November 2026)
+
+A further source-level review of `src/components/UgraMap.jsx` and the application shell confirmed:
+
+- Municipality shapes on the SVG map are keyboard-focusable button targets with municipality-specific accessible names; Enter and Space open the corresponding passport.
+- The adjacent municipality list uses native buttons, providing an alternative to selecting small SVG targets.
+- The map has a labelled SVG group and a description that explains pointer, touch, and keyboard interaction.
+- The database synchronization message is exposed as a polite live status and distinguishes connected, loading, unconfigured, and error states; retry is available when connection fails.
+- Global visible focus styles cover buttons, links, inputs, selects, and textareas; map regions and city targets have dedicated focus treatment.
+
+This review is based on source inspection, not live assistive-technology or touch testing. The PR's recent CI runs pass, but deployment preview is separately constrained by Vercel's free-plan daily deployment limit noted in the PR checks.
