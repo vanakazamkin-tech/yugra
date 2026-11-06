@@ -1457,20 +1457,20 @@ export const InvestmentDetails = () => {
       <a className="skip-link" href="#main-content">Перейти к содержимому</a>
       <div className="site-shell print:hidden">
         <header className="site-header">
-          <button className="brand-lockup" onClick={() => navigateToTab('catalog')} aria-label="Югра — на главную">
+          <button className="brand-lockup" aria-controls="main-content" onClick={() => navigateToTab('catalog')} aria-label="Югра — на главную">
             <span className="brand-emblem"><img src="/images/khanty-prosperity-seal.svg" alt="" /></span>
             <span className="brand-copy"><span className="brand-title">ЮГРА</span><span className="brand-subtitle">Земля традиций</span></span>
           </button>
           <nav className="main-nav" aria-label="Основная навигация">
-            <button aria-current={activeTab === 'catalog' ? 'page' : undefined} className={activeTab === 'catalog' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('catalog')}><Icon name="home"/>Главная</button>
-            <button aria-current={activeTab === 'map' ? 'page' : undefined} className={activeTab === 'map' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('map')}><Icon name="map"/>Карта</button>
-            <button aria-current={activeTab === 'rating' ? 'page' : undefined} className={activeTab === 'rating' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('rating')}><Icon name="chart"/>Рейтинг</button>
-            <button aria-current={activeTab === 'risk' || activeTab === 'forecast' ? 'page' : undefined} className={activeTab === 'risk' || activeTab === 'forecast' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('risk')}><Icon name="chart"/>Риски и прогноз</button>
-            <button aria-current={activeTab === 'compare' ? 'page' : undefined} className={activeTab === 'compare' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('compare')}><Icon name="compare"/>Сравнение</button>
-            <button aria-current={activeTab === 'reports' ? 'page' : undefined} className={activeTab === 'reports' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('reports')}><Icon name="file"/>Отчёты</button>
+            <button aria-current={activeTab === 'catalog' ? 'page' : undefined} className={activeTab === 'catalog' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('catalog')}><Icon name="home"/>Главная</button>
+            <button aria-current={activeTab === 'map' ? 'page' : undefined} className={activeTab === 'map' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('map')}><Icon name="map"/>Карта</button>
+            <button aria-current={activeTab === 'rating' ? 'page' : undefined} className={activeTab === 'rating' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('rating')}><Icon name="chart"/>Рейтинг</button>
+            <button aria-current={activeTab === 'risk' || activeTab === 'forecast' ? 'page' : undefined} className={activeTab === 'risk' || activeTab === 'forecast' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('risk')}><Icon name="chart"/>Риски и прогноз</button>
+            <button aria-current={activeTab === 'compare' ? 'page' : undefined} className={activeTab === 'compare' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('compare')}><Icon name="compare"/>Сравнение</button>
+            <button aria-current={activeTab === 'reports' ? 'page' : undefined} className={activeTab === 'reports' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('reports')}><Icon name="file"/>Отчёты</button>
             
-            <button aria-current={activeTab === 'data' ? 'page' : undefined} className={activeTab === 'data' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('data')}><Icon name="table"/>Данные</button>
-            <button aria-current={activeTab === 'about' ? 'page' : undefined} className={activeTab === 'about' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('about')}><Icon name="info"/>Концепция</button>
+            <button aria-current={activeTab === 'data' ? 'page' : undefined} className={activeTab === 'data' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('data')}><Icon name="table"/>Данные</button>
+            <button aria-current={activeTab === 'about' ? 'page' : undefined} className={activeTab === 'about' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('about')}><Icon name="info"/>Концепция</button>
           </nav>
           <div className="header-motto"><span className="concept-corner">КОНЦЕПТ</span><span className="motto-mark"/>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</div>
         </header>
