@@ -47,7 +47,8 @@ insert into public.municipality_indicators(municipality_id,indicator_code,indica
  ('test-municipality','test_indicator','Test indicator',2025,'annual',11,'thousand persons','src-primary','https://example.test/primary','verified','municipality',null),
  ('test-municipality','test_indicator','Test indicator',2025,'annual',12,'persons','src-primary','https://example.test/primary','verified','settlement','Test settlement'),
  ('test-municipality','test_indicator','Test indicator',2025,'annual',13,'thousand persons','src-secondary','https://example.test/secondary','needs_review','municipality',null),
- ('test-municipality','test_indicator','Test indicator',2025,'annual',14,'persons','src-secondary','https://example.test/secondary','needs_review','municipality',null);
+ ('test-municipality','test_indicator','Test indicator',2025,'annual',14,'persons','src-secondary','https://example.test/secondary','needs_review','municipality',null),
+ ('test-municipality','test_indicator','Test indicator',2025,'year_end_estimate',15,'persons','src-primary','https://example.test/primary','needs_review','municipality',null);
 do $duplicate_check$
 begin
  if not exists (
@@ -57,6 +58,34 @@ begin
      and indicator_code = 'test_indicator'
  ) then
    raise exception 'cross-source incompatible units are not reported';
+ end if;
+ if not exists (
+   select 1 from public.municipality_indicator_quality_issues
+   where issue_code = 'conflicting_source_values'
+     and municipality_id = 'test-municipality'
+     and indicator_code = 'test_indicator'
+     and unit = 'persons'
+     and source_count = 2
+ ) then
+   raise exception 'cross-source disagreement is not reported for a matching unit/geography key';
+ end if;
+ if not exists (
+   select 1 from public.municipality_indicator_quality_issues
+   where issue_code = 'noncanonical_period_label'
+     and municipality_id = 'test-municipality'
+     and indicator_code = 'test_indicator'
+     and reference_period = 'year_end_estimate'
+ ) then
+   raise exception 'noncanonical period labels are not added to the manual review queue';
+ end if;
+ if not exists (
+   select 1 from public.municipality_indicator_quality_issues
+   where issue_code = 'verification_backlog'
+     and municipality_id = 'test-municipality'
+     and indicator_code = 'test_indicator'
+     and reference_period = 'year_end_estimate'
+ ) then
+   raise exception 'non-verified observations are not added to the verification backlog';
  end if;
  begin
   insert into public.municipality_indicators(municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,verification_status,geographic_level,geographic_name)
