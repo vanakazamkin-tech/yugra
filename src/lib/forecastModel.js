@@ -69,7 +69,8 @@ export function normalizeScenarioRows(baseRows, factorRows = [], factorColumnsAv
 
 export function buildForecasts(municipalities = [], params = {}, horizon = 1, options = {}) {
   const safeOptions = options && typeof options === 'object' ? options : {};
-  const useApprovedIndex = safeOptions.scoreSource === 'resilience-index'
+  const indexModeRequested = safeOptions.scoreSource === 'resilience-index';
+  const useApprovedIndex = indexModeRequested
     && safeOptions.indexContract?.status === 'approved'
     && typeof safeOptions.indexContract?.version === 'string'
     && safeOptions.indexContract.version.trim() !== '';
@@ -93,8 +94,8 @@ export function buildForecasts(municipalities = [], params = {}, horizon = 1, op
     const investmentRaw = municipality?.investments?.volumeBillion;
     const smeRaw = municipality?.smeCount;
     const indexResult = municipality?.id == null ? null : indexResults[String(municipality.id)];
-    const scoreRaw = useApprovedIndex
-      ? (indexResult?.status === 'complete' ? indexResult.index : null)
+    const scoreRaw = indexModeRequested
+      ? (useApprovedIndex && indexResult?.status === 'complete' ? indexResult.index : null)
       : municipality?.score;
     const hasInvestment = nonNegative(investmentRaw);
     const hasSme = nonNegative(smeRaw);
@@ -152,7 +153,7 @@ export function buildForecasts(municipalities = [], params = {}, horizon = 1, op
       hasInvestment,
       hasSme,
       hasScore,
-      scoreSource: useApprovedIndex ? 'approved_resilience_index' : 'conceptual_score',
+      scoreSource: useApprovedIndex ? 'approved_resilience_index' : indexModeRequested ? 'unavailable_index_contract' : 'conceptual_score',
       scoreMethodologyVersion: useApprovedIndex ? safeOptions.indexContract.version : null,
       adjustedScoreRate,
     };
