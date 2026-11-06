@@ -51,7 +51,7 @@ begin
       v_row.source_id,
       ds.url,
       'verified',
-      concat_ws(E'\n',
+      concat_ws(E'\\n',
         'Импортировано из staging после ручного подтверждения.',
         'Исходная запись: ' || coalesce(v_row.source_record_key, v_row.id::text),
         nullif(array_to_string(v_row.validation_errors, '; '), '')
