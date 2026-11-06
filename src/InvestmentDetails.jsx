@@ -2160,7 +2160,7 @@ export const InvestmentDetails = () => {
                   {reportIncludeOfficialData && <section className="report-preview-section report-official-section">
                     <div className="report-preview-section-heading"><h4>Проверенные официальные наблюдения</h4><span>ОТДЕЛЬНЫЙ СТАТИСТИЧЕСКИЙ СЛОЙ</span></div>
                     <p className="report-official-intro">{reportOfficialIndicators.length} наблюдений по выбранным территориям. Эти значения не смешиваются с демонстрационными баллами, инвестиционными объёмами и оценками из локального набора. Уровень географии указан в каждой строке.</p>
-                    {reportOfficialIndicators.length ? <div className="report-official-data-table-wrap"><table className="report-official-data-table">
+                    {reportOfficialIndicators.length ? <div className="report-official-data-table-wrap" role="region" tabIndex={0} aria-label="Таблица официальных наблюдений. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="report-official-data-table">
                       <thead><tr><th scope="col">Территория / уровень</th><th scope="col">Показатель</th><th scope="col">Значение</th><th scope="col">Период</th><th scope="col">Примечание / источник</th></tr></thead>
                       <tbody>{reportOfficialIndicators.map((item) => {
                         const municipality = municipalities.find((entry) => entry.id === item.municipality_id);
