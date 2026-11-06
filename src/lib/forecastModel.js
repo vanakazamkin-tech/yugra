@@ -10,50 +10,85 @@ export const FACTOR_COEFFICIENTS = Object.freeze({
   laborShortage: -0.15,
 });
 
-const finite = (value) => value != null && value !== '' && Number.isFinite(Number(value));
+// Number('   ') and Number(null) both produce 0. Accept only explicit finite
+// numbers or non-empty numeric strings; booleans and coercible objects are invalid.
+const numeric = (value) => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  const parsed = Number(value.trim());
+  return Number.isFinite(parsed) ? parsed : null;
+};
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-const rate = (value, min = -100, max = 100) => clamp(finite(value) ? Number(value) : 0, min, max);
-const nonNegative = (value) => finite(value) && Number(value) >= 0;
-const growth = (base, annualRate, years) => base * Math.pow(Math.max(0, 1 + annualRate / 100), years);
+const rate = (value, min = -100, max = 100) => {
+  const parsed = numeric(value);
+  return clamp(parsed == null ? 0 : parsed, min, max);
+};
+const nonNegative = (value) => {
+  const parsed = numeric(value);
+  return parsed != null && parsed >= 0;
+};
+const validScore = (value) => {
+  const parsed = numeric(value);
+  return parsed != null && parsed >= 0 && parsed <= 100;
+};
+const growth = (base, annualRate, years) => {
+  const result = base * Math.pow(Math.max(0, 1 + annualRate / 100), years);
+  return Number.isFinite(result) ? result : null;
+};
+const roundCount = (value) => value == null ? null : Math.round(value);
 
 export function buildForecasts(municipalities = [], params = {}, horizon = 1) {
-  const years = clamp(Math.round(finite(horizon) ? Number(horizon) : 1), 1, 3);
-  const uncertaintyRate = rate(params.uncertainty_rate, 0, 100);
+  const parsedHorizon = numeric(horizon);
+  const years = clamp(Math.round(parsedHorizon == null ? 1 : parsedHorizon), 1, 3);
+  const safeParams = params && typeof params === 'object' ? params : {};
+  const uncertaintyRate = rate(safeParams.uncertainty_rate, 0, 100);
   const uncertainty = uncertaintyRate * Math.sqrt(years);
-  const baseRate = rate(params.score_growth_rate, -100, 100);
+  const baseRate = rate(safeParams.score_growth_rate, -100, 100);
   const factors = [
-    { key: 'exportShock', label: 'Изменение экспортной выручки', input: rate(params.export_shock_pct, -100, 100), coefficient: FACTOR_COEFFICIENTS.exportShock },
-    { key: 'costPressure', label: 'Изменение издержек предприятий', input: rate(params.cost_pressure_pct, -100, 100), coefficient: FACTOR_COEFFICIENTS.costPressure },
-    { key: 'laborShortage', label: 'Изменение кадрового дефицита', input: rate(params.labor_shortage_pct, -100, 100), coefficient: FACTOR_COEFFICIENTS.laborShortage },
+    { key: 'exportShock', label: 'Изменение экспортной выручки', input: rate(safeParams.export_shock_pct, -100, 100), coefficient: FACTOR_COEFFICIENTS.exportShock },
+    { key: 'costPressure', label: 'Изменение издержек предприятий', input: rate(safeParams.cost_pressure_pct, -100, 100), coefficient: FACTOR_COEFFICIENTS.costPressure },
+    { key: 'laborShortage', label: 'Изменение кадрового дефицита', input: rate(safeParams.labor_shortage_pct, -100, 100), coefficient: FACTOR_COEFFICIENTS.laborShortage },
   ].map((factor) => ({ ...factor, annualEffect: factor.input * factor.coefficient }));
 
   const adjustedScoreRate = rate(baseRate + factors.reduce((sum, factor) => sum + factor.annualEffect, 0));
   const sourceRows = Array.isArray(municipalities) ? municipalities : [];
   const rows = sourceRows.map((municipality) => {
     const investmentRaw = municipality?.investments?.volumeBillion;
+    const smeRaw = municipality?.smeCount;
+    const scoreRaw = municipality?.score;
     const hasInvestment = nonNegative(investmentRaw);
-    const hasSme = nonNegative(municipality?.smeCount);
-    const hasScore = finite(municipality?.score);
-    const investment = hasInvestment ? Number(investmentRaw) : null;
-    const sme = hasSme ? Number(municipality.smeCount) : null;
-    const score = hasScore ? clamp(Number(municipality.score), 0, 100) : null;
+    const hasSme = nonNegative(smeRaw);
+    const hasScore = validScore(scoreRaw);
+    const investment = hasInvestment ? numeric(investmentRaw) : null;
+    const sme = hasSme ? numeric(smeRaw) : null;
+    const score = hasScore ? numeric(scoreRaw) : null;
 
-    const investmentRate = rate(params.investment_growth_rate);
-    const smeRate = rate(params.sme_growth_rate);
+    const investmentRate = rate(safeParams.investment_growth_rate);
+    const smeRate = rate(safeParams.sme_growth_rate);
     const projectedInvestments = hasInvestment ? growth(investment, investmentRate, years) : null;
-    const projectedSme = hasSme ? Math.round(growth(sme, smeRate, years)) : null;
-    const projectedScore = hasScore ? clamp(growth(score, adjustedScoreRate, years), 0, 100) : null;
-    const scoreLow = projectedScore == null ? null : clamp(growth(score, adjustedScoreRate - uncertainty, years), 0, 100);
-    const scoreHigh = projectedScore == null ? null : clamp(growth(score, adjustedScoreRate + uncertainty, years), 0, 100);
+    const projectedSmeRaw = hasSme ? growth(sme, smeRate, years) : null;
+    const projectedSme = roundCount(projectedSmeRaw);
+    const projectedScoreRaw = hasScore ? growth(score, adjustedScoreRate, years) : null;
+    const projectedScore = projectedScoreRaw == null ? null : clamp(projectedScoreRaw, 0, 100);
+    const scoreLowRaw = hasScore ? growth(score, adjustedScoreRate - uncertainty, years) : null;
+    const scoreHighRaw = hasScore ? growth(score, adjustedScoreRate + uncertainty, years) : null;
+    const scoreLow = scoreLowRaw == null ? null : clamp(scoreLowRaw, 0, 100);
+    const scoreHigh = scoreHighRaw == null ? null : clamp(scoreHighRaw, 0, 100);
+
+    const investmentsLow = hasInvestment ? growth(investment, investmentRate - uncertainty, years) : null;
+    const investmentsHigh = hasInvestment ? growth(investment, investmentRate + uncertainty, years) : null;
+    const smeLow = hasSme ? roundCount(growth(sme, smeRate - uncertainty, years)) : null;
+    const smeHigh = hasSme ? roundCount(growth(sme, smeRate + uncertainty, years)) : null;
 
     const factorImpacts = factors.map((factor) => {
-      if (!hasScore) return { key: factor.key, label: factor.label, annualEffect: factor.annualEffect, scorePoints: null };
-      const withoutFactor = growth(score, adjustedScoreRate - factor.annualEffect, years);
+      if (!hasScore || projectedScore == null) return { key: factor.key, label: factor.label, annualEffect: factor.annualEffect, scorePoints: null };
+      const withoutFactorRaw = growth(score, adjustedScoreRate - factor.annualEffect, years);
+      const withoutFactor = withoutFactorRaw == null ? null : clamp(withoutFactorRaw, 0, 100);
       return {
         key: factor.key,
         label: factor.label,
         annualEffect: factor.annualEffect,
-        scorePoints: projectedScore - clamp(withoutFactor, 0, 100),
+        scorePoints: withoutFactor == null ? null : projectedScore - withoutFactor,
       };
     });
 
@@ -63,12 +98,12 @@ export function buildForecasts(municipalities = [], params = {}, horizon = 1) {
       group: municipality?.group2024,
       investment,
       projectedInvestments,
-      investmentsLow: hasInvestment ? growth(investment, investmentRate - uncertainty, years) : null,
-      investmentsHigh: hasInvestment ? growth(investment, investmentRate + uncertainty, years) : null,
+      investmentsLow,
+      investmentsHigh,
       sme,
       projectedSme,
-      smeLow: hasSme ? Math.round(growth(sme, smeRate - uncertainty, years)) : null,
-      smeHigh: hasSme ? Math.round(growth(sme, smeRate + uncertainty, years)) : null,
+      smeLow,
+      smeHigh,
       score,
       projectedScore,
       scoreLow,
@@ -83,30 +118,38 @@ export function buildForecasts(municipalities = [], params = {}, horizon = 1) {
 
   const ranked = rows.filter((row) => row.projectedScore != null)
     .slice().sort((a, b) => b.projectedScore - a.projectedScore || String(a.name).localeCompare(String(b.name), 'ru-RU'));
-  const rank = new Map(ranked.map((row, index) => [row.id, index + 1]));
-  return rows.map((row) => ({ ...row, projectedRank: rank.get(row.id) ?? null }))
+  const rankByRow = new Map(ranked.map((row, index) => [row, index + 1]));
+  return rows.map((row) => ({ ...row, projectedRank: rankByRow.get(row) ?? null }))
     .sort((a, b) => {
       if (a.projectedInvestments == null && b.projectedInvestments == null) return String(a.name).localeCompare(String(b.name), 'ru-RU');
       if (a.projectedInvestments == null) return 1;
       if (b.projectedInvestments == null) return -1;
-      return b.projectedInvestments - a.projectedInvestments;
+      return b.projectedInvestments - a.projectedInvestments || String(a.name).localeCompare(String(b.name), 'ru-RU');
     });
 }
 
 export function summarizeForecast(rows = []) {
-  const valid = rows.filter((row) => row.projectedScore != null);
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const valid = safeRows.filter((row) => numeric(row?.projectedScore) != null);
   const average = (items, key) => {
-    const values = items.map((item) => item[key]).filter(Number.isFinite);
-    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+    const values = items.map((item) => numeric(item?.[key])).filter((value) => value != null);
+    if (!values.length) return null;
+    // Incremental mean avoids overflowing an intermediate sum.
+    return values.reduce((mean, value, index) => mean + (value - mean) / (index + 1), 0);
   };
-  const investmentRows = rows.filter((row) => row.projectedInvestments != null);
+  const investmentRows = safeRows.filter((row) => numeric(row?.projectedInvestments) != null);
+  let investmentTotal = null;
+  if (investmentRows.length) {
+    const total = investmentRows.reduce((sum, row) => sum + numeric(row.projectedInvestments), 0);
+    investmentTotal = Number.isFinite(total) ? total : null;
+  }
   return {
-    municipalityCount: rows.length,
+    municipalityCount: safeRows.length,
     scoreCoverage: valid.length,
     averageScore: average(valid, 'projectedScore'),
     averageScoreLow: average(valid, 'scoreLow'),
     averageScoreHigh: average(valid, 'scoreHigh'),
-    investmentTotal: investmentRows.length ? investmentRows.reduce((sum, row) => sum + row.projectedInvestments, 0) : null,
+    investmentTotal,
     investmentCoverage: investmentRows.length,
   };
 }
