@@ -30,6 +30,30 @@ const riskRow = (year, period, value, overrides = {}) => ({
   reference_year: year, reference_period: period, value, unit: '%',
   verification_status: 'verified', geographic_level: 'municipality', source_id: 'test-source', ...overrides,
 });
+
+const budgetRow = (indicator_code, value) => riskRow(2024, 'annual', value, {
+  indicator_code, indicator_name: indicator_code, unit: 'млн руб.',
+});
+for (const missing of ['', '   ', String.fromCharCode(9), null, undefined, true, false, 'not-a-number', NaN, Infinity]) {
+  const derived = deriveMunicipalIndicators([
+    budgetRow('budget_total_revenue', 100),
+    budgetRow('budget_intergovernmental_transfers', missing),
+  ]);
+  assert.equal(
+    derived.some((item) => item.indicator_code === 'derived_budget_transfer_dependency'),
+    false,
+    'blank, boolean, and malformed financial values must not be converted into zero',
+  );
+}
+const zeroTransfer = deriveMunicipalIndicators([
+  budgetRow('budget_total_revenue', 100),
+  budgetRow('budget_intergovernmental_transfers', '0'),
+]);
+assert.equal(
+  zeroTransfer.find((item) => item.indicator_code === 'derived_budget_transfer_dependency')?.value,
+  0,
+  'a numeric string zero is a valid observation and must remain zero',
+);
 const periodYearFromLabelSeries = buildRiskSeries([
   { ...riskRow(null, '2022-Q1', 70), reference_year: null },
   { ...riskRow(null, '2023-Q1', 60), reference_year: null },
