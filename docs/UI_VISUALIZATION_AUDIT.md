@@ -126,3 +126,9 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - The in-place analytics section switcher is now represented as a named control group rather than a navigation landmark with page-current states.
 - Each section button exposes its selected state through `aria-pressed`, synchronized with the existing active section.
 - The existing section switching, visual classes, content, and analytical behavior are unchanged.
+
+## Rating filter and result feedback (6 November 2026)
+
+- The rating page's municipality-group filter is now a named control group; each option exposes its selected state through `aria-pressed`.
+- The rating table's municipality count is exposed as a polite status announcement when the visible result set changes.
+- Existing filter predicates, sort order, data, and visual styling are unchanged.
