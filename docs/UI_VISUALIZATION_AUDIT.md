@@ -305,3 +305,7 @@ The index sensitivity panel previously rendered sliders for all six pillars, inc
 ## Forecast investment chart empty-state semantics (7 November 2026)
 
 The forecast investment chart container previously retained `role=list` and a list label when no chart rows existed, even though its only child was an explanatory empty-state panel rather than a list item. The list role and label are now applied only when actual chart rows are present. The empty-state message remains visible and unchanged; chart values, filters, and calculations are unaffected.
+
+## Live announcement of risk-workspace filter results (7 November 2026)
+
+The shared municipality and text filters in the risk workspace now expose the current number of matching indicator series in a polite live status region. The search field also has an explicit accessible name. This makes changes to the selected territory or search query perceivable without requiring a screen-reader user to navigate the indicator content manually. Filtering logic and risk calculations are unchanged.
