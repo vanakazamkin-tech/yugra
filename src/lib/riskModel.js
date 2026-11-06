@@ -18,7 +18,12 @@ export const RISK_CHAINS = [
 
 const MODEL_PILLAR_BY_SERIES = Object.fromEntries(MODEL_PILLARS.flatMap((p) => p.series.map((key) => [key, p.key])));
 const RISK_WATCH_SERIES = { social: ['social', 'health', 'education'] };
-const finite = (v) => Number.isFinite(Number(v)) && v !== null && v !== '';
+const finite = (value) => {
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (typeof value !== 'string') return false;
+  const normalized = value.trim();
+  return normalized !== '' && Number.isFinite(Number(normalized));
+};
 const clamp = (v, min = 0, max = 100) => Math.max(min, Math.min(max, v));
 
 // Explicit period metadata is required. reference_year alone never proves annual frequency.
