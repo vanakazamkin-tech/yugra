@@ -68,6 +68,30 @@ export const DEFAULT_RISK_THRESHOLDS = Object.freeze({
   criticalPillars: 2,
 });
 
+export function collapseRiskSignals(signals = []) {
+  const groups = new Map();
+  (Array.isArray(signals) ? signals : []).filter((signal) =>
+    signal && (signal.adverse === true || signal.adverse === false)
+  ).forEach((signal) => {
+    const identity = signal.signalFamily || signal.code || signal.key || signal;
+    if (!groups.has(identity)) groups.set(identity, []);
+    groups.get(identity).push(signal);
+  });
+  const usable = [];
+  const conflicts = [];
+  groups.forEach((members, identity) => {
+    const states = new Set(members.map((signal) => signal.adverse));
+    // Contradictory duplicate definitions are not counted in either direction.
+    if (states.size > 1) {
+      conflicts.push(String(identity));
+      return;
+    }
+    members.sort((a, b) => Number(b.adverseStreak || 0) - Number(a.adverseStreak || 0));
+    usable.push({ ...members[0], familyMembers: members.length });
+  });
+  return { usable, conflicts };
+}
+
 export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESHOLDS) {
   const normalize = (value, fallback, min, max) => Number.isFinite(Number(value))
     ? clamp(Math.trunc(Number(value)), min, max)
@@ -79,9 +103,8 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
   };
   // Only explicit true/false values are assessable. Missing/unknown directions
   // must never be counted as healthy observations.
-  const usable = (Array.isArray(signals) ? signals : []).filter(
-    (signal) => signal && (signal.adverse === true || signal.adverse === false)
-  );
+  const collapsed = collapseRiskSignals(signals);
+  const usable = collapsed.usable;
   const bad = usable.filter((signal) => signal.adverse === true);
   const pillarOf = (signal) => MODEL_PILLAR_BY_SERIES[signal.pillar?.key] || signal.pillar?.key;
   const affectedPillars = new Set(bad.map(pillarOf).filter(Boolean));
@@ -130,9 +153,8 @@ export function buildRiskModel(municipalities = [], series = []) {
   const byMunicipality = {};
   for (const municipality of municipalities) {
     const own = (Array.isArray(series) ? series : []).filter((item) => String(item.municipalityId) === String(municipality.id));
-    const usable = own.filter((item) =>
-      ['higher', 'lower'].includes(item.direction) && (item.adverse === true || item.adverse === false)
-    );
+    const collapsed = collapseRiskSignals(own.filter((item) => ['higher', 'lower'].includes(item.direction)));
+    const usable = collapsed.usable;
     const adverse = usable.filter((item) => item.adverse === true);
     const affectedPillars = new Set(adverse.map((item) => MODEL_PILLAR_BY_SERIES[item.pillar?.key]).filter(Boolean));
     const availablePillars = new Set(usable.map((item) => MODEL_PILLAR_BY_SERIES[item.pillar?.key]).filter(Boolean));
