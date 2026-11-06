@@ -51,6 +51,9 @@ const rosstatCoverageAudit = readFileSync('supabase/audits/rosstat-bd-pmo-covera
 assert.match(rosstatCoverageAudit, /8112027/, 'Rosstat coverage audit must include population candidate');
 assert.match(rosstatCoverageAudit, /8423005/, 'Rosstat coverage audit must include employment candidate');
 assert.match(rosstatCoverageAudit, /8423007/, 'Rosstat coverage audit must include salary candidate');
+assert.match(rosstatCoverageAudit, /8423015/, 'Rosstat coverage audit must include municipal-owned employment candidate');
+assert.match(rosstatCoverageAudit, /8423016/, 'Rosstat coverage audit must include municipal-owned payroll fund candidate');
+assert.match(rosstatCoverageAudit, /8423017/, 'Rosstat coverage audit must include municipal-owned salary candidate');
 assert.match(rosstatCoverageAudit, /8109001/, 'Rosstat coverage audit must include enterprise investment candidate');
 assert.match(rosstatCoverageAudit, /8010001/, 'Rosstat coverage audit must include housing commissioning candidate');
 assert.match(rosstatCoverageAudit, /missing_municipalities/, 'Rosstat coverage audit must expose municipality gaps');
