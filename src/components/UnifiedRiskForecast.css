@@ -123,3 +123,10 @@
 .unified-chain-stages i{font-style:normal;color:var(--text-secondary,#999);font-size:11px}
 @media(max-width:900px){.unified-model-weight-grid,.unified-model-pillar-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.unified-model-weight-grid,.unified-model-pillar-grid,.unified-chain-grid,.unified-shock-grid{grid-template-columns:1fr}.unified-model-result{align-items:flex-start;flex-direction:column}}
+
+.unified-backtest{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.unified-backtest>div{display:flex;flex-direction:column;gap:7px;padding:15px;border:1px solid var(--border-color,rgba(50,70,60,.16));border-radius:10px;background:var(--surface-soft,#f7f6f1)}
+.unified-backtest span{font-size:11px;color:var(--text-secondary,#777)}
+.unified-backtest strong{font-size:20px;color:var(--text-primary,#27352e)}
+.unified-backtest small{font-size:10px;line-height:1.5;color:var(--text-secondary,#777)}
+@media(max-width:700px){.unified-backtest{grid-template-columns:1fr}}
