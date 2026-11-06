@@ -11,6 +11,9 @@ try {
     { name: 'extra column', csv: `${headers}\nСургут;code;name;amount;2024;10;тыс. руб.;1;Table;unexpected\n` },
     { name: 'missing column', csv: `${headers}\nСургут;code;name;amount;2024;10;тыс. руб.;1\n` },
     { name: 'duplicate header', csv: 'municipality;municipality;indicator_name;measure_type;year;value_raw;unit;page;table_title\nСургут;Сургут;name;amount;2024;10;тыс. руб.;1;Table\n' },
+    { name: 'quote inside unquoted field', csv: `${headers}\nСургут;co"de;name;amount;2024;10;тыс. руб.;1;Table\n` },
+    { name: 'characters after closing quote', csv: `${headers}\nСургут;code;"name"x;amount;2024;10;тыс. руб.;1;Table\n` },
+    { name: 'unclosed quoted field', csv: `${headers}\nСургут;code;"name;amount;2024;10;тыс. руб.;1;Table\n` },
   ];
 
   for (const testCase of cases) {
@@ -21,7 +24,7 @@ try {
       'scripts/prepare-duma-budget-import.mjs', input, `--out=${output}`,
     ], { encoding: 'utf8' });
     assert.notEqual(result.status, 0, `${testCase.name} must fail`);
-    assert.match(result.stderr, /CSV (contains duplicate column names|line \d+ has)/);
+    assert.match(result.stderr, /CSV (contains duplicate column names|line \\d+ has|contains a quote inside an unquoted field|contains unexpected characters after a closing quote|contains an unclosed quoted field)/);
     await assert.rejects(fs.access(output));
   }
 } finally {
