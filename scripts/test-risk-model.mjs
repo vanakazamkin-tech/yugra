@@ -28,6 +28,12 @@ assert.equal(indicatorSeriesGroup({ indicator_code: 'housing_commissioned_report
   'housing commissioning is construction activity, not infrastructure availability');
 assert.equal(indicatorSeriesGroup({ indicator_code: 'sovetsky_noncompliant_roads_share' }), 'infrastructure',
   'road condition belongs to infrastructure');
+assert.equal(indicatorSeriesGroup({ indicator_code: 'kogalym_no_regular_transport_population_share' }), 'infrastructure',
+  'regular transport accessibility belongs to infrastructure');
+assert.equal(indicatorDirection({ indicator_code: 'kogalym_no_regular_transport_population_share' }), 'lower',
+  'a lower share of residents without regular transport is preferable');
+assert.match(indicatorMethodFor({ indicator_code: 'kogalym_no_regular_transport_population_share' }).limitation, /только по одному муниципалитету/,
+  'single-municipality transport coverage must be disclosed');
 assert.equal(indicatorMethodFor({ indicator_code: 'housing_commissioned_reported' }).direction, 'context',
   'housing commissioning must not be scored as infrastructure quality');
 assert.equal(indicatorMethodFor({ indicator_code: 'sovetsky_local_road_repair' }).direction, 'context',
