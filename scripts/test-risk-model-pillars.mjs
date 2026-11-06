@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { classify } from '../src/lib/indicatorClassification.js';
-import { assessRiskSignals, buildRiskModel, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios } from '../src/lib/riskModel.js';
+import { assessRiskSignals, buildRiskModel, countConsecutiveAdverseIntervals, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios } from '../src/lib/riskModel.js';
 
 assert.equal(classify({ indicator_code: 'healthcare_facilities', indicator_name: 'Медицинские организации' }).key, 'health');
 assert.equal(classify({ indicator_code: 'hospital_beds', indicator_name: 'Количество больничных коек' }).key, 'health');
@@ -95,6 +95,11 @@ assert.equal(repeated.level, 'watch', 'a repeated signal in one direction does n
 assert.equal(repeated.earlyWarning, true, 'two consecutive adverse intervals must activate early warning');
 assert.equal(repeated.affectedPillars, 1, 'affected pillar count must be explicit');
 assert.match(repeated.explanation, /негативных сигнал/, 'assessment must explain its assigned level');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2021, reference_period: 'annual', numericValue: 100 }, { reference_year: 2023, reference_period: 'annual', numericValue: 80 }], 'higher'), 0, 'a missing year must not count as a consecutive interval');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2024, reference_period: '2024-Q1', numericValue: 100 }, { reference_year: 2024, reference_period: '2024-Q2', numericValue: 90 }, { reference_year: 2024, reference_period: '2024-Q3', numericValue: 80 }], 'higher'), 2, 'consecutive quarterly deterioration must activate the streak');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2024, reference_period: '2024-Q1', numericValue: 100 }, { reference_year: 2024, reference_period: '2024-Q3', numericValue: 80 }], 'higher'), 0, 'a missing quarter must break the warning streak');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2024, reference_period: '2024-H1', numericValue: 10 }, { reference_year: 2024, reference_period: '2024-H2', numericValue: 12 }], 'lower'), 1, 'half-year periods must be recognized as consecutive');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2024, reference_period: '2024-01-01', numericValue: 100 }, { reference_year: 2024, reference_period: '2024-06-01', numericValue: 80 }], 'higher'), 0, 'unknown date cadence must not create an early warning');
 const noWarning = assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 'labour')]);
 assert.equal(noWarning.earlyWarning, false, 'no adverse streak must not produce an early warning');
 
