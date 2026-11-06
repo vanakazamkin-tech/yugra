@@ -245,7 +245,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
         <div className="forecast-control-card">
           <label className="forecast-field"><span>Сценарий</span><select value={scenarioKey} onChange={(e) => selectScenario(e.target.value)}>{scenarios.map((scenario) => <option key={scenario.key} value={scenario.key}>{scenario.title}</option>)}</select></label>
           <p className="forecast-scenario-description">{activeScenario.summary}</p>
-          <div className="forecast-field"><span>Горизонт модели</span><div className="forecast-horizons">{[1, 2, 3].map((years) => <button key={years} className={horizon === years ? 'selected' : ''} onClick={() => { setHorizon(years); }}>{years} {years === 1 ? 'год' : 'лет'}</button>)}</div></div>
+          <div className="forecast-field"><span>Горизонт модели</span><div className="forecast-horizons">{[1, 2, 3].map((years) => <button type="button" key={years} className={horizon === years ? 'selected' : ''} onClick={() => { setHorizon(years); }}>{years} {years === 1 ? 'год' : 'лет'}</button>)}</div></div>
           <div className="forecast-parameter-list">
             <label><span>Годовой рост инвестиций, %</span><strong>{fmt(n(params.investment_growth_rate), 1)}%</strong><input aria-label="Годовой рост инвестиций" type="range" min="-10" max="20" step="0.5" value={params.investment_growth_rate} onChange={(e) => setParam('investment_growth_rate', Number(e.target.value))}/></label>
             <label><span>Годовой рост субъектов МСП, %</span><strong>{fmt(n(params.sme_growth_rate), 1)}%</strong><input aria-label="Годовой рост субъектов МСП" type="range" min="-10" max="20" step="0.5" value={params.sme_growth_rate} onChange={(e) => setParam('sme_growth_rate', Number(e.target.value))}/></label>
@@ -253,8 +253,8 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
             <label><span>Условная неопределённость, %/год</span><strong>±{fmt(n(params.uncertainty_rate), 1)}%</strong><input aria-label="Допущение неопределённости" type="range" min="0" max="25" step="0.5" value={params.uncertainty_rate} onChange={(e) => setParam('uncertainty_rate', Number(e.target.value))}/></label>
           </div>
           <div className="forecast-control-actions">
-            <button className="primary-button" onClick={exportCsv}><span className="forecast-action-symbol" aria-hidden="true">↓</span>Экспортировать результат CSV</button>
-            <button className="outline-button" onClick={() => {
+            <button type="button" className="primary-button" onClick={exportCsv}><span className="forecast-action-symbol" aria-hidden="true">↓</span>Экспортировать результат CSV</button>
+            <button type="button" className="outline-button" onClick={() => {
               setParams({
                 investment_growth_rate: activeScenario.investment_growth_rate,
                 sme_growth_rate: activeScenario.sme_growth_rate,
