@@ -1,5 +1,12 @@
 import assert from 'node:assert/strict';
 import { classify } from '../src/lib/indicatorClassification.js';
+import { directionForRiskIndicator } from '../src/lib/riskDirection.js';
+
+assert.equal(directionForRiskIndicator({ indicator_code: 'derived_investment_per_capita', indicator_name: 'Инвестиции в основной капитал без добычи на одного жителя' }), 'context', 'nominal per-capita investment must not be treated as real growth without a deflator');
+assert.equal(directionForRiskIndicator({ indicator_code: 'fixed_capital_investment_growth_preliminary', indicator_name: 'Индекс физического объёма инвестиций в основной капитал' }), 'higher', 'physical-volume investment index can be evaluated directionally');
+assert.equal(directionForRiskIndicator({ indicator_code: 'average_monthly_salary_annual', indicator_name: 'Среднемесячная номинальная заработная плата' }), 'context', 'nominal salary without inflation adjustment must remain contextual');
+assert.equal(directionForRiskIndicator({ indicator_code: 'derived_budget_transfer_dependency', indicator_name: 'Доля безвозмездных поступлений в общих доходах бюджета' }), 'lower', 'transfer dependency remains a lower-is-better signal');
+
 import { assessRiskSignals, buildRiskModel, countConsecutiveAdverseIntervals, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios } from '../src/lib/riskModel.js';
 
 assert.equal(classify({ indicator_code: 'healthcare_facilities', indicator_name: 'Медицинские организации' }).key, 'health');
