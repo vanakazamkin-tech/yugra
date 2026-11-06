@@ -1,12 +1,12 @@
-// Explainable municipal resilience and early-warning model.
-// Scores are comparative pilot indicators, never probabilities of crisis.
+// Explainable municipal risk diagnostics and early-warning rules.
+// This module does not calculate the six-pillar resilience index.
 export const MODEL_PILLARS = [
-  { key: 'economy', title: 'Экономика и инвестиции', weight: 0.20, series: ['investment', 'business', 'production'] },
-  { key: 'labour', title: 'Рынок труда и доходы', weight: 0.20, series: ['employment', 'income'] },
-  { key: 'demography', title: 'Демография и миграция', weight: 0.15, series: ['migration', 'demography'] },
-  { key: 'finance', title: 'Муниципальные финансы', weight: 0.15, series: ['budget'] },
-  { key: 'social', title: 'Социальная сфера', weight: 0.15, series: ['social', 'health', 'education'] },
-  { key: 'infrastructure', title: 'Инфраструктура и среда', weight: 0.15, series: ['infrastructure'] },
+  { key: 'economy', title: 'Экономика и инвестиции', series: ['investment', 'business', 'production'] },
+  { key: 'labour', title: 'Рынок труда и доходы', series: ['employment', 'income'] },
+  { key: 'demography', title: 'Демография и миграция', series: ['migration', 'demography'] },
+  { key: 'finance', title: 'Муниципальные финансы', series: ['budget'] },
+  { key: 'social', title: 'Социальная сфера', series: ['social', 'health', 'education'] },
+  { key: 'infrastructure', title: 'Инфраструктура и среда', series: ['infrastructure'] },
 ];
 
 export const RISK_CHAINS = [
@@ -21,11 +21,82 @@ const RISK_WATCH_SERIES = { social: ['social', 'health', 'education'] };
 const finite = (v) => Number.isFinite(Number(v)) && v !== null && v !== '';
 const clamp = (v, min = 0, max = 100) => Math.max(min, Math.min(max, v));
 
+// Explicit period metadata is required. reference_year alone never proves annual frequency.
+export function parseRiskPeriod(point = {}) {
+  const period = String(point?.reference_period ?? '').trim();
+  if (!period) return null;
+  const rawYear = point?.reference_year;
+  const hasDeclaredYear = rawYear != null && String(rawYear).trim() !== '';
+  const declaredYear = Number(rawYear);
+  const yearFromLabel = Number(period.match(/^(\d{4})(?=$|[-_\s])/i)?.[1]);
+  if (hasDeclaredYear && (!Number.isInteger(declaredYear) || declaredYear < 1900 || declaredYear > 2200)) return null;
+  const year = hasDeclaredYear ? declaredYear : yearFromLabel;
+  if (!Number.isInteger(year) || year < 1900 || year > 2200) return null;
+  if (yearFromLabel && yearFromLabel !== year) return null;
+  const quarter = period.match(/^(?:\d{4}[-_\s]?)?Q([1-4])$/i);
+  if (quarter) return { year, frequency: 'quarter', slot: Number(quarter[1]) };
+  const half = period.match(/^(?:\d{4}[-_\s]?)?H([12])$/i);
+  if (half) return { year, frequency: 'half', slot: Number(half[1]) };
+  if (/^(?:annual|year|год|годовой|\d{4})$/i.test(period)) return { year, frequency: 'annual', slot: 0 };
+  return null;
+}
+
+function consecutiveComparablePeriods(current, previous) {
+  const a = parseRiskPeriod(current), b = parseRiskPeriod(previous);
+  return Boolean(a && b && a.frequency === b.frequency && a.slot === b.slot && a.year - b.year === 1);
+}
+
+export function countConsecutiveAdverseIntervals(points = [], direction = 'context') {
+  if (!Array.isArray(points) || points.length < 2 || !['higher', 'lower'].includes(direction)) return 0;
+  let streak = 0;
+  for (let index = points.length - 1; index > 0; index -= 1) {
+    const current = points[index], previous = points[index - 1];
+    const comparable = consecutiveComparablePeriods(current, previous);
+    if (!comparable) break;
+    const currentValue = Number(current?.numericValue), previousValue = Number(previous?.numericValue);
+    if (!Number.isFinite(currentValue) || !Number.isFinite(previousValue)) break;
+    const adverse = direction === 'lower' ? currentValue > previousValue : currentValue < previousValue;
+    if (!adverse) break;
+    streak += 1;
+  }
+  return streak;
+}
+
 export const DEFAULT_RISK_THRESHOLDS = Object.freeze({
   minimumUsable: 2,
   criticalSignals: 3,
   criticalPillars: 2,
+  sharpChangePercent: 10,
 });
+
+export function collapseRiskSignals(signals = []) {
+  const groups = new Map();
+  (Array.isArray(signals) ? signals : []).filter((signal) =>
+    signal && (signal.adverse === true || signal.adverse === false)
+  ).forEach((signal) => {
+    const identity = signal.signalFamily || signal.code || signal.key || signal;
+    if (!groups.has(identity)) groups.set(identity, []);
+    groups.get(identity).push(signal);
+  });
+  const usable = [];
+  const conflicts = [];
+  groups.forEach((members, identity) => {
+    const states = new Set(members.map((signal) => signal.adverse));
+    // Contradictory duplicate definitions are not counted in either direction.
+    if (states.size > 1) {
+      conflicts.push(String(identity));
+      return;
+    }
+    members.sort((a, b) => Number(b.adverseStreak || 0) - Number(a.adverseStreak || 0));
+    usable.push({
+      ...members[0],
+      familyMembers: members.length,
+      adverseStreak: Math.max(...members.map((signal) => Number(signal.adverseStreak) || 0)),
+      sharpChange: members.some((signal) => signal.sharpChange === true),
+    });
+  });
+  return { usable, conflicts };
+}
 
 export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESHOLDS) {
   const normalize = (value, fallback, min, max) => Number.isFinite(Number(value))
@@ -35,103 +106,98 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
     minimumUsable: normalize(thresholds?.minimumUsable, DEFAULT_RISK_THRESHOLDS.minimumUsable, 1, 10),
     criticalSignals: normalize(thresholds?.criticalSignals, DEFAULT_RISK_THRESHOLDS.criticalSignals, 1, 20),
     criticalPillars: normalize(thresholds?.criticalPillars, DEFAULT_RISK_THRESHOLDS.criticalPillars, 1, 6),
+    sharpChangePercent: normalize(thresholds?.sharpChangePercent, DEFAULT_RISK_THRESHOLDS.sharpChangePercent, 1, 100),
   };
-  const usable = (Array.isArray(signals) ? signals : []).filter((signal) => signal && signal.adverse !== null);
+  // Only explicit true/false values are assessable. Missing/unknown directions
+  // must never be counted as healthy observations.
+  const collapsed = collapseRiskSignals(signals);
+  const usable = collapsed.usable;
   const bad = usable.filter((signal) => signal.adverse === true);
-  const affectedPillars = new Set(bad.map((signal) => signal.pillar?.key).filter(Boolean));
-  if (usable.length < settings.minimumUsable) return { level: 'insufficient', usable, bad, thresholds: settings };
-  if (bad.length >= settings.criticalSignals && affectedPillars.size >= settings.criticalPillars) {
-    return { level: 'critical', usable, bad, thresholds: settings };
+  const pillarOf = (signal) => MODEL_PILLAR_BY_SERIES[signal.pillar?.key] || signal.pillar?.key;
+  const affectedPillars = new Set(bad.map(pillarOf).filter(Boolean));
+  const pillarCounts = Object.fromEntries([...affectedPillars].map((key) => [
+    key, bad.filter((signal) => pillarOf(signal) === key).length,
+  ]));
+  const repeatedDeterioration = bad.filter((signal) => Number(signal.adverseStreak) >= 2);
+  const sharpChanges = bad.filter((signal) => signal.sharpChange === true);
+  const conflictNote = collapsed.conflicts.length ? ` Исключено противоречивых семейств: ${collapsed.conflicts.join(', ')}.` : '';
+  const conflictReasons = collapsed.conflicts.length ? [`Исключены противоречивые семейства сигналов: ${collapsed.conflicts.join(', ')}`] : [];
+  const common = {
+    usable, bad, thresholds: settings,
+    conflictingSignalFamilies: collapsed.conflicts,
+    usableCount: usable.length,
+    adverseCount: bad.length,
+    affectedPillars: affectedPillars.size,
+    pillarCounts,
+    repeatedDeterioration,
+    sharpChanges,
+    sharpChangeCount: sharpChanges.length,
+    earlyWarning: repeatedDeterioration.length > 0,
+  };
+  if (usable.length < settings.minimumUsable) {
+    return {
+      ...common, level: 'insufficient',
+      explanation: `Недостаточно данных: оцениваемых рядов ${usable.length}, требуется не менее ${settings.minimumUsable}. Неопределённые и контекстные показатели не учитываются как положительные.${conflictNote}`,
+      reasons: ['Недостаточное покрытие показателями с однозначным направлением', ...conflictReasons],
+    };
   }
-  if (bad.length > 0) return { level: 'watch', usable, bad, thresholds: settings };
-  return { level: 'stable', usable, bad, thresholds: settings };
-}
-
-function percentile(value, values, higherIsBetter) {
-  const sorted = values.filter(finite).map(Number).sort((a, b) => a - b);
-  if (sorted.length < 3) return null;
-  const below = sorted.filter((v) => v < Number(value)).length;
-  const equal = sorted.filter((v) => v === Number(value)).length;
-  const rank = (below + Math.max(0, equal - 1) / 2) / Math.max(1, sorted.length - 1) * 100;
-  return higherIsBetter ? rank : 100 - rank;
+  if (bad.length >= settings.criticalSignals && affectedPillars.size >= settings.criticalPillars) {
+    return {
+      ...common, level: 'critical',
+      explanation: `Зафиксировано ${bad.length} негативных сигналов в ${affectedPillars} направлениях; достигнуты оба настраиваемых порога повышенного внимания.${conflictNote}`,
+      reasons: [`Негативных сигналов: ${bad.length} из требуемых ${settings.criticalSignals}`, `Затронуто направлений: ${affectedPillars.size} из требуемых ${settings.criticalPillars}`, ...conflictReasons],
+    };
+  }
+  if (bad.length > 0) {
+    return {
+      ...common, level: 'watch',
+      explanation: `Есть ${bad.length} негативных сигнал(а/ов) в ${affectedPillars} направлениях, но критерий одновременного межотраслевого ухудшения не достигнут.${conflictNote}`,
+      reasons: [`Негативных сигналов: ${bad.length}`, `Затронуто направлений: ${affectedPillars.size}`, ...conflictReasons],
+    };
+  }
+  return {
+    ...common, level: 'stable',
+    explanation: `Среди ${usable.length} оцениваемых рядов негативных изменений не выявлено. Это не подтверждает отсутствие рисков в направлениях без данных или с контекстными показателями.${conflictNote}`,
+    reasons: ['Негативных сигналов среди оцениваемых рядов нет', ...conflictReasons],
+  };
 }
 
 export function buildRiskModel(municipalities = [], series = []) {
-  const comparable = new Map();
-  for (const item of series) {
-    if (!item || item.direction === 'context' || !finite(item.latest?.numericValue)) continue;
-    const pillarKey = MODEL_PILLAR_BY_SERIES[item.pillar?.key];
-    if (!pillarKey) continue;
-    const year = Number(item.latest.reference_year) || 0;
-    const key = [item.code, item.unit, item.latest.reference_period || '', year].join('|');
-    if (!comparable.has(key)) comparable.set(key, []);
-    comparable.get(key).push(item);
-  }
-
-  const scored = new Map();
-  for (const group of comparable.values()) {
-    if (new Set(group.map((x) => x.municipalityId)).size < 3) continue;
-    const values = group.map((x) => x.latest.numericValue);
-    for (const item of group) {
-      const score = percentile(item.latest.numericValue, values, item.direction === 'higher');
-      if (score === null) continue;
-      const trend = item.adverse === null ? 50 : item.adverse ? 20 : 80;
-      const indicatorScore = score * 0.8 + trend * 0.2;
-      const municipalityKey = String(item.municipalityId);
-      if (!scored.has(municipalityKey)) scored.set(municipalityKey, []);
-      scored.get(municipalityKey).push({ ...item, peerScore: score, indicatorScore, modelPillar: MODEL_PILLAR_BY_SERIES[item.pillar.key] });
-    }
-  }
-
   const byMunicipality = {};
   for (const municipality of municipalities) {
-    const own = scored.get(String(municipality.id)) || [];
+    const own = (Array.isArray(series) ? series : []).filter((item) => String(item.municipalityId) === String(municipality.id));
+    const collapsed = collapseRiskSignals(own.filter((item) => ['higher', 'lower'].includes(item.direction)));
+    const usable = collapsed.usable;
+    const adverse = usable.filter((item) => item.adverse === true);
+    const affectedPillars = new Set(adverse.map((item) => MODEL_PILLAR_BY_SERIES[item.pillar?.key]).filter(Boolean));
+    const availablePillars = new Set(usable.map((item) => MODEL_PILLAR_BY_SERIES[item.pillar?.key]).filter(Boolean));
     const pillars = MODEL_PILLARS.map((pillar) => {
-      const items = own.filter((item) => item.modelPillar === pillar.key);
+      const items = usable.filter((item) => MODEL_PILLAR_BY_SERIES[item.pillar?.key] === pillar.key);
       return {
-        ...pillar,
-        score: items.length ? items.reduce((sum, item) => sum + item.indicatorScore, 0) / items.length : null,
+        key: pillar.key,
+        title: pillar.title,
+        series: pillar.series,
         indicators: items.length,
         adverse: items.filter((item) => item.adverse === true).length,
-        series: items,
+        totalSeries: own.filter((item) => MODEL_PILLAR_BY_SERIES[item.pillar?.key] === pillar.key).length,
       };
     });
-    const available = pillars.filter((p) => p.score !== null);
-    const availableWeight = available.reduce((sum, p) => sum + p.weight, 0);
-    // A pilot score is useful with two independently covered dimensions and >=35% of base weights.
-    // The UI must always show coverage so a partial score cannot be mistaken for a complete assessment.
-    const resilience = available.length >= 2 && availableWeight >= 0.35
-      ? available.reduce((sum, p) => sum + p.score * p.weight, 0) / availableWeight
-      : null;
-    const coverage = availableWeight * 100;
-    const historyDepth = own.length ? own.reduce((sum, item) => sum + Math.min(1, item.points.length / 4), 0) / own.length : 0;
-    const confidence = resilience === null ? 0 : clamp(coverage * (0.65 + historyDepth * 0.35));
-    const adverse = own.filter((item) => item.adverse === true);
-    const affectedPillars = new Set(adverse.map((item) => item.modelPillar));
-    const deteriorationShare = own.length ? adverse.length / own.length : 0;
-    const priority = own.length >= 2
-      ? clamp(deteriorationShare * 70 + Math.max(0, affectedPillars.size - 1) * 10)
-      : null;
     const chains = RISK_CHAINS.map((chain) => {
       const hits = chain.watch.filter((key) => {
         const seriesKeys = RISK_WATCH_SERIES[key] || [key];
-        return own.some((item) => seriesKeys.includes(item.pillar.key) && item.adverse === true);
+        return own.some((item) => seriesKeys.includes(item.pillar?.key) && item.adverse === true);
       });
       return { ...chain, hits, matched: hits.length, active: hits.length >= 2 };
     }).filter((chain) => chain.matched > 0).sort((a, b) => b.matched - a.matched);
     byMunicipality[municipality.id] = {
       municipalityId: municipality.id,
-      score: resilience === null ? null : Math.round(resilience * 10) / 10,
-      confidence: Math.round(confidence),
-      assessmentStatus: resilience === null ? 'insufficient' : available.length < 4 || coverage < 70 ? 'partial' : 'expanded',
-      availablePillars: available.length,
-      availableWeight: Math.round(availableWeight * 100),
-      pillars,
+      totalSeries: own.length,
+      usableIndicators: usable.length,
+      availablePillars: availablePillars.size,
       adverseCount: adverse.length,
       affectedPillars: affectedPillars.size,
-      priority: priority === null ? null : Math.round(priority),
+      pillars,
       chains,
-      scoredIndicators: own.length,
     };
   }
   return { byMunicipality, pillars: MODEL_PILLARS, chains: RISK_CHAINS };
@@ -162,8 +228,29 @@ export function deriveMunicipalIndicators(rows = []) {
   const populationByMunicipalityYear = new Map();
   for (const row of verified) {
     const key = rowKey(row);
-    if (!grouped.has(key)) grouped.set(key, {});
-    grouped.get(key)[row.indicator_code] = row;
+    if (!grouped.has(key)) grouped.set(key, { rows: {}, ambiguousCodes: new Set() });
+    const bucket = grouped.get(key);
+    const code = String(row.indicator_code || '');
+    if (!bucket.ambiguousCodes.has(code)) {
+      const existing = bucket.rows[code];
+      if (!existing) bucket.rows[code] = row;
+      else if (Number(existing.value) !== Number(row.value) || !sameUnit(existing, row)) {
+        delete bucket.rows[code];
+        bucket.ambiguousCodes.add(code);
+      } else {
+        const sourceIds = [...new Set([
+          ...(Array.isArray(existing.source_ids) ? existing.source_ids : []),
+          ...(existing.source_id ? [existing.source_id] : []),
+          ...(row.source_id ? [row.source_id] : []),
+        ])];
+        const sourceUrls = [...new Set([
+          ...(Array.isArray(existing.source_urls) ? existing.source_urls : []),
+          ...(existing.source_url ? [existing.source_url] : []),
+          ...(row.source_url ? [row.source_url] : []),
+        ])];
+        bucket.rows[code] = { ...existing, source_ids: sourceIds, source_urls: sourceUrls };
+      }
+    }
     if (row.indicator_code === 'population_municipality') {
       const populationKey = String(row.municipality_id) + '|' + String(row.reference_year);
       if (!populationByMunicipalityYear.has(populationKey)) populationByMunicipalityYear.set(populationKey, []);
@@ -175,8 +262,14 @@ export function deriveMunicipalIndicators(rows = []) {
   const push = (base, code, name, value, unit, directionNote, provenanceRows = [base], referencePeriod = base?.reference_period || null) => {
     if (!base || !Number.isFinite(value)) return;
     const inputs = (Array.isArray(provenanceRows) ? provenanceRows : [base]).filter(Boolean);
-    const sourceIds = [...new Set(inputs.map((row) => String(row.source_id || '').trim()).filter(Boolean))];
-    const sourceUrls = [...new Set(inputs.map((row) => String(row.source_url || '').trim()).filter(Boolean))];
+    const sourceIds = [...new Set(inputs.flatMap((row) => [
+      ...(Array.isArray(row.source_ids) ? row.source_ids : []),
+      ...(row.source_id ? [row.source_id] : []),
+    ]).map((value) => String(value).trim()).filter(Boolean))];
+    const sourceUrls = [...new Set(inputs.flatMap((row) => [
+      ...(Array.isArray(row.source_urls) ? row.source_urls : []),
+      ...(row.source_url ? [row.source_url] : []),
+    ]).map((value) => String(value).trim()).filter(Boolean))];
     const retrievedAt = inputs.map((row) => row.retrieved_at).filter(Boolean).sort((a, b) => new Date(b) - new Date(a))[0] || base.retrieved_at || null;
     const sourceNote = sourceIds.length ? ' Источники исходных наблюдений: ' + sourceIds.join(', ') + '.' : '';
     derived.push({
@@ -201,10 +294,10 @@ export function deriveMunicipalIndicators(rows = []) {
   };
 
   for (const bucket of grouped.values()) {
-    const totalRow = bucket.budget_total_revenue;
-    const nonGrantRow = bucket.budget_revenue_excluding_grants;
-    const transfersRow = bucket.budget_intergovernmental_transfers;
-    const expenditureRow = bucket.budget_total_expenditure;
+    const totalRow = bucket.rows.budget_total_revenue;
+    const nonGrantRow = bucket.rows.budget_revenue_excluding_grants;
+    const transfersRow = bucket.rows.budget_intergovernmental_transfers;
+    const expenditureRow = bucket.rows.budget_total_expenditure;
     const total = Number(totalRow?.value);
     const nonGrant = Number(nonGrantRow?.value);
     const transfers = Number(transfersRow?.value);
@@ -223,7 +316,7 @@ export function deriveMunicipalIndicators(rows = []) {
       push(totalRow, 'derived_budget_balance_ratio', 'Отношение доходов к расходам бюджета', (total - expenditure) / expenditure * 100, '%', 'Положительное значение означает превышение доходов над расходами в пределах данного отчётного периода; требуется сверка методики исполнения бюджета.', [totalRow, expenditureRow]);
     }
 
-    const investment = bucket.fixed_capital_investment_non_mining;
+    const investment = bucket.rows.fixed_capital_investment_non_mining;
     if (investment) {
       const populationKey = String(investment.municipality_id) + '|' + String(investment.reference_year);
       const populationRows = populationByMunicipalityYear.get(populationKey) || [];
@@ -254,28 +347,6 @@ export function deriveMunicipalIndicators(rows = []) {
   return derived;
 }
 
-
-export function projectScoreScenarios(baseScore, scenarios = [], horizon = 1) {
-  if (!finite(baseScore)) return [];
-  const years = clamp(Math.trunc(Number(horizon) || 1), 1, 3);
-  const base = clamp(Number(baseScore));
-  return (Array.isArray(scenarios) ? scenarios : []).map((scenario) => {
-    const rateValue = Number(scenario?.score_growth_rate ?? 0);
-    const uncertaintyValue = Number(scenario?.uncertainty_rate ?? 0);
-    const rate = Number.isFinite(rateValue) ? rateValue : 0;
-    const uncertainty = Number.isFinite(uncertaintyValue) ? Math.max(0, uncertaintyValue) : 0;
-    const project = (annualRate) => clamp(base * Math.pow(Math.max(0.01, 1 + annualRate / 100), years));
-    return {
-      ...scenario,
-      rate,
-      uncertainty,
-      horizon: years,
-      value: project(rate),
-      low: project(rate - uncertainty),
-      high: project(rate + uncertainty),
-    };
-  });
-}
 
 export function backtestAnnualSeries(series) {
   const points = Array.isArray(series?.points) ? series.points : [];

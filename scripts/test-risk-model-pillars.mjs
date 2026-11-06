@@ -1,11 +1,120 @@
 import assert from 'node:assert/strict';
 import { classify } from '../src/lib/indicatorClassification.js';
-import { assessRiskSignals, buildRiskModel, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios } from '../src/lib/riskModel.js';
+import { directionForRiskIndicator } from '../src/lib/riskDirection.js';
+import { assessRiskSignals, buildRiskModel, countConsecutiveAdverseIntervals, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, parseRiskPeriod } from '../src/lib/riskModel.js';
+import { buildRiskSeries } from '../src/lib/riskSeries.js';
+
+assert.equal(directionForRiskIndicator({ indicator_code: 'derived_investment_per_capita', indicator_name: 'Инвестиции в основной капитал без добычи на одного жителя' }), 'context', 'nominal per-capita investment must not be treated as real growth without a deflator');
+assert.equal(directionForRiskIndicator({ indicator_code: 'fixed_capital_investment_growth_preliminary', indicator_name: 'Индекс физического объёма инвестиций в основной капитал' }), 'higher', 'physical-volume investment index can be evaluated directionally');
+assert.equal(directionForRiskIndicator({ indicator_code: 'average_monthly_salary_annual', indicator_name: 'Среднемесячная номинальная заработная плата' }), 'context', 'nominal salary without inflation adjustment must remain contextual');
+assert.equal(directionForRiskIndicator({ indicator_code: 'sme_employment_share', indicator_name: 'Доля среднесписочной численности работников МСП в численности работников всех предприятий и организаций' }), 'context', 'SME employment share is not an automatically positive diversification signal');
+assert.equal(directionForRiskIndicator({ indicator_code: 'derived_budget_transfer_dependency', indicator_name: 'Доля безвозмездных поступлений в общих доходах бюджета' }), 'lower', 'transfer dependency remains a lower-is-better signal');
+assert.equal(directionForRiskIndicator({ indicator_code: 'migration_balance', indicator_name: 'Миграционное сальдо' }), 'higher', 'positive migration balance is a higher-is-better signal');
+assert.equal(directionForRiskIndicator({ indicator_code: 'network_needs_replacement_share', indicator_name: 'Доля сетей, нуждающихся в замене' }), 'lower', 'a higher share of networks needing replacement is adverse');
+assert.equal(directionForRiskIndicator({ indicator_code: 'roads_in_normative_condition', indicator_name: 'Доля дорог в нормативном состоянии' }), 'higher', 'a higher share of roads in normative condition is favourable');
+
+// Period metadata is mandatory: year alone must never be silently promoted to annual.
+assert.equal(parseRiskPeriod({ reference_year: 2024, reference_period: '' }), null);
+assert.equal(parseRiskPeriod({ reference_year: 2024, reference_period: '   ' }), null, 'whitespace-only periods must remain unknown');
+assert.equal(parseRiskPeriod({ reference_year: 2024 }), null);
+assert.deepEqual(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-Q1' }), { year: 2024, frequency: 'quarter', slot: 1 });
+assert.deepEqual(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-H2' }), { year: 2024, frequency: 'half', slot: 2 });
+assert.deepEqual(parseRiskPeriod({ reference_year: 2024, reference_period: 'annual' }), { year: 2024, frequency: 'annual', slot: 0 });
+assert.equal(parseRiskPeriod({ reference_year: 2023, reference_period: '2024-Q1' }), null, 'period label and reference year conflict must be rejected');
+assert.equal(parseRiskPeriod({ reference_year: 1800, reference_period: 'annual' }), null, 'out-of-range years must be rejected');
+assert.equal(parseRiskPeriod({ reference_year: 1800, reference_period: '2024-Q1' }), null, 'an invalid declared year must not be replaced by a year inferred from the period label');
+assert.equal(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-M13' }), null, 'unknown frequency must not be inferred as annual');
+
+const riskRow = (year, period, value, overrides = {}) => ({
+  municipality_id: 'm-risk', indicator_code: 'employment_rate', indicator_name: 'Уровень занятости',
+  reference_year: year, reference_period: period, value, unit: '%',
+  verification_status: 'verified', geographic_level: 'municipality', source_id: 'test-source', ...overrides,
+});
+const periodYearFromLabelSeries = buildRiskSeries([
+  { ...riskRow(null, '2022-Q1', 70), reference_year: null },
+  { ...riskRow(null, '2023-Q1', 60), reference_year: null },
+]);
+assert.equal(periodYearFromLabelSeries.length, 1, 'period year labels must preserve distinct observations when reference_year is absent');
+assert.equal(periodYearFromLabelSeries[0].adverse, true, 'validated year labels may support same-quarter year-over-year comparison');
+assert.equal(periodYearFromLabelSeries[0].confidenceLevel, 'medium', 'two comparable observations with source metadata receive medium confidence');
+const identicalDuplicateSeries = buildRiskSeries([
+  riskRow(2022, 'annual', 70),
+  riskRow(2023, 'annual', 60),
+  riskRow(2023, 'annual', 60, { source_id: 'second-source' }),
+]);
+assert.deepEqual(identicalDuplicateSeries[0].latest.source_ids, ['test-source', 'second-source'], 'identical duplicate observations must retain all contributing source IDs');
+
+const sharpDrop = buildRiskSeries([
+  riskRow(2023, 'annual', 100), riskRow(2024, 'annual', 80),
+]);
+assert.equal(sharpDrop[0].adverse, true, 'a comparable decline remains a negative signal');
+assert.equal(sharpDrop[0].sharpChange, true, 'a 20% adverse change exceeds the default 10% abrupt-change threshold');
+const smallDrop = buildRiskSeries([
+  riskRow(2023, 'annual', 100), riskRow(2024, 'annual', 95),
+]);
+assert.equal(smallDrop[0].sharpChange, false, 'a 5% adverse change is not classified as abrupt by default');
+const customSharpThreshold = buildRiskSeries([
+  riskRow(2023, 'annual', 100), riskRow(2024, 'annual', 80),
+], { ...DEFAULT_RISK_THRESHOLDS, sharpChangePercent: 25 });
+assert.equal(customSharpThreshold[0].sharpChange, false, 'the abrupt-change threshold must be configurable');
+assert.equal(assessRiskSignals([{ adverse: true, sharpChange: true, pillar: { key: 'economy' } }]).sharpChangeCount, 1, 'sharp changes must be counted separately from the overall risk level');
+
+const highConfidenceSeries = buildRiskSeries([
+  riskRow(2022, 'annual', 70), riskRow(2023, 'annual', 65), riskRow(2024, 'annual', 60),
+]);
+assert.equal(highConfidenceSeries[0].confidenceLevel, 'high', 'three continuous annual observations with source metadata receive high confidence');
+const incompleteSourceHistory = buildRiskSeries([
+  riskRow(2022, 'annual', 70, { source_id: null }), riskRow(2023, 'annual', 65),
+]);
+assert.equal(incompleteSourceHistory[0].confidenceLevel, 'low', 'confidence must not be high when an earlier observation lacks source provenance');
+
+const missingPeriodSeries = buildRiskSeries([
+  riskRow(2022, '', 70), riskRow(2023, '', 60),
+]);
+assert.equal(missingPeriodSeries[0].adverse, null, 'empty periods must not produce an annual comparison');
+assert.equal(missingPeriodSeries[0].adverseStreak, 0, 'empty periods must break early-warning streaks');
+
+const mixedFrequencySeries = buildRiskSeries([
+  riskRow(2023, 'annual', 70), riskRow(2024, '2024-Q1', 60),
+]);
+assert.equal(mixedFrequencySeries.length, 2, 'annual and quarterly observations must remain separate series');
+assert.ok(mixedFrequencySeries.every((item) => item.adverse === null), 'annual and quarterly observations must not create a cross-frequency signal');
+
+const gapSeries = buildRiskSeries([
+  riskRow(2022, 'annual', 70), riskRow(2024, 'annual', 60),
+]);
+assert.equal(gapSeries[0].change, null, 'non-consecutive annual observations must not be compared');
+assert.equal(gapSeries[0].adverse, null, 'a missing year must not create a current adverse signal');
+
+const conflictingSeries = buildRiskSeries([
+  riskRow(2022, 'annual', 70), riskRow(2023, 'annual', 65),
+  riskRow(2024, 'annual', 60), riskRow(2024, 'annual', 80, { source_id: 'conflicting_source' }),
+]);
+assert.equal(conflictingSeries[0].excludedConflictingPeriods, 1, 'conflicting duplicates must be excluded and counted');
+assert.equal(conflictingSeries[0].confidenceLevel, 'low', 'a conflicting period must lower the series confidence');
+assert.equal(conflictingSeries[0].latest.reference_year, 2023, 'conflicting period must not be selected as latest');
+assert.equal(conflictingSeries[0].conflictAfterLatest, true, 'a newer conflicting period must be identified as a data-quality block');
+assert.equal(conflictingSeries[0].adverse, null, 'a newer conflicting period must suppress stale adverse signals as current');
+
+const invalidYearSeries = buildRiskSeries([
+  riskRow(2023, '2024-Q1', 70), riskRow(2024, '2024-Q1', 60),
+]);
+assert.equal(invalidYearSeries[0].adverse, null, 'a year-period conflict must not create a risk signal');
+
+assert.equal(countConsecutiveAdverseIntervals([
+  { reference_year: 2022, reference_period: 'annual', numericValue: -10 },
+  { reference_year: 2023, reference_period: 'annual', numericValue: -12 },
+], 'higher'), 1, 'negative numeric observations remain valid values for direction-aware comparisons');
+
+
+
 
 assert.equal(classify({ indicator_code: 'healthcare_facilities', indicator_name: 'Медицинские организации' }).key, 'health');
 assert.equal(classify({ indicator_code: 'hospital_beds', indicator_name: 'Количество больничных коек' }).key, 'health');
 assert.equal(classify({ indicator_code: 'employees_healthcare', indicator_name: 'Деятельность в области здравоохранения и социальных услуг' }).key, 'employment');
 assert.equal(classify({ indicator_code: 'death_rate', indicator_name: 'Общий коэффициент смертности' }).key, 'demography');
+assert.equal(classify({ indicator_code: 'population_municipality', indicator_name: 'Численность постоянного населения муниципального образования на 1 января' }).key, 'demography', 'the phrase municipal entity must not trigger the education classifier');
+assert.equal(classify({ indicator_code: 'population_rural_municipality', indicator_name: 'Численность сельского населения муниципального образования на 1 января' }).key, 'demography', 'rural municipal population must remain demographic, not education');
 assert.equal(classify({ indicator_code: 'employees_hospitality', indicator_name: 'Деятельность гостиниц и предприятий общественного питания' }).key, 'employment');
 assert.equal(classify({ indicator_code: 'education_preschool', indicator_name: 'Дошкольные образовательные учреждения' }).key, 'education');
 assert.equal(classify({ indicator_code: 'social_support', indicator_name: 'Социальная поддержка населения' }).key, 'social');
@@ -46,11 +155,13 @@ for (const definition of definitions) {
 }
 const model = buildRiskModel(municipalities, series);
 const m1 = model.byMunicipality.m1;
-assert.ok(m1.score !== null, 'two or more independently covered pillars should produce a partial score');
+assert.equal(Object.hasOwn(m1, 'score'), false, 'risk diagnostics must not calculate an integrated index score');
 assert.equal(m1.pillars.find((pillar) => pillar.key === 'social').indicators, 2, 'health and education series must map into the social model pillar');
-assert.equal(m1.availableWeight, 55, 'economy + labour + social base weights should remain unchanged');
+assert.equal(m1.availablePillars, 3, 'risk diagnostics count covered directions without applying index weights');
 const chain = m1.chains.find((item) => item.id === 'investment-employment');
 assert.ok(chain?.active, 'adverse investment and employment signals should activate their risk chain');
+const singleMunicipalityDiagnostics = buildRiskModel([municipalities[0]], series.filter((item) => item.municipalityId === municipalities[0].id)).byMunicipality.m1;
+assert.ok(singleMunicipalityDiagnostics.adverseCount > 0, 'risk detection must not depend on a minimum peer group of municipalities');
 
 const serviceSeries = [];
 for (const definition of [
@@ -75,31 +186,60 @@ const serviceRisk = buildRiskModel(municipalities, serviceSeries).byMunicipality
 assert.ok(serviceRisk?.active, 'health and education signals must activate the social stage in the budget-services chain');
 assert.deepEqual(serviceRisk.hits, ['budget', 'social'], 'health and education must count as one social-stage hit, not duplicate hits');
 
+const unknownDirectionSeries = series.map((item) => ({ ...item, direction: undefined }));
+assert.equal(buildRiskModel(municipalities, unknownDirectionSeries).byMunicipality.m1.usableIndicators, 0, 'unknown directions must not be counted as assessable risk indicators');
 const insufficient = buildRiskModel(municipalities, series.filter((item) => item.pillar.key === 'investment'));
-assert.equal(insufficient.byMunicipality.m1.score, null, 'one 20% pillar must not produce a resilience score');
-assert.equal(MODEL_PILLARS.find((pillar) => pillar.key === 'social').weight, 0.15, 'the existing social weight must remain unchanged');
+assert.equal(insufficient.byMunicipality.m1.availablePillars, 1, 'one observed direction remains one risk-coverage direction');
+assert.equal(Object.hasOwn(MODEL_PILLARS.find((pillar) => pillar.key === 'social'), 'weight'), false, 'risk directions must not carry or reapply index weights');
 const riskSignal = (adverse, pillar) => ({ adverse, pillar: { key: pillar } });
-assert.deepEqual(DEFAULT_RISK_THRESHOLDS, { minimumUsable: 2, criticalSignals: 3, criticalPillars: 2 }, 'default thresholds must preserve the existing traffic-light behavior');
+assert.deepEqual(DEFAULT_RISK_THRESHOLDS, { minimumUsable: 2, criticalSignals: 3, criticalPillars: 2, sharpChangePercent: 10 }, 'default thresholds must preserve the existing traffic-light behavior');
 assert.equal(assessRiskSignals([riskSignal(false, 'economy')]).level, 'insufficient', 'one usable signal is insufficient under the default threshold');
 assert.equal(assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 'labour')]).level, 'stable', 'no negative signals with sufficient coverage is green');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(false, 'labour')]).level, 'watch', 'one negative signal is yellow');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour'), riskSignal(true, 'finance')]).level, 'critical', 'three negative signals across two or more pillars are red by default');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'economy'), riskSignal(true, 'economy')]).level, 'watch', 'multiple signals in one pillar do not satisfy the default cross-pillar red threshold');
+assert.equal(assessRiskSignals([riskSignal(true, 'health'), riskSignal(true, 'education'), riskSignal(true, 'social'), riskSignal(false, 'finance')]).level, 'watch', 'health, education and social subcategories count as one social direction, not three');
+const complementaryBudgetSignals = assessRiskSignals([
+  { code: 'derived_budget_own_revenue_share', signalFamily: 'budget_revenue_structure', adverse: true, pillar: { key: 'budget' } },
+  { code: 'derived_budget_transfer_dependency', signalFamily: 'budget_revenue_structure', adverse: true, pillar: { key: 'budget' } },
+  { code: 'employment_rate', adverse: true, pillar: { key: 'employment' } },
+]);
+assert.equal(complementaryBudgetSignals.usableCount, 2, 'complementary own-revenue and transfer shares count as one independent signal family');
+assert.equal(complementaryBudgetSignals.level, 'watch', 'a complementary budget pair plus one labour signal must not falsely satisfy the three-signal critical threshold');
+const sharpBudgetFamily = assessRiskSignals([
+  { code: 'derived_budget_own_revenue_share', signalFamily: 'budget_revenue_structure', adverse: true, sharpChange: true, pillar: { key: 'budget' } },
+  { code: 'derived_budget_transfer_dependency', signalFamily: 'budget_revenue_structure', adverse: true, sharpChange: false, pillar: { key: 'budget' } },
+  { code: 'employment_rate', adverse: false, pillar: { key: 'employment' } },
+]);
+assert.equal(sharpBudgetFamily.sharpChangeCount, 1, 'sharp-change evidence from any member must be retained after family deduplication');
+const conflictingBudgetSignals = assessRiskSignals([
+  { code: 'derived_budget_own_revenue_share', signalFamily: 'budget_revenue_structure', adverse: true, pillar: { key: 'budget' } },
+  { code: 'derived_budget_transfer_dependency', signalFamily: 'budget_revenue_structure', adverse: false, pillar: { key: 'budget' } },
+  { code: 'employment_rate', adverse: false, pillar: { key: 'employment' } },
+]);
+assert.equal(conflictingBudgetSignals.level, 'insufficient', 'contradictory signals from one dependent family must be quarantined');
+assert.deepEqual(conflictingBudgetSignals.conflictingSignalFamilies, ['budget_revenue_structure']);
+
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 2, criticalSignals: 2, criticalPillars: 2 }).level, 'critical', 'custom thresholds must recalculate the traffic-light status');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 3, criticalSignals: 2, criticalPillars: 2 }).level, 'insufficient', 'the minimum coverage threshold must take precedence over negative signals');
 
-const indexScenarios = projectScoreScenarios(60, [
-  { key: 'cautious', score_growth_rate: -3, uncertainty_rate: 18 },
-  { key: 'base', score_growth_rate: 1.5, uncertainty_rate: 7 },
-  { key: 'ambitious', score_growth_rate: 3, uncertainty_rate: 12 },
-], 3);
-assert.equal(indexScenarios.length, 3, 'all three stored scenarios must produce an index trajectory');
-assert.equal(indexScenarios[0].value, 60 * Math.pow(0.97, 3), 'pessimistic index path must use the stored annual score growth rate');
-assert.equal(indexScenarios[0].low, 60 * Math.pow(0.79, 3), 'scenario uncertainty must define the lower sensitivity bound');
-assert.equal(indexScenarios[1].horizon, 3, 'the selected 1–3 year horizon must be retained');
-assert.equal(projectScoreScenarios(99, [{ score_growth_rate: 20, uncertainty_rate: 30 }], 3)[0].high, 100, 'index projections must stay within the 0–100 scale');
-assert.deepEqual(projectScoreScenarios(null, [{ score_growth_rate: 2 }], 3), [], 'an unavailable base index must not produce a forecast');
 
+assert.equal(assessRiskSignals([riskSignal(true, 'economy'), { adverse: undefined, pillar: { key: 'labour' } }]).level, 'insufficient', 'unknown-direction rows must not count toward coverage');
+const repeated = assessRiskSignals([{ ...riskSignal(true, 'economy'), adverseStreak: 2 }, riskSignal(false, 'labour')]);
+assert.equal(repeated.level, 'watch', 'a repeated signal in one direction does not automatically become critical');
+assert.equal(repeated.earlyWarning, true, 'two consecutive adverse intervals must activate early warning');
+assert.equal(repeated.affectedPillars, 1, 'affected pillar count must be explicit');
+assert.match(repeated.explanation, /негативных сигнал/, 'assessment must explain its assigned level');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2021, reference_period: 'annual', numericValue: 100 }, { reference_year: 2023, reference_period: 'annual', numericValue: 80 }], 'higher'), 0, 'a missing year must not count as a consecutive interval');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2022, reference_period: '2022-Q1', numericValue: 100 }, { reference_year: 2023, reference_period: '2023-Q1', numericValue: 90 }, { reference_year: 2024, reference_period: '2024-Q1', numericValue: 80 }], 'higher'), 2, 'same-quarter year-over-year deterioration must activate the streak');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2022, reference_period: '2022-Q1', numericValue: 100 }, { reference_year: 2024, reference_period: '2024-Q1', numericValue: 80 }], 'higher'), 0, 'a missing year must break the same-quarter warning streak');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2023, reference_period: '2023-H1', numericValue: 10 }, { reference_year: 2024, reference_period: '2024-H1', numericValue: 12 }], 'lower'), 1, 'same-half-year year-over-year deterioration must activate the streak');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2024, reference_period: '2024-01-01', numericValue: 100 }, { reference_year: 2024, reference_period: '2024-06-01', numericValue: 80 }], 'higher'), 0, 'unknown date cadence must not create an early warning');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2022, reference_period: '2022-Q1', numericValue: 100 }, { reference_year: 2023, reference_period: '2023-Q2', numericValue: 80 }], 'higher'), 0, 'different quarters across adjacent years must not be treated as comparable');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2022, reference_period: '2022-H1', numericValue: 100 }, { reference_year: 2023, reference_period: '2023-H2', numericValue: 80 }], 'higher'), 0, 'different half-years across adjacent years must not be treated as comparable');
+assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2022, reference_period: 'annual', numericValue: 100 }, { reference_year: 2023, reference_period: '2023-Q1', numericValue: 80 }], 'higher'), 0, 'annual and quarterly observations must not be compared');
+const noWarning = assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 'labour')]);
+assert.equal(noWarning.earlyWarning, false, 'no adverse streak must not produce an early warning');
 
 const sourceRow = (indicator_code, value, reference_period, unit = 'тыс. руб.', overrides = {}) => ({
   municipality_id: 'm1',
@@ -113,6 +253,28 @@ const sourceRow = (indicator_code, value, reference_period, unit = 'тыс. ру
   geographic_level: 'municipality',
   ...overrides,
 });
+const conflictingDerivedRows = deriveMunicipalIndicators([
+  sourceRow('budget_total_revenue', 100, '2024-Q3'),
+  sourceRow('budget_total_revenue', 120, '2024-Q3', 'тыс. руб.', { source_id: 'conflicting_total' }),
+  sourceRow('budget_revenue_excluding_grants', 40, '2024-Q3'),
+]);
+assert.equal(conflictingDerivedRows.some((row) => row.indicator_code === 'derived_budget_own_revenue_share'), false, 'conflicting source values must not be used to derive a budget ratio');
+
+const unitConflictRows = deriveMunicipalIndicators([
+  sourceRow('budget_total_revenue', 100, '2024-Q3', 'тыс. руб.'),
+  sourceRow('budget_total_revenue', 100, '2024-Q3', 'руб.'),
+  sourceRow('budget_revenue_excluding_grants', 40, '2024-Q3', 'тыс. руб.'),
+]);
+assert.equal(unitConflictRows.some((row) => row.indicator_code === 'derived_budget_own_revenue_share'), false, 'same numeric values in conflicting units must not be treated as duplicates');
+
+const duplicateSourceRows = deriveMunicipalIndicators([
+  sourceRow('budget_total_revenue', 100, '2024-Q3', 'тыс. руб.', { source_id: 'budget-source-a' }),
+  sourceRow('budget_total_revenue', 100, '2024-Q3', 'тыс. руб.', { source_id: 'budget-source-b' }),
+  sourceRow('budget_revenue_excluding_grants', 40, '2024-Q3', 'тыс. руб.', { source_id: 'own-source' }),
+]);
+const duplicateDerivedShare = duplicateSourceRows.find((row) => row.indicator_code === 'derived_budget_own_revenue_share');
+assert.deepEqual(duplicateDerivedShare.source_ids, ['budget-source-a', 'budget-source-b', 'own-source'], 'derived rows must retain all identical source observations');
+
 const derivedRows = deriveMunicipalIndicators([
   sourceRow('budget_total_revenue', 100, '2024-Q2'),
   sourceRow('budget_revenue_excluding_grants', 40, '2024-Q2'),
