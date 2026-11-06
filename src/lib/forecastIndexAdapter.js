@@ -34,7 +34,7 @@ const hasTraceableCompleteResult = (result, expectedYear, expectedPeriod) => {
       && isFiniteIndex(indicator.score)
       && typeof indicator.unit === 'string'
       && indicator.unit.trim() !== ''
-      && Number.isFinite(Number(indicator.rawValue))
+      && Number.isFinite(indicator.rawValue)
     )
   );
 };
