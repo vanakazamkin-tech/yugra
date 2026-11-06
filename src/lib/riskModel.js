@@ -229,6 +229,28 @@ export function deriveMunicipalIndicators(rows = []) {
 }
 
 
+export function projectScoreScenarios(baseScore, scenarios = [], horizon = 1) {
+  if (!finite(baseScore)) return [];
+  const years = clamp(Math.trunc(Number(horizon) || 1), 1, 3);
+  const base = clamp(Number(baseScore));
+  return (Array.isArray(scenarios) ? scenarios : []).map((scenario) => {
+    const rateValue = Number(scenario?.score_growth_rate ?? 0);
+    const uncertaintyValue = Number(scenario?.uncertainty_rate ?? 0);
+    const rate = Number.isFinite(rateValue) ? rateValue : 0;
+    const uncertainty = Number.isFinite(uncertaintyValue) ? Math.max(0, uncertaintyValue) : 0;
+    const project = (annualRate) => clamp(base * Math.pow(Math.max(0.01, 1 + annualRate / 100), years));
+    return {
+      ...scenario,
+      rate,
+      uncertainty,
+      horizon: years,
+      value: project(rate),
+      low: project(rate - uncertainty),
+      high: project(rate + uncertainty),
+    };
+  });
+}
+
 export function backtestAnnualSeries(series) {
   const points = Array.isArray(series?.points) ? series.points : [];
   const tests = [];
