@@ -2,28 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { isEligibleAnnualForecastSeries } from '../lib/forecastCoverage.js';
 import { backtestAnnualSeries, buildRiskModel, deriveMunicipalIndicators, MODEL_PILLARS, RISK_CHAINS } from '../lib/riskModel.js';
 import './UnifiedRiskForecast.css';
+import { PILLARS, classify } from '../lib/indicatorClassification.js';
 
-const PILLARS = [
-  { key: 'employment', title: 'Занятость', match: /(employ|employee|unemploy|работник|занят|безработ|кадр)/i, note: 'Рабочие места и занятость' },
-  { key: 'income', title: 'Доходы населения', match: /(salary|wage|income|зарплат|заработ|доход насел|среднедушев)/i, note: 'Заработная плата и денежные доходы' },
-  { key: 'budget', title: 'Местный бюджет', match: /(budget|revenue|expenditure|debt|deficit|бюджет|доходы бюджета|расходы бюджета|исполнени.*программ)/i, note: 'Доходы, расходы и исполнение программ' },
-  { key: 'migration', title: 'Миграция', match: /(migration|migrat|arrival|departure|миграц|прибывш|выбывш)/i, note: 'Прибытие, выбытие и миграционное сальдо' },
-  { key: 'investment', title: 'Инвестиции', match: /(investment|capital_investment|инвестици|капиталовлож)/i, note: 'Инвестиции в основной капитал' },
-  { key: 'business', title: 'Предпринимательство', match: /(sme|small_business|entrepreneur|business|предприним|мсп)/i, note: 'Число субъектов МСП и занятость в МСП' },
-  { key: 'production', title: 'Производство и рынок', match: /(production|shipment|turnover|retail|goods|продукц|отгруж|оборот|торговл|ярмарк)/i, note: 'Производство, торговля и услуги' },
-  { key: 'demography', title: 'Демография', match: /(population|birth|death|населен|рождаем|смертн)/i, note: 'Численность и структура населения' },
-  { key: 'infrastructure', title: 'Инфраструктура', match: /(facility|school|preschool|road|housing|network|учрежден|школ|дорог|жиль|сет)/i, note: 'Инфраструктурные объекты и среда' },
-];
+
 const number = (v) => v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v);
 const fmt = (v, digits = 1) => v == null || !Number.isFinite(Number(v)) ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: digits }).format(Number(v));
 const pct = (v) => v == null ? '—' : (v > 0 ? '+' : '') + fmt(v, 1) + '%';
 const safeText = (v) => String(v ?? '').trim();
-const classify = (row) => {
-  const text = safeText(row.indicator_code) + ' ' + safeText(row.indicator_name);
-  if (/(sme_employment_share|доля.*работников.*малых и средних)/i.test(text)) return PILLARS.find((p) => p.key === 'employment');
-  if (/(sme|small_business|entrepreneur|мсп|предприним)/i.test(text)) return PILLARS.find((p) => p.key === 'business');
-  return PILLARS.find((p) => p.match.test(text)) || { key: 'other', title: 'Прочие показатели', note: 'Дополнительные показатели проекта' };
-};
+
 const directionFor = (row) => {
   const code = safeText(row.indicator_code).toLowerCase();
   const s = (code + ' ' + safeText(row.indicator_name)).toLowerCase();
