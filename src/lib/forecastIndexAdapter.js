@@ -14,7 +14,7 @@ const isFiniteIndex = (value) => {
   return Number.isFinite(parsed) && parsed >= 0 && parsed <= 100;
 };
 
-const hasTraceableCompleteResult = (result, expectedYear, expectedPeriod) => {
+const hasTraceableCompleteResult = (result, expectedYear, expectedPeriod, diagnostics, minimumPeers, minimumCoveragePercent) => {
   if (!Array.isArray(result?.pillars) || result.pillars.length !== 6) return false;
   return result.pillars.every((pillar) =>
     pillar
@@ -25,6 +25,14 @@ const hasTraceableCompleteResult = (result, expectedYear, expectedPeriod) => {
     && pillar.indicators.length > 0
     && pillar.indicators.every((indicator) =>
       indicator
+      && typeof indicator.code === 'string'
+      && indicator.code.trim() !== ''
+      && (diagnostics || []).some((group) =>
+        group?.code === indicator.code
+        && group.comparable === true
+        && Number(group.municipalityCount) >= minimumPeers
+        && Number(group.peerCoveragePercent) >= minimumCoveragePercent
+      )
       && typeof indicator.sourceId === 'string'
       && indicator.sourceId.trim() !== ''
       && typeof indicator.sourceUrl === 'string'
@@ -62,9 +70,16 @@ export function createForecastIndexOptions({
     && expectedPeriod !== ''
     && runPeriod === expectedPeriod;
   const scaleMatches = indexRun?.indexScale === '0–100 percentile score';
+  const minimumPeerMunicipalities = Number(indexContract?.minimumPeerMunicipalities);
+  const minimumPeerCoveragePercent = Number(indexContract?.minimumPeerCoveragePercent);
   const contractApproved = indexContract?.status === 'approved'
     && typeof indexContract?.version === 'string'
-    && indexContract.version.trim() !== '';
+    && indexContract.version.trim() !== ''
+    && Number.isInteger(minimumPeerMunicipalities)
+    && minimumPeerMunicipalities >= 5
+    && Number.isFinite(minimumPeerCoveragePercent)
+    && minimumPeerCoveragePercent > 0
+    && minimumPeerCoveragePercent <= 100;
   const runAvailable = indexRun?.results && typeof indexRun.results === 'object'
     && !Array.isArray(indexRun.results);
   const approved = contractApproved && runHasExpectedPeriod && scaleMatches && runAvailable;
@@ -95,7 +110,14 @@ export function createForecastIndexOptions({
     }
     if (String(result.municipalityId ?? '').trim() !== id
       || !isFiniteIndex(result.index)
-      || !hasTraceableCompleteResult(result, expectedYear, expectedPeriod)) {
+      || !hasTraceableCompleteResult(
+        result,
+        expectedYear,
+        expectedPeriod,
+        indexRun?.diagnostics?.indicatorGroups,
+        minimumPeerMunicipalities,
+        minimumPeerCoveragePercent,
+      )) {
       indexResults[id] = { status: 'invalid_index_result', index: null };
       invalidCount += 1;
       continue;
@@ -109,11 +131,13 @@ export function createForecastIndexOptions({
     indexContract: {
       status: approved ? 'approved' : 'candidate',
       version: approved ? indexContract.version.trim() : null,
+      minimumPeerMunicipalities: approved ? minimumPeerMunicipalities : null,
+      minimumPeerCoveragePercent: approved ? minimumPeerCoveragePercent : null,
     },
     indexResults,
     diagnostics: {
       available: approved,
-      reason: !contractApproved ? 'approved_versioned_methodology_contract_required'
+      reason: !contractApproved ? 'approved_versioned_peer_coverage_contract_required'
         : !runHasExpectedPeriod ? 'reference_period_mismatch'
           : !scaleMatches ? 'unsupported_index_scale'
             : !runAvailable ? 'calculated_index_results_required'
@@ -121,6 +145,8 @@ export function createForecastIndexOptions({
       referenceYear: Number.isInteger(runYear) ? runYear : null,
       referencePeriod: runPeriod || null,
       methodologyVersion: approved ? indexContract.version.trim() : null,
+      minimumPeerMunicipalities: approved ? minimumPeerMunicipalities : null,
+      minimumPeerCoveragePercent: approved ? minimumPeerCoveragePercent : null,
       municipalityCount: rows.length,
       completeCount,
       incompleteCount,
