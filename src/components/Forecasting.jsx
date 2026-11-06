@@ -41,37 +41,57 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
     async function loadScenarios() {
       if (!isSupabaseConfigured || !supabase) return;
       try {
+        // Load the stable scenario contract first. This keeps the screen compatible
+        // with databases that have not yet received the optional factor migration.
         const result = await supabase.from('forecast_scenarios')
-          .select('id,key,title,summary,investment_growth_rate,sme_growth_rate,score_growth_rate,uncertainty_rate,export_shock_pct,cost_pressure_pct,labor_shortage_pct,display_order')
+          .select('id,key,title,summary,investment_growth_rate,sme_growth_rate,score_growth_rate,uncertainty_rate,display_order')
           .eq('is_active', true).order('display_order', { ascending: true });
         if (result.error) throw result.error;
-        if (cancelled) return;
-        if (Array.isArray(result.data) && result.data.length) {
-          const normalized = result.data.map((s) => ({
-            id: s.id, key: s.key, title: s.title, summary: s.summary,
-            investment_growth_rate: hasNumericValue(s.investment_growth_rate) ? n(s.investment_growth_rate) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.investment_growth_rate ?? 0),
-            sme_growth_rate: hasNumericValue(s.sme_growth_rate) ? n(s.sme_growth_rate) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.sme_growth_rate ?? 0),
-            score_growth_rate: hasNumericValue(s.score_growth_rate) ? n(s.score_growth_rate) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.score_growth_rate ?? 0),
-            uncertainty_rate: hasNumericValue(s.uncertainty_rate) ? n(s.uncertainty_rate) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.uncertainty_rate ?? 0),
-            export_shock_pct: hasNumericValue(s.export_shock_pct) ? n(s.export_shock_pct) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.export_shock_pct ?? 0),
-            cost_pressure_pct: hasNumericValue(s.cost_pressure_pct) ? n(s.cost_pressure_pct) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.cost_pressure_pct ?? 0),
-            labor_shortage_pct: hasNumericValue(s.labor_shortage_pct) ? n(s.labor_shortage_pct) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.labor_shortage_pct ?? 0),
-            display_order: s.display_order,
-          }));
-          setScenarios(normalized);
-          setScenarioStatus('database');
-          const initial = normalized.find((s) => s.key === 'base') || normalized[0];
-          setScenarioKey(initial.key);
-          setParams({
-            investment_growth_rate: initial.investment_growth_rate,
-            sme_growth_rate: initial.sme_growth_rate,
-            score_growth_rate: initial.score_growth_rate,
-            uncertainty_rate: initial.uncertainty_rate,
-            export_shock_pct: initial.export_shock_pct,
-            cost_pressure_pct: initial.cost_pressure_pct,
-            labor_shortage_pct: initial.labor_shortage_pct,
-          });
+        if (cancelled || !Array.isArray(result.data) || !result.data.length) return;
+
+        let factorRows = [];
+        let hasFactorColumns = false;
+        try {
+          const factors = await supabase.from('forecast_scenarios')
+            .select('id,key,export_shock_pct,cost_pressure_pct,labor_shortage_pct')
+            .eq('is_active', true);
+          if (!factors.error && Array.isArray(factors.data)) {
+            factorRows = factors.data;
+            hasFactorColumns = true;
+          }
+        } catch {
+          // Older schema: use documented expert fallback assumptions for factors.
         }
+        if (cancelled) return;
+
+        const normalized = result.data.map((s) => {
+          const fallback = FALLBACK_SCENARIOS.find((item) => item.key === s.key) || FALLBACK_SCENARIOS[1];
+          const factor = factorRows.find((item) => item.id === s.id || item.key === s.key) || {};
+          return {
+            id: s.id, key: s.key, title: s.title, summary: s.summary,
+            investment_growth_rate: hasNumericValue(s.investment_growth_rate) ? n(s.investment_growth_rate) : fallback.investment_growth_rate,
+            sme_growth_rate: hasNumericValue(s.sme_growth_rate) ? n(s.sme_growth_rate) : fallback.sme_growth_rate,
+            score_growth_rate: hasNumericValue(s.score_growth_rate) ? n(s.score_growth_rate) : fallback.score_growth_rate,
+            uncertainty_rate: hasNumericValue(s.uncertainty_rate) ? n(s.uncertainty_rate) : fallback.uncertainty_rate,
+            export_shock_pct: hasFactorColumns && hasNumericValue(factor.export_shock_pct) ? n(factor.export_shock_pct) : fallback.export_shock_pct,
+            cost_pressure_pct: hasFactorColumns && hasNumericValue(factor.cost_pressure_pct) ? n(factor.cost_pressure_pct) : fallback.cost_pressure_pct,
+            labor_shortage_pct: hasFactorColumns && hasNumericValue(factor.labor_shortage_pct) ? n(factor.labor_shortage_pct) : fallback.labor_shortage_pct,
+            display_order: s.display_order,
+          };
+        });
+        setScenarios(normalized);
+        setScenarioStatus(hasFactorColumns ? 'database' : 'database-legacy');
+        const initial = normalized.find((s) => s.key === 'base') || normalized[0];
+        setScenarioKey(initial.key);
+        setParams({
+          investment_growth_rate: initial.investment_growth_rate,
+          sme_growth_rate: initial.sme_growth_rate,
+          score_growth_rate: initial.score_growth_rate,
+          uncertainty_rate: initial.uncertainty_rate,
+          export_shock_pct: initial.export_shock_pct,
+          cost_pressure_pct: initial.cost_pressure_pct,
+          labor_shortage_pct: initial.labor_shortage_pct,
+        });
       } catch {
         if (!cancelled) setScenarioStatus('fallback');
       }
@@ -206,7 +226,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
     <section className="panel full-panel forecast-page">
       <div className="section-heading">
         <div className="heading-label"><span className="heading-icon"><span className="forecast-heading-mark">↗</span></span><div><h2>Режим прогнозирования</h2><p>Сценарная модель развития муниципалитетов Югры</p></div></div>
-        <span className={'forecast-source-pill ' + (scenarioStatus === 'database' ? 'is-live' : '')}><i />{scenarioStatus === 'database' ? 'Сценарии из Supabase' : 'Встроенные шаблоны'}</span>
+        <span className={'forecast-source-pill ' + (scenarioStatus === 'database' ? 'is-live' : '')}><i />{scenarioStatus === 'database' ? 'Сценарии из Supabase' : scenarioStatus === 'database-legacy' ? 'Сценарии Supabase · факторы по шаблону' : 'Встроенные шаблоны'}</span>
       </div>
 
       <div className="forecast-warning"><strong>Концептуальная модель, не официальный прогноз.</strong><span>Проверенных временных рядов по всем 22 территориям нет. Это сценарный эксперимент с заданными пользователем темпами, а не статистически обученная модель и не вероятность развития событий.</span><span className="forecast-coverage-note">Пять групп из паспорта проекта: занятость, доходы населения, местный бюджет, миграция и инвестиции. Текущий расчётный прототип использует инвестиции, число субъектов МСП и концептуальный балл; занятость, доходы, бюджет и миграция пока не входят в вычислительное ядро. Подтверждённых сопоставимых муниципальных рядов миграции сейчас нет. Пропуски не подменяются нулями.</span></div>
