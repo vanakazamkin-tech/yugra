@@ -22,6 +22,12 @@ assert.equal(indicatorDirection({ indicator_code: 'real_disposable_income_index'
 const sectorEmploymentMethod = indicatorMethodFor({ indicator_code: 'employees_healthcare' });
 assert.equal(sectorEmploymentMethod.direction, 'context',
   'sectoral employee headcounts must remain contextual without a common denominator');
+assert.equal(sectorEmploymentMethod.pillar, 'social',
+  'healthcare employee headcount belongs to the social context pillar');
+assert.equal(indicatorSeriesGroup({ indicator_code: 'employees_education' }), 'social',
+  'education employee headcount belongs to the social context group');
+assert.equal(indicatorMethodFor({ indicator_code: 'employees_education' }).direction, 'context',
+  'education employee headcount must not be scored without a service-coverage denominator');
 assert.match(sectorEmploymentMethod.limitation, /только два муниципалитета/,
   'sectoral employee headcounts must disclose their current two-municipality coverage');
 assert.equal(indicatorSeriesGroup({ indicator_code: 'housing_commissioned_reported' }), 'production',
