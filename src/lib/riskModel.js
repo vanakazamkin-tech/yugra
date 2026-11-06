@@ -83,9 +83,10 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
     (signal) => signal && (signal.adverse === true || signal.adverse === false)
   );
   const bad = usable.filter((signal) => signal.adverse === true);
-  const affectedPillars = new Set(bad.map((signal) => signal.pillar?.key).filter(Boolean));
+  const pillarOf = (signal) => MODEL_PILLAR_BY_SERIES[signal.pillar?.key] || signal.pillar?.key;
+  const affectedPillars = new Set(bad.map(pillarOf).filter(Boolean));
   const pillarCounts = Object.fromEntries([...affectedPillars].map((key) => [
-    key, bad.filter((signal) => signal.pillar?.key === key).length,
+    key, bad.filter((signal) => pillarOf(signal) === key).length,
   ]));
   const repeatedDeterioration = bad.filter((signal) => Number(signal.adverseStreak) >= 2);
   const common = {
