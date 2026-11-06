@@ -37,6 +37,36 @@ const growth = (base, annualRate, years) => {
 };
 const roundCount = (value) => value == null ? null : Math.round(value);
 
+/**
+ * Normalize scenario definitions from Supabase while supporting databases
+ * that have not yet received the optional scenario-factor migration.
+ */
+export function normalizeScenarioRows(baseRows, factorRows = [], factorColumnsAvailable = false, fallbackScenarios = []) {
+  if (!Array.isArray(baseRows)) return [];
+  const factors = Array.isArray(factorRows) ? factorRows : [];
+  const fallbacks = Array.isArray(fallbackScenarios) ? fallbackScenarios : [];
+  return baseRows.map((row) => {
+    const fallback = fallbacks.find((item) => item?.key === row?.key) || {};
+    const factor = factors.find((item) => item?.id === row?.id || item?.key === row?.key) || {};
+    const valueOrFallback = (value, fallbackValue) => numeric(value) ?? numeric(fallbackValue) ?? 0;
+    return {
+      id: row?.id ?? null,
+      key: row?.key ?? null,
+      title: row?.title ?? fallback.title ?? '',
+      summary: row?.summary ?? fallback.summary ?? '',
+      investment_growth_rate: valueOrFallback(row?.investment_growth_rate, fallback.investment_growth_rate),
+      sme_growth_rate: valueOrFallback(row?.sme_growth_rate, fallback.sme_growth_rate),
+      score_growth_rate: valueOrFallback(row?.score_growth_rate, fallback.score_growth_rate),
+      uncertainty_rate: valueOrFallback(row?.uncertainty_rate, fallback.uncertainty_rate),
+      export_shock_pct: factorColumnsAvailable ? valueOrFallback(factor.export_shock_pct, fallback.export_shock_pct) : valueOrFallback(fallback.export_shock_pct, 0),
+      cost_pressure_pct: factorColumnsAvailable ? valueOrFallback(factor.cost_pressure_pct, fallback.cost_pressure_pct) : valueOrFallback(fallback.cost_pressure_pct, 0),
+      labor_shortage_pct: factorColumnsAvailable ? valueOrFallback(factor.labor_shortage_pct, fallback.labor_shortage_pct) : valueOrFallback(fallback.labor_shortage_pct, 0),
+      display_order: row?.display_order ?? fallback.display_order ?? 0,
+    };
+  });
+}
+
+
 export function buildForecasts(municipalities = [], params = {}, horizon = 1) {
   const parsedHorizon = numeric(horizon);
   const years = clamp(Math.round(parsedHorizon == null ? 1 : parsedHorizon), 1, 3);
