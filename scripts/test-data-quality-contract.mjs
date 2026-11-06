@@ -13,6 +13,7 @@ assert.match(migration, /\[0-9\]\{4\}/, 'bare years must be accepted as annual p
 assert.match(migration, /group by[\s\S]*geographic_level[\s\S]*geographic_name/i, 'conflict keys must retain geographic scope');
 assert.match(migration, /and count\(distinct source_id\) > 1/i, 'cross-source conflict view must require multiple sources');
 assert.match(migration, /revoke all .*anon, authenticated/is, 'quality view must not be exposed to API roles');
+assert.match(migration, /grant select on table public\.municipality_indicator_quality_issues to service_role/i, 'service role must be able to read the private diagnostic view');
 assert.doesNotMatch(migration, /\b(insert\s+into|update\s+public\.|delete\s+from|truncate)\b/i, 'diagnostics migration must not mutate observations');
 assert.match(assertions, /known multi-source disagreement/i, 'SQL regression assertions must cover known conflict');
 assert.match(assertions, /legitimate negative growth value/i, 'SQL regression assertions must protect valid negative values');
