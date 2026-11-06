@@ -8,10 +8,10 @@ export const PILLARS = [
   { key: 'investment', title: 'Инвестиции', match: /(investment|capital_investment|инвестици|капиталовлож)/i, note: 'Инвестиции в основной капитал' },
   { key: 'business', title: 'Предпринимательство', match: /(sme|small_business|entrepreneur|business|предприним|мсп)/i, note: 'Число субъектов МСП и занятость в МСП' },
   { key: 'production', title: 'Производство и рынок', match: /(production|shipment|turnover|retail|goods|hospitality|hotel|restaurant|гостиниц|общепит|общественн.*питан|продукц|отгруж|оборот|торговл|ярмарк)/i, note: 'Производство, торговля и услуги' },
-  { key: 'health', title: 'Здравоохранение', match: /(health|hospital(?!ity)|clinic|medical|doctor|physician|morbidity|здрав|медицин|больниц|поликлиник|врач|фельдшер|заболеваем|смертн)/i, note: 'Доступность медицинской помощи и показатели здоровья' },
+  { key: 'health', title: 'Здравоохранение', match: /(health|hospital(?!ity)|clinic|medical|doctor|physician|morbidity|здрав|медицин|больниц|поликлиник|врач|фельдшер|заболеваем)/i, note: 'Доступность медицинской помощи и показатели здоровья' },
   { key: 'education', title: 'Образование', match: /(education|school|preschool|kindergarten|student|teacher|образован|школ|дошколь|детсад|учител|учащ|студент)/i, note: 'Образовательная инфраструктура и охват' },
   { key: 'social', title: 'Социальная сфера', match: /(social|poverty|benefit|welfare|социал|малоимущ|пособ|соцзащит|пенси)/i, note: 'Социальная поддержка и уязвимость населения' },
-  { key: 'demography', title: 'Демография', match: /(population|birth|death|населен|рождаем|смертн)/i, note: 'Численность и структура населения' },
+  { key: 'demography', title: 'Демография', match: /(population|birth|death|mortality|населен|рождаем|смертн)/i, note: 'Численность и структура населения' },
   { key: 'infrastructure', title: 'Инфраструктура', match: /(facility|road|housing|network|коммунал|учрежден|дорог|жиль|сет|инфраструктур)/i, note: 'Инфраструктурные объекты и среда' },
 ];
 
