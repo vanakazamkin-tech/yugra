@@ -36,6 +36,11 @@ assert.equal(indicatorSeriesGroup({ indicator_code: 'employees_hospitality' }), 
   'hospitality workforce belongs to production context');
 assert.equal(indicatorMethodFor({ indicator_code: 'employees_hospitality' }).direction, 'context',
   'hospitality workforce must remain contextual without tourism activity denominators');
+const transportEmploymentMethod = indicatorMethodFor({ indicator_code: 'employees_transport' });
+assert.equal(transportEmploymentMethod.direction, 'context',
+  'transport and storage employee headcount must remain contextual without a service denominator');
+assert.equal(transportEmploymentMethod.pillar, 'employment',
+  'transport and storage workforce belongs to the employment context');
 assert.match(sectorEmploymentMethod.limitation, /только по Когалыму и Сургуту/,
   'sectoral employee headcounts must disclose their current two-municipality coverage');
 assert.equal(indicatorSeriesGroup({ indicator_code: 'housing_commissioned_reported' }), 'production',
