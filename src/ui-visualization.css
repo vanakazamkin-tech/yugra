@@ -513,3 +513,76 @@
     overflow-wrap: anywhere;
   }
 }
+
+
+/* Municipality map: comfortable touch targets and a readable stacked mobile layout. */
+.yugra-app .ugra-map-svg {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.yugra-app .ugra-map-svg [role="button"] {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.yugra-app .map-list-item {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+.yugra-app .map-list-item:focus-visible {
+  outline: 3px solid rgba(177, 139, 82, .82);
+  outline-offset: 2px;
+  border-color: #b18b52;
+  background: #f2eadb;
+}
+.yugra-app .map-list-item:active {
+  border-color: #b18b52;
+  background: #eee2cb;
+}
+.yugra-app .map-list {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 760px) {
+  .yugra-app .map-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .yugra-app .map-layout .large-map {
+    min-height: 0;
+    padding: 14px 8px;
+  }
+  .yugra-app .map-layout .large-map > svg {
+    width: 100%;
+    max-height: none;
+  }
+  .yugra-app .map-layout .map-list {
+    max-height: min(44vh, 360px);
+    padding: 14px 4px 4px;
+    border-top: 1px solid #e3d7c5;
+    border-left: 0;
+  }
+  .yugra-app .map-layout .map-list-section h3 {
+    font-size: 16px;
+  }
+  .yugra-app .map-layout .map-list-item {
+    padding: 8px 10px;
+    gap: 10px;
+  }
+}
+@media (max-width: 420px) {
+  .yugra-app .map-layout .large-map {
+    padding-inline: 3px;
+  }
+  .yugra-app .map-layout .map-list {
+    max-height: 320px;
+  }
+  .yugra-app .map-card-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .yugra-app .map-card-footer button {
+    min-height: 40px;
+    padding: 7px 0;
+  }
+}
