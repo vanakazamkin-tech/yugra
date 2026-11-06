@@ -44,6 +44,9 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Makes the municipal passport dialog keyboard-contained: Tab/Shift+Tab stay inside the dialog, Escape closes it, focus returns to the opener, and background page scrolling is locked while the dialog is open.
 - Explicitly marks interface action buttons as `type="button"` so they cannot accidentally submit a form if the page is later wrapped in one.
 - Extends explicit button types to the forecasting and risk workspaces; a repository-wide JSX scan found and corrected 15 remaining buttons across those two modules.
+- Makes all 17 horizontally scrollable data-table wrappers in the main workspace, forecast workspace and risk workspace keyboard-focusable named regions; visible focus styling makes the active scroll area clear.
+- Adds explicit `scope="col"` semantics to 121 table column headers across those three UI modules.
+- Announces the filtered result count in the forecast table with a polite live region, so search and municipality-filter changes are conveyed to assistive technology.
 - Keeps the existing Yugra palette, ornament assets and component hierarchy intact.
 
 ## Known review notes / items for dedicated follow-up
@@ -64,5 +67,6 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Municipal passport dialog keyboard behavior reviewed in source: focus containment, Escape close, focus restoration, and background scroll lock are implemented.
 - Map-list rendering reviewed: list sections are now stable module-level components rather than nested component definitions.
 - All seven JSX/TSX source files scanned for buttons without an explicit type; the 15 remaining buttons in forecast and risk workspaces were corrected. No untyped buttons remain in the scan.
+- All 17 table-scroll wrappers across the three analytical UI modules were checked and made keyboard-focusable labelled regions; table headers were assigned column scope.
 - GitHub Actions `Build verification` run #1007 passed on head `d14ec9fa3527c2f9d63db995e770847a70683a46`: dependency installation, all data-integrity regression checks, and production bundle build succeeded.
 - Local browser-based visual regression was not run in this environment; viewport-specific manual verification remains outstanding.
