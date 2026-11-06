@@ -1454,12 +1454,12 @@ export const InvestmentDetails = () => {
     const rawValues = chartItems.map((m) => reportChartMetricDef.get(m));
     const maxValue = Math.max(...rawValues, 1);
     const rankMax = Math.max(...municipalities.map((m) => Number(m.rank2024 || 0)), 1);
-    return <div className="report-chart-list">{chartItems.map((m) => {
+    return <div className="report-chart-list" role="list" aria-label={`Сравнение: ${reportChartMetricDef.label} по муниципалитетам`}>{chartItems.map((m) => {
       const value = reportChartMetricDef.get(m);
       const barValue = reportChartMetric === 'rank2024' ? rankMax + 1 - value : value;
       const denominator = reportChartMetric === 'rank2024' ? rankMax : maxValue;
       const width = Math.max(2, Math.min(100, denominator ? (barValue / denominator) * 100 : 0));
-      return <div className="report-chart-row" key={m.id}><span className="report-chart-name">{m.name}</span><span className="report-chart-track"><i style={{ width: `${width}%` }}/></span><strong>{reportChartMetricDef.format(m)}</strong></div>;
+      return <div className="report-chart-row" role="listitem" key={m.id}><span className="report-chart-name">{m.name}</span><span className="report-chart-track" aria-hidden="true"><i style={{ width: `${width}%` }}/></span><strong>{reportChartMetricDef.format(m)}</strong></div>;
     })}</div>;
   };
 
@@ -2058,7 +2058,7 @@ export const InvestmentDetails = () => {
               <div className="compare-analysis">
                 <div className="analysis-toolbar"><div><span className="micro-label">ОСНОВНОЙ СРЕЗ</span><h3>Сравнить по показателю</h3></div><label className="select-field"><span>Показатель диаграммы</span><select value={comparisonMetric} onChange={(e) => setComparisonMetric(e.target.value)}>{METRICS.map((metric) => <option key={metric.key} value={metric.key}>{metric.label}</option>)}</select></label></div>
                 {comparisonItems.length < 2 ? <div className="empty-state comparison-empty"><span>Нужно выбрать минимум две территории</span><p>Отметьте муниципалитеты в списке слева, чтобы увидеть сравнение.</p></div> : <>
-                  <div className="comparison-chart-card"><div className="chart-card-heading"><div><strong>{comparisonMetricDef.label}</strong><span>{comparisonMetricDef.unit === 'место' ? 'Меньший номер означает более высокую позицию' : `Единица измерения: ${comparisonMetricDef.unit}`}</span></div><span className="chart-chip">{comparisonItems.length} территории</span></div>
+                  <div className="comparison-chart-card" role="group" aria-label={`Диаграмма сравнения: ${comparisonMetricDef.label}`}><div className="chart-card-heading"><div><strong>{comparisonMetricDef.label}</strong><span>{comparisonMetricDef.unit === 'место' ? 'Меньший номер означает более высокую позицию' : `Единица измерения: ${comparisonMetricDef.unit}`}</span></div><span className="chart-chip">{comparisonItems.length} территории</span></div>
                     {(() => {
                       const values = comparisonItems.map((m) => comparisonMetricDef.get(m));
                       const maxVal = comparisonMetric === 'rank2024' ? Math.max(...municipalities.map((m) => Number(m.rank2024 || 0)), 1) : Math.max(...values, 1);
@@ -2068,7 +2068,7 @@ export const InvestmentDetails = () => {
                         const denom = comparisonMetric === 'rank2024' ? maxVal : Math.max(...values, 1);
                         const width = val == null ? 0 : Math.max(3, Math.min(100, (barVal / denom) * 100));
                         const paletteClass = ['bar-forest', 'bar-ochre', 'bar-moss', 'bar-russet'][index % 4];
-                        return <div className="comparison-bar-row" key={m.id}><div className="comparison-bar-label"><span className="comparison-number">0{index + 1}</span><strong>{m.name}</strong></div><div className="comparison-bar-track"><i className={paletteClass} style={{ width: `${width}%` }}/></div><strong className="comparison-bar-value">{comparisonMetricDef.format(m)}</strong></div>;
+                        return <div className="comparison-bar-row" key={m.id}><div className="comparison-bar-label"><span className="comparison-number">0{index + 1}</span><strong>{m.name}</strong></div><div className="comparison-bar-track" aria-hidden="true"><i className={paletteClass} style={{ width: `${width}%` }}/></div><strong className="comparison-bar-value">{comparisonMetricDef.format(m)}</strong></div>;
                       });
                     })()}
                   </div>
