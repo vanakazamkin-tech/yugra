@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test:risk": "node scripts/test-risk-model.mjs",
-    "test": "npm run test:risk",
+    "test:tochno": "node scripts/test-tochno-hmao-extractor.mjs",
+    "test": "npm run test:risk && npm run test:tochno",
     "prebuild": "npm run test"
   },
   "dependencies": {
