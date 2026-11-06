@@ -301,3 +301,7 @@ The comparison heading counted municipalities using an optional-chained score ch
 ## Stress-test controls follow actual index coverage (7 November 2026)
 
 The index sensitivity panel previously rendered sliders for all six pillars, including pillars with no comparable observations in the selected municipality. Those controls could not affect the recalculated score because the calculation correctly uses only scored pillars. The panel now renders controls only for pillars whose score is present and explicitly explains that directions without comparable data are excluded. The index formula, available-pillar weighting, and scenario calculations are unchanged.
+
+## Forecast investment chart empty-state semantics (7 November 2026)
+
+The forecast investment chart container previously retained `role=list` and a list label when no chart rows existed, even though its only child was an explanatory empty-state panel rather than a list item. The list role and label are now applied only when actual chart rows are present. The empty-state message remains visible and unchanged; chart values, filters, and calculations are unaffected.
