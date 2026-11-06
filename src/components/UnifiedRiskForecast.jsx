@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { isEligibleAnnualForecastSeries } from '../lib/forecastCoverage.js';
-import { assessRiskSignals, backtestAnnualSeries, buildRiskModel, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, RISK_CHAINS } from '../lib/riskModel.js';
+import { assessRiskSignals, backtestAnnualSeries, buildRiskModel, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, parseRiskPeriod, RISK_CHAINS } from '../lib/riskModel.js';
 import './UnifiedRiskForecast.css';
 import { PILLARS } from '../lib/indicatorClassification.js';
 import { buildRiskSeries } from '../lib/riskSeries.js';
@@ -110,7 +110,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     });
   }, [series, municipalities]);
   const selected = municipalityAnalysis.find((m) => m.id === (selectedMunicipality || municipalityId)) || municipalityAnalysis[0];
-  const forecastOptions = useMemo(() => series.filter((s) => signature(s.latest) === 'annual' && isEligibleAnnualForecastSeries(s)), [series]);
+  const forecastOptions = useMemo(() => series.filter((s) => parseRiskPeriod(s.latest)?.frequency === 'annual' && isEligibleAnnualForecastSeries(s)), [series]);
   const forecastSeries = forecastOptions.find((s) => s.key === selectedSeriesKey) || forecastOptions.find((s) => s.municipalityId === (municipalityId === 'ALL' ? selected?.id : municipalityId)) || forecastOptions[0] || null;
   const forecastMunicipality = forecastSeries ? municipalityNames.get(forecastSeries.municipalityId) || forecastSeries.municipalityId : '—';
   const history = forecastSeries?.points || [];
