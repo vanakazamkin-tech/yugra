@@ -29,6 +29,19 @@ assert.match(indicatorMethodFor({ indicator_code: 'average_monthly_salary_annual
   'salary method must disclose its limited municipal coverage');
 assert.equal(indicatorDirection({ indicator_code: 'sme_employment_share' }), 'context',
   'structural SME employment share must remain contextual');
+for (const code of [
+  'derived_budget_transfer_dependency',
+  'derived_budget_balance_ratio',
+  'derived_investment_per_capita',
+  'derived_population_growth_rate',
+  'derived_migration_net_per_1000',
+  'sme_employment_share',
+]) {
+  const method = indicatorMethodFor({ indicator_code: code });
+  assert.equal(method?.direction, 'context', code + ' must remain contextual');
+  assert.ok(method?.rationale && method?.limitation,
+    code + ' must explain why it is contextual in the interface');
+}
 assert.ok(indicatorMethodFor({ indicator_code: 'sme_per_10k' }).rationale.length > 0);
 console.log('OK: equivalent municipal SME-density aliases are harmonized without changing unrelated indicators.');
 console.log('OK: indicator direction is assigned only by explicit reviewed rules with documented caveats.');
