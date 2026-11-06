@@ -170,6 +170,7 @@ assert.equal(assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(false, 'labour')]).level, 'watch', 'one negative signal is yellow');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour'), riskSignal(true, 'finance')]).level, 'critical', 'three negative signals across two or more pillars are red by default');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'economy'), riskSignal(true, 'economy')]).level, 'watch', 'multiple signals in one pillar do not satisfy the default cross-pillar red threshold');
+assert.equal(assessRiskSignals([riskSignal(true, 'health'), riskSignal(true, 'education'), riskSignal(true, 'social'), riskSignal(false, 'finance')]).level, 'watch', 'health, education and social subcategories count as one social direction, not three');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 2, criticalSignals: 2, criticalPillars: 2 }).level, 'critical', 'custom thresholds must recalculate the traffic-light status');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 3, criticalSignals: 2, criticalPillars: 2 }).level, 'insufficient', 'the minimum coverage threshold must take precedence over negative signals');
 
