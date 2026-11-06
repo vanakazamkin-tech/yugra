@@ -3,6 +3,7 @@ import { isEligibleAnnualForecastSeries } from '../lib/forecastCoverage.js';
 import { assessRiskSignals, backtestAnnualSeries, buildRiskModel, countConsecutiveAdverseIntervals, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios, RISK_CHAINS } from '../lib/riskModel.js';
 import './UnifiedRiskForecast.css';
 import { PILLARS, classify } from '../lib/indicatorClassification.js';
+import { directionForRiskIndicator } from '../lib/riskDirection.js';
 
 
 const number = (v) => v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v);
@@ -10,15 +11,7 @@ const fmt = (v, digits = 1) => v == null || !Number.isFinite(Number(v)) ? '—' 
 const pct = (v) => v == null ? '—' : (v > 0 ? '+' : '') + fmt(v, 1) + '%';
 const safeText = (v) => String(v ?? '').trim();
 
-const directionFor = (row) => {
-  const code = safeText(row.indicator_code).toLowerCase();
-  const s = (code + ' ' + safeText(row.indicator_name)).toLowerCase();
-  // Направление задаётся только для показателей, где знак изменения можно объяснить без скрытых допущений.
-  if (/(unemploy|registered_unemployed|poverty|below_poverty|death_rate|mortality|noncompliant_roads|arrears|deficit|debt|budget_transfer_dependency|derived_budget_transfer_dependency|аварийн|износ|смертн|бедност|безработ|не отвечающ.*норматив)/i.test(s)) return 'lower';
-  if (/(employment_share|sme_per_10k|real_disposable_income|real_income|industrial_production_index|physical_index|productivity|budget_own_revenue_share|budget_balance_ratio|population_growth_rate|investment_per_capita|derived_population_growth_rate|положительн.*миграц|уровень занятости|доля занятых|индекс физического объём|индекс физического объем|реальн.*доход)/i.test(s)) return 'higher';
-  // Абсолютные номинальные суммы, зарплаты без дефлятора, численность, миграция и обороты требуют контекста.
-  return 'context';
-};
+const directionFor = directionForRiskIndicator;
 const signature = (row) => {
   const p = safeText(row.reference_period);
   const q = p.match(/-Q([1-4])/i), h = p.match(/-H([12])/i);
