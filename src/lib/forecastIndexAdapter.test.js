@@ -8,14 +8,28 @@ const municipalities = [
   { id: 'c', name: 'C', score: 64 },
 ];
 
+const completePillars = () => ['economy', 'labour', 'demography', 'finance', 'social', 'infrastructure'].map((key) => ({
+  key,
+  score: 80,
+  indicators: [{
+    sourceId: 'rosstat-source',
+    sourceUrl: 'https://rosstat.gov.ru/example',
+    year: 2025,
+    period: 'year',
+    score: 80,
+    unit: 'единиц',
+    rawValue: 10,
+  }],
+}));
+
 const run = {
   referenceYear: 2025,
   referencePeriod: 'year',
   indexScale: '0–100 percentile score',
   results: {
-    a: { municipalityId: 'a', status: 'complete', index: 88.5 },
+    a: { municipalityId: 'a', status: 'complete', index: 88.5, pillars: completePillars() },
     b: { municipalityId: 'b', status: 'insufficient_coverage', index: null },
-    c: { municipalityId: 'c', status: 'complete', index: 101 },
+    c: { municipalityId: 'c', status: 'complete', index: 101, pillars: completePillars() },
   },
 };
 
@@ -118,7 +132,7 @@ test('adapter rejects a complete result whose embedded municipality identity doe
       ...run,
       results: {
         ...run.results,
-        a: { municipalityId: 'b', status: 'complete', index: 88.5 },
+        a: { municipalityId: 'b', status: 'complete', index: 88.5, pillars: completePillars() },
       },
     },
     municipalities,
@@ -128,4 +142,44 @@ test('adapter rejects a complete result whose embedded municipality identity doe
   });
   assert.deepEqual(options.indexResults.a, { status: 'invalid_index_result', index: null });
   assert.equal(options.diagnostics.invalidCount, 2);
+});
+
+
+test('adapter requires source provenance on every indicator in all six complete pillars', () => {
+  const missingSource = completePillars();
+  missingSource[4].indicators[0].sourceUrl = null;
+  const options = createForecastIndexOptions({
+    indexRun: {
+      ...run,
+      results: {
+        ...run.results,
+        a: { municipalityId: 'a', status: 'complete', index: 88.5, pillars: missingSource },
+      },
+    },
+    municipalities,
+    indexContract: contract,
+    referenceYear: 2025,
+    referencePeriod: 'year',
+  });
+  assert.deepEqual(options.indexResults.a, { status: 'invalid_index_result', index: null });
+  assert.equal(options.diagnostics.invalidCount, 2);
+});
+
+test('adapter rejects pillar observations from a different year or period', () => {
+  const mixedPeriod = completePillars();
+  mixedPeriod[0].indicators[0].period = '2025-Q3';
+  const options = createForecastIndexOptions({
+    indexRun: {
+      ...run,
+      results: {
+        ...run.results,
+        a: { municipalityId: 'a', status: 'complete', index: 88.5, pillars: mixedPeriod },
+      },
+    },
+    municipalities,
+    indexContract: contract,
+    referenceYear: 2025,
+    referencePeriod: 'year',
+  });
+  assert.deepEqual(options.indexResults.a, { status: 'invalid_index_result', index: null });
 });
