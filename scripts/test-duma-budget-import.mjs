@@ -32,6 +32,7 @@ try {
   ], { stdio: 'pipe' });
   const result = JSON.parse(await fs.readFile(output, 'utf8'));
 
+  console.log('Duma fixture diagnostics', JSON.stringify({coverage: result.coverage_by_year, unmatched: result.records.filter((record) => !record.municipality_id).map((record) => record.municipality_label_source)}));
   assert.equal(result.source.source_id, 'duma_hmao_municipal_budget_2023_2024_appendix1');
   assert.equal(result.input_rows, 46);
   assert.equal(result.staged_rows, 45);
