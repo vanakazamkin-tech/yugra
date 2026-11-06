@@ -30,6 +30,12 @@ try {
   ]);
   assert.deepEqual(new Set(result.records.map((r) => r.municipality_id)), expectedMunicipalityIds);
   assert.ok(result.records.every((r) => ['budget_total_revenue','budget_tax_non_tax_revenue','budget_revenue_excluding_grants'].includes(r.indicator_code)));
+  for (const code of ['budget_total_revenue','budget_tax_non_tax_revenue','budget_revenue_excluding_grants']) {
+    assert.equal(result.coverage_by_indicator_year[code]['2023'].municipality_count, 22, `${code} 2023 coverage`);
+    assert.equal(result.coverage_by_indicator_year[code]['2024'].municipality_count, 22, `${code} 2024 coverage`);
+    assert.equal(result.coverage_by_indicator_year[code]['2023'].complete, true, `${code} 2023 complete`);
+    assert.equal(result.coverage_by_indicator_year[code]['2024'].complete, true, `${code} 2024 complete`);
+  }
 
   const expected = {
     budget_total_revenue: {2023: 216011081.4, 2024: 241589251.7},
