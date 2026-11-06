@@ -71,3 +71,12 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - All 17 table-scroll wrappers across the three analytical UI modules were checked and made keyboard-focusable labelled regions; table headers were assigned column scope.
 - GitHub Actions `Build verification` run #1007 passed on head `d14ec9fa3527c2f9d63db995e770847a70683a46`: dependency installation, all data-integrity regression checks, and production bundle build succeeded.
 - Local browser-based visual regression was not run in this environment; viewport-specific manual verification remains outstanding.
+
+
+## Chart semantics follow-up (6 November 2026)
+
+- Report comparison bars are exposed as a labelled list; each row keeps its municipality and formatted metric value in the accessibility tree.
+- Forecast investment bars are likewise exposed as a labelled list with one item per municipality and the formatted model value.
+- Decorative bar tracks are hidden from assistive technology so they do not create meaningless stops or duplicate content; the adjacent text values remain available.
+- The municipality comparison chart is explicitly named as a group, and its decorative bar tracks are hidden; the same metric values remain available in the adjacent comparison cards and detailed table.
+- No chart calculations, metric selection, data, scenario assumptions, or styling were changed.
