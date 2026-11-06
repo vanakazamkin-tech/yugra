@@ -141,6 +141,8 @@ assert.equal(m1.pillars.find((pillar) => pillar.key === 'social').indicators, 2,
 assert.equal(m1.availablePillars, 3, 'risk diagnostics count covered directions without applying index weights');
 const chain = m1.chains.find((item) => item.id === 'investment-employment');
 assert.ok(chain?.active, 'adverse investment and employment signals should activate their risk chain');
+const singleMunicipalityDiagnostics = buildRiskModel([municipalities[0]], series.filter((item) => item.municipalityId === municipalities[0].id)).byMunicipality.m1;
+assert.ok(singleMunicipalityDiagnostics.adverseCount > 0, 'risk detection must not depend on a minimum peer group of municipalities');
 
 const serviceSeries = [];
 for (const definition of [
