@@ -45,3 +45,15 @@ assert.match(auditSql, /municipality_indicator_import_review[\s\S]*municipality_
 
 assert.match(postMigrationAuditSql, /Run only after applying migrations/i, 'migration-dependent audit must state its prerequisite');
 assert.doesNotMatch(auditSql, /private\.municipality_indicator_source_links|municipality_indicator_quality_issues|data_owner/i, 'baseline audit must run before additive migrations');
+
+
+const rosstatCoverageAudit = readFileSync('supabase/audits/rosstat-bd-pmo-coverage-readonly.sql', 'utf8');
+assert.match(rosstatCoverageAudit, /8112027/, 'Rosstat coverage audit must include population candidate');
+assert.match(rosstatCoverageAudit, /8423005/, 'Rosstat coverage audit must include employment candidate');
+assert.match(rosstatCoverageAudit, /8423007/, 'Rosstat coverage audit must include salary candidate');
+assert.match(rosstatCoverageAudit, /8109001/, 'Rosstat coverage audit must include enterprise investment candidate');
+assert.match(rosstatCoverageAudit, /8010001/, 'Rosstat coverage audit must include housing commissioning candidate');
+assert.match(rosstatCoverageAudit, /missing_municipalities/, 'Rosstat coverage audit must expose municipality gaps');
+assert.match(rosstatCoverageAudit, /verification_status <> 'verified'/, 'Rosstat coverage audit must distinguish non-verified observations');
+assert.doesNotMatch(rosstatCoverageAudit, /\\b(insert\\s+into|update\\s+public\\.|delete\\s+from|truncate|alter\\s+table|drop\\s+table)\\b/i, 'Rosstat coverage audit must remain read-only');
+console.log('Rosstat BD PMO coverage audit contract checks passed.');
