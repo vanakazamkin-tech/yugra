@@ -74,11 +74,21 @@ function buildSeries(rows) {
   });
   const result = [];
   groups.forEach((items, key) => {
-    const unique = new Map();
+    const candidatesByPeriod = new Map();
     items.forEach((item) => {
       // Один временной срез не должен превращаться в несколько точек из-за разных источников.
       const natural = [item.reference_year, signature(item)].join('|');
-      if (!unique.has(natural) || new Date(item.retrieved_at || 0) > new Date(unique.get(natural).retrieved_at || 0)) unique.set(natural, item);
+      if (!candidatesByPeriod.has(natural)) candidatesByPeriod.set(natural, []);
+      candidatesByPeriod.get(natural).push(item);
+    });
+    const unique = new Map();
+    candidatesByPeriod.forEach((candidates, natural) => {
+      // При конфликтующих подтверждённых значениях нельзя произвольно выбирать
+      // последнее загруженное: спорный срез исключается из динамики.
+      if (new Set(candidates.map((item) => item.numericValue)).size !== 1) return;
+      unique.set(natural, [...candidates].sort((a, b) =>
+        new Date(b.retrieved_at || 0).getTime() - new Date(a.retrieved_at || 0).getTime()
+      )[0]);
     });
     const points = [...unique.values()].sort((a, b) => a.order - b.order);
     if (!points.length) return;
