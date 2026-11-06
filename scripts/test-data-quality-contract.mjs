@@ -22,6 +22,7 @@ console.log('Data-quality contract checks passed.');
 const provenanceMigration = readFileSync('supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql', 'utf8');
 const metadataMigration = readFileSync('supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql', 'utf8');
 const auditSql = readFileSync('supabase/audits/data-quality-audit.sql', 'utf8');
+const postMigrationAuditSql = readFileSync('supabase/audits/data-quality-post-migration-audit.sql', 'utf8');
 
 assert.match(provenanceMigration, /create table if not exists private\.municipality_indicator_source_links/i, 'provenance relation must be private and additive');
 assert.match(provenanceMigration, /on conflict \(indicator_id, source_id, source_role\) do nothing/i, 'provenance backfill must be idempotent');
@@ -30,11 +31,14 @@ assert.match(provenanceMigration, /grant select, insert, update, delete on table
 assert.match(metadataMigration, /add column if not exists data_owner text/i, 'source owner metadata must be available');
 assert.match(metadataMigration, /add column if not exists temporal_coverage text/i, 'temporal coverage metadata must be available');
 assert.match(metadataMigration, /add column if not exists access_restrictions text/i, 'access restrictions metadata must be available');
-assert.match(auditSql, /observations_without_provenance_link/i, 'read-only audit must identify observations without provenance');
-assert.match(auditSql, /municipality_indicator_quality_issues/i, 'read-only audit must summarize diagnostic flags');
-assert.match(auditSql, /unchecked_access_restrictions/i, 'read-only audit must expose unchecked source restrictions');
+assert.match(postMigrationAuditSql, /observations_without_provenance_link/i, 'post-migration audit must identify observations without provenance');
+assert.match(postMigrationAuditSql, /municipality_indicator_quality_issues/i, 'post-migration audit must summarize diagnostic flags');
+assert.match(postMigrationAuditSql, /unchecked_access_restrictions/i, 'post-migration audit must expose unchecked source restrictions');
 assert.match(auditSql, /reference_period !~ '[^']*\[0-9\]\{4\}/i, 'period audit must preserve explicit canonical vocabulary');
 console.log('Extended provenance and source-quality audit contract checks passed.');
 assert.match(auditSql, /union select source_id from public\.municipality_indicator_import_review/i, 'catalog usage audit must include import-review records');
 assert.match(auditSql, /orphan_source_references/i, 'audit must report orphan source references by relation');
 assert.match(auditSql, /municipality_indicator_import_review[\s\S]*municipality_indicator_import_staging/i, 'source reference inventory must include review and staging relations');
+
+assert.match(postMigrationAuditSql, /Run only after applying migrations/i, 'migration-dependent audit must state its prerequisite');
+assert.doesNotMatch(auditSql, /private\.municipality_indicator_source_links|municipality_indicator_quality_issues|data_owner/i, 'baseline audit must run before additive migrations');
