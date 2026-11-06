@@ -28,7 +28,9 @@ export function buildRiskSeries(rows) {
   groups.forEach((items, key) => {
     const candidates = new Map();
     items.forEach((item) => {
-      const natural = [item.reference_year, signature(item)].join('|');
+      const parsed = parseRiskPeriod(item);
+      const naturalYear = parsed?.year ?? String(item.reference_year ?? '');
+      const natural = [naturalYear, signature(item)].join('|');
       if (!candidates.has(natural)) candidates.set(natural, []);
       candidates.get(natural).push(item);
     });
