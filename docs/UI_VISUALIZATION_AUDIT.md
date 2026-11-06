@@ -179,3 +179,12 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Added touch-friendly horizontal scrolling and a more visible, themed scrollbar for keyboard-accessible table regions.
 - Scenario cards use a single-column layout on phones, while comparison summary cards retain a compact two-column grid on very narrow screens.
 - No metric values, model assumptions, calculations, source records, or table columns were changed. Browser verification remains pending CI.
+
+## Touch interaction and mobile municipality map (7 November 2026)
+
+- On narrow screens, the municipality map and its territory list now form a single-column layout, placing the list below the map instead of squeezing it into a side column.
+- The territory list has a bounded, touch-scrollable viewport on phones so it remains usable without dominating the full page.
+- Municipality list buttons have a minimum 44px touch target, visible keyboard focus, and pressed feedback.
+- SVG map targets use manipulation touch behavior and suppress the browser tap highlight without changing map selection handlers.
+- Small-screen footer actions stack vertically and retain a comfortable tap area.
+- Municipality IDs, map geometry, group classification, selected-item behavior, and all underlying data remain unchanged. Browser/device testing remains pending CI.
