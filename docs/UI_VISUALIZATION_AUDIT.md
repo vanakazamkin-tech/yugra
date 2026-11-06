@@ -62,4 +62,5 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Map keyboard semantics reviewed: the SVG root exposes a labelled group; each existing region/city target retains its button role and Enter/Space handling.
 - Municipal passport dialog keyboard behavior reviewed in source: focus containment, Escape close, focus restoration, and background scroll lock are implemented.
 - Map-list rendering reviewed: list sections are now stable module-level components rather than nested component definitions.
-- Local production build was not run in this environment; GitHub Actions PR checks are the required build gate.
+- GitHub Actions `Build verification` run #1007 passed on head `d14ec9fa3527c2f9d63db995e770847a70683a46`: dependency installation, all data-integrity regression checks, and production bundle build succeeded.
+- Local browser-based visual regression was not run in this environment; viewport-specific manual verification remains outstanding.
