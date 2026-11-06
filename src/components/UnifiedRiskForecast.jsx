@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { isEligibleAnnualForecastSeries } from '../lib/forecastCoverage.js';
 import { assessRiskSignals, backtestAnnualSeries, buildRiskModel, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios, RISK_CHAINS } from '../lib/riskModel.js';
 import './UnifiedRiskForecast.css';
-import { PILLARS, classify } from '../lib/indicatorClassification.js';
+import { PILLARS } from '../lib/indicatorClassification.js';
 import { buildRiskSeries } from '../lib/riskSeries.js';
 
 
