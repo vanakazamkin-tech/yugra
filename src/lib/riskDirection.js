@@ -14,3 +14,14 @@ export const directionForRiskIndicator = (row = {}) => {
   // removes population scale, not price growth. Keep it contextual without a deflator.
   return 'context';
 };
+
+ 
+// These two budget shares are complementary parts of one revenue structure,
+// not independent pieces of evidence for the same financial risk.
+export const riskSignalFamilyFor = (indicatorCode) => {
+  const code = String(indicatorCode ?? '').trim().toLowerCase();
+  if (['derived_budget_own_revenue_share', 'derived_budget_transfer_dependency'].includes(code)) {
+    return 'budget_revenue_structure';
+  }
+  return code || null;
+};
