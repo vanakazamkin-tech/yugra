@@ -12,6 +12,7 @@ const completePillars = () => ['economy', 'labour', 'demography', 'finance', 'so
   key,
   score: 80,
   indicators: [{
+    code: key,
     sourceId: 'rosstat-source',
     sourceUrl: 'https://rosstat.gov.ru/example',
     year: 2025,
@@ -33,7 +34,7 @@ const run = {
   },
 };
 
-const contract = { status: 'approved', version: '1.2.0' };
+const contract = { status: 'approved', version: '1.2.0', minimumPeerMunicipalities: 15, minimumPeerCoveragePercent: 68.18 };
 
 test('adapter passes only complete finite 0–100 index results under an approved matching contract', () => {
   const options = createForecastIndexOptions({
@@ -56,6 +57,8 @@ test('adapter passes only complete finite 0–100 index results under an approve
     referenceYear: 2025,
     referencePeriod: 'year',
     methodologyVersion: '1.2.0',
+    minimumPeerMunicipalities: 15,
+    minimumPeerCoveragePercent: 68.18,
     municipalityCount: 3,
     completeCount: 1,
     incompleteCount: 1,
