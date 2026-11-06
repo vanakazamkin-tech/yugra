@@ -24,7 +24,7 @@ coverage as (
     min(i.reference_year) filter(where i.geographic_level='municipality') as first_year,
     max(i.reference_year) filter(where i.geographic_level='municipality') as last_year,
     count(i.id) filter(where i.geographic_level='municipality' and i.verification_status='verified') as verified_rows,
-    count(i.id) filter(where i.geographic_level='municipality' and i.verification_status <> 'verified') as nonverified_rows
+    count(i.id) filter(where i.geographic_level='municipality' and i.verification_status IS DISTINCT FROM 'verified') as nonverified_rows
   from targets t
   left join public.municipality_indicators i
     on i.indicator_code=t.indicator_code
@@ -57,7 +57,7 @@ select i.indicator_code,max(i.indicator_name) as indicator_name,i.unit,
   count(distinct i.reference_year) as years_covered,
   min(i.reference_year) as first_year,max(i.reference_year) as last_year,
   count(*) filter(where i.verification_status='verified') as verified_rows,
-  count(*) filter(where i.verification_status <> 'verified') as nonverified_rows,
+  count(*) filter(where i.verification_status IS DISTINCT FROM 'verified') as nonverified_rows,
   count(distinct i.source_id) as source_count,
   array_agg(distinct i.reference_period order by i.reference_period) as periods
 from public.municipality_indicators i
