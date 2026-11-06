@@ -31,7 +31,7 @@ function comparablePeriod(row) {
   const raw = String(row?.reference_period ?? '').trim().toLowerCase();
   if (/q[1-4]/i.test(raw)) return raw.match(/q([1-4])/i)[0].toUpperCase();
   if (/h[12]/i.test(raw)) return raw.match(/h([12])/i)[0].toUpperCase();
-  if (!raw || /annual|year|год|^\d{4}$/.test(raw)) return 'annual';
+  if (!raw || /^(annual|year|год|годовой|за год)$/.test(raw) || /^\d{4}$/.test(raw)) return 'annual';
   return raw;
 }
 const finite = (v) => Number.isFinite(Number(v)) && v !== null && v !== '';
