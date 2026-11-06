@@ -1900,7 +1900,7 @@ export const InvestmentDetails = () => {
                     </tr>;
                   })}</tbody>
                 </table>
-                {filteredOfficialIndicators.length === 0 && <div className="empty-state"><span>Показатели не найдены</span><p>Попробуйте изменить поисковый запрос или территорию.</p><button type="button" className="outline-button" onClick={() => {setIndicatorSearch('');setIndicatorMunicipalityFilter('all');}}>Сбросить фильтры</button></div>}
+                {filteredOfficialIndicators.length === 0 && <div className="empty-state" role="status"><span>Показатели не найдены</span><p>Попробуйте изменить поисковый запрос или территорию.</p><button type="button" className="outline-button" onClick={() => {setIndicatorSearch('');setIndicatorMunicipalityFilter('all');setIndicatorYearFilter('all');}}>Сбросить фильтры</button></div>}
               </div>
               <p className="source-panel-note">В таблице отображаются только записи с проверенным статусом. Годовые, квартальные и моментные показатели не объединяются в один период; примечания помогают отличать показатель муниципального образования от данных по населённому пункту.</p>
             </section>
@@ -2001,7 +2001,7 @@ export const InvestmentDetails = () => {
                   {[['all','Все'],['school','Школы'],['preschool','Детские сады']].map(([value,label]) => <button type="button" key={value} className={`filter-pill ${facilityFilter === value ? 'selected' : ''}`} aria-pressed={facilityFilter === value} onClick={() => setFacilityFilter(value)}>{label}</button>)}
                 </div>
               </div>
-              <div className="facility-list-meta">Показано <strong>{filteredFacilities.length}</strong> из {facilities.length} объектов. Численность учеников и детей — среднегодовое значение из источника, не нормативная вместимость.</div>
+              <div className="facility-list-meta" role="status" aria-live="polite" aria-atomic="true">Показано <strong>{filteredFacilities.length}</strong> из {facilities.length} объектов. Численность учеников и детей — среднегодовое значение из источника, не нормативная вместимость.</div>
               <div className="fuel-prices-table-wrap">
                 <table className="fuel-prices-table facility-table">
                   <thead><tr><th scope="col">Учреждение</th><th scope="col">Адрес</th><th scope="col">Тип</th><th scope="col">Учеников / детей в год</th><th scope="col">Штат, %</th><th scope="col">Координаты</th><th scope="col">Версия данных</th></tr></thead>
@@ -2015,7 +2015,7 @@ export const InvestmentDetails = () => {
                     <td>{facility.source_updated_at ? new Intl.DateTimeFormat('ru-RU').format(new Date(facility.source_updated_at + 'T00:00:00')) : '—'}<small><a href={facility.source_url} target="_blank" rel="noreferrer">Первоисточник ↗</a></small></td>
                   </tr>)}</tbody>
                 </table>
-                {filteredFacilities.length === 0 && <div className="empty-state"><span>Объекты не найдены</span><p>Измените запрос или выберите другой тип учреждения.</p><button type="button" className="outline-button" onClick={() => {setFacilitySearch('');setFacilityFilter('all');}}>Сбросить фильтры</button></div>}
+                {filteredFacilities.length === 0 && <div className="empty-state" role="status"><span>Объекты не найдены</span><p>Измените запрос или выберите другой тип учреждения.</p><button type="button" className="outline-button" onClick={() => {setFacilitySearch('');setFacilityFilter('all');}}>Сбросить фильтры</button></div>}
               </div>
               <p className="source-panel-note">О дошкольных учреждениях импортированы 17 из 18 строк, доступных в поисковом представлении актуального CSV. Реестр школ содержит 7 объектов по версии от 16.12.2024. Дата обновления паспорта набора не заменяет дату фактической версии файла.</p>
             </section>}
@@ -2230,7 +2230,7 @@ export const InvestmentDetails = () => {
               <div className="source-catalog-toolbar">
                 <label className="search-box"><Icon name="search"/><input value={sourceSearch} onChange={(event) => setSourceSearch(event.target.value)} placeholder="Найти источник, тему или территорию…" aria-label="Поиск по каталогу источников"/></label>
                 <label className="select-field"><span>Статус импорта</span><select value={sourceStatusFilter} onChange={(event) => setSourceStatusFilter(event.target.value)}><option value="all">Все статусы</option><option value="imported">Импортирован</option><option value="partially_imported">Частично импортирован</option><option value="ready_for_import">Готов к импорту</option><option value="identified">Выявлен</option><option value="access_issue">Проблема доступа</option></select></label>
-                <span className="section-tag">{filteredDataSources.length} ИЗ {officialDataSources.length}</span>
+                <span className="section-tag" role="status" aria-live="polite" aria-atomic="true">{filteredDataSources.length} ИЗ {officialDataSources.length}</span>
                 <button type="button" className="outline-button" onClick={() => { setSourceSearch(''); setSourceStatusFilter('all'); }}><Icon name="refresh"/>Сбросить</button>
               </div>
               <div className="about-source-list">
@@ -2241,7 +2241,7 @@ export const InvestmentDetails = () => {
                   <span className={`source-status source-status--${source.import_status || 'identified'}`}>{DATA_STATUS_LABELS[source.import_status] || 'Статус проверяется'}</span>
                   <span className="source-item-link">Открыть источник ↗</span>
                 </a>)}
-                {filteredDataSources.length === 0 && <div className="empty-state"><span>Источники не найдены</span><p>Измените запрос или сбросьте фильтры каталога.</p></div>}
+                {filteredDataSources.length === 0 && <div className="empty-state" role="status"><span>Источники не найдены</span><p>Измените запрос или сбросьте фильтры каталога.</p></div>}
               </div>
               <div className="about-methodology"><h3>Правила публикации данных</h3><ol>
                 <li>Для каждого значения сохраняются источник, год наблюдения, единица измерения и дата загрузки.</li>
