@@ -4,7 +4,7 @@
 **QA branch:** `feat/qa-testing`  
 **Baseline:** `main` at `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`  
 **QA PR:** [#12](https://github.com/vanakazamkin-tech/yugra/pull/12), draft, not merged  
-**Last verified QA head:** `c749ee0a46267252daf25a3e3468f517cbda35be`
+**Last verified QA head:** `e32748f23997470f9b17735449313a45668a6d59`
 
 ## Scope and integrity
 
@@ -82,10 +82,10 @@ Read-only inspection of project `dmbikidqikjupkghywbz`:
 - **#12 — QA:** consolidated regression runner, isolated QA workflow, and this audit record. Draft only; no merge.
 
 Latest branch-head CI rechecks (6 Nov 2026):
-- PR #8 head `0a13e705d315dd1f7046553c7ce6eeb269007f17`: Build verification run [#42271778744](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271778744) — success.
-- PR #9 head `b93a3f8b9dd04ea0f4683bbb0ace6a8c516aefa8`: Build verification run [#42271733941](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271733941) — success. The two timeline edge cases above remain present at this exact head.
-- PR #10 head `49478e6bbd3e87cf73763c83cf49e61c766362d0`: Build verification run [#42271783308](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271783308) — success.
-- PR #11 head `40c4cf2402f441dac1f342e9f73a8b435f29ee8b`: Build verification run [#42271866999](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271866999) — success.
+- PR #8 head `f9db1fde3407344c06d254f2bf8862f4953ba42b`: Build verification run [#42272255405](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272255405) — queued at last check.
+- PR #9 head `41efd4ec3e80522ca847368c974e54263f4e2e7e`: Build verification run [#42272128061](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272128061) — success. The missing-period and contradictory-year edge cases remain present at this head.
+- PR #10 head `f3145b281743acb45950d03fbc2392131b4242a0`: Build verification run [#42272040320](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272040320) — success.
+- PR #11 head `3701436647868f1fe04e373780ce48ceb404fed7`: Build verification run [#42272134348](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272134348) — failure in the data-quality contract test; database migration integration job passed.
 - PR #13 head `40abd4f39e719429cded4090cf606470f5d8779e`: Build verification run [#42268245956](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268245956) — success.
 
 ## Verification limitations
