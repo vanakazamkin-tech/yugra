@@ -94,8 +94,12 @@ export function buildRiskModel(municipalities = [], series = []) {
       ? available.reduce((sum, p) => sum + p.score * p.weight, 0) / availableWeight
       : null;
     const coverage = availableWeight * 100;
+    // Историческая глубина показывается отдельно: это характеристика доступности
+    // временной истории, а не статистическая вероятность правильности индекса.
     const historyDepth = own.length ? own.reduce((sum, item) => sum + Math.min(1, item.points.length / 4), 0) / own.length : 0;
-    const confidence = resilience === null ? 0 : clamp(coverage * (0.65 + historyDepth * 0.35));
+    const latestPeriods = [...new Set(own.map((item) =>
+      String(item.latest.reference_period || item.latest.reference_year || 'период не указан')
+    ))].sort();
     const adverse = own.filter((item) => item.adverse === true);
     const affectedPillars = new Set(adverse.map((item) => item.modelPillar));
     const deteriorationShare = own.length ? adverse.length / own.length : 0;
@@ -109,7 +113,8 @@ export function buildRiskModel(municipalities = [], series = []) {
     byMunicipality[municipality.id] = {
       municipalityId: municipality.id,
       score: resilience === null ? null : Math.round(resilience * 10) / 10,
-      confidence: Math.round(confidence),
+      historyCoverage: Math.round(historyDepth * 100),
+      latestPeriods,
       assessmentStatus: resilience === null ? 'insufficient' : available.length < 4 || coverage < 70 ? 'partial' : 'expanded',
       availablePillars: available.length,
       availableWeight: Math.round(availableWeight * 100),
