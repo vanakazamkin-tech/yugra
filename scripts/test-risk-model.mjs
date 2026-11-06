@@ -97,6 +97,51 @@ const conflictingPopulationFixture = [
 assert.equal(deriveMunicipalIndicators(conflictingPopulationFixture)
   .filter((row) => ['derived_population_growth_rate', 'derived_investment_per_capita'].includes(row.indicator_code)).length, 0,
   'conflicting annual population values must not be used in trends or per-capita calculations');
+
 console.log('OK: conflicting annual population snapshots are excluded from derived indicators.');
+
+// Неполные данные не должны превращаться в нулевой балл или искусственный индекс.
+const partialMunicipalities = [1, 2, 3, 4].map((id) => ({ id, name: 'Территория ' + id }));
+const onePillarOnly = [1, 2, 3].map((municipalityId) => ({
+  municipalityId, code: 'budget', unit: '%', direction: 'higher', adverse: null,
+  pillar: { key: 'budget' }, points: [{}],
+  latest: { numericValue: municipalityId * 10, reference_year: 2025, reference_period: '2025-Q3' },
+}));
+const partialModel = buildRiskModel(partialMunicipalities, onePillarOnly);
+assert.equal(partialModel.byMunicipality[1].score, null,
+  'one covered dimension must not be presented as a composite resilience index');
+assert.equal(partialModel.byMunicipality[4].score, null,
+  'municipality without observations must remain unscored');
+assert.equal(partialModel.byMunicipality[4].availableWeight, 0,
+  'missing data must not be converted to an artificial zero score');
+console.log('OK: insufficient and missing coverage remains explicitly unscored.');
+
+const makeScoreFixture = (middleValue) => ['economy', 'labour'].flatMap((pillarKey, pillarIndex) =>
+  [1, 2, 3].map((municipalityId) => ({
+    municipalityId, code: pillarKey, unit: '%', direction: 'higher', adverse: null,
+    pillar: { key: pillarKey }, points: [{}, {}],
+    latest: { numericValue: municipalityId === 2 ? middleValue : municipalityId * 10,
+      reference_year: 2025, reference_period: 'annual' },
+  }))
+);
+const baseline = buildRiskModel(partialMunicipalities.slice(0, 3), makeScoreFixture(20));
+const changed = buildRiskModel(partialMunicipalities.slice(0, 3), makeScoreFixture(35));
+assert.notEqual(changed.byMunicipality[2].score, baseline.byMunicipality[2].score,
+  'changing a source indicator must change the composite index when its peer rank changes');
+assert.ok(changed.byMunicipality[2].score > baseline.byMunicipality[2].score,
+  'higher-is-better source change must improve the comparative score');
+console.log('OK: index responds to changes in source indicator values.');
+
+const zeroFixture = [0, 10, 20].map((value, index) => ({
+  municipalityId: index + 1, code: 'zero-safe', unit: 'ед.', direction: 'higher', adverse: null,
+  pillar: { key: 'investment' }, points: [{}],
+  latest: { numericValue: value, reference_year: 2025, reference_period: 'annual' },
+}));
+const zeroModel = buildRiskModel(partialMunicipalities.slice(0, 3), zeroFixture);
+assert.notEqual(zeroModel.byMunicipality[1].score, null,
+  'zero is a valid observed value and must not be treated as missing');
+assert.ok(zeroModel.byMunicipality[1].score >= 0 && zeroModel.byMunicipality[1].score <= 100);
+console.log('OK: zero observations remain valid numeric inputs.');
+
 
 
