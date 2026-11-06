@@ -116,6 +116,9 @@ const demographicFixture = [
   { municipality_id: 'north-town', indicator_code: 'population_municipality', reference_year: 2023, reference_period: '2023-Q3', value: 900, unit: 'человек', verification_status: 'verified', geographic_level: 'municipality' },
   { municipality_id: 'north-town', indicator_code: 'fixed_capital_investment_non_mining', reference_year: 2022, reference_period: 'annual', value: 1000, unit: 'руб.', verification_status: 'verified', geographic_level: 'municipality' },
   { municipality_id: 'north-town', indicator_code: 'fixed_capital_investment_non_mining', reference_year: 2023, reference_period: 'annual', value: 2200, unit: 'руб.', verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'north-town', indicator_code: 'migration_net_total', reference_year: 2022, reference_period: 'annual', value: 5, unit: 'человек', verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'north-town', indicator_code: 'migration_net_total', reference_year: 2023, reference_period: 'annual', value: 11, unit: 'человек', verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'north-town', indicator_code: 'migration_net_total', reference_year: 2023, reference_period: 'year_end_estimate', value: 999, unit: 'человек', verification_status: 'verified', geographic_level: 'municipality' },
 ];
 const demographicDerived = deriveMunicipalIndicators(demographicFixture);
 const populationGrowth = demographicDerived.find((row) => row.indicator_code === 'derived_population_growth_rate');
@@ -126,6 +129,12 @@ const investmentPerCapita = demographicDerived.filter((row) => row.indicator_cod
 assert.equal(investmentPerCapita.length, 2,
   'annual investment flows should align with same-year Jan 1 population snapshots');
 assert.deepEqual(investmentPerCapita.map((row) => row.value).sort((a, b) => a - b), [10, 20]);
+const migrationRates = demographicDerived.filter((row) => row.indicator_code === 'derived_migration_net_per_1000');
+assert.equal(migrationRates.length, 2,
+  'migration rates should use only annual net migration and matching Jan 1 population');
+assert.deepEqual(migrationRates.map((row) => row.value).sort((a, b) => a - b), [50, 100]);
+assert.match(migrationRates[0].notes, /Не включается в интегральный индекс/,
+  'migration rate must remain contextual until source comparability is established');
 console.log('OK: demographic trends use annual snapshots; investment intensity aligns same-year population denominators.');
 
 const conflictingPopulationFixture = [
