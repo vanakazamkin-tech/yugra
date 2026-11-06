@@ -14,6 +14,31 @@ const isFiniteIndex = (value) => {
   return Number.isFinite(parsed) && parsed >= 0 && parsed <= 100;
 };
 
+const hasTraceableCompleteResult = (result, expectedYear, expectedPeriod) => {
+  if (!Array.isArray(result?.pillars) || result.pillars.length !== 6) return false;
+  return result.pillars.every((pillar) =>
+    pillar
+    && typeof pillar.key === 'string'
+    && pillar.key.trim() !== ''
+    && isFiniteIndex(pillar.score)
+    && Array.isArray(pillar.indicators)
+    && pillar.indicators.length > 0
+    && pillar.indicators.every((indicator) =>
+      indicator
+      && typeof indicator.sourceId === 'string'
+      && indicator.sourceId.trim() !== ''
+      && typeof indicator.sourceUrl === 'string'
+      && indicator.sourceUrl.trim() !== ''
+      && Number(indicator.year) === expectedYear
+      && String(indicator.period ?? '').trim() === expectedPeriod
+      && isFiniteIndex(indicator.score)
+      && typeof indicator.unit === 'string'
+      && indicator.unit.trim() !== ''
+      && Number.isFinite(Number(indicator.rawValue))
+    )
+  );
+};
+
 const municipalityId = (row) => {
   const id = row?.id ?? row?.municipality_id;
   return id == null ? '' : String(id).trim();
@@ -68,7 +93,9 @@ export function createForecastIndexOptions({
       incompleteCount += 1;
       continue;
     }
-    if (String(result.municipalityId ?? '').trim() !== id || !isFiniteIndex(result.index)) {
+    if (String(result.municipalityId ?? '').trim() !== id
+      || !isFiniteIndex(result.index)
+      || !hasTraceableCompleteResult(result, expectedYear, expectedPeriod)) {
       indexResults[id] = { status: 'invalid_index_result', index: null };
       invalidCount += 1;
       continue;
