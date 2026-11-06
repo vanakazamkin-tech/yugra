@@ -137,8 +137,10 @@ export function deriveMunicipalIndicators(rows = []) {
   const grouped = new Map();
   for (const row of verified) {
     const key = rowKey(row);
-    if (!grouped.has(key)) grouped.set(key, {});
-    grouped.get(key)[row.indicator_code] = row;
+    if (!grouped.has(key)) grouped.set(key, new Map());
+    const byCode = grouped.get(key);
+    if (!byCode.has(row.indicator_code)) byCode.set(row.indicator_code, []);
+    byCode.get(row.indicator_code).push(row);
   }
   const derived = [];
   const push = (base, code, name, value, unit, directionNote, referencePeriod = base.reference_period || 'annual') => {
@@ -160,7 +162,17 @@ export function deriveMunicipalIndicators(rows = []) {
       notes: 'Расчётный показатель, получен из подтверждённых исходных муниципальных наблюдений. ' + directionNote,
     });
   };
-  for (const bucket of grouped.values()) {
+  for (const candidatesByCode of grouped.values()) {
+    // Не выбираем произвольное значение, если один код за тот же период
+    // имеет конфликтующие значения из разных источников.
+    const bucket = {};
+    for (const [code, candidates] of candidatesByCode.entries()) {
+      const distinctValues = new Set(candidates.map((row) => Number(row.value)));
+      if (distinctValues.size !== 1) continue;
+      bucket[code] = [...candidates].sort((a, b) =>
+        new Date(b.retrieved_at || 0).getTime() - new Date(a.retrieved_at || 0).getTime()
+      )[0];
+    }
     const total = Number(bucket.budget_total_revenue?.value);
     const nonGrant = Number(bucket.budget_revenue_excluding_grants?.value);
     const transfers = Number(bucket.budget_intergovernmental_transfers?.value);
