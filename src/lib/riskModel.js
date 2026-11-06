@@ -197,7 +197,7 @@ export function indicatorSeriesGroup(row) {
   const code = canonicalIndicatorCode(row?.indicator_code);
   if (/^(housing_commissioned|housing_construction|pokachi_housing_commissioning|sovetsky_housing_commissioning_plan)/.test(code)) return 'production';
   if (/^(sovetsky_local_road_repair|sovetsky_engineering_network_repair|sovetsky_noncompliant_roads_share|kogalym_no_regular_transport_population_share)/.test(code)) return 'infrastructure';
-  if (code === 'pokachi_population_below_poverty') return 'social';
+  if (code === 'pokachi_population_below_poverty' || /^(employees_education|employees_healthcare)$/.test(code)) return 'social';
   return null;
 }
 
@@ -233,6 +233,14 @@ export function indicatorMethodFor(row) {
       pillar: 'infrastructure',
       rationale: 'Объём выполненных работ по ремонту дорог или инженерных сетей.',
       limitation: 'Объём ремонта не равен состоянию инфраструктуры: без протяжённости сети, доли нормативного состояния и сопоставимого муниципального охвата направление изменения неоднозначно.',
+    };
+  }
+  if (/^(employees_education|employees_healthcare)$/.test(code)) {
+    return {
+      direction: 'context',
+      pillar: 'social',
+      rationale: 'Среднесписочная численность работников организаций в образовании либо здравоохранении и социальных услугах — контекстный показатель масштаба соответствующей сферы.',
+      limitation: 'Абсолютная численность не измеряет обеспеченность услугами, нагрузку на персонал или доступность учреждений и исключает субъекты малого предпринимательства. Наблюдения есть только по Когалыму и Сургуту; у Когалыма представлен только I квартал 2026 года, тогда как сопоставимые годовые значения есть по Сургуту за 2024–2025 годы. Не использовать для межмуниципального ранжирования и интегрального индекса.',
     };
   }
   if (/^employees_[a-z0-9_]+$/.test(code)) {
