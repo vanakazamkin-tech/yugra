@@ -80,3 +80,12 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Decorative bar tracks are hidden from assistive technology so they do not create meaningless stops or duplicate content; the adjacent text values remain available.
 - The municipality comparison chart is explicitly named as a group, and its decorative bar tracks are hidden; the same metric values remain available in the adjacent comparison cards and detailed table.
 - No chart calculations, metric selection, data, scenario assumptions, or styling were changed.
+
+
+## Filter and navigation state semantics (6 November 2026)
+
+- Municipality-group filters, quick analytical slices, and education-facility type filters now expose their selected state through `aria-pressed`.
+- The advanced municipality-filter disclosure reports `aria-expanded` and controls the identified filter panel.
+- Forecast horizon buttons expose the selected horizon through `aria-pressed`.
+- Sections in the unified risk-analysis navigation expose the active section with `aria-current="page"`.
+- These changes add state information for assistive technology without changing filter behavior, forecast calculations, risk logic, or visual styling.
