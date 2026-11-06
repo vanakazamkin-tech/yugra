@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildForecasts, summarizeForecast } from './forecastModel.js';
+import { buildForecasts, normalizeScenarioRows, summarizeForecast } from './forecastModel.js';
 
 const sample = [
   { id: 'a', name: 'Муниципалитет А', group2024: 1, score: 60, smeCount: 100, investments: { volumeBillion: 20 } },
@@ -185,4 +185,36 @@ test('finite aggregate helper preserves zero, ignores missing values and rejects
   assert.equal(sumFiniteValues([0, '0', 2]), 2);
   assert.equal(sumFiniteValues([Number.MAX_VALUE, Number.MAX_VALUE]), null);
   assert.equal(sumFiniteValues([1, 'bad', 2]), 3);
+});
+
+
+test('scenario normalization keeps database rates and uses expert factors on legacy schemas', () => {
+  const fallback = [
+    { key: 'base', title: 'Базовый', summary: 'fallback', investment_growth_rate: 4, sme_growth_rate: 3, score_growth_rate: 1.5, uncertainty_rate: 7, export_shock_pct: 0, cost_pressure_pct: 0, labor_shortage_pct: 0, display_order: 2 },
+    { key: 'cautious', title: 'Стрессовый', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18, export_shock_pct: -10, cost_pressure_pct: 8, labor_shortage_pct: 6, display_order: 1 },
+  ];
+  const rows = normalizeScenarioRows([
+    { id: 'db-base', key: 'base', title: 'Базовый из БД', summary: 'db', investment_growth_rate: '6', sme_growth_rate: 2, score_growth_rate: null, uncertainty_rate: 9, display_order: 2 },
+    { id: 'db-cautious', key: 'cautious', title: 'Стрессовый из БД', summary: 'db', investment_growth_rate: -7, sme_growth_rate: -3, score_growth_rate: -2, uncertainty_rate: 20, display_order: 1 },
+  ], [], false, fallback);
+
+  assert.equal(rows[0].investment_growth_rate, 6);
+  assert.equal(rows[0].score_growth_rate, 1.5);
+  assert.equal(rows[0].export_shock_pct, 0);
+  assert.equal(rows[1].export_shock_pct, -10);
+  assert.equal(rows[1].cost_pressure_pct, 8);
+  assert.equal(rows[0].title, 'Базовый из БД');
+});
+
+test('scenario normalization prefers persisted factor columns when available', () => {
+  const fallback = [{ key: 'base', investment_growth_rate: 4, sme_growth_rate: 3, score_growth_rate: 1.5, uncertainty_rate: 7, export_shock_pct: 0, cost_pressure_pct: 0, labor_shortage_pct: 0 }];
+  const rows = normalizeScenarioRows([
+    { id: 'db-base', key: 'base', investment_growth_rate: 5, sme_growth_rate: 4, score_growth_rate: 2, uncertainty_rate: 8 },
+  ], [
+    { id: 'db-base', key: 'base', export_shock_pct: 12, cost_pressure_pct: -4, labor_shortage_pct: 3 },
+  ], true, fallback);
+
+  assert.equal(rows[0].export_shock_pct, 12);
+  assert.equal(rows[0].cost_pressure_pct, -4);
+  assert.equal(rows[0].labor_shortage_pct, 3);
 });
