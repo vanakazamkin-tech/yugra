@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import data from '../data/municipalities-detailed.json';
 import { UgraMap, UgraMapList } from './components/UgraMap';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
@@ -154,8 +154,8 @@ const csvEscape = (value) => {
   return `"${text.replaceAll('"', '""')}"`;
 };
 const downloadCsv = (items, fields, filename) => {
-  const headers = ['Муниципальное образование', 'Группа', ...fields.map((key) => METRIC_BY_KEY[key]?.label || key)];
-  const rows = items.map((item) => [item.name, `Группа ${item.group2024}`, ...fields.map((key) => metricText(item, key))]);
+  const headers = ['Муниципальное образование', 'Группа', 'Статус данных', ...fields.map((key) => METRIC_BY_KEY[key]?.label || key)];
+  const rows = items.map((item) => [item.name, `Группа ${item.group2024}`, 'Демонстрационные значения — не официальная статистика', ...fields.map((key) => metricText(item, key))]);
   const content = '\uFEFF' + [headers, ...rows].map((row) => row.map(csvEscape).join(';')).join('\r\n');
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -165,7 +165,7 @@ const downloadCsv = (items, fields, filename) => {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
 export const InvestmentDetails = () => {
@@ -304,6 +304,7 @@ export const InvestmentDetails = () => {
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({ minScore: '', maxScore: '', minInvestments: '', minSme: '', minGrowth: '', minAssessment: '' });
   const [activeModalItem, setActiveModalItem] = useState(null);
+  const municipalityDialogRef = useRef(null);
   const [hoveredRegionId, setHoveredRegionId] = useState(null);
   const [isMapListOpen, setIsMapListOpen] = useState(true);
   const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'desc' });
@@ -354,11 +355,55 @@ export const InvestmentDetails = () => {
   
   useEffect(() => {
     if (!activeModalItem) return undefined;
-    const closeOnEscape = (event) => {
-      if (event.key === 'Escape') setActiveModalItem(null);
+
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const getFocusableElements = () => Array.from(
+      municipalityDialogRef.current?.querySelectorAll(
+        'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [contenteditable="true"], [tabindex]:not([tabindex="-1"])'
+      ) || []
+    ).filter((element) => (
+      !element.closest('[hidden], [inert], [aria-hidden="true"]')
+      && element.getClientRects().length > 0
+    ));
+
+    municipalityDialogRef.current?.querySelector('#modal-title')?.focus();
+
+    const closeOnEscapeAndContainFocus = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setActiveModalItem(null);
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+      const focusable = getFocusableElements();
+      if (!focusable.length) {
+        event.preventDefault();
+        municipalityDialogRef.current?.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const activeIndex = focusable.indexOf(document.activeElement);
+      if (event.shiftKey && activeIndex <= 0) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (activeIndex === -1 || activeIndex === focusable.length - 1)) {
+        event.preventDefault();
+        first.focus();
+      }
     };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
+
+    window.addEventListener('keydown', closeOnEscapeAndContainFocus);
+    return () => {
+      window.removeEventListener('keydown', closeOnEscapeAndContainFocus);
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
+    };
   }, [activeModalItem]);
 
 
@@ -713,6 +758,17 @@ export const InvestmentDetails = () => {
         || String(a.geographic_level || '').localeCompare(String(b.geographic_level || ''))
         || String(a.indicator_name || '').localeCompare(String(b.indicator_name || ''), 'ru-RU'));
   }, [officialIndicators, activeModalItem]);
+
+  const modalDataCoverage = useMemo(() => {
+    if (!activeModalItem) return [];
+    const municipalityId = activeModalItem.id;
+    return [
+      { key: 'indicators', label: 'Проверенные показатели', count: modalOfficialIndicators.length },
+      { key: 'sites', label: 'Инвестиционные площадки', count: investmentSites.filter((item) => item.municipality_id === municipalityId).length },
+      { key: 'facilities', label: 'Образовательные объекты', count: facilities.filter((item) => item.municipality_id === municipalityId).length },
+      { key: 'programs', label: 'Отчёты о программах', count: programExecution.filter((item) => item.municipality_id === municipalityId).length },
+    ];
+  }, [activeModalItem, modalOfficialIndicators, investmentSites, facilities, programExecution]);
 
   const surgutPopulationTrend = useMemo(() => {
     const rows = officialIndicators
@@ -1202,7 +1258,7 @@ export const InvestmentDetails = () => {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const downloadSectorEmploymentCsv = () => {
@@ -1227,7 +1283,7 @@ export const InvestmentDetails = () => {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const downloadOfficialRiskSignalCsv = () => {
@@ -1257,7 +1313,7 @@ export const InvestmentDetails = () => {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const downloadSurgutComparableTrendCsv = () => {
@@ -1297,7 +1353,7 @@ export const InvestmentDetails = () => {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const downloadOfficialComparisonCsv = () => {
@@ -1326,7 +1382,7 @@ export const InvestmentDetails = () => {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const handleExportPDF = () => window.print();
   const resetFilters = () => {
@@ -1370,7 +1426,7 @@ export const InvestmentDetails = () => {
     const population = populationByMunicipality.get(m.id);
     return <tr key={m.id} onMouseEnter={() => setHoveredRegionId(m.id)} onMouseLeave={() => setHoveredRegionId(null)}>
       <td className="row-number">{String(index + 1).padStart(2, '0')}</td>
-      <td className="municipality-cell"><button className="municipality-link" onClick={() => setActiveModalItem(m)}>{m.name}</button></td>
+      <td className="municipality-cell"><button type="button" className="municipality-link" onClick={() => setActiveModalItem(m)}>{m.name}</button></td>
       <td><span className={`group-badge ${m.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i />Группа {m.group2024}</span></td>
       <td className="score-cell"><span className="demo-value">{formatNumber(m.score, 1)}</span><small className="cell-subnote">демо</small></td>
       <td className="number-cell"><span className="demo-value">{numericValue(m.investments?.volumeBillion) == null ? '—' : formatNumber(m.investments.volumeBillion, 1)}</span>{numericValue(m.investments?.volumeBillion) != null && <small className="cell-subnote">млрд ₽ · демо</small>}</td>
@@ -1381,7 +1437,7 @@ export const InvestmentDetails = () => {
         <strong>{formatPopulationIndicator(population)}</strong>
         {population && <small className="cell-subnote">{population.geographic_level === 'settlement' ? (population.geographic_name || 'населённый пункт') : 'муниципальное образование'} · {population.reference_year}</small>}
       </td>
-      <td><button className="icon-button" aria-label={`Открыть паспорт: ${m.name}`} onClick={() => setActiveModalItem(m)}><Icon name="arrow"/></button></td>
+      <td><button type="button" className="icon-button" aria-label={`Открыть паспорт: ${m.name}`} onClick={() => setActiveModalItem(m)}><Icon name="arrow"/></button></td>
     </tr>;
   });
 
@@ -1410,17 +1466,17 @@ export const InvestmentDetails = () => {
     const rawValues = chartItems.map((m) => reportChartMetricDef.get(m));
     const maxValue = Math.max(...rawValues, 1);
     const rankMax = Math.max(...municipalities.map((m) => Number(m.rank2024 || 0)), 1);
-    return <div className="report-chart-list">{chartItems.map((m) => {
+    return <div className="report-chart-list" role="list" aria-label={`Сравнение: ${reportChartMetricDef.label} по муниципалитетам`}>{chartItems.map((m) => {
       const value = reportChartMetricDef.get(m);
       const barValue = reportChartMetric === 'rank2024' ? rankMax + 1 - value : value;
       const denominator = reportChartMetric === 'rank2024' ? rankMax : maxValue;
       const width = Math.max(2, Math.min(100, denominator ? (barValue / denominator) * 100 : 0));
-      return <div className="report-chart-row" key={m.id}><span className="report-chart-name">{m.name}</span><span className="report-chart-track"><i style={{ width: `${width}%` }}/></span><strong>{reportChartMetricDef.format(m)}</strong></div>;
+      return <div className="report-chart-row" role="listitem" key={m.id}><span className="report-chart-name">{m.name}</span><span className="report-chart-track" aria-hidden="true"><i style={{ width: `${width}%` }}/></span><strong>{reportChartMetricDef.format(m)}</strong></div>;
     })}</div>;
   };
 
   const renderReportTable = () => (
-    <div className="table-scroll report-table-scroll"><table className="ranking-table report-table"><thead><tr><th>№</th><th>Муниципальное образование</th><th>Группа</th>{reportPrintFields.map((key) => <th key={key}>{METRIC_BY_KEY[key].label}</th>)}</tr></thead>
+    <div className="table-scroll report-table-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table report-table"><thead><tr><th scope="col">№</th><th scope="col">Муниципальное образование</th><th scope="col">Группа</th>{reportPrintFields.map((key) => <th scope="col" key={key}>{METRIC_BY_KEY[key].label}</th>)}</tr></thead>
       <tbody>{reportItems.map((m, index) => <tr key={m.id}><td>{String(index + 1).padStart(2, '0')}</td><td>{m.name}</td><td>Группа {m.group2024}</td>{reportPrintFields.map((key) => <td key={key}>{metricText(m, key)}</td>)}</tr>)}</tbody>
     </table>{reportItems.length === 0 && <div className="empty-state"><span>Нет данных для отчёта</span><p>Выберите другой источник данных или отметьте муниципалитеты.</p></div>}</div>
   );
@@ -1431,14 +1487,15 @@ export const InvestmentDetails = () => {
         <div className="print-report-kicker">ЮГРА · АНАЛИТИЧЕСКАЯ ПЛАТФОРМА</div>
         <h1>{reportTitle || 'Аналитический отчёт по муниципалитетам Югры'}</h1>
         <p>Демонстрационные поля рейтинга · Сформировано: {reportDate()} · В выборке: {reportSummary.count} муниципалитетов</p>
+        <p className="print-methodology"><strong>Важно:</strong> сводные оценки, баллы и расчётные показатели основаны на концептуальном наборе проекта и не являются официальной статистикой. Новые официальные статистические ряды пока не загружены. Подтверждённые официальные наблюдения, если они включены, приведены отдельно с источником, периодом и территориальным уровнем.</p>
         {reportIncludeSummary && <><h2>Сводка</h2>{renderReportSummary()}</>}
-        {reportIncludeChart && reportItems.length > 0 && <><h2>Сравнение показателя: {reportChartMetricDef.label}</h2>{renderReportChart()}</>}
-        {reportIncludeTable && <><h2>Детализация показателей</h2>{renderReportTable()}</>}
+        {reportIncludeChart && <><h2>Сравнение показателя: {reportChartMetricDef.label}</h2>{reportItems.some((m) => reportChartMetricDef.get(m) != null) ? renderReportChart() : <p>Нет заполненных значений выбранного показателя в этой выборке; диаграмма не построена.</p>}</>}
+        {reportIncludeTable && <><h2>Детализация показателей</h2>{reportPrintFields.length === 0 ? <p>Показатели для детализации не выбраны.</p> : renderReportTable()}</>}
         {reportIncludeOfficialData && <section className="print-official-data">
           <h2>Проверенные официальные наблюдения ({reportOfficialIndicators.length})</h2>
           <p>Отдельный слой фактических данных: только проверенные наблюдения с явным территориальным уровнем, корректным годом и числовым значением. Муниципальные, поселковые и региональные записи не объединяются в один территориальный итог; единица измерения и период указаны отдельно.</p>
           {reportOfficialIndicators.length ? <table className="report-official-data-table">
-            <thead><tr><th>Территория / уровень</th><th>Показатель</th><th>Значение</th><th>Период</th><th>Примечание / источник</th></tr></thead>
+            <thead><tr><th scope="col">Территория / уровень</th><th scope="col">Показатель</th><th scope="col">Значение</th><th scope="col">Период</th><th scope="col">Примечание / источник</th></tr></thead>
             <tbody>{reportOfficialIndicators.map((item) => {
               const municipality = municipalities.find((entry) => entry.id === item.municipality_id);
               const geography = item.geographic_level === 'settlement' ? 'Населённый пункт' : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
@@ -1458,21 +1515,21 @@ export const InvestmentDetails = () => {
       <a className="skip-link" href="#main-content">Перейти к содержимому</a>
       <div className="site-shell print:hidden">
         <header className="site-header">
-          <button className="brand-lockup" aria-controls="main-content" onClick={() => navigateToTab('catalog')} aria-label="Югра — на главную">
+          <button type="button" className="brand-lockup" aria-controls="main-content" onClick={() => navigateToTab('catalog')} aria-label="Югра — на главную">
             <span className="brand-emblem"><img src="/images/khanty-prosperity-seal.svg" alt="" /></span>
             <span className="brand-copy"><span className="brand-title">ЮГРА</span><span className="brand-subtitle">Земля традиций</span></span>
           </button>
           <nav className="main-nav" aria-label="Основная навигация">
-            <button aria-current={activeTab === 'catalog' ? 'page' : undefined} className={activeTab === 'catalog' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('catalog')}><Icon name="home"/>Главная</button>
-            <button aria-current={activeTab === 'map' ? 'page' : undefined} className={activeTab === 'map' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('map')}><Icon name="map"/>Карта</button>
-            <button aria-current={activeTab === 'rating' ? 'page' : undefined} className={activeTab === 'rating' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('rating')}><Icon name="chart"/>Рейтинг</button>
-            <button aria-current={activeTab === 'risk' ? 'page' : undefined} className={activeTab === 'risk' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('risk')}><Icon name="chart"/>Риски</button>
-            <button aria-current={activeTab === 'forecast' ? 'page' : undefined} className={activeTab === 'forecast' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('forecast')}><Icon name="chart"/>Прогнозирование</button>
-            <button aria-current={activeTab === 'compare' ? 'page' : undefined} className={activeTab === 'compare' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('compare')}><Icon name="compare"/>Сравнение</button>
-            <button aria-current={activeTab === 'reports' ? 'page' : undefined} className={activeTab === 'reports' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('reports')}><Icon name="file"/>Отчёты</button>
+            <button type="button" aria-current={activeTab === 'catalog' ? 'page' : undefined} className={activeTab === 'catalog' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('catalog')}><Icon name="home"/>Главная</button>
+            <button type="button" aria-current={activeTab === 'map' ? 'page' : undefined} className={activeTab === 'map' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('map')}><Icon name="map"/>Карта</button>
+            <button type="button" aria-current={activeTab === 'rating' ? 'page' : undefined} className={activeTab === 'rating' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('rating')}><Icon name="chart"/>Рейтинг</button>
+            <button type="button" aria-current={activeTab === 'risk' ? 'page' : undefined} className={activeTab === 'risk' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('risk')}><Icon name="chart"/>Риски</button>
+            <button type="button" aria-current={activeTab === 'forecast' ? 'page' : undefined} className={activeTab === 'forecast' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('forecast')}><Icon name="chart"/>Прогнозирование</button>
+            <button type="button" aria-current={activeTab === 'compare' ? 'page' : undefined} className={activeTab === 'compare' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('compare')}><Icon name="compare"/>Сравнение</button>
+            <button type="button" aria-current={activeTab === 'reports' ? 'page' : undefined} className={activeTab === 'reports' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('reports')}><Icon name="file"/>Отчёты</button>
             
-            <button aria-current={activeTab === 'data' ? 'page' : undefined} className={activeTab === 'data' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('data')}><Icon name="table"/>Данные</button>
-            <button aria-current={activeTab === 'about' ? 'page' : undefined} className={activeTab === 'about' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('about')}><Icon name="info"/>Концепция</button>
+            <button type="button" aria-current={activeTab === 'data' ? 'page' : undefined} className={activeTab === 'data' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('data')}><Icon name="table"/>Данные</button>
+            <button type="button" aria-current={activeTab === 'about' ? 'page' : undefined} className={activeTab === 'about' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('about')}><Icon name="info"/>Концепция</button>
           </nav>
           <div className="header-motto"><span className="concept-corner">КОНЦЕПТ</span><span className="motto-mark"/>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</div>
         </header>
@@ -1484,10 +1541,10 @@ export const InvestmentDetails = () => {
           {syncStatus === 'unconfigured' && <span>Демонстрационные данные · подключение к базе не настроено</span>}
           {syncStatus === 'error' && <span>{lastSyncedAt && syncTimeLabel ? `Не удалось обновить · последние данные на ${syncTimeLabel}` : 'Не удалось подключиться · показываем резервные данные'}</span>}
           {syncStatus === 'error' && syncMessage && <span className="sync-status-detail" title={syncMessage}>Подробности: {syncMessage}</span>}
-          {syncStatus === 'error' && <button className="sync-retry" onClick={() => setSyncAttempt((attempt) => attempt + 1)}><Icon name="refresh"/>Повторить</button>}
+          {syncStatus === 'error' && <button type="button" className="sync-retry" onClick={() => setSyncAttempt((attempt) => attempt + 1)}><Icon name="refresh"/>Повторить</button>}
         </div>
 
-        <main id="main-content">
+        <main id="main-content" tabIndex={-1}>
           {activeTab === 'catalog' && <>
             <section className="intro-panel panel">
               <div className="intro-top">
@@ -1504,22 +1561,22 @@ export const InvestmentDetails = () => {
               </div>
               <div className="catalog-toolbar">
                 <label className="search-box"><Icon name="search"/><input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Поиск по названию муниципалитета…" aria-label="Поиск по названию муниципалитета"/><span className="search-shortcut">⌕</span></label>
-                <div className="filter-block"><span className="filter-caption">Группа рейтинга</span><div className="filter-row" aria-label="Фильтр по группе">
-                  {[['ALL', 'Все группы'], ['A', 'Группа A'], ['B', 'Группа B']].map(([value, label]) => <button key={value} className={`filter-pill ${selectedGroup === value ? 'selected' : ''}`} onClick={() => setSelectedGroup(value)}>{label}{selectedGroup === value && <span className="filter-check">✓</span>}</button>)}
+                <div className="filter-block"><span className="filter-caption">Группа рейтинга</span><div className="filter-row" role="group" aria-label="Фильтр по группе">
+                  {[['ALL', 'Все группы'], ['A', 'Группа A'], ['B', 'Группа B']].map(([value, label]) => <button type="button" key={value} className={`filter-pill ${selectedGroup === value ? 'selected' : ''}`} aria-pressed={selectedGroup === value} onClick={() => setSelectedGroup(value)}>{label}{selectedGroup === value && <span className="filter-check">✓</span>}</button>)}
                 </div></div>
               </div>
-              <div className="slice-bar"><div className="slice-label"><Icon name="sliders"/> Быстрые срезы</div><div className="slice-options">
-                {[['all', 'Все территории'], ['top', 'Топ-5 рейтинга'], ['investment', 'Инвестиции ≥ 50 млрд ₽'], ['growth', 'Рост ≥ 103%'], ['business', 'Оценка бизнеса ≥ 4,5']].map(([value, label]) => <button key={value} className={`slice-chip ${activeSlice === value ? 'active' : ''}`} onClick={() => setActiveSlice(value)}>{label}</button>)}
-              </div><button className={`filter-toggle ${advancedFiltersOpen ? 'open' : ''}`} onClick={() => setAdvancedFiltersOpen((open) => !open)}><Icon name="sliders"/>{advancedFiltersOpen ? 'Скрыть фильтры' : 'Расширенные фильтры'}<Icon name="chevron"/></button></div>
-              {(searchTerm.trim() || selectedGroup !== 'ALL' || activeSlice !== 'all' || Object.values(filters).some((value) => value !== '')) && <div className="active-filter-summary"><span>Активные фильтры · найдено <strong>{filteredMunicipalities.length}</strong> из {municipalities.length}</span><button className="text-action" onClick={resetFilters}><Icon name="refresh"/>Сбросить</button></div>}
-              {advancedFiltersOpen && <div className="advanced-filter-grid">
+              <div className="slice-bar"><div className="slice-label"><Icon name="sliders"/> Быстрые срезы</div><div className="slice-options" role="group" aria-label="Быстрые аналитические срезы">
+                {[['all', 'Все территории'], ['top', 'Топ-5 рейтинга'], ['investment', 'Инвестиции ≥ 50 млрд ₽'], ['growth', 'Рост ≥ 103%'], ['business', 'Оценка бизнеса ≥ 4,5']].map(([value, label]) => <button type="button" key={value} className={`slice-chip ${activeSlice === value ? 'active' : ''}`} aria-pressed={activeSlice === value} onClick={() => setActiveSlice(value)}>{label}</button>)}
+              </div><button type="button" className={`filter-toggle ${advancedFiltersOpen ? 'open' : ''}`} aria-expanded={advancedFiltersOpen} aria-controls="advanced-municipality-filters" onClick={() => setAdvancedFiltersOpen((open) => !open)}><Icon name="sliders"/>{advancedFiltersOpen ? 'Скрыть фильтры' : 'Расширенные фильтры'}<Icon name="chevron"/></button></div>
+              {(searchTerm.trim() || selectedGroup !== 'ALL' || activeSlice !== 'all' || Object.values(filters).some((value) => value !== '')) && <div className="active-filter-summary" role="status" aria-live="polite" aria-atomic="true"><span>Активные фильтры · найдено <strong>{filteredMunicipalities.length}</strong> из {municipalities.length}</span><button type="button" className="text-action" onClick={resetFilters}><Icon name="refresh"/>Сбросить</button></div>}
+              {advancedFiltersOpen && <div className="advanced-filter-grid" id="advanced-municipality-filters">
                 <label><span>Балл от</span><input type="number" value={filters.minScore} onChange={(e) => setFilter('minScore', e.target.value)} placeholder="Например, 250"/></label>
                 <label><span>Балл до</span><input type="number" value={filters.maxScore} onChange={(e) => setFilter('maxScore', e.target.value)} placeholder="Без ограничения"/></label>
                 <label><span>Инвестиции от, млрд ₽</span><input type="number" min="0" value={filters.minInvestments} onChange={(e) => setFilter('minInvestments', e.target.value)} placeholder="0"/></label>
                 <label><span>Субъекты МСП от</span><input type="number" min="0" value={filters.minSme} onChange={(e) => setFilter('minSme', e.target.value)} placeholder="0"/></label>
                 <label><span>Рост инвестиций от, %</span><input type="number" value={filters.minGrowth} onChange={(e) => setFilter('minGrowth', e.target.value)} placeholder="Без ограничения"/></label>
                 <label><span>Оценка бизнеса от, из 5</span><input type="number" min="0" max="5" step="0.1" value={filters.minAssessment} onChange={(e) => setFilter('minAssessment', e.target.value)} placeholder="0"/></label>
-                <div className="advanced-filter-footer"><span>Срез включает <strong>{filteredMunicipalities.length}</strong> из {municipalities.length} территорий</span><button className="text-action" onClick={resetFilters}><Icon name="refresh"/>Сбросить всё</button></div>
+                <div className="advanced-filter-footer"><span>Срез включает <strong>{filteredMunicipalities.length}</strong> из {municipalities.length} территорий</span><button type="button" className="text-action" onClick={resetFilters}><Icon name="refresh"/>Сбросить всё</button></div>
               </div>}
             </section>
 
@@ -1535,16 +1592,16 @@ export const InvestmentDetails = () => {
                 <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="pin"/></span><div><h2>Карта Югры</h2><p>Нажмите на территорию для подробностей</p></div></div><span className="section-tag">ИНТЕРАКТИВНАЯ</span></div>
                 <div className="map-stage"><UgraMap municipalities={municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/><div className="map-watermark" aria-hidden="true"><img src="/images/khanty-prosperity-seal.svg" alt=""/></div></div>
                 <div className="map-legend"><span><i className="legend-dot high"/>Группа A</span><span><i className="legend-dot mid"/>Группа B</span><span className="legend-hint">Выберите район на карте</span></div>
-                <div className="map-card-footer"><span><Icon name="leaf"/> Территория тайги и рек</span><button onClick={() => navigateToTab('map')}>Открыть карту <Icon name="arrow"/></button></div>
+                <div className="map-card-footer"><span><Icon name="leaf"/> Территория тайги и рек</span><button type="button" onClick={() => navigateToTab('map')}>Открыть карту <Icon name="arrow"/></button></div>
               </section>
 
               <section className="ranking-panel panel">
-                <div className="section-heading ranking-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Сводная таблица муниципалитетов</h2><p>Демо-показатели помечены; население — с годом и географическим уровнем</p></div></div><button className="primary-button" onClick={() => navigateToTab('rating')}>Полный рейтинг <Icon name="arrow"/></button></div>
+                <div className="section-heading ranking-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Сводная таблица муниципалитетов</h2><p>Демо-показатели помечены; население — с годом и географическим уровнем</p></div></div><button type="button" className="primary-button" onClick={() => navigateToTab('rating')}>Полный рейтинг <Icon name="arrow"/></button></div>
                 <div className="table-meta"><span>НАЙДЕНО <strong>{sortedMunicipalities.length}</strong> ИЗ {municipalities.length}</span><span className="table-sort-hint"><Icon name="sort"/> Сортировка · значения «демо» не официальная статистика</span></div>
-                <div className="table-scroll"><table className="ranking-table"><thead><tr><th className="num-col">№</th><th><SortButton label="Муниципальное образование" column="name"/></th><th><SortButton label="Группа" column="group2024"/></th><th><SortButton label="Балл · демо" column="score"/></th><th><SortButton label="Инвестиции · демо" column="investments"/></th><th><SortButton label="Динамика · демо" column="growthPercent"/></th><th><SortButton label="МСП · демо" column="smeCount"/></th><th><SortButton label="Оценка бизнеса · демо" column="assessmentScore"/></th><th><span className="action-heading">Население · источник</span></th><th><span className="action-heading">Паспорт</span></th></tr></thead><tbody>{renderTableRows(sortedMunicipalities)}</tbody></table>
-                  {sortedMunicipalities.length === 0 && <div className="empty-state"><span>Ничего не найдено</span><p>Измените фильтры или сбросьте текущий срез.</p><button className="outline-button" onClick={resetFilters}>Сбросить фильтры</button></div>}
+                <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table"><thead><tr><th scope="col" className="num-col">№</th><th scope="col" aria-sort={sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Муниципальное образование" column="name"/></th><th scope="col" aria-sort={sortConfig.key === 'group2024' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Группа" column="group2024"/></th><th scope="col" aria-sort={sortConfig.key === 'score' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Балл · демо" column="score"/></th><th scope="col" aria-sort={sortConfig.key === 'investments' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Инвестиции · демо" column="investments"/></th><th scope="col" aria-sort={sortConfig.key === 'growthPercent' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Динамика · демо" column="growthPercent"/></th><th scope="col" aria-sort={sortConfig.key === 'smeCount' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="МСП · демо" column="smeCount"/></th><th scope="col" aria-sort={sortConfig.key === 'assessmentScore' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Оценка бизнеса · демо" column="assessmentScore"/></th><th scope="col"><span className="action-heading">Население · источник</span></th><th scope="col"><span className="action-heading">Паспорт</span></th></tr></thead><tbody>{renderTableRows(sortedMunicipalities)}</tbody></table>
+                  {sortedMunicipalities.length === 0 && <div className="empty-state"><span>Ничего не найдено</span><p>Измените фильтры или сбросьте текущий срез.</p><button type="button" className="outline-button" onClick={resetFilters}>Сбросить фильтры</button></div>}
                 </div>
-                <div className="table-footer"><span>Данные муниципальных образований</span><button className="text-action" onClick={() => downloadCsv(sortedMunicipalities, DEFAULT_REPORT_FIELDS, 'yugra-current-slice')}><Icon name="download"/>Выгрузить срез CSV</button></div>
+                <div className="table-footer"><span>Данные муниципальных образований</span><button type="button" className="text-action" onClick={() => downloadCsv(sortedMunicipalities, DEFAULT_REPORT_FIELDS, 'yugra-current-slice')}><Icon name="download"/>Выгрузить срез CSV</button></div>
               </section>
             </div>
 
@@ -1576,7 +1633,7 @@ export const InvestmentDetails = () => {
                 <small>из {extendedInsights.growthCoverage} с доступным показателем</small>
               </article>
             </section>
-            <p className="data-quality-note">Все сводные карточки выше — демонстрационные расчёты из концептуального набора и не являются официальной статистикой. Проверенные значения и охват источников показаны отдельно ниже.</p>
+            <p className="data-quality-note">Все сводные карточки выше — демонстрационные расчёты из концептуального набора и не являются официальной статистикой. Новые карточки рассчитываются на основе существующего набора данных проекта; новые официальные статистические ряды пока не загружены. Проверенные значения и охват источников показаны отдельно ниже.</p>
             <section className="official-coverage-teaser panel" aria-labelledby="home-official-coverage-title">
               <div className="official-coverage-copy">
                 <span className="eyebrow"><span className="eyebrow-diamond"/> ФАКТИЧЕСКИЙ СЛОЙ ДАННЫХ</span>
@@ -1588,7 +1645,7 @@ export const InvestmentDetails = () => {
                 <article><span>Муниципалитетов с данными своего уровня</span><strong>{officialDataSummary.municipalityCount} / {municipalities.length}</strong><small>городские поселения отдельно</small></article>
                 <article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong><small>включая источники, ожидающие импорта</small></article>
               </div>
-              <div className="official-coverage-footer"><span className={`official-coverage-status official-coverage-status--${officialDataStatus}`}><i/>{officialDataStatus === 'connected' ? 'Официальный слой подключён' : officialDataStatus === 'loading' ? 'Загрузка официального слоя' : officialDataStatus === 'error' ? 'Ошибка чтения официального слоя' : 'Демонстрационный режим'}</span><button className="primary-button" onClick={() => navigateToTab('data')}>Открыть центр данных <Icon name="arrow"/></button></div>
+              <div className="official-coverage-footer"><span className={`official-coverage-status official-coverage-status--${officialDataStatus}`}><i/>{officialDataStatus === 'connected' ? 'Официальный слой подключён' : officialDataStatus === 'loading' ? 'Загрузка официального слоя' : officialDataStatus === 'error' ? 'Ошибка чтения официального слоя' : 'Демонстрационный режим'}</span><button type="button" className="primary-button" onClick={() => navigateToTab('data')}>Открыть центр данных <Icon name="arrow"/></button></div>
             </section>
           </>}
 
@@ -1598,7 +1655,7 @@ export const InvestmentDetails = () => {
               <div className="data-page-hero-actions">
                 <span className={`official-status-chip official-status--${officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
                 {officialDataSyncedAt && <span className="official-data-updated">Обновлено: {new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(officialDataSyncedAt)}</span>}
-                <button className="outline-button" onClick={() => setSyncAttempt((attempt) => attempt + 1)} disabled={officialDataStatus === 'loading'}><Icon name="refresh"/>Обновить данные</button>
+                <button type="button" className="outline-button" onClick={() => setSyncAttempt((attempt) => attempt + 1)} disabled={officialDataStatus === 'loading'}><Icon name="refresh"/>Обновить данные</button>
                 <a className="outline-button data-dictionary-link" href="/data-dictionary.md" download="yugra-data-dictionary.md"><Icon name="download"/>Скачать словарь данных</a>
               </div>
             </section>
@@ -1625,11 +1682,11 @@ export const InvestmentDetails = () => {
                 <div className="heading-label"><span className="heading-icon"><Icon name="table"/></span><div><h2 id="municipality-coverage-title">Покрытие официальными данными по муниципалитетам</h2><p>Приоритет расширения базы: население, инвестиции, зарплата, занятость и предпринимательство</p></div></div>
                 <span className="section-tag">{officialMunicipalCoverage.rows.length} ТЕРРИТОРИЙ</span>
               </div>
-              <div className="table-scroll">
+              <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов.">
                 <table className="ranking-table municipality-coverage-table">
                   <thead><tr>
-                    <th>Муниципалитет</th>
-                    {officialMunicipalCoverage.categories.map((category) => <th key={category.key}>{category.label}<small className="cell-subnote">{category.coveredCount}/{municipalities.length} на уровне МО</small></th>)}
+                    <th scope="col">Муниципалитет</th>
+                    {officialMunicipalCoverage.categories.map((category) => <th scope="col" key={category.key}>{category.label}<small className="cell-subnote">{category.coveredCount}/{municipalities.length} на уровне МО</small></th>)}
                   </tr></thead>
                   <tbody>{officialMunicipalCoverage.rows.map((municipality) => <tr key={municipality.id}>
                     <td className="municipality-cell"><strong>{municipality.name}</strong></td>
@@ -1649,9 +1706,9 @@ export const InvestmentDetails = () => {
                 <div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="population-composition-title">Городское и сельское население</h2><p>Официальное разбиение на 1 января 2025 года · только территории, где в источнике указаны обе составляющие</p></div></div>
                 <span className="section-tag">{officialMunicipalPopulationMix.length} ТЕРРИТОРИЙ</span>
               </div>
-              <div className="table-scroll">
+              <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов.">
                 <table className="ranking-table population-composition-table">
-                  <thead><tr><th>Муниципалитет</th><th>Всего жителей</th><th>Городское / сельское население</th><th>Городское</th><th>Сельское</th></tr></thead>
+                  <thead><tr><th scope="col">Муниципалитет</th><th scope="col">Всего жителей</th><th scope="col">Городское / сельское население</th><th scope="col">Городское</th><th scope="col">Сельское</th></tr></thead>
                   <tbody>{officialMunicipalPopulationMix.map((item) => <tr key={item.id}>
                     <td className="municipality-cell"><strong>{item.name}</strong></td>
                     <td className="number-cell">{formatNumber(item.total)}</td>
@@ -1708,11 +1765,11 @@ export const InvestmentDetails = () => {
                     {settlementPopulationTrend.rows.map((item,index)=><g key={item.id}><circle cx={item.x} cy={item.y} r="5" fill={index===settlementPopulationTrend.rows.length-1?'#b78a49':'#3d7050'} stroke="#fffdf8" strokeWidth="1.5"/><text x={item.x} y={Math.max(23,item.y-12)} textAnchor="middle" fill="#46614b" fontSize="12" fontWeight="700">{formatNumber(item.numericValue,1)}</text><text x={item.x} y="194" textAnchor="middle" fill="#7c8979" fontSize="12">{item.reference_year}</text></g>)}
                   </svg>
                 </div>
-                <div className="table-scroll official-trend-table-wrap"><table className="ranking-table"><thead><tr><th>Город</th><th>Значение, тыс. чел.</th><th>Период</th><th>Географический уровень</th><th>Источник</th></tr></thead><tbody>{settlementPopulationTrend.rows.map((item)=><tr key={item.id}><td>{item.geographic_name || settlementPopulationTrend.name}</td><td className="score-cell">{formatNumber(item.numericValue,1)}</td><td>{formatReferencePeriod(item)}</td><td>Населённый пункт</td><td><a href={item.source_url} target="_blank" rel="noreferrer">Росстат ↗</a></td></tr>)}</tbody></table></div>
+                <div className="table-scroll official-trend-table-wrap" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table"><thead><tr><th scope="col">Город</th><th scope="col">Значение, тыс. чел.</th><th scope="col">Период</th><th scope="col">Географический уровень</th><th scope="col">Источник</th></tr></thead><tbody>{settlementPopulationTrend.rows.map((item)=><tr key={item.id}><td>{item.geographic_name || settlementPopulationTrend.name}</td><td className="score-cell">{formatNumber(item.numericValue,1)}</td><td>{formatReferencePeriod(item)}</td><td>Населённый пункт</td><td><a href={item.source_url} target="_blank" rel="noreferrer">Росстат ↗</a></td></tr>)}</tbody></table></div>
               </> : <div className="empty-state"><span>Для выбранного города пока доступно менее двух наблюдений</span><p>Выберите другой город. Значения населённого пункта не трактуются как данные всего муниципального района.</p></div>}
             </section>
             <section className="population-trend-panel panel" aria-labelledby="economic-trend-title">
-              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="economic-trend-title">Сопоставимая динамика экономики Сургута</h2><p>Одинаковые периоды за 2024–2026 годы · официальный муниципальный паспорт</p></div></div><div className="toolbar-actions"><span className="section-tag">{surgutComparableTrend.rows.length} НАБЛЮДЕНИЙ</span><button className="outline-button" onClick={downloadSurgutComparableTrendCsv} disabled={surgutComparableTrend.rows.length===0}><Icon name="download"/>CSV</button></div></div>
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="economic-trend-title">Сопоставимая динамика экономики Сургута</h2><p>Одинаковые периоды за 2024–2026 годы · официальный муниципальный паспорт</p></div></div><div className="toolbar-actions"><span className="section-tag">{surgutComparableTrend.rows.length} НАБЛЮДЕНИЙ</span><button type="button" className="outline-button" onClick={downloadSurgutComparableTrendCsv} disabled={surgutComparableTrend.rows.length===0}><Icon name="download"/>CSV</button></div></div>
               <label className="official-trend-select"><span>Показатель и период сравнения</span><select value={selectedTrendSeries} onChange={(event)=>setSelectedTrendSeries(event.target.value)}>{OFFICIAL_TREND_SERIES.map((series)=><option value={series.code} key={series.code}>{series.title} — {series.periodLabel}</option>)}</select></label>
               <p className="official-trend-definition">{surgutComparableTrend.definition}</p>
               {surgutComparableTrend.rows.length > 1 ? <>
@@ -1730,13 +1787,13 @@ export const InvestmentDetails = () => {
                     {surgutComparableTrend.rows.map((item,index)=><g key={item.id}><circle cx={item.x} cy={item.y} r="5" fill={index===surgutComparableTrend.rows.length-1?'#b78a49':'#3d7050'} stroke="#fffdf8" strokeWidth="1.5"/><text x={item.x} y={Math.max(23,item.y-12)} textAnchor="middle" fill="#46614b" fontSize="12" fontWeight="700">{formatNumber(item.numericValue,0)}</text><text x={item.x} y="194" textAnchor="middle" fill="#7c8979" fontSize="12">{item.reference_year}</text></g>)}
                   </svg>
                 </div>
-                <div className="table-scroll official-trend-table-wrap"><table className="ranking-table"><thead><tr><th>Период</th><th>Значение, {surgutComparableTrend.unit}</th><th>Изменение к предыдущему</th><th>Источник</th></tr></thead><tbody>{surgutComparableTrend.rows.map((item)=><tr key={item.id}><td>{formatReferencePeriod(item)}</td><td className="score-cell">{formatNumber(item.numericValue,1)}</td><td>{item.changePercent==null?'—':`${item.changePercent>0?'+':''}${formatNumber(item.changePercent,1)}%`}</td><td><a href={item.source_url} target="_blank" rel="noreferrer">Росстат ↗</a></td></tr>)}</tbody></table></div>
+                <div className="table-scroll official-trend-table-wrap" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table"><thead><tr><th scope="col">Период</th><th scope="col">Значение, {surgutComparableTrend.unit}</th><th scope="col">Изменение к предыдущему</th><th scope="col">Источник</th></tr></thead><tbody>{surgutComparableTrend.rows.map((item)=><tr key={item.id}><td>{formatReferencePeriod(item)}</td><td className="score-cell">{formatNumber(item.numericValue,1)}</td><td>{item.changePercent==null?'—':`${item.changePercent>0?'+':''}${formatNumber(item.changePercent,1)}%`}</td><td><a href={item.source_url} target="_blank" rel="noreferrer">Росстат ↗</a></td></tr>)}</tbody></table></div>
               </> : <div className="empty-state"><span>Для выбранного показателя пока недостаточно наблюдений</span><p>Выберите другой показатель или проверьте заполненность источника.</p></div>}
             </section>
             <section className="sector-employment-panel panel" aria-labelledby="sector-employment-title">
               <div className="section-heading">
                 <div className="heading-label"><span className="heading-icon"><Icon name="people"/></span><div><h2 id="sector-employment-title">Отраслевая структура занятости</h2><p>Официальная среднесписочная численность работников в отраслях для выбранной территории</p></div></div>
-                <div className="toolbar-actions"><span className="section-tag">{sectorEmploymentProfile.rows.length} ОТРАСЛЕЙ</span><button className="outline-button" onClick={downloadSectorEmploymentCsv} disabled={!sectorEmploymentProfile.rows.length}><Icon name="download"/>CSV</button></div>
+                <div className="toolbar-actions"><span className="section-tag">{sectorEmploymentProfile.rows.length} ОТРАСЛЕЙ</span><button type="button" className="outline-button" onClick={downloadSectorEmploymentCsv} disabled={!sectorEmploymentProfile.rows.length}><Icon name="download"/>CSV</button></div>
               </div>
               <div className="sector-employment-controls">
                 <label className="official-trend-select"><span>Муниципалитет</span><select value={selectedSectorMunicipalityId} onChange={(event)=>{setSelectedSectorMunicipalityId(event.target.value);setSelectedSectorYear('2026');setSelectedSectorPeriod('Q1');}}>{sectorEmploymentMunicipalityOptions.map((municipality)=><option key={municipality.id} value={municipality.id}>{municipality.name}</option>)}</select></label>
@@ -1790,8 +1847,8 @@ export const InvestmentDetails = () => {
                   <div className="official-comparison-track"><i style={{width:Math.max(1,item.numericValue/Math.max(1,officialComparisonRows[0].numericValue)*100)+'%'}}/></div>
                   <strong className="official-comparison-value">{formatNumber(item.numericValue,1)} <small>{officialComparisonConfig.unit}</small></strong>
                 </div>)}</div>
-                <div className="official-comparison-footer"><span>{officialComparisonConfig.geographicLevel === 'settlement' ? `Показано ${officialComparisonRows.length} городов/населённых пунктов с подтверждённым наблюдением в выбранном срезе.` : `Показано ${officialComparisonRows.length} из ${municipalities.length} муниципалитетов, по которым есть подтверждённое наблюдение в выбранном срезе.`}</span><button className="text-action" onClick={downloadOfficialComparisonCsv}><Icon name="download"/>Выгрузить срез CSV</button></div>
-                <div className="table-scroll official-trend-table-wrap"><table className="ranking-table"><thead><tr><th>{officialComparisonConfig.geographicLevel === 'settlement' ? 'Город / населённый пункт' : 'Муниципальное образование'}</th><th>Значение</th><th>Период</th><th>Источник</th></tr></thead><tbody>{officialComparisonRows.map((item)=><tr key={item.id}><td>{item.municipalityName}</td><td className="score-cell">{formatNumber(item.numericValue,1)} {officialComparisonConfig.unit}</td><td>{formatReferencePeriod(item)}</td><td><a href={item.source_url} target="_blank" rel="noreferrer">Росстат ↗</a></td></tr>)}</tbody></table></div>
+                <div className="official-comparison-footer"><span>{officialComparisonConfig.geographicLevel === 'settlement' ? `Показано ${officialComparisonRows.length} городов/населённых пунктов с подтверждённым наблюдением в выбранном срезе.` : `Показано ${officialComparisonRows.length} из ${municipalities.length} муниципалитетов, по которым есть подтверждённое наблюдение в выбранном срезе.`}</span><button type="button" className="text-action" onClick={downloadOfficialComparisonCsv}><Icon name="download"/>Выгрузить срез CSV</button></div>
+                <div className="table-scroll official-trend-table-wrap" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table"><thead><tr><th scope="col">{officialComparisonConfig.geographicLevel === 'settlement' ? 'Город / населённый пункт' : 'Муниципальное образование'}</th><th scope="col">Значение</th><th scope="col">Период</th><th scope="col">Источник</th></tr></thead><tbody>{officialComparisonRows.map((item)=><tr key={item.id}><td>{item.municipalityName}</td><td className="score-cell">{formatNumber(item.numericValue,1)} {officialComparisonConfig.unit}</td><td>{formatReferencePeriod(item)}</td><td><a href={item.source_url} target="_blank" rel="noreferrer">Росстат ↗</a></td></tr>)}</tbody></table></div>
               </> : <div className="empty-state"><span>Нет сопоставимых наблюдений для выбранного среза</span><p>Выберите показатель или другой период. Для корректного сравнения нужны одна единица измерения и один территориальный уровень.</p></div>}
             </section>
             <section className="official-data-panel panel" aria-labelledby="official-data-heading">
@@ -1831,7 +1888,7 @@ export const InvestmentDetails = () => {
               </div>
               <div className="official-indicator-table-wrap">
                 <table className="fuel-prices-table official-indicator-table">
-                  <thead><tr><th>Территория / уровень</th><th>Показатель</th><th>Значение</th><th>Период наблюдения</th><th>Примечание</th><th>Источник</th></tr></thead>
+                  <thead><tr><th scope="col">Территория / уровень</th><th scope="col">Показатель</th><th scope="col">Значение</th><th scope="col">Период наблюдения</th><th scope="col">Примечание</th><th scope="col">Источник</th></tr></thead>
                   <tbody>{filteredOfficialIndicators.map((item) => {
                     const municipality = municipalities.find((m) => m.id === item.municipality_id);
                     const geography = item.geographic_level === 'settlement' ? 'Населённый пункт' : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
@@ -1845,7 +1902,7 @@ export const InvestmentDetails = () => {
                     </tr>;
                   })}</tbody>
                 </table>
-                {filteredOfficialIndicators.length === 0 && <div className="empty-state"><span>Показатели не найдены</span><p>Попробуйте изменить поисковый запрос или территорию.</p><button className="outline-button" onClick={() => {setIndicatorSearch('');setIndicatorMunicipalityFilter('all');}}>Сбросить фильтры</button></div>}
+                {filteredOfficialIndicators.length === 0 && <div className="empty-state" role="status"><span>Показатели не найдены</span><p>Попробуйте изменить поисковый запрос или территорию.</p><button type="button" className="outline-button" onClick={() => {setIndicatorSearch('');setIndicatorMunicipalityFilter('all');setIndicatorYearFilter('all');}}>Сбросить фильтры</button></div>}
               </div>
               <p className="source-panel-note">В таблице отображаются только записи с проверенным статусом. Годовые, квартальные и моментные показатели не объединяются в один период; примечания помогают отличать показатель муниципального образования от данных по населённому пункту.</p>
             </section>
@@ -1919,7 +1976,7 @@ export const InvestmentDetails = () => {
               <p className="fuel-unit-note">В паспорте источника единица измерения явно не указана, поэтому значения показаны ровно в том виде, в котором опубликованы. Пустые поля и прочерки не считаются нулевыми ценами; исходные значения сохранены для проверки.</p>
               <div className="fuel-prices-table-wrap">
                 <table className="fuel-prices-table">
-                  <thead><tr><th>АЗС / компания</th><th>Адрес</th><th>АИ‑92</th><th>АИ‑95</th><th>АИ‑98</th><th>Пропан</th><th>Дизель</th><th>Источник</th></tr></thead>
+                  <thead><tr><th scope="col">АЗС / компания</th><th scope="col">Адрес</th><th scope="col">АИ‑92</th><th scope="col">АИ‑95</th><th scope="col">АИ‑98</th><th scope="col">Пропан</th><th scope="col">Дизель</th><th scope="col">Источник</th></tr></thead>
                   <tbody>{fuelPrices.map((fuel) => <tr key={fuel.id}>
                     <td><strong>{fuel.station_name}</strong><small>{fuel.company_name || 'Компания не указана'}</small></td>
                     <td>{fuel.address || '—'}</td>
@@ -1942,14 +1999,14 @@ export const InvestmentDetails = () => {
               </div>
               <div className="facility-toolbar">
                 <label className="search-box"><Icon name="search"/><input value={facilitySearch} onChange={(event) => setFacilitySearch(event.target.value)} placeholder="Поиск по названию или адресу…" aria-label="Поиск образовательного объекта"/></label>
-                <div className="filter-row" aria-label="Фильтр типа образовательного объекта">
-                  {[['all','Все'],['school','Школы'],['preschool','Детские сады']].map(([value,label]) => <button type="button" key={value} className={`filter-pill ${facilityFilter === value ? 'selected' : ''}`} onClick={() => setFacilityFilter(value)}>{label}</button>)}
+                <div className="filter-row" role="group" aria-label="Фильтр типа образовательного объекта">
+                  {[['all','Все'],['school','Школы'],['preschool','Детские сады']].map(([value,label]) => <button type="button" key={value} className={`filter-pill ${facilityFilter === value ? 'selected' : ''}`} aria-pressed={facilityFilter === value} onClick={() => setFacilityFilter(value)}>{label}</button>)}
                 </div>
               </div>
-              <div className="facility-list-meta">Показано <strong>{filteredFacilities.length}</strong> из {facilities.length} объектов. Численность учеников и детей — среднегодовое значение из источника, не нормативная вместимость.</div>
+              <div className="facility-list-meta" role="status" aria-live="polite" aria-atomic="true">Показано <strong>{filteredFacilities.length}</strong> из {facilities.length} объектов. Численность учеников и детей — среднегодовое значение из источника, не нормативная вместимость.</div>
               <div className="fuel-prices-table-wrap">
                 <table className="fuel-prices-table facility-table">
-                  <thead><tr><th>Учреждение</th><th>Адрес</th><th>Тип</th><th>Учеников / детей в год</th><th>Штат, %</th><th>Координаты</th><th>Версия данных</th></tr></thead>
+                  <thead><tr><th scope="col">Учреждение</th><th scope="col">Адрес</th><th scope="col">Тип</th><th scope="col">Учеников / детей в год</th><th scope="col">Штат, %</th><th scope="col">Координаты</th><th scope="col">Версия данных</th></tr></thead>
                   <tbody>{filteredFacilities.map((facility) => <tr key={facility.id}>
                     <td><strong>{facility.name_short || facility.name_full}</strong><small>{facility.name_full}</small></td>
                     <td>{facility.address || '—'}{facility.postal_code && <small>Индекс: {facility.postal_code}</small>}</td>
@@ -1960,7 +2017,7 @@ export const InvestmentDetails = () => {
                     <td>{facility.source_updated_at ? new Intl.DateTimeFormat('ru-RU').format(new Date(facility.source_updated_at + 'T00:00:00')) : '—'}<small><a href={facility.source_url} target="_blank" rel="noreferrer">Первоисточник ↗</a></small></td>
                   </tr>)}</tbody>
                 </table>
-                {filteredFacilities.length === 0 && <div className="empty-state"><span>Объекты не найдены</span><p>Измените запрос или выберите другой тип учреждения.</p><button className="outline-button" onClick={() => {setFacilitySearch('');setFacilityFilter('all');}}>Сбросить фильтры</button></div>}
+                {filteredFacilities.length === 0 && <div className="empty-state" role="status"><span>Объекты не найдены</span><p>Измените запрос или выберите другой тип учреждения.</p><button type="button" className="outline-button" onClick={() => {setFacilitySearch('');setFacilityFilter('all');}}>Сбросить фильтры</button></div>}
               </div>
               <p className="source-panel-note">О дошкольных учреждениях импортированы 17 из 18 строк, доступных в поисковом представлении актуального CSV. Реестр школ содержит 7 объектов по версии от 16.12.2024. Дата обновления паспорта набора не заменяет дату фактической версии файла.</p>
             </section>}
@@ -1986,15 +2043,15 @@ export const InvestmentDetails = () => {
           </section>}
 
           {activeTab === 'map' && <section className="panel full-panel">
-            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="map"/></span><div><h2>Муниципальная карта Югры</h2><p>Выберите территорию на карте или в списке</p></div></div><button className="outline-button" onClick={() => setIsMapListOpen(!isMapListOpen)}>{isMapListOpen ? 'Скрыть список' : 'Показать список'}</button></div>
+            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="map"/></span><div><h2>Муниципальная карта Югры</h2><p>Выберите территорию на карте или в списке</p></div></div><button type="button" className="outline-button" aria-expanded={isMapListOpen} onClick={() => setIsMapListOpen(!isMapListOpen)}>{isMapListOpen ? 'Скрыть список' : 'Показать список'}</button></div>
             <div className={`map-layout ${isMapListOpen ? '' : 'map-only'}`}><div className="map-stage large-map"><UgraMap municipalities={municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/></div>{isMapListOpen && <div className="map-list"><UgraMapList municipalities={municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/></div>}</div>
           </section>}
 
           {activeTab === 'rating' && <section className="panel full-panel ranking-page">
-            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Рейтинг муниципалитетов</h2><p>Полный рейтинг с поиском, срезами и сортировкой</p></div></div><div className="toolbar-actions"><button className="outline-button" onClick={() => downloadCsv(sortedMunicipalities, DEFAULT_REPORT_FIELDS, 'yugra-rating')}><Icon name="download"/>CSV</button><button className="primary-button" onClick={() => { setReportScope('filtered'); navigateToTab('reports'); }}><Icon name="file"/>Собрать отчёт</button></div></div>
-            <div className="rating-filters"><label className="search-box"><Icon name="search"/><input aria-label="Поиск в рейтинге" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Найти муниципалитет…"/></label><div className="filter-row">{[['ALL', 'Все группы'], ['A', 'Группа A'], ['B', 'Группа B']].map(([value, label]) => <button key={value} className={`filter-pill ${selectedGroup === value ? 'selected' : ''}`} onClick={() => setSelectedGroup(value)}>{label}</button>)}</div><button className="text-action" onClick={resetFilters}><Icon name="refresh"/>Сбросить фильтры</button></div>
-            <div className="table-meta"><span>В ТАБЛИЦЕ <strong>{sortedMunicipalities.length}</strong> МУНИЦИПАЛИТЕТОВ</span><span className="table-sort-hint">Нажмите на заголовок, чтобы изменить порядок</span></div>
-            <div className="table-scroll compare-scroll"><table className="ranking-table compare-table"><thead><tr><th className="num-col">№</th><th><SortButton label="Муниципальное образование" column="name"/></th><th><SortButton label="Группа" column="group2024"/></th><th><SortButton label="Балл" column="score"/></th><th><SortButton label="Инвестиции, млрд ₽" column="investments"/></th><th><SortButton label="МСП, ед." column="smeCount"/></th><th><SortButton label="Оценка бизнеса" column="assessmentScore"/></th><th>Паспорт</th></tr></thead><tbody>{sortedMunicipalities.map((m, i) => <tr key={m.id} onMouseEnter={() => setHoveredRegionId(m.id)} onMouseLeave={() => setHoveredRegionId(null)}><td className="row-number">{String(i + 1).padStart(2, '0')}</td><td><button className="municipality-link" onClick={() => setActiveModalItem(m)}>{m.name}</button></td><td><span className={`group-badge ${m.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i/>{`Группа ${m.group2024}`}</span></td><td className="score-cell">{formatNumber(m.score, 1)}</td><td className="number-cell">{formatNumber(m.investments.volumeBillion, 1)}</td><td className="number-cell">{formatNumber(m.smeCount)}</td><td>{formatNumber(m.assessmentScore, 2)} / 5</td><td><button className="icon-button" onClick={() => setActiveModalItem(m)} aria-label={`Открыть паспорт: ${m.name}`}><Icon name="arrow"/></button></td></tr>)}</tbody></table></div>
+            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Рейтинг муниципалитетов</h2><p>Полный рейтинг с поиском, срезами и сортировкой</p></div></div><div className="toolbar-actions"><button type="button" className="outline-button" onClick={() => downloadCsv(sortedMunicipalities, DEFAULT_REPORT_FIELDS, 'yugra-rating')}><Icon name="download"/>CSV</button><button type="button" className="primary-button" onClick={() => { setReportScope('filtered'); navigateToTab('reports'); }}><Icon name="file"/>Собрать отчёт</button></div></div>
+            <div className="rating-filters"><label className="search-box"><Icon name="search"/><input aria-label="Поиск в рейтинге" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Найти муниципалитет…"/></label><div className="filter-row" role="group" aria-label="Фильтр рейтинга по группе муниципалитета">{[['ALL', 'Все группы'], ['A', 'Группа A'], ['B', 'Группа B']].map(([value, label]) => <button type="button" key={value} className={`filter-pill ${selectedGroup === value ? 'selected' : ''}`} aria-pressed={selectedGroup === value} onClick={() => setSelectedGroup(value)}>{label}</button>)}</div><button type="button" className="text-action" onClick={resetFilters}><Icon name="refresh"/>Сбросить фильтры</button></div>
+            <div className="table-meta"><span role="status" aria-live="polite" aria-atomic="true">В ТАБЛИЦЕ <strong>{sortedMunicipalities.length}</strong> МУНИЦИПАЛИТЕТОВ</span><span className="table-sort-hint">Нажмите на заголовок, чтобы изменить порядок</span></div>
+            <div className="table-scroll compare-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table compare-table"><thead><tr><th scope="col" className="num-col">№</th><th scope="col" aria-sort={sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Муниципальное образование" column="name"/></th><th scope="col" aria-sort={sortConfig.key === 'group2024' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Группа" column="group2024"/></th><th scope="col" aria-sort={sortConfig.key === 'score' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Балл" column="score"/></th><th scope="col" aria-sort={sortConfig.key === 'investments' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Инвестиции, млрд ₽" column="investments"/></th><th scope="col" aria-sort={sortConfig.key === 'smeCount' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="МСП, ед." column="smeCount"/></th><th scope="col" aria-sort={sortConfig.key === 'assessmentScore' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Оценка бизнеса" column="assessmentScore"/></th><th scope="col">Паспорт</th></tr></thead><tbody>{sortedMunicipalities.map((m, i) => <tr key={m.id} onMouseEnter={() => setHoveredRegionId(m.id)} onMouseLeave={() => setHoveredRegionId(null)}><td className="row-number">{String(i + 1).padStart(2, '0')}</td><td><button type="button" className="municipality-link" onClick={() => setActiveModalItem(m)}>{m.name}</button></td><td><span className={`group-badge ${m.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i/>{`Группа ${m.group2024}`}</span></td><td className="score-cell">{formatNumber(m.score, 1)}</td><td className="number-cell">{formatNumber(m.investments.volumeBillion, 1)}</td><td className="number-cell">{formatNumber(m.smeCount)}</td><td>{formatNumber(m.assessmentScore, 2)} / 5</td><td><button type="button" className="icon-button" onClick={() => setActiveModalItem(m)} aria-label={`Открыть паспорт: ${m.name}`}><Icon name="arrow"/></button></td></tr>)}</tbody></table></div>
           </section>}
 
           {activeTab === 'risk' && <Suspense fallback={<section className="panel full-panel" role="status"><p>Загружаем систему мониторинга рисков…</p></section>}><UnifiedRiskForecast municipalities={municipalities} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} officialIndicators={officialIndicators} programExecution={programExecution} officialDataStatus={officialDataStatus} officialDataSyncedAt={officialDataSyncedAt} investmentSites={investmentSites} fuelPrices={fuelPrices} facilities={facilities} /></Suspense>}
@@ -2002,38 +2059,48 @@ export const InvestmentDetails = () => {
           {activeTab === 'forecast' && <Suspense fallback={<section className="panel full-panel" role="status"><p>Загружаем сценарную модель прогнозирования…</p></section>}><Forecasting municipalities={municipalities} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} officialIndicators={officialIndicators} programExecution={programExecution} officialDataStatus={officialDataStatus} officialDataSyncedAt={officialDataSyncedAt} /></Suspense>}
 
           {activeTab === 'compare' && <section className="panel full-panel compare-page">
-            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2>Сравнение муниципалитетов</h2><p>Выберите от двух до четырёх территорий и сравните показатели бок о бок</p></div></div><div className="toolbar-actions"><button className="outline-button" onClick={() => setSelectedCompareIds(DEFAULT_COMPARE_IDS.filter((id) => municipalities.some((m) => m.id === id)))}><Icon name="refresh"/>Сбросить выбор</button><button className="primary-button" onClick={() => { setReportScope('selected'); setReportSelectedIds(selectedCompareIds); navigateToTab('reports'); }}><Icon name="file"/>Отчёт по сравнению</button></div></div>
+            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2>Сравнение муниципалитетов</h2><p>Выберите от двух до четырёх территорий и сравните показатели бок о бок</p></div></div><div className="toolbar-actions"><button type="button" className="outline-button" onClick={() => setSelectedCompareIds(DEFAULT_COMPARE_IDS.filter((id) => municipalities.some((m) => m.id === id)))}><Icon name="refresh"/>Сбросить выбор</button><button type="button" className="primary-button" onClick={() => { setReportScope('selected'); setReportSelectedIds(selectedCompareIds); navigateToTab('reports'); }}><Icon name="file"/>Отчёт по сравнению</button></div></div>
             <div className="compare-workspace">
               <aside className="compare-picker">
-                <div className="picker-title"><div><strong>Территории для сравнения</strong><span>Выбрано {selectedCompareIds.length} из 4</span></div><span className="picker-counter">{selectedCompareIds.length}/4</span></div>
+                <div className="picker-title"><div><strong>Территории для сравнения</strong><span>Выбрано {selectedCompareIds.length} из 4</span></div><span className="picker-counter" role="status" aria-live="polite" aria-atomic="true">{selectedCompareIds.length}/4</span></div>
                 <label className="search-box picker-search"><Icon name="search"/><input aria-label="Поиск территории для сравнения" value={comparisonSearch} onChange={(e) => setComparisonSearch(e.target.value)} placeholder="Найти муниципалитет…"/></label>
+                <p className="picker-note" role="status" aria-live="polite" aria-atomic="true">Найдено муниципалитетов: {comparisonCandidates.length}</p>
                 <div className="compare-options">{comparisonCandidates.map((m) => {
                   const checked = selectedCompareIds.includes(m.id);
                   const disabled = !checked && selectedCompareIds.length >= 4;
                   return <label key={m.id} className={`compare-option ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}`}><input type="checkbox" checked={checked} disabled={disabled} onChange={() => toggleCompare(m.id)}/><span className="compare-checkmark"><Icon name="check"/></span><span className="compare-option-copy"><strong>{m.name}</strong><small>Группа {m.group2024} · место {m.rank2024}</small></span><span className="compare-option-score">{formatNumber(m.score)}</span></label>;
                 })}</div>
+                {comparisonCandidates.length === 0 && <p className="empty-state" role="status">Муниципалитеты по запросу не найдены. Проверьте написание или измените поисковый запрос.</p>}
                 <p className="picker-note"><Icon name="info"/> Можно сравнить до четырёх территорий. Используется текущий набор данных; пропущенные показатели обозначены прочерком.</p>
               </aside>
               <div className="compare-analysis">
                 <div className="analysis-toolbar"><div><span className="micro-label">ОСНОВНОЙ СРЕЗ</span><h3>Сравнить по показателю</h3></div><label className="select-field"><span>Показатель диаграммы</span><select value={comparisonMetric} onChange={(e) => setComparisonMetric(e.target.value)}>{METRICS.map((metric) => <option key={metric.key} value={metric.key}>{metric.label}</option>)}</select></label></div>
                 {comparisonItems.length < 2 ? <div className="empty-state comparison-empty"><span>Нужно выбрать минимум две территории</span><p>Отметьте муниципалитеты в списке слева, чтобы увидеть сравнение.</p></div> : <>
-                  <div className="comparison-chart-card"><div className="chart-card-heading"><div><strong>{comparisonMetricDef.label}</strong><span>{comparisonMetricDef.unit === 'место' ? 'Меньший номер означает более высокую позицию' : `Единица измерения: ${comparisonMetricDef.unit}`}</span></div><span className="chart-chip">{comparisonItems.length} территории</span></div>
+                  <div className="comparison-chart-card" role="group" aria-label={`Диаграмма сравнения: ${comparisonMetricDef.label}`}><div className="chart-card-heading"><div><strong>{comparisonMetricDef.label}</strong><span>{comparisonMetricDef.unit === 'место' ? 'Меньший номер означает более высокую позицию' : `Единица измерения: ${comparisonMetricDef.unit}`}</span></div><span className="chart-chip">{comparisonItems.length} территории</span></div>
                     {(() => {
                       const values = comparisonItems.map((m) => comparisonMetricDef.get(m));
-                      const maxVal = comparisonMetric === 'rank2024' ? Math.max(...municipalities.map((m) => Number(m.rank2024 || 0)), 1) : Math.max(...values, 1);
-                      return comparisonItems.map((m, index) => {
+                      const availableValues = values.filter((value) => value != null && Number.isFinite(Number(value)));
+                      const maxVal = comparisonMetric === 'rank2024' ? Math.max(...municipalities.map((m) => Number(m.rank2024 || 0)), 1) : Math.max(...availableValues, 1);
+                      return <>
+                        {availableValues.length === 0
+                          ? <p className="empty-state" role="status">По выбранному показателю нет доступных значений для сравнения. Выберите другой показатель или проверьте исходные данные.</p>
+                          : availableValues.length < comparisonItems.length
+                            ? <p className="source-panel-note" role="status">Значения доступны для {availableValues.length} из {comparisonItems.length} территорий. Для остальных муниципалитетов данные не представлены; пустые значения не интерпретируются как ноль.</p>
+                            : null}
+                        {comparisonItems.map((m, index) => {
                         const val = comparisonMetricDef.get(m);
                         const barVal = val == null ? 0 : comparisonMetric === 'rank2024' ? maxVal + 1 - val : val;
                         const denom = comparisonMetric === 'rank2024' ? maxVal : Math.max(...values, 1);
                         const width = val == null ? 0 : Math.max(3, Math.min(100, (barVal / denom) * 100));
                         const paletteClass = ['bar-forest', 'bar-ochre', 'bar-moss', 'bar-russet'][index % 4];
-                        return <div className="comparison-bar-row" key={m.id}><div className="comparison-bar-label"><span className="comparison-number">0{index + 1}</span><strong>{m.name}</strong></div><div className="comparison-bar-track"><i className={paletteClass} style={{ width: `${width}%` }}/></div><strong className="comparison-bar-value">{comparisonMetricDef.format(m)}</strong></div>;
-                      });
+                        return <div className="comparison-bar-row" key={m.id}><div className="comparison-bar-label"><span className="comparison-number">0{index + 1}</span><strong>{m.name}</strong></div><div className="comparison-bar-track" aria-hidden="true"><i className={paletteClass} style={{ width: `${width}%` }}/></div><strong className="comparison-bar-value">{comparisonMetricDef.format(m)}</strong></div>;
+                        })}
+                      </>;
                     })()}
                   </div>
                   <div className="compare-value-grid">{comparisonItems.map((m, index) => <article className="compare-value-card" key={m.id}><span className={`compare-color-mark mark-${index + 1}`}/><span className="compare-value-name">{m.name}</span><strong>{comparisonMetricDef.format(m)}</strong><small>Группа {m.group2024} · место {m.rank2024}</small></article>)}</div>
-                  <div className="compare-details-card"><div className="section-heading inner-section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="table"/></span><div><h3>Все показатели рядом</h3><p>Разница видна в одном срезе без переключения страниц</p></div></div><button className="outline-button" onClick={() => downloadCsv(comparisonItems, DEFAULT_REPORT_FIELDS, 'yugra-municipality-comparison')}><Icon name="download"/>Выгрузить CSV</button></div>
-                    <div className="table-scroll"><table className="ranking-table comparison-data-table"><thead><tr><th>Показатель</th>{comparisonItems.map((m) => <th key={m.id}>{m.name}</th>)}</tr></thead><tbody>{METRICS.map((metric) => <tr key={metric.key}><td className="metric-name-cell">{metric.label}</td>{comparisonItems.map((m) => <td key={m.id} className={metric.key === comparisonMetric ? 'highlight-metric-cell' : ''}>{metric.format(m)}</td>)}</tr>)}</tbody></table></div>
+                  <div className="compare-details-card"><div className="section-heading inner-section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="table"/></span><div><h3>Все показатели рядом</h3><p>Разница видна в одном срезе без переключения страниц</p></div></div><button type="button" className="outline-button" onClick={() => downloadCsv(comparisonItems, DEFAULT_REPORT_FIELDS, 'yugra-municipality-comparison')}><Icon name="download"/>Выгрузить CSV</button></div>
+                    <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table comparison-data-table"><thead><tr><th scope="col">Показатель</th>{comparisonItems.map((m) => <th scope="col" key={m.id}>{m.name}</th>)}</tr></thead><tbody>{METRICS.map((metric) => <tr key={metric.key}><td className="metric-name-cell">{metric.label}</td>{comparisonItems.map((m) => <td key={m.id} className={metric.key === comparisonMetric ? 'highlight-metric-cell' : ''}>{metric.format(m)}</td>)}</tr>)}</tbody></table></div>
                   </div>
                 </>}
               </div>
@@ -2067,16 +2134,16 @@ export const InvestmentDetails = () => {
           </section>}
 
           {activeTab === 'reports' && <section className="panel full-panel reports-page">
-            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2>Конструктор аналитических отчётов</h2><p>Настройте выборку, показатели и состав документа до экспорта</p></div></div><div className="toolbar-actions"><button className="outline-button" onClick={loadReportTemplate}><Icon name="refresh"/>Загрузить шаблон</button><button className="outline-button" onClick={saveReportTemplate}><Icon name="save"/>{reportTemplateSaved ? 'Сохранено на устройстве' : 'Сохранить шаблон на устройстве'}</button></div></div>
+            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2>Конструктор аналитических отчётов</h2><p>Настройте выборку, показатели и состав документа до экспорта</p></div></div><div className="toolbar-actions"><button type="button" className="outline-button" onClick={loadReportTemplate}><Icon name="refresh"/>Загрузить шаблон</button><button type="button" className="outline-button" onClick={saveReportTemplate}><Icon name="save"/>{reportTemplateSaved ? 'Сохранено на устройстве' : 'Сохранить шаблон на устройстве'}</button></div></div>
             <div className="report-workspace">
               <aside className="report-config">
                 <div className="config-section"><div className="config-section-heading"><span className="config-step">01</span><div><strong>Параметры документа</strong><small>Название и источник данных</small></div></div>
                   <label className="form-field"><span>Название отчёта</span><input value={reportTitle} onChange={(e) => { setReportTitle(e.target.value); setReportTemplateSaved(false); }} placeholder="Введите название отчёта"/></label>
                   <label className="form-field"><span>Источник данных</span><select value={reportScope} onChange={(e) => { setReportScope(e.target.value); setReportTemplateSaved(false); }}><option value="filtered">Текущий срез из каталога ({filteredMunicipalities.length})</option><option value="all">Все муниципалитеты ({municipalities.length})</option><option value="selected">Выбранные вручную ({reportSelectedIds.length})</option></select></label>
                   {reportScope === 'filtered' && <div className="scope-summary"><Icon name="sliders"/><span>Отчёт будет учитывать поиск, группу, быстрый срез и расширенные фильтры на главной.</span></div>}
-                  {reportScope === 'selected' && <div className="report-selection-box"><div className="selection-box-heading"><strong>Выбрать муниципалитеты</strong><span>{reportSelectedIds.length} выбрано</span></div><label className="search-box"><Icon name="search"/><input aria-label="Поиск муниципалитета в отчёте" value={reportSelectionSearch} onChange={(e) => setReportSelectionSearch(e.target.value)} placeholder="Поиск в списке…"/></label><div className="report-selection-list">{municipalities.filter((m) => m.name.toLocaleLowerCase('ru-RU').includes(reportSelectionSearch.trim().toLocaleLowerCase('ru-RU'))).map((m) => <label key={m.id} className="report-selection-item"><input type="checkbox" checked={reportSelectedIds.includes(m.id)} onChange={() => toggleReportSelection(m.id)}/><span>{m.name}</span><small>{m.group2024}</small></label>)}</div></div>}
+                  {reportScope === 'selected' && <div className="report-selection-box"><div className="selection-box-heading"><strong>Выбрать муниципалитеты</strong><span role="status" aria-live="polite" aria-atomic="true">{reportSelectedIds.length} выбрано</span></div><label className="search-box"><Icon name="search"/><input aria-label="Поиск муниципалитета в отчёте" value={reportSelectionSearch} onChange={(e) => setReportSelectionSearch(e.target.value)} placeholder="Поиск в списке…"/></label><div className="report-selection-list" role="group" aria-label="Муниципалитеты, включаемые в отчёт">{municipalities.filter((m) => m.name.toLocaleLowerCase('ru-RU').includes(reportSelectionSearch.trim().toLocaleLowerCase('ru-RU'))).map((m) => <label key={m.id} className="report-selection-item"><input type="checkbox" checked={reportSelectedIds.includes(m.id)} onChange={() => toggleReportSelection(m.id)}/><span>{m.name}</span><small>{m.group2024}</small></label>)}{!municipalities.some((m) => m.name.toLocaleLowerCase('ru-RU').includes(reportSelectionSearch.trim().toLocaleLowerCase('ru-RU'))) && <p className="empty-state">Муниципалитеты не найдены. Измените поисковый запрос.</p>}</div></div>}
                 </div>
-                <div className="config-section"><div className="config-section-heading"><span className="config-step">02</span><div><strong>Показатели в таблице</strong><small>Отметьте нужные поля</small></div></div><div className="metric-check-grid">{METRICS.map((metric) => <label className="metric-check" key={metric.key}><input type="checkbox" checked={reportFields.includes(metric.key)} onChange={() => toggleReportField(metric.key)}/><span className="custom-check"><Icon name="check"/></span><span><strong>{metric.label}</strong><small>{metric.unit}</small></span></label>)}</div><div className="selection-actions"><button className="text-action" onClick={() => { setReportFields(DEFAULT_REPORT_FIELDS); setReportTemplateSaved(false); }}>Выбрать все</button><button className="text-action" onClick={() => { setReportFields([]); setReportTemplateSaved(false); }}>Очистить</button></div></div>
+                <div className="config-section"><div className="config-section-heading"><span className="config-step">02</span><div><strong>Показатели в таблице</strong><small>Отметьте нужные поля</small></div></div><div className="metric-check-grid" role="group" aria-label="Показатели, включаемые в таблицу отчёта">{METRICS.map((metric) => <label className="metric-check" key={metric.key}><input type="checkbox" checked={reportFields.includes(metric.key)} onChange={() => toggleReportField(metric.key)}/><span className="custom-check"><Icon name="check"/></span><span><strong>{metric.label}</strong><small>{metric.unit}</small></span></label>)}</div><div className="selection-actions"><button type="button" className="text-action" onClick={() => { setReportFields(DEFAULT_REPORT_FIELDS); setReportTemplateSaved(false); }}>Выбрать все</button><button type="button" className="text-action" onClick={() => { setReportFields([]); setReportTemplateSaved(false); }}>Очистить</button></div></div>
                 <div className="config-section"><div className="config-section-heading"><span className="config-step">03</span><div><strong>Состав документа</strong><small>Блоки предпросмотра и PDF</small></div></div>
                   <label className="switch-row"><span><strong>Сводные показатели</strong><small>Количество территорий, средний балл, инвестиции, МСП</small></span><input type="checkbox" checked={reportIncludeSummary} onChange={(e) => { setReportIncludeSummary(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
                   <label className="switch-row"><span><strong>Диаграмма сравнения</strong><small>Показать выбранный показатель по муниципалитетам</small></span><input type="checkbox" checked={reportIncludeChart} onChange={(e) => { setReportIncludeChart(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
@@ -2085,7 +2152,7 @@ export const InvestmentDetails = () => {
                   <label className="switch-row"><span><strong>Методика и оговорки</strong><small>Указать происхождение и необходимость проверки данных</small></span><input type="checkbox" checked={reportIncludeMethodology} onChange={(e) => { setReportIncludeMethodology(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
                   <label className="switch-row"><span><strong>Официальные наблюдения</strong><small>Отдельная таблица с источником, географическим уровнем и периодом · {reportOfficialIndicators.length} значений в текущей выборке</small></span><input type="checkbox" checked={reportIncludeOfficialData} onChange={(e) => { setReportIncludeOfficialData(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
                 </div>
-                <div className="report-actions"><button className="primary-button" onClick={handleExportPDF}><Icon name="download"/>Сохранить / печатать PDF</button><button className="outline-button" onClick={exportReportCsv}><Icon name="table"/>Экспорт CSV</button></div>
+                <div className="report-actions"><button type="button" className="primary-button" onClick={handleExportPDF}><Icon name="download"/>Сохранить / печатать PDF</button><button type="button" className="outline-button" onClick={exportReportCsv}><Icon name="table"/>Экспорт CSV</button></div>
               </aside>
 
               <div className="report-preview-column">
@@ -2093,15 +2160,15 @@ export const InvestmentDetails = () => {
                 <article className="report-document-preview">
                   <div className="report-document-brand"><span className="report-doc-emblem"><img src="/images/khanty-prosperity-seal.svg" alt=""/></span><div><strong>ЮГРА</strong><small>аналитическая платформа муниципалитетов</small></div><span className="document-year">КОНЦЕПТ</span></div>
                   <div className="report-doc-rule" aria-hidden="true"/>
-                  <span className="report-doc-kicker">АНАЛИТИЧЕСКИЙ ОТЧЁТ · {reportDate().toLocaleUpperCase('ru-RU')}</span><h2>{reportTitle || 'Название отчёта не задано'}</h2><p className="report-doc-subtitle">Отчёт собран в демонстрационной аналитической платформе Югры. В выборке: <strong>{reportSummary.count}</strong> муниципалитетов. Сводные оценки и визуализации показывают предполагаемый формат аналитики; официальные наблюдения можно подключить как самостоятельный слой.</p>
+                  <span className="report-doc-kicker">АНАЛИТИЧЕСКИЙ ОТЧЁТ · {reportDate().toLocaleUpperCase('ru-RU')}</span><h2>{reportTitle || 'Название отчёта не задано'}</h2><p className="report-doc-subtitle">Отчёт собран в демонстрационной аналитической платформе Югры. В выборке: <strong>{reportSummary.count}</strong> муниципалитетов. Сводные оценки и расчётные показатели основаны на концептуальном наборе проекта и не являются официальной статистикой; новые официальные статистические ряды пока не загружены. Подтверждённые официальные наблюдения, если они включены, показаны отдельным слоем.</p>
                   {reportIncludeSummary && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>Ключевые показатели выборки</h4><span>01 / СВОДКА</span></div>{renderReportSummary()}</section>}
                   {reportIncludeChart && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>{reportChartMetricDef.label}</h4><span>02 / СРАВНЕНИЕ</span></div><p className="chart-unit-note">{reportChartMetricDef.unit === 'место' ? 'Для места в рейтинге более длинная полоса означает более высокую позицию.' : `Значение показателя в ${reportChartMetricDef.unit}.`}</p>{reportItems.some((m) => reportChartMetricDef.get(m) != null) ? renderReportChart() : <p className="report-empty-note">Нет заполненных значений этого показателя в выбранной выборке.</p>}</section>}
                   {reportIncludeTable && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>Детализация</h4><span>03 / ТАБЛИЦА</span></div>{reportPrintFields.length === 0 ? <p className="report-empty-note">Выберите хотя бы один показатель для таблицы.</p> : renderReportTable()}</section>}
                   {reportIncludeOfficialData && <section className="report-preview-section report-official-section">
                     <div className="report-preview-section-heading"><h4>Проверенные официальные наблюдения</h4><span>ОТДЕЛЬНЫЙ СТАТИСТИЧЕСКИЙ СЛОЙ</span></div>
                     <p className="report-official-intro">{reportOfficialIndicators.length} наблюдений по выбранным территориям. Эти значения не смешиваются с демонстрационными баллами, инвестиционными объёмами и оценками из локального набора. Уровень географии указан в каждой строке.</p>
-                    {reportOfficialIndicators.length ? <div className="report-official-data-table-wrap"><table className="report-official-data-table">
-                      <thead><tr><th>Территория / уровень</th><th>Показатель</th><th>Значение</th><th>Период</th><th>Примечание / источник</th></tr></thead>
+                    {reportOfficialIndicators.length ? <div className="report-official-data-table-wrap" role="region" tabIndex={0} aria-label="Таблица официальных наблюдений. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="report-official-data-table">
+                      <thead><tr><th scope="col">Территория / уровень</th><th scope="col">Показатель</th><th scope="col">Значение</th><th scope="col">Период</th><th scope="col">Примечание / источник</th></tr></thead>
                       <tbody>{reportOfficialIndicators.map((item) => {
                         const municipality = municipalities.find((entry) => entry.id === item.municipality_id);
                         const geography = item.geographic_level === 'settlement' ? 'Населённый пункт' : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
@@ -2127,7 +2194,7 @@ export const InvestmentDetails = () => {
                 <span className="eyebrow"><span className="eyebrow-diamond"/> ЦИФРОВАЯ ЮГРА · ПРОДУКТОВАЯ КОНЦЕПЦИЯ</span>
                 <h1>От разрозненных показателей — <em>к целостному взгляду на развитие Югры.</em></h1>
                 <p className="concept-lead">Единое цифровое пространство для изучения муниципалитетов, сопоставления территорий и обсуждения возможных сценариев социально-экономического развития.</p>
-                <div className="concept-hero-actions"><button className="primary-button" onClick={() => navigateToTab('catalog')}>Открыть платформу <Icon name="arrow"/></button><button className="outline-button" onClick={() => navigateToTab('risk')}>Посмотреть прогноз <Icon name="chart"/></button></div>
+                <div className="concept-hero-actions"><button type="button" className="primary-button" onClick={() => navigateToTab('catalog')}>Открыть платформу <Icon name="arrow"/></button><button type="button" className="outline-button" onClick={() => navigateToTab('risk')}>Посмотреть прогноз <Icon name="chart"/></button></div>
                 <div className="concept-hero-meta"><span>КОНЦЕПТ ПРОДУКТА</span><span>ХАНТЫ · МАНСИ · ЮГРА</span><span>22 МУНИЦИПАЛИТЕТА</span></div>
               </div>
               <div className="concept-visual">
@@ -2143,10 +2210,10 @@ export const InvestmentDetails = () => {
             <section className="concept-modules">
               <div className="concept-section-heading"><div><span className="eyebrow"><span className="eyebrow-diamond"/> КАК УСТРОЕНА ПЛАТФОРМА</span><h2>Четыре инструмента — один рабочий контур</h2><p>От обзора территории до аргументированного сценария действий.</p></div><span className="concept-section-index">ПРОДУКТОВАЯ АРХИТЕКТУРА / 2026</span></div>
               <div className="concept-module-grid">
-                <button className="concept-module concept-module-map" onClick={() => navigateToTab('map')}><span className="concept-module-number">01 / ОБЗОР</span><span className="concept-module-icon"><Icon name="map"/></span><strong>Территории на карте</strong><p>Муниципальная карта, паспорта территорий и быстрый переход от округа к отдельному муниципалитету.</p><span className="concept-module-link">Исследовать карту <Icon name="arrow"/></span></button>
-                <button className="concept-module concept-module-compare" onClick={() => navigateToTab('compare')}><span className="concept-module-number">02 / АНАЛИЗ</span><span className="concept-module-icon"><Icon name="compare"/></span><strong>Сравнение потенциала</strong><p>Сопоставление выбранных муниципалитетов, динамики показателей и различий между территориями.</p><span className="concept-module-link">Сравнить территории <Icon name="arrow"/></span></button>
-                <button className="concept-module concept-module-risk" onClick={() => navigateToTab('risk')}><span className="concept-module-number">03 / СЦЕНАРИИ</span><span className="concept-module-icon"><Icon name="chart"/></span><strong>Риски и прогноз</strong><p>Сигналы внимания, сценарии на 1–3 года и настройка предположений для проверки гипотез.</p><span className="concept-module-link">Открыть сценарии <Icon name="arrow"/></span></button>
-                <button className="concept-module concept-module-report" onClick={() => navigateToTab('reports')}><span className="concept-module-number">04 / РЕЗУЛЬТАТ</span><span className="concept-module-icon"><Icon name="file"/></span><strong>Аналитические материалы</strong><p>Конструктор отчётов, выбор показателей и подготовка материалов для обсуждения решений.</p><span className="concept-module-link">Собрать отчёт <Icon name="arrow"/></span></button>
+                <button type="button" className="concept-module concept-module-map" onClick={() => navigateToTab('map')}><span className="concept-module-number">01 / ОБЗОР</span><span className="concept-module-icon"><Icon name="map"/></span><strong>Территории на карте</strong><p>Муниципальная карта, паспорта территорий и быстрый переход от округа к отдельному муниципалитету.</p><span className="concept-module-link">Исследовать карту <Icon name="arrow"/></span></button>
+                <button type="button" className="concept-module concept-module-compare" onClick={() => navigateToTab('compare')}><span className="concept-module-number">02 / АНАЛИЗ</span><span className="concept-module-icon"><Icon name="compare"/></span><strong>Сравнение потенциала</strong><p>Сопоставление выбранных муниципалитетов, динамики показателей и различий между территориями.</p><span className="concept-module-link">Сравнить территории <Icon name="arrow"/></span></button>
+                <button type="button" className="concept-module concept-module-risk" onClick={() => navigateToTab('risk')}><span className="concept-module-number">03 / СЦЕНАРИИ</span><span className="concept-module-icon"><Icon name="chart"/></span><strong>Риски и прогноз</strong><p>Сигналы внимания, сценарии на 1–3 года и настройка предположений для проверки гипотез.</p><span className="concept-module-link">Открыть сценарии <Icon name="arrow"/></span></button>
+                <button type="button" className="concept-module concept-module-report" onClick={() => navigateToTab('reports')}><span className="concept-module-number">04 / РЕЗУЛЬТАТ</span><span className="concept-module-icon"><Icon name="file"/></span><strong>Аналитические материалы</strong><p>Конструктор отчётов, выбор показателей и подготовка материалов для обсуждения решений.</p><span className="concept-module-link">Собрать отчёт <Icon name="arrow"/></span></button>
               </div>
             </section>
             <section className="concept-flow panel"><div className="concept-flow-heading"><span className="eyebrow"><span className="eyebrow-diamond"/> ЛОГИКА РАБОТЫ</span><h2>Путь от вопроса к решению</h2></div><div className="concept-flow-steps"><div><span>01</span><strong>Собрать</strong><small>Показатели и контекст территории</small></div><i>→</i><div><span>02</span><strong>Сопоставить</strong><small>Муниципалитеты и периоды</small></div><i>→</i><div><span>03</span><strong>Смоделировать</strong><small>Возможные сценарии развития</small></div><i>→</i><div><span>04</span><strong>Обсудить</strong><small>Выводы и варианты действий</small></div></div></section>
@@ -2167,7 +2234,7 @@ export const InvestmentDetails = () => {
               <div className="source-catalog-toolbar">
                 <label className="search-box"><Icon name="search"/><input value={sourceSearch} onChange={(event) => setSourceSearch(event.target.value)} placeholder="Найти источник, тему или территорию…" aria-label="Поиск по каталогу источников"/></label>
                 <label className="select-field"><span>Статус импорта</span><select value={sourceStatusFilter} onChange={(event) => setSourceStatusFilter(event.target.value)}><option value="all">Все статусы</option><option value="imported">Импортирован</option><option value="partially_imported">Частично импортирован</option><option value="ready_for_import">Готов к импорту</option><option value="identified">Выявлен</option><option value="access_issue">Проблема доступа</option></select></label>
-                <span className="section-tag">{filteredDataSources.length} ИЗ {officialDataSources.length}</span>
+                <span className="section-tag" role="status" aria-live="polite" aria-atomic="true">{filteredDataSources.length} ИЗ {officialDataSources.length}</span>
                 <button type="button" className="outline-button" onClick={() => { setSourceSearch(''); setSourceStatusFilter('all'); }}><Icon name="refresh"/>Сбросить</button>
               </div>
               <div className="about-source-list">
@@ -2178,7 +2245,7 @@ export const InvestmentDetails = () => {
                   <span className={`source-status source-status--${source.import_status || 'identified'}`}>{DATA_STATUS_LABELS[source.import_status] || 'Статус проверяется'}</span>
                   <span className="source-item-link">Открыть источник ↗</span>
                 </a>)}
-                {filteredDataSources.length === 0 && <div className="empty-state"><span>Источники не найдены</span><p>Измените запрос или сбросьте фильтры каталога.</p></div>}
+                {filteredDataSources.length === 0 && <div className="empty-state" role="status"><span>Источники не найдены</span><p>Измените запрос или сбросьте фильтры каталога.</p></div>}
               </div>
               <div className="about-methodology"><h3>Правила публикации данных</h3><ol>
                 <li>Для каждого значения сохраняются источник, год наблюдения, единица измерения и дата загрузки.</li>
@@ -2193,11 +2260,18 @@ export const InvestmentDetails = () => {
         <footer className="site-footer"><div className="footer-brand"><span className="footer-emblem"><img src="/images/khanty-prosperity-seal.svg" alt=""/></span><span><strong>ЮГРА</strong><small>Земля традиций</small></span></div><p>Ханты · Манси · Северная культура</p><div className="footer-right"><span>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</span><span className="footer-ornament" aria-hidden="true"/></div></footer>
       </div>
 
-      {activeModalItem && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setActiveModalItem(null); }}><section className="municipality-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-intro">
-        <div className="modal-ornament" aria-hidden="true"/><div className="modal-topline"><span className="eyebrow"><span className="eyebrow-diamond"/> ПАСПОРТ ТЕРРИТОРИИ</span><button autoFocus className="close-button" onClick={() => setActiveModalItem(null)} aria-label="Закрыть"><Icon name="close"/></button></div>
-        <h2 id="modal-title">{activeModalItem.name}</h2><p className="modal-intro" id="modal-intro">Демонстрационные показатели проекта приведены отдельно от проверенной официальной статистики.</p>
+      {activeModalItem && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setActiveModalItem(null); }}><section ref={municipalityDialogRef} className="municipality-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-intro" tabIndex={-1}>
+        <div className="modal-ornament" aria-hidden="true"/><div className="modal-topline"><span className="eyebrow"><span className="eyebrow-diamond"/> ПАСПОРТ ТЕРРИТОРИИ</span><button type="button" className="close-button" onClick={() => setActiveModalItem(null)} aria-label="Закрыть"><Icon name="close"/></button></div>
+        <h2 id="modal-title" tabIndex={-1}>{activeModalItem.name}</h2><p className="modal-intro" id="modal-intro">Демонстрационные показатели проекта приведены отдельно от проверенной официальной статистики.</p>
         <div className="modal-group-line"><span className={`group-badge ${activeModalItem.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i/>Группа {activeModalItem.group2024}</span><span>Рейтинг № {activeModalItem.rank2024}</span></div>
         <div className="modal-demo-label"><Icon name="info"/> ДЕМО-НАБОР · ЗНАЧЕНИЯ НЕ ПРОВЕРЕНЫ КАК ОФИЦИАЛЬНАЯ СТАТИСТИКА</div>
+        <section className="modal-coverage" aria-labelledby="modal-coverage-heading">
+          <div className="modal-coverage-heading"><h3 id="modal-coverage-heading">Наличие данных по территории</h3><span role="status" aria-live="polite">{modalDataCoverage.filter((item) => item.count > 0).length} из {modalDataCoverage.length} разделов с записями</span></div>
+          <div className="modal-coverage-grid">
+            {modalDataCoverage.map((item) => <div className="modal-coverage-item" key={item.key}><span>{item.label}</span><strong>{item.count}</strong><small>{item.count > 0 ? 'записей в базе' : 'пока нет записей'}</small></div>)}
+          </div>
+          <p className="modal-coverage-note">{officialDataStatus === 'loading' ? 'Каталог официальных данных загружается; состав разделов может обновиться.' : officialDataStatus === 'error' ? 'Не удалось обновить каталог официальных данных. Показано последнее доступное состояние.' : officialDataStatus === 'connected' ? 'Каталог загружен' + (officialDataSyncedAt ? ' · обновлено ' + new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(officialDataSyncedAt) : '') + '. Наличие записей не означает полного статистического покрытия территории.' : 'Каталог официальных данных сейчас не подключён. Нулевое количество записей не означает нулевое значение показателя.'}</p>
+        </section>
         <div className="modal-stats"><div><span>Итоговый балл · демо</span><strong>{formatNumber(activeModalItem.score, 1)}</strong></div><div><span>Инвестиции · демо</span><strong>{formatBillion(activeModalItem.investments?.volumeBillion)}</strong></div><div><span>Динамика инвестиций · демо</span><strong className="growth-value">{numericValue(activeModalItem.investments?.growthPercent) == null ? '—' : `${formatNumber(activeModalItem.investments.growthPercent)}%`}</strong></div><div><span>Субъекты МСП · демо</span><strong>{formatNumber(activeModalItem.smeCount)}</strong></div><div><span>Оценка бизнеса · демо</span><strong>{formatNumber(activeModalItem.assessmentScore, 2)} / 5.0</strong></div></div>
         <section className="modal-official-data" aria-labelledby="modal-official-heading">
           <div className="modal-official-heading"><h3 id="modal-official-heading">Подтверждённые официальные показатели</h3><span>{modalOfficialIndicators.length} знач.</span></div>
@@ -2209,34 +2283,36 @@ export const InvestmentDetails = () => {
             </article>)}
           </div> : <p className="modal-no-official">Для этой территории пока нет проверенных официальных показателей в базе. Новые значения будут добавляться только после проверки источника, периода и территориальной привязки.</p>}
         </section>
-        {investmentSites.filter((site) => site.municipality_id === activeModalItem.id).length > 0 && <section className="modal-official-data" aria-labelledby="modal-sites-heading">
+        <section className="modal-official-data" aria-labelledby="modal-sites-heading">
           <div className="modal-official-heading"><h3 id="modal-sites-heading">Инвестиционные площадки</h3><span>{investmentSites.filter((site) => site.municipality_id === activeModalItem.id).length} объектов</span></div>
-          <div className="modal-official-list">{investmentSites.filter((site) => site.municipality_id === activeModalItem.id).map((site) => <article key={site.id} className="modal-official-row modal-site-row">
+          {investmentSites.some((site) => site.municipality_id === activeModalItem.id) ? <div className="modal-official-list">{investmentSites.filter((site) => site.municipality_id === activeModalItem.id).map((site) => <article key={site.id} className="modal-official-row modal-site-row">
             <div><strong>{site.name}</strong><span>{site.location_text || 'Адрес указан в первоисточнике'} · {site.site_type || 'тип не указан'}</span><span>Использование: {site.permitted_use || 'не указано'} · {site.offer_type || 'условия уточняются'}</span></div>
             <b>{site.area_hectares == null ? '—' : `${formatNumber(site.area_hectares, 2)} га`}</b>
             <a href={site.source_url} target="_blank" rel="noreferrer">Первоисточник ↗</a>
-          </article>)}</div>
-        </section>}
-        {facilities.filter((facility) => facility.municipality_id === activeModalItem.id).length > 0 && <section className="modal-official-data modal-facilities-passport" aria-labelledby="modal-facilities-heading">
+          </article>)}</div> : <p className="modal-no-official">Для этой территории инвестиционные площадки пока не представлены в базе. Это означает отсутствие загруженных записей, а не отсутствие площадок.</p>}
+        </section>
+        <section className="modal-official-data modal-facilities-passport" aria-labelledby="modal-facilities-heading">
           <div className="modal-official-heading"><h3 id="modal-facilities-heading">Образовательная инфраструктура</h3><span>{facilities.filter((facility) => facility.municipality_id === activeModalItem.id).length} объектов</span></div>
-          <p className="modal-no-official">В реестре доступны школы и дошкольные учреждения с адресами и координатами. Дата версии указана у каждого объекта; данные школ относятся к версии 16.12.2024.</p>
-          <details className="modal-facilities-details">
-            <summary>Показать список учреждений</summary>
-            <div className="modal-official-list">{facilities.filter((facility) => facility.municipality_id === activeModalItem.id).map((facility) => <article key={facility.id} className="modal-official-row modal-site-row">
-              <div><strong>{facility.name_short || facility.name_full}</strong><span>{facility.facility_category === 'preschool' ? 'Дошкольное учреждение' : 'Школа'} · {facility.address || 'адрес не указан'}</span><span>Среднегодовое число детей/учеников: {formatNumber(facility.annual_attendance)} · штат: {facility.staffing_percent == null ? '—' : `${formatNumber(facility.staffing_percent, 1)}%`}</span><span>Версия данных: {facility.source_updated_at ? new Intl.DateTimeFormat('ru-RU').format(new Date(facility.source_updated_at + 'T00:00:00')) : 'не указана'}</span></div>
-              <a href={facility.source_url} target="_blank" rel="noreferrer">Источник ↗</a>
-            </article>)}</div>
-          </details>
-        </section>}
-        {programExecution.filter((item) => item.municipality_id === activeModalItem.id).length > 0 && <section className="modal-official-data" aria-labelledby="modal-programs-heading">
+          {facilities.some((facility) => facility.municipality_id === activeModalItem.id) ? <>
+            <p className="modal-no-official">В реестре доступны школы и дошкольные учреждения с адресами и координатами. Дата версии указана у каждого объекта; данные школ относятся к версии 16.12.2024.</p>
+            <details className="modal-facilities-details">
+              <summary>Показать список учреждений</summary>
+              <div className="modal-official-list">{facilities.filter((facility) => facility.municipality_id === activeModalItem.id).map((facility) => <article key={facility.id} className="modal-official-row modal-site-row">
+                <div><strong>{facility.name_short || facility.name_full}</strong><span>{facility.facility_category === 'preschool' ? 'Дошкольное учреждение' : 'Школа'} · {facility.address || 'адрес не указан'}</span><span>Среднегодовое число детей/учеников: {formatNumber(facility.annual_attendance)} · штат: {facility.staffing_percent == null ? '—' : `${formatNumber(facility.staffing_percent, 1)}%`}</span><span>Версия данных: {facility.source_updated_at ? new Intl.DateTimeFormat('ru-RU').format(new Date(facility.source_updated_at + 'T00:00:00')) : 'не указана'}</span></div>
+                <a href={facility.source_url} target="_blank" rel="noreferrer">Источник ↗</a>
+              </article>)}</div>
+            </details>
+          </> : <p className="modal-no-official">Для этой территории образовательные учреждения пока не представлены в базе. Это не означает, что на территории нет школ или детских садов.</p>}
+        </section>
+        <section className="modal-official-data" aria-labelledby="modal-programs-heading">
           <div className="modal-official-heading"><h3 id="modal-programs-heading">Исполнение муниципальных программ</h3><span>{programExecution.filter((item) => item.municipality_id === activeModalItem.id).length} отчёта</span></div>
-          <div className="modal-official-list">{programExecution.filter((item) => item.municipality_id === activeModalItem.id).map((item) => <article key={item.id} className="modal-official-row">
+          {programExecution.some((item) => item.municipality_id === activeModalItem.id) ? <div className="modal-official-list">{programExecution.filter((item) => item.municipality_id === activeModalItem.id).map((item) => <article key={item.id} className="modal-official-row">
             <div><strong>{item.program_name}</strong><span>Отчёт на {new Intl.DateTimeFormat('ru-RU').format(new Date(item.report_date + 'T00:00:00'))} · уточнённый бюджет {formatNumber(item.revised_budget_thousand / 1000, 2)} млн ₽</span></div>
             <b>{formatNumber(item.execution_percent, 1)}%</b>
             <a href={item.source_url} target="_blank" rel="noreferrer">Первоисточник ↗</a>
-          </article>)}</div>
-        </section>}
-        <button className="primary-button modal-print" onClick={() => { setReportScope('selected'); setReportSelectedIds([activeModalItem.id]); setActiveModalItem(null); navigateToTab('reports'); }}><Icon name="file"/>Создать отчёт по территории</button>
+          </article>)}</div> : <p className="modal-no-official">Отчёты об исполнении программ для этой территории пока не загружены. Нулевое количество записей не означает нулевое исполнение.</p>}
+        </section>
+        <button type="button" className="primary-button modal-print" onClick={() => { setReportScope('selected'); setReportSelectedIds([activeModalItem.id]); setActiveModalItem(null); navigateToTab('reports'); }}><Icon name="file"/>Создать отчёт по территории</button>
       </section></div>}
     </div>
   );
