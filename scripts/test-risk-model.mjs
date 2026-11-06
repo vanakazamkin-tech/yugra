@@ -26,6 +26,8 @@ for (const id of [1, 2, 3]) {
   assert.notEqual(model.score, null, 'index must be calculated for municipality ' + id);
   assert.equal(model.availablePillars, 6, 'all six dimensions must be mapped');
   assert.equal(model.availableWeight, 100, 'full pillar coverage expected in fixture');
+  assert.equal(model.historyCoverage, 100, 'four historical points represent full history coverage');
+  assert.ok(Array.isArray(model.latestPeriods), 'model exposes periods used in the score');
   assert.ok(model.score >= 0 && model.score <= 100, 'index is bounded');
 }
 assert.equal(result.byMunicipality[1].pillars.find((p) => p.key === 'labour').indicators, 2);
