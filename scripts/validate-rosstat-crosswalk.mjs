@@ -19,7 +19,7 @@ const ids = rows.map((row) => row.id)
 for (const id of expectedIds) if (!ids.includes(id)) errors.push('Missing project municipality: ' + id)
 for (const id of new Set(ids)) if (ids.filter((candidate) => candidate === id).length > 1) errors.push('Duplicate project municipality: ' + id)
 for (const row of rows) {
-  if (row.oktmo && !/^\\d{8,11}$/.test(row.oktmo)) errors.push('Invalid OKTMO format for ' + row.id + ': ' + row.oktmo)
+  if (row.oktmo && !/^\d{8,11}$/.test(row.oktmo)) errors.push('Invalid OKTMO format for ' + row.id + ': ' + row.oktmo)
   if (row.oktmo && row.status === 'pending_official_match') errors.push('Code entered but status still pending: ' + row.id)
 }
 const filled = rows.filter((row) => row.oktmo).length
