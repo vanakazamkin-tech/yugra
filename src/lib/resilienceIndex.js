@@ -11,7 +11,11 @@ export const INDEX_PILLARS = Object.freeze([
 ]);
 
 const PILLAR_KEYS = new Set(INDEX_PILLARS.map((item) => item.key));
-const isFiniteValue = (value) => value !== null && value !== undefined && !(typeof value === 'string' && value.trim() === '') && Number.isFinite(Number(value));
+const isFiniteValue = (value) => {
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (typeof value !== 'string' || value.trim() === '') return false;
+  return Number.isFinite(Number(value));
+};
 
 const quantile = (sorted, p) => {
   if (!sorted.length) return null;
