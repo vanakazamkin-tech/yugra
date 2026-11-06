@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { buildForecastCoverage } from '../lib/forecastCoverage';
-import { buildForecasts, summarizeForecast } from '../lib/forecastModel';
+import { buildForecasts, summarizeForecast, sumFiniteValues } from '../lib/forecastModel';
 
 const FALLBACK_SCENARIOS = [
   { id: null, key: 'cautious', title: 'Стрессовый', summary: 'Неблагоприятный сценарий: снижение экспортной выручки, усиление санкционных ограничений, рост издержек предприятий и дефицит кадров.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18, export_shock_pct: -10, cost_pressure_pct: 8, labor_shortage_pct: 6, display_order: 1 },
@@ -114,24 +114,19 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       && (!searchText || row.name.toLocaleLowerCase('ru-RU').includes(searchText)));
   }, [forecasts, selectedId, search]);
   const totalInvestment = useMemo(() => {
-    const available = forecasts.filter((row) => row.projectedInvestments != null);
-    return available.length ? available.reduce((sum, row) => sum + row.projectedInvestments, 0) : null;
+    return sumFiniteValues(forecasts.map((row) => row.projectedInvestments));
   }, [forecasts]);
   const baselineInvestment = useMemo(() => {
-    const available = forecasts.filter((row) => row.investment != null);
-    return available.length ? available.reduce((sum, row) => sum + row.investment, 0) : null;
+    return sumFiniteValues(forecasts.map((row) => row.investment));
   }, [forecasts]);
   const totalSme = useMemo(() => {
-    const available = forecasts.filter((row) => row.projectedSme != null);
-    return available.length ? available.reduce((sum, row) => sum + row.projectedSme, 0) : null;
+    return sumFiniteValues(forecasts.map((row) => row.projectedSme));
   }, [forecasts]);
   const baselineSme = useMemo(() => {
-    const available = forecasts.filter((row) => row.sme != null);
-    return available.length ? available.reduce((sum, row) => sum + row.sme, 0) : null;
+    return sumFiniteValues(forecasts.map((row) => row.sme));
   }, [forecasts]);
   const avgScore = useMemo(() => {
-    const validScores = forecasts.filter((row) => row.projectedScore != null);
-    return validScores.length ? validScores.reduce((sum, row) => sum + row.projectedScore, 0) / validScores.length : null;
+    return summarizeForecast(forecasts).averageScore;
   }, [forecasts]);
   const investmentCoverage = forecasts.filter((row) => row.hasInvestment).length;
   const smeCoverage = forecasts.filter((row) => row.hasSme).length;
