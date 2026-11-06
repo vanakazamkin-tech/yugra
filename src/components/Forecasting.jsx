@@ -262,8 +262,8 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
         <div className="forecast-results">
           <div className="forecast-results-heading"><div><span className="micro-label">MODEL OUTPUT</span><h3>Итог сценария</h3></div><span className="forecast-horizon-tag">Горизонт: {horizon} {horizon === 1 ? 'год' : 'лет'}</span></div>
           <div className="forecast-kpi-grid">
-            <article><span>Инвестиции, модельный итог</span><strong>{fmt(totalInvestment, 1)} <small>млрд ₽</small></strong><em>{baselineInvestment > 0 ? pct((totalInvestment / baselineInvestment - 1) * 100) : '—'} к базе · данные по {investmentCoverage} из {forecasts.length} территорий</em></article>
-            <article><span>Субъекты МСП, модельный итог</span><strong>{fmt(totalSme, 0)}</strong><em>{baselineSme > 0 ? pct((totalSme / baselineSme - 1) * 100) : '—'} к базе · данные по {smeCoverage} из {forecasts.length} территорий</em></article>
+            <article><span>Инвестиции, модельный итог</span><strong>{fmt(totalInvestment, 1)} <small>млрд ₽</small></strong><em>{totalInvestment != null && baselineInvestment > 0 ? pct((totalInvestment / baselineInvestment - 1) * 100) : '—'} к базе · данные по {investmentCoverage} из {forecasts.length} территорий</em></article>
+            <article><span>Субъекты МСП, модельный итог</span><strong>{fmt(totalSme, 0)}</strong><em>{totalSme != null && baselineSme > 0 ? pct((totalSme / baselineSme - 1) * 100) : '—'} к базе · данные по {smeCoverage} из {forecasts.length} территорий</em></article>
             <article><span>Средний модельный балл</span><strong>{fmt(avgScore, 1)}</strong><em>данные по {scoreCoverage} из {forecasts.length} территорий</em></article>
           </div>
           <div className="forecast-chart-head"><div><h4>Инвестиции по территориям</h4><p>Модельные значения, млрд ₽</p></div><span>Показано {chartRows.length} территорий с данными</span></div>
