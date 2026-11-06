@@ -18,5 +18,6 @@ try{
  assert.ok(result.records.every(r=>r.value!==null));
  assert.equal(result.coverage_by_year['2023'].municipality_count,22);
  assert.equal(result.coverage_by_year['2024'].municipality_count,22);
+ assert.equal(Object.keys(result.coverage_by_indicator_year).length,0,'unmapped rows must not masquerade as mapped indicator coverage');
 } finally { await fs.rm(temp,{recursive:true,force:true}); }
 console.log('Duma unmapped tax-column review checks passed');
