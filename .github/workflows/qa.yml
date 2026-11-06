@@ -2,7 +2,9 @@ name: QA branch verification
 
 on:
   push:
-    branches: [feat/qa-testing]
+    branches: [feat/qa-testing, integration/yugra18-six-directions-2026-11-07]
+  pull_request:
+    branches: [integration/yugra18-six-directions-2026-11-07]
   workflow_dispatch:
 
 permissions:
