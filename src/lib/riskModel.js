@@ -34,6 +34,14 @@ function comparablePeriod(row) {
   if (!raw || /^(annual|year|год|годовой|за год)$/.test(raw) || /^\d{4}$/.test(raw)) return 'annual';
   return raw;
 }
+// These city-scoped codes are the same SME density indicator from the same official 349-рп report.
+export function canonicalIndicatorCode(code) {
+  const value = String(code ?? '').trim();
+  return /^(kogalym|langepas|pyt_yah|raduzhny|surgut)_sme_per_10k$/.test(value)
+    ? 'sme_per_10k'
+    : value;
+}
+
 const finite = (v) => Number.isFinite(Number(v)) && v !== null && v !== '';
 const clamp = (v, min = 0, max = 100) => Math.max(min, Math.min(max, v));
 
