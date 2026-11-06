@@ -88,7 +88,12 @@ export function collapseRiskSignals(signals = []) {
       return;
     }
     members.sort((a, b) => Number(b.adverseStreak || 0) - Number(a.adverseStreak || 0));
-    usable.push({ ...members[0], familyMembers: members.length });
+    usable.push({
+      ...members[0],
+      familyMembers: members.length,
+      adverseStreak: Math.max(...members.map((signal) => Number(signal.adverseStreak) || 0)),
+      sharpChange: members.some((signal) => signal.sharpChange === true),
+    });
   });
   return { usable, conflicts };
 }
