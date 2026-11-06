@@ -42,7 +42,22 @@ export function buildRiskSeries(rows) {
         return;
       }
       duplicates.sort((a, b) => new Date(b.retrieved_at || 0) - new Date(a.retrieved_at || 0));
-      points.push(duplicates[0]);
+      const chosen = duplicates[0];
+      const sourceIds = [...new Set(duplicates.flatMap((item) => [
+        ...(Array.isArray(item.source_ids) ? item.source_ids : []),
+        ...(item.source_id ? [item.source_id] : []),
+      ]).filter(Boolean))];
+      const sourceUrls = [...new Set(duplicates.flatMap((item) => [
+        ...(Array.isArray(item.source_urls) ? item.source_urls : []),
+        ...(item.source_url ? [item.source_url] : []),
+      ]).filter(Boolean))];
+      points.push({
+        ...chosen,
+        source_ids: sourceIds,
+        source_urls: sourceUrls,
+        source_id: sourceIds.length === 1 ? sourceIds[0] : null,
+        source_url: sourceUrls.length === 1 ? sourceUrls[0] : null,
+      });
     });
     points.sort((a, b) => a.order - b.order);
     if (!points.length) return;
@@ -59,7 +74,7 @@ export function buildRiskSeries(rows) {
     const direction = directionFor(latest);
     const adverse = change == null || direction === 'context' ? null : direction === 'lower' ? change > 0 : change < 0;
     const adverseStreak = countConsecutiveAdverseIntervals(points, direction);
-    const sourcePresent = Boolean(latest.source_id || latest.source_url || (Array.isArray(latest.source_urls) && latest.source_urls.length));
+    const sourcePresent = Boolean(latest.source_id || latest.source_url || (Array.isArray(latest.source_ids) && latest.source_ids.length) || (Array.isArray(latest.source_urls) && latest.source_urls.length));
     const historyConsistent = points.length >= 3 && points.slice(1).every((point, index) => {
       const current = parseRiskPeriod(point), prior = parseRiskPeriod(points[index]);
       return current && prior && current.frequency === prior.frequency && current.slot === prior.slot && current.year - prior.year === 1;
