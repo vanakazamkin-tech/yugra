@@ -190,6 +190,13 @@ const sourceRow = (indicator_code, value, reference_period, unit = 'тыс. ру
   geographic_level: 'municipality',
   ...overrides,
 });
+const conflictingDerivedRows = deriveMunicipalIndicators([
+  sourceRow('budget_total_revenue', 100, '2024-Q3'),
+  sourceRow('budget_total_revenue', 120, '2024-Q3', 'тыс. руб.', { source_id: 'conflicting_total' }),
+  sourceRow('budget_revenue_excluding_grants', 40, '2024-Q3'),
+]);
+assert.equal(conflictingDerivedRows.some((row) => row.indicator_code === 'derived_budget_own_revenue_share'), false, 'conflicting source values must not be used to derive a budget ratio');
+
 const derivedRows = deriveMunicipalIndicators([
   sourceRow('budget_total_revenue', 100, '2024-Q2'),
   sourceRow('budget_revenue_excluding_grants', 40, '2024-Q2'),
