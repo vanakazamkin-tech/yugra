@@ -43,7 +43,7 @@ const signature = (row) => {
   const q = p.match(/-Q([1-4])/i), h = p.match(/-H([12])/i);
   if (q) return 'Q' + q[1];
   if (h) return 'H' + h[1];
-  if (/annual|год|^\d{4}$/.test(p.toLowerCase())) return 'annual';
+  if (/^(annual|year|год|годовой|за год)$/.test(p.toLowerCase()) || /^\d{4}$/.test(p)) return 'annual';
   // Датированные срезы нельзя схлопывать в один общий тип date: разные даты — разные срезы.
   const dated = p.match(/^\d{4}-(\d{2})-(\d{2})$/);
   if (dated) return 'date-' + dated[1] + '-' + dated[2];
