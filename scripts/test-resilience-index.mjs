@@ -25,6 +25,7 @@ const model = calculateMunicipalIndex(rows, municipalities, { referenceYear: 202
 assert.equal(model.results.m1.index, 8.33);
 assert.equal(model.results.m6.index, 91.67);
 assert.equal(model.results.m1.status, 'complete');
+assert.equal(model.results.m1.coveragePercent, 100, 'indicator coverage is based on distinct approved codes');
 assert.equal(model.results.m1.pillars.length, 6);
 const sensitivity = calculateLeaveOneOutSensitivity(model.results.m1);
 assert.equal(sensitivity.available, true);
@@ -36,6 +37,7 @@ const partial = calculateMunicipalIndex(withMissing, municipalities, { reference
 assert.equal(partial.results.m1.index, null, 'missing pillar must not be zero-filled or renormalized');
 assert.equal(partial.results.m1.status, 'insufficient_coverage');
 assert.equal(partial.results.m1.availableWeightPercent, 85);
+assert.equal(partial.results.m1.coveragePercent, 83.33, 'missing one of six approved indicator codes must be visible in coverage');
 
 const dirty = [
   ...rows,
