@@ -379,9 +379,14 @@ export function analyzeIndicatorDominance(indexResult, options = {}) {
 
     const indicators = [...byCode.entries()].map(([code, scores]) => {
       const influence = [];
+      const nominalWeights = [];
       let pillarCount = 0;
       for (const { municipality, pillarResult } of pillarByMunicipality.values()) {
-        if (pillarResult.indicators?.some((item) => String(item.code) === code)) pillarCount += 1;
+        if (pillarResult.indicators?.some((item) => String(item.code) === code)) {
+          pillarCount += 1;
+          const indicatorCount = new Set(pillarResult.indicators.map((item) => String(item.code))).size;
+          if (indicatorCount) nominalWeights.push(1 / indicatorCount);
+        }
         if (!Number.isFinite(municipality.index) || !Number.isFinite(pillarResult.score)) continue;
         const remaining = (pillarResult.indicators || []).filter((item) => String(item.code) !== code);
         if (!remaining.length) continue;
@@ -398,8 +403,10 @@ export function analyzeIndicatorDominance(indexResult, options = {}) {
         code,
         municipalityCount: scores.size,
         pillarCoverageCount: pillarCount,
-        nominalWeightWithinPillar: byCode.size ? Math.round((1 / byCode.size) * 10000) / 10000 : null,
-        effectiveIndexWeight: byCode.size ? Math.round((pillar.weight / byCode.size) * 10000) / 10000 : null,
+        meanNominalWeightWithinPillar: nominalWeights.length ? Math.round((nominalWeights.reduce((sum, value) => sum + value, 0) / nominalWeights.length) * 10000) / 10000 : null,
+        meanEffectiveIndexWeight: nominalWeights.length ? Math.round((nominalWeights.reduce((sum, value) => sum + value * pillar.weight, 0) / nominalWeights.length) * 10000) / 10000 : null,
+        minimumNominalWeightWithinPillar: nominalWeights.length ? Math.round(Math.min(...nominalWeights) * 10000) / 10000 : null,
+        maximumNominalWeightWithinPillar: nominalWeights.length ? Math.round(Math.max(...nominalWeights) * 10000) / 10000 : null,
         meanAbsoluteIndexShift: absolute.length ? Math.round((absolute.reduce((sum, value) => sum + value, 0) / absolute.length) * 100) / 100 : null,
         maximumAbsoluteIndexShift: absolute.length ? Math.round(Math.max(...absolute) * 100) / 100 : null,
         evaluatedMunicipalities: influence.length,
