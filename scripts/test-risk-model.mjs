@@ -15,6 +15,10 @@ assert.equal(indicatorDirection({ indicator_code: 'registered_unemployed_count' 
   'absolute unemployment counts must not be treated as comparable rates');
 assert.equal(indicatorDirection({ indicator_code: 'derived_migration_net_per_1000' }), 'context',
   'derived migration rate remains contextual until municipal source definitions are harmonized');
+assert.equal(indicatorDirection({ indicator_code: 'fixed_capital_investment_growth_preliminary' }), 'context',
+  'investment growth series with mixed municipal definitions must not be compared');
+assert.equal(indicatorDirection({ indicator_code: 'real_disposable_income_index' }), 'context',
+  'real disposable and real cash income indices must not be merged under one common score');
 assert.equal(indicatorDirection({ indicator_code: 'average_monthly_salary_annual' }), 'higher',
   'full-year municipal nominal salary may be used as a qualified income proxy');
 assert.equal(indicatorDirection({ indicator_code: 'average_monthly_salary_q1' }), 'context',
