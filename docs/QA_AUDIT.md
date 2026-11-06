@@ -4,13 +4,13 @@
 **QA branch:** `feat/qa-testing`  
 **Baseline:** `main` at `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`  
 **QA PR:** [#12](https://github.com/vanakazamkin-tech/yugra/pull/12), draft, not merged  
-**Last verified QA head:** `0c51274b914dff66635a36287b9d30e0d2141fa0`
+**Last verified QA head:** `c749ee0a46267252daf25a3e3468f517cbda35be`
 
 ## Scope and integrity
 
 - Repository default branch is `main`.
 - The existing `feat/qa-testing` branch was identical to `main` before QA work. No existing work was overwritten.
-- PRs #8 (index methodology), #9 (risk analysis), and #10 (UI visualization) remain separate workstreams and must be reviewed as PR code, not assumed to be in `main`.
+- PRs #8 (index methodology), #9 (risk analysis), #10 (UI visualization), #11 (data quality), and #13 (forecasting) remain separate workstreams and must be reviewed as PR code, not assumed to be in `main`.
 - QA changes are isolated in `feat/qa-testing` and proposed through draft PR #12. No merge was performed.
 - Latest check confirms `main` still points to `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`.
 - Repository API reports branch protection disabled on `main` (no required status checks). This is a process risk: merges are not technically gated by required CI checks.
@@ -22,6 +22,7 @@
 |---|---|---|---|
 | Medium — review required | Missing period is silently treated as annual in the risk pipeline | `src/components/UnifiedRiskForecast.jsx` maps an empty `reference_period` to the signature `annual`; `src/lib/riskModel.js` also treats an empty period as annual in `comparablePeriodSequence()`. Thus two observations with unknown frequency can be counted as consecutive annual intervals. Require an explicit annual marker or approved source-specific default; add blank/null period tests at both normalization and streak layers. | Risks (#9) |
 | Medium — review required | Risk timeline accepts contradictory year metadata | Both `periodOrder()` in `UnifiedRiskForecast.jsx` and `comparablePeriodSequence()` in `riskModel.js` prefer `reference_year` over a year embedded in `reference_period`. A row such as `reference_year=2023`, `reference_period='2024-Q1'` is silently placed in 2023 and may contribute to a streak. Reject contradictory year metadata and test both ordering and streak calculation. | Risks (#9) |
+| Medium — review required | Whitespace-only numeric inputs are silently converted to zero in scenario forecasts | `src/lib/forecastModel.js` `finite()` rejects `''` but not strings such as `'   '`. `Number('   ')` is `0`, so whitespace-only `score`, `smeCount`, or `investments.volumeBillion` can be treated as observed zero instead of missing. This can alter projected values and coverage. Trim strings before numeric coercion and add tests for whitespace-only inputs. | Forecasting (#13) |
 
 
 | Priority | Finding | Evidence / impact | Owner |
@@ -37,7 +38,7 @@
 
 ## CI verification
 
-Verified on latest QA head `05db7572b24b6e3af6c836772bb06934820e28d0`:
+Verified on QA head `c749ee0a46267252daf25a3e3468f517cbda35be`:
 
 - **QA branch verification** — [GitHub Actions run #42271362101](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271362101): completed successfully on QA head `0c51274b914dff66635a36287b9d30e0d2141fa0`.
 - **Build verification** — [GitHub Actions run #42271371312](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271371312): pull-request build verification was in progress at last check; previous QA-head production build passed in run [#42271362101](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271362101).
@@ -76,13 +77,16 @@ Read-only inspection of project `dmbikidqikjupkghywbz`:
 - **#8 — index methodology:** adds a separate strict six-pillar module and deterministic tests. It is not wired into the user-facing rating. This is the correct safety boundary until indicator definitions and methodology are approved. Build verification passed; this confirms branch tests/build, not methodological approval or production integration. Do not call it a production index.
 - **#9 — risks:** addresses the unknown-direction coverage defect and adds repeated-deterioration explanations. Build verification passed. Review behavior at missing/undefined/null directions and streak boundaries before merge.
 - **#10 — UI:** additive visualization changes; source review reports no calculation or data-access changes. Build verification passed. Browser-level visual and interaction testing remains outstanding.
+- **#11 — data quality:** current PR head `40c4cf2402f441dac1f342e9f73a8b435f29ee8b`; latest Build verification run [#42271866999](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271866999) succeeded. This is source/build validation, not a full data provenance or UI verification.
+- **#13 — forecasting:** current PR head `40abd4f39e719429cded4090cf606470f5d8779e`; Build verification run [#42268245956](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268245956) succeeded. Conceptual model remains assumption-driven; whitespace numeric parsing finding above needs owner review.
 - **#12 — QA:** consolidated regression runner, isolated QA workflow, and this audit record. Draft only; no merge.
 
 Latest branch-head CI rechecks (6 Nov 2026):
-Latest branch-head CI rechecks (6 Nov 2026; these heads supersede the earlier successful checks above):
-- PR #8 head `0a13e705d315dd1f7046553c7ce6eeb269007f17`: Build verification run [#42271778744](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271778744) — in progress at last check.
-- PR #9 head `b93a3f8b9dd04ea0f4683bbb0ace6a8c516aefa8`: Build verification run [#42271733941](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271733941) — in progress at last check. The two timeline edge cases above remain present at this exact head.
-- PR #10 head `49478e6bbd3e87cf73763c83cf49e61c766362d0`: Build verification run [#42271783308](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271783308) — in progress at last check.
+- PR #8 head `0a13e705d315dd1f7046553c7ce6eeb269007f17`: Build verification run [#42271778744](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271778744) — success.
+- PR #9 head `b93a3f8b9dd04ea0f4683bbb0ace6a8c516aefa8`: Build verification run [#42271733941](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271733941) — success. The two timeline edge cases above remain present at this exact head.
+- PR #10 head `49478e6bbd3e87cf73763c83cf49e61c766362d0`: Build verification run [#42271783308](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271783308) — success.
+- PR #11 head `40c4cf2402f441dac1f342e9f73a8b435f29ee8b`: Build verification run [#42271866999](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271866999) — success.
+- PR #13 head `40abd4f39e719429cded4090cf606470f5d8779e`: Build verification run [#42268245956](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268245956) — success.
 
 ## Verification limitations
 
