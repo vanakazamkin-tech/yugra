@@ -133,13 +133,14 @@ console.log('OK: year-end estimates remain separate from annual observations.');
 
 
 const budgetFixture = [];
-for (const [year, period, total, own, transfers, expenditure] of [
-  [2024, 'annual', 100, 20, 80, 95],
-  [2025, '2025-Q3', 200, 80, 120, 190],
+for (const [year, period, total, taxNonTax, excludingRegionalGrants, transfers, expenditure] of [
+  [2024, 'annual', 100, 30, 20, 80, 95],
+  [2025, '2025-Q3', 200, 90, 80, 120, 190],
 ]) {
   for (const [indicator_code, value] of [
     ['budget_total_revenue', total],
-    ['budget_revenue_excluding_grants', own],
+    ['budget_tax_non_tax_revenue', taxNonTax],
+    ['budget_revenue_excluding_grants', excludingRegionalGrants],
     ['budget_intergovernmental_transfers', transfers],
     ['budget_total_expenditure', expenditure],
   ]) {
@@ -154,14 +155,16 @@ const derivedBudget = deriveMunicipalIndicators(budgetFixture)
   .filter((row) => row.indicator_code === 'derived_budget_own_revenue_share');
 assert.equal(derivedBudget.length, 2, 'annual and quarterly budget ratios must remain separate');
 assert.deepEqual(derivedBudget.map((row) => row.reference_period).sort(), ['2025-Q3', 'annual']);
-assert.equal(derivedBudget.find((row) => row.reference_period === 'annual').value, 20);
-assert.equal(derivedBudget.find((row) => row.reference_period === '2025-Q3').value, 40);
+assert.equal(derivedBudget.find((row) => row.reference_period === 'annual').value, 30);
+assert.equal(derivedBudget.find((row) => row.reference_period === '2025-Q3').value, 45);
+assert.match(derivedBudget[0].indicator_name, /налоговых и неналоговых доходов/,
+  'the derived metric must identify the exact official numerator');
 console.log('OK: derived budget indicators preserve source reporting periods and do not mix annual and quarterly data.');
 
 const conflictingBudgetFixture = [
   { municipality_id: 'conflict-town', indicator_code: 'budget_total_revenue', reference_year: 2025, reference_period: '2025-Q3', value: 100, unit: 'тыс. руб.', verification_status: 'verified', geographic_level: 'municipality' },
   { municipality_id: 'conflict-town', indicator_code: 'budget_total_revenue', reference_year: 2025, reference_period: '2025-Q3', value: 120, unit: 'тыс. руб.', verification_status: 'verified', geographic_level: 'municipality' },
-  { municipality_id: 'conflict-town', indicator_code: 'budget_revenue_excluding_grants', reference_year: 2025, reference_period: '2025-Q3', value: 50, unit: 'тыс. руб.', verification_status: 'verified', geographic_level: 'municipality' },
+  { municipality_id: 'conflict-town', indicator_code: 'budget_tax_non_tax_revenue', reference_year: 2025, reference_period: '2025-Q3', value: 50, unit: 'тыс. руб.', verification_status: 'verified', geographic_level: 'municipality' },
 ];
 assert.equal(deriveMunicipalIndicators(conflictingBudgetFixture).length, 0,
   'derived budget ratios must not use arbitrary values when source observations conflict');
