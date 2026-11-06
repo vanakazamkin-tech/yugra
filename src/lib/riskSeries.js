@@ -59,7 +59,30 @@ export function buildRiskSeries(rows) {
     const direction = directionFor(latest);
     const adverse = change == null || direction === 'context' ? null : direction === 'lower' ? change > 0 : change < 0;
     const adverseStreak = countConsecutiveAdverseIntervals(points, direction);
-    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, adverseStreak, excludedConflictingPeriods });
+    const sourcePresent = Boolean(latest.source_id || latest.source_url || (Array.isArray(latest.source_urls) && latest.source_urls.length));
+    const historyConsistent = points.length >= 3 && points.slice(1).every((point, index) => {
+      const current = parseRiskPeriod(point), prior = parseRiskPeriod(points[index]);
+      return current && prior && current.frequency === prior.frequency && current.slot === prior.slot && current.year - prior.year === 1;
+    });
+    let confidenceLevel = 'low';
+    let confidenceLabel = 'Низкая';
+    let confidenceReason = 'Нет подтверждённого сопоставимого интервала или метаданных источника.';
+    if (excludedConflictingPeriods > 0) {
+      confidenceReason = 'Есть конфликтующие дубликаты; они исключены из временного ряда.';
+    } else if (!sourcePresent) {
+      confidenceReason = 'Не заполнены идентификатор или ссылка на источник.';
+    } else if (!comparable) {
+      confidenceReason = 'Для последнего значения нет соседнего сопоставимого периода.';
+    } else if (historyConsistent) {
+      confidenceLevel = 'high';
+      confidenceLabel = 'Высокая';
+      confidenceReason = 'Источник указан; не менее трёх последовательных сопоставимых наблюдений без разрывов.';
+    } else {
+      confidenceLevel = 'medium';
+      confidenceLabel = 'Средняя';
+      confidenceReason = 'Источник указан; последнее изменение сопоставимо, но история короткая.';
+    }
+    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, adverseStreak, excludedConflictingPeriods, confidenceLevel, confidenceLabel, confidenceReason });
   });
   return result;
 }
