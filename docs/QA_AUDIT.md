@@ -58,7 +58,8 @@ Read-only inspection of project `dmbikidqikjupkghywbz`:
 - All inspected public tables have RLS enabled.
 - Security advisor returned four `rls_enabled_no_policy` informational findings listed above; no security-critical finding was returned in this scan. Health advisor returned no findings.
 - A fresh privilege audit confirmed that the 10 client-readable public tables grant `anon`/`authenticated` SELECT only; none grants client INSERT, UPDATE, or DELETE. The four fail-closed tables have no client privileges and no policies.
-- The only public view, `municipality_indicator_import_review`, has `security_invoker=true` and no client SELECT grant.
+- Policy predicates were reviewed: `municipality_indicators`, `external_rating_results`, `fuel_price_observations`, `investment_sites`, `municipal_facilities`, and `municipal_program_execution` expose only `verified` rows; `forecast_scenarios` exposes only active scenarios; municipality registry, source catalog, and external rating catalog are public-read. All are SELECT-only.
+- The only public view, `municipality_indicator_import_review`, has `security_invoker=true` and no client SELECT grant. No Supabase Storage buckets currently exist.
 - The inspected public functions are not `SECURITY DEFINER`; the import function is not executable by client roles. The `set_updated_at` trigger helper has default EXECUTE privileges but is not a `SECURITY DEFINER` function.
 - Data-quality aggregate over `municipality_indicators`: 1,445 rows; zero missing municipality IDs, indicator codes, units, periods, source IDs, or source URLs; zero invalid years; 1,389 verified municipality-level rows.
 - Performance advisor reported 16 unused indexes. This is informational on a database with limited workload; no indexes were removed.
