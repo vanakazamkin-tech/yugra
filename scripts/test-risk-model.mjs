@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { buildRiskModel, canonicalIndicatorCode, deriveMunicipalIndicators, indicatorDirection, indicatorMethodFor } from '../src/lib/riskModel.js';
+import { buildRiskModel, canonicalIndicatorCode, deriveMunicipalIndicators, indicatorDirection, indicatorMethodFor, indicatorSeriesGroup } from '../src/lib/riskModel.js';
 
 const municipalities = [1, 2, 3].map((id) => ({ id, name: 'Муниципалитет ' + id }));
 for (const alias of ['kogalym', 'langepas', 'pyt_yah', 'raduzhny', 'surgut']) {
