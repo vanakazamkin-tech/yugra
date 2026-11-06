@@ -241,8 +241,17 @@ export function deriveMunicipalIndicators(rows = []) {
   const populationByMunicipalityYear = new Map();
   for (const row of verified) {
     const key = rowKey(row);
-    if (!grouped.has(key)) grouped.set(key, {});
-    grouped.get(key)[row.indicator_code] = row;
+    if (!grouped.has(key)) grouped.set(key, { rows: {}, ambiguousCodes: new Set() });
+    const bucket = grouped.get(key);
+    const code = String(row.indicator_code || '');
+    if (!bucket.ambiguousCodes.has(code)) {
+      const existing = bucket.rows[code];
+      if (!existing) bucket.rows[code] = row;
+      else if (Number(existing.value) !== Number(row.value)) {
+        delete bucket.rows[code];
+        bucket.ambiguousCodes.add(code);
+      }
+    }
     if (row.indicator_code === 'population_municipality') {
       const populationKey = String(row.municipality_id) + '|' + String(row.reference_year);
       if (!populationByMunicipalityYear.has(populationKey)) populationByMunicipalityYear.set(populationKey, []);
@@ -280,10 +289,10 @@ export function deriveMunicipalIndicators(rows = []) {
   };
 
   for (const bucket of grouped.values()) {
-    const totalRow = bucket.budget_total_revenue;
-    const nonGrantRow = bucket.budget_revenue_excluding_grants;
-    const transfersRow = bucket.budget_intergovernmental_transfers;
-    const expenditureRow = bucket.budget_total_expenditure;
+    const totalRow = bucket.rows.budget_total_revenue;
+    const nonGrantRow = bucket.rows.budget_revenue_excluding_grants;
+    const transfersRow = bucket.rows.budget_intergovernmental_transfers;
+    const expenditureRow = bucket.rows.budget_total_expenditure;
     const total = Number(totalRow?.value);
     const nonGrant = Number(nonGrantRow?.value);
     const transfers = Number(transfersRow?.value);
@@ -302,7 +311,7 @@ export function deriveMunicipalIndicators(rows = []) {
       push(totalRow, 'derived_budget_balance_ratio', 'Отношение доходов к расходам бюджета', (total - expenditure) / expenditure * 100, '%', 'Положительное значение означает превышение доходов над расходами в пределах данного отчётного периода; требуется сверка методики исполнения бюджета.', [totalRow, expenditureRow]);
     }
 
-    const investment = bucket.fixed_capital_investment_non_mining;
+    const investment = bucket.rows.fixed_capital_investment_non_mining;
     if (investment) {
       const populationKey = String(investment.municipality_id) + '|' + String(investment.reference_year);
       const populationRows = populationByMunicipalityYear.get(populationKey) || [];
