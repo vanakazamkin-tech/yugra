@@ -57,7 +57,7 @@ const customSharpThreshold = buildRiskSeries([
   riskRow(2023, 'annual', 100), riskRow(2024, 'annual', 80),
 ], { ...DEFAULT_RISK_THRESHOLDS, sharpChangePercent: 25 });
 assert.equal(customSharpThreshold[0].sharpChange, false, 'the abrupt-change threshold must be configurable');
-assert.equal(assessRiskSignals([{ ...riskSignal(true, 'economy'), sharpChange: true }]).sharpChangeCount, 1, 'sharp changes must be counted separately from the overall risk level');
+assert.equal(assessRiskSignals([{ adverse: true, sharpChange: true, pillar: { key: 'economy' } }]).sharpChangeCount, 1, 'sharp changes must be counted separately from the overall risk level');
 
 const highConfidenceSeries = buildRiskSeries([
   riskRow(2022, 'annual', 70), riskRow(2023, 'annual', 65), riskRow(2024, 'annual', 60),
