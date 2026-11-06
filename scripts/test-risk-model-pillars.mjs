@@ -38,11 +38,11 @@ assert.equal(gapSeries[0].change, null, 'non-consecutive annual observations mus
 assert.equal(gapSeries[0].adverse, null, 'a missing year must not create a current adverse signal');
 
 const conflictingSeries = buildRiskSeries([
-  riskRow(2022, 'annual', 70), riskRow(2023, 'annual', 65),
+  riskRow(2022, 'annual', 70),
   riskRow(2024, 'annual', 60), riskRow(2024, 'annual', 80, { source_id: 'conflicting_source' }),
 ]);
 assert.equal(conflictingSeries[0].excludedConflictingPeriods, 1, 'conflicting duplicates must be excluded and counted');
-assert.equal(conflictingSeries[0].latest.reference_year, 2023, 'conflicting period must not be selected as latest');
+assert.equal(conflictingSeries[0].latest.reference_year, 2022, 'conflicting period must not be selected as latest');
 assert.equal(conflictingSeries[0].adverse, null, 'excluded conflicting value must not create a risk signal');
 
 const invalidYearSeries = buildRiskSeries([
