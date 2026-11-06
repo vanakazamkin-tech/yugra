@@ -50,14 +50,15 @@ export function buildRiskModel(municipalities = [], series = []) {
       if (score === null) continue;
       const trend = item.adverse === null ? 50 : item.adverse ? 20 : 80;
       const indicatorScore = score * 0.8 + trend * 0.2;
-      if (!scored.has(item.municipalityId)) scored.set(item.municipalityId, []);
-      scored.get(item.municipalityId).push({ ...item, peerScore: score, indicatorScore, modelPillar: MODEL_PILLAR_BY_SERIES[item.pillar.key] });
+      const municipalityKey = String(item.municipalityId);
+      if (!scored.has(municipalityKey)) scored.set(municipalityKey, []);
+      scored.get(municipalityKey).push({ ...item, peerScore: score, indicatorScore, modelPillar: MODEL_PILLAR_BY_SERIES[item.pillar.key] });
     }
   }
 
   const byMunicipality = {};
   for (const municipality of municipalities) {
-    const own = scored.get(municipality.id) || [];
+    const own = scored.get(String(municipality.id)) || [];
     const pillars = MODEL_PILLARS.map((pillar) => {
       const items = own.filter((item) => item.modelPillar === pillar.key);
       return {
@@ -70,7 +71,9 @@ export function buildRiskModel(municipalities = [], series = []) {
     });
     const available = pillars.filter((p) => p.score !== null);
     const availableWeight = available.reduce((sum, p) => sum + p.weight, 0);
-    const resilience = available.length >= 3 && availableWeight >= 0.5
+    // A pilot score is useful with two independently covered dimensions and >=35% of base weights.
+    // The UI must always show coverage so a partial score cannot be mistaken for a complete assessment.
+    const resilience = available.length >= 2 && availableWeight >= 0.35
       ? available.reduce((sum, p) => sum + p.score * p.weight, 0) / availableWeight
       : null;
     const coverage = availableWeight * 100;
@@ -90,6 +93,7 @@ export function buildRiskModel(municipalities = [], series = []) {
       municipalityId: municipality.id,
       score: resilience === null ? null : Math.round(resilience * 10) / 10,
       confidence: Math.round(confidence),
+      assessmentStatus: resilience === null ? 'insufficient' : available.length < 4 || coverage < 70 ? 'partial' : 'expanded',
       availablePillars: available.length,
       availableWeight: Math.round(availableWeight * 100),
       pillars,
