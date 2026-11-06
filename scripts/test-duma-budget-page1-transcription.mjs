@@ -20,6 +20,16 @@ try {
   assert.equal(result.coverage_by_year['2024'].municipality_count, 22);
   assert.equal(result.records.filter((r) => r.reference_year === 2023).length, 66);
   assert.equal(result.records.filter((r) => r.reference_year === 2024).length, 66);
+  assert.ok(result.records.every((r) => r.reference_period === String(r.reference_year)));
+  const expectedMunicipalityIds = new Set([
+    'beloyarsky-raion','berezovsky-raion','kogalym','kondinsky-raion','langepas',
+    'megion','nefteyugansk','nefteyugansky-raion','nizhnevartovsk',
+    'nizhnevartovsky-raion','nyagan-city','october-raion','pokachi','pyt-yah',
+    'raduzhny','sovetsky-raion','surgut','surgutsky','uray','khanty-mansiysk',
+    'khanty-mansiysky-raion','ugorsk',
+  ]);
+  assert.deepEqual(new Set(result.records.map((r) => r.municipality_id)), expectedMunicipalityIds);
+  assert.ok(result.records.every((r) => ['budget_total_revenue','budget_tax_non_tax_revenue','budget_revenue_excluding_grants'].includes(r.indicator_code)));
 
   const expected = {
     budget_total_revenue: {2023: 216011081.4, 2024: 241589251.7},
