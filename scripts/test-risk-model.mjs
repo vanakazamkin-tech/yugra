@@ -24,6 +24,14 @@ assert.equal(sectorEmploymentMethod.direction, 'context',
   'sectoral employee headcounts must remain contextual without a common denominator');
 assert.match(sectorEmploymentMethod.limitation, /только два муниципалитета/,
   'sectoral employee headcounts must disclose their current two-municipality coverage');
+assert.equal(indicatorSeriesGroup({ indicator_code: 'housing_commissioned_reported' }), 'production',
+  'housing commissioning is construction activity, not infrastructure availability');
+assert.equal(indicatorSeriesGroup({ indicator_code: 'sovetsky_noncompliant_roads_share' }), 'infrastructure',
+  'road condition belongs to infrastructure');
+assert.equal(indicatorMethodFor({ indicator_code: 'housing_commissioned_reported' }).direction, 'context',
+  'housing commissioning must not be scored as infrastructure quality');
+assert.equal(indicatorMethodFor({ indicator_code: 'sovetsky_local_road_repair' }).direction, 'context',
+  'road repair volume must not be treated as infrastructure condition');
 assert.equal(indicatorDirection({ indicator_code: 'average_monthly_salary_annual' }), 'higher',
   'full-year municipal nominal salary may be used as a qualified income proxy');
 assert.equal(indicatorDirection({ indicator_code: 'average_monthly_salary_q1' }), 'context',
