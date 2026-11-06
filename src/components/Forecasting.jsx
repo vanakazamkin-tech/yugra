@@ -217,7 +217,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   return (
@@ -253,7 +253,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
         <div className="forecast-control-card">
           <label className="forecast-field"><span>Сценарий</span><select value={scenarioKey} onChange={(e) => selectScenario(e.target.value)}>{scenarios.map((scenario) => <option key={scenario.key} value={scenario.key}>{scenario.title}</option>)}</select></label>
           <p className="forecast-scenario-description">{activeScenario.summary}</p>
-          <div className="forecast-field"><span>Горизонт модели</span><div className="forecast-horizons">{[1, 2, 3].map((years) => <button key={years} className={horizon === years ? 'selected' : ''} onClick={() => { setHorizon(years); }}>{years} {years === 1 ? 'год' : 'лет'}</button>)}</div></div>
+          <div className="forecast-field"><span id="forecast-horizon-label">Горизонт модели</span><div className="forecast-horizons" role="group" aria-labelledby="forecast-horizon-label">{[1, 2, 3].map((years) => <button type="button" key={years} className={horizon === years ? 'selected' : ''} aria-pressed={horizon === years} onClick={() => { setHorizon(years); }}>{years} {years === 1 ? 'год' : 'лет'}</button>)}</div></div>
           <div className="forecast-parameter-list">
             <label><span>Годовой рост инвестиций, %</span><strong>{fmt(n(params.investment_growth_rate), 1)}%</strong><input aria-label="Годовой рост инвестиций" type="range" min="-10" max="20" step="0.5" value={params.investment_growth_rate} onChange={(e) => setParam('investment_growth_rate', Number(e.target.value))}/></label>
             <label><span>Годовой рост субъектов МСП, %</span><strong>{fmt(n(params.sme_growth_rate), 1)}%</strong><input aria-label="Годовой рост субъектов МСП" type="range" min="-10" max="20" step="0.5" value={params.sme_growth_rate} onChange={(e) => setParam('sme_growth_rate', Number(e.target.value))}/></label>
@@ -264,8 +264,8 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
             <label><span>Кадровый дефицит, %</span><strong>{fmt(n(params.labor_shortage_pct), 1)}%</strong><input aria-label="Кадровый дефицит" type="range" min="-10" max="20" step="1" value={params.labor_shortage_pct} onChange={(e) => setParam('labor_shortage_pct', Number(e.target.value))}/></label>
           </div>
           <div className="forecast-control-actions">
-            <button className="primary-button" onClick={exportCsv}><span className="forecast-action-symbol" aria-hidden="true">↓</span>Экспортировать результат CSV</button>
-            <button className="outline-button" onClick={() => {
+            <button type="button" className="primary-button" onClick={exportCsv}><span className="forecast-action-symbol" aria-hidden="true">↓</span>Экспортировать результат CSV</button>
+            <button type="button" className="outline-button" onClick={() => {
               setParams({
                 investment_growth_rate: activeScenario.investment_growth_rate,
                 sme_growth_rate: activeScenario.sme_growth_rate,
@@ -287,7 +287,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
             <article><span>Средний модельный балл</span><strong>{fmt(avgScore, 1)}</strong><em>данные по {scoreCoverage} из {forecasts.length} территорий</em></article>
           </div>
           <div className="forecast-chart-head"><div><h4>Инвестиции по территориям</h4><p>Модельные значения, млрд ₽</p></div><span>Показано {chartRows.length} территорий с данными</span></div>
-          <div className="forecast-bars">{chartRows.map((row) => <div className="forecast-bar-row" key={row.id}><span title={row.name}>{row.name}</span><div className="forecast-bar-track"><i style={{ width: Math.max(1, row.projectedInvestments / maxInvestments * 100) + '%' }} /></div><strong>{fmt(row.projectedInvestments, 1)}</strong></div>)}</div>
+          <div className="forecast-bars" role={chartRows.length ? 'list' : undefined} aria-label={chartRows.length ? "Модельный объём инвестиций по муниципалитетам, млрд рублей" : undefined}>{chartRows.length ? chartRows.map((row) => <div className="forecast-bar-row" role="listitem" key={row.id}><span title={row.name}>{row.name}</span><div className="forecast-bar-track" aria-hidden="true"><i style={{ width: Math.max(1, row.projectedInvestments / maxInvestments * 100) + '%' }} /></div><strong>{fmt(row.projectedInvestments, 1)}</strong></div>) : <div className="empty-state"><strong>Нет доступных модельных значений инвестиций</strong><p>Для выбранной территории или текущего фильтра исходные данные не загружены. Это не означает нулевой объём инвестиций.</p></div>}</div>
         </div>
       </div>
 
@@ -306,10 +306,10 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       </section>
 
       <div className="forecast-table-panel">
-        <div className="forecast-table-toolbar"><div><h3>Результаты по муниципалитетам</h3><p>Рейтинг рассчитан заново по модельному баллу; он не является официальным рейтингом.</p></div><div className="forecast-table-filters"><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск территории…" aria-label="Поиск территории в прогнозе"/><select aria-label="Выбрать муниципалитет" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}><option value="ALL">Все территории</option>{municipalities.map((m) => <option value={m.id} key={m.id}>{m.name}</option>)}</select></div></div>
-        <div className="table-scroll"><table className="ranking-table forecast-table"><thead><tr><th>Территория</th><th>Инвестиции: база</th><th>Прогноз, млрд ₽</th><th>Модельный диапазон, млрд ₽</th><th>МСП: база → прогноз (диапазон)</th><th>Балл активного сценария</th><th>Диапазон активного сценария</th>{scenarioComparisons.map((scenario) => <th key={scenario.key}>Балл: {scenario.title}</th>)}<th>Модельное место</th></tr></thead>
+        <div className="forecast-table-toolbar"><div><h3>Результаты по муниципалитетам</h3><p>Рейтинг рассчитан заново по модельному баллу; он не является официальным рейтингом.</p><p className="forecast-results-count" role="status" aria-live="polite" aria-atomic="true">Показано {filtered.length} из {forecasts.length} муниципалитетов</p></div><div className="forecast-table-filters"><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск территории…" aria-label="Поиск территории в прогнозе"/><select aria-label="Выбрать муниципалитет" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}><option value="ALL">Все территории</option>{municipalities.map((m) => <option value={m.id} key={m.id}>{m.name}</option>)}</select></div></div>
+        <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table forecast-table"><thead><tr><th scope="col">Территория</th><th scope="col">Инвестиции: база</th><th scope="col">Прогноз, млрд ₽</th><th scope="col">Модельный диапазон, млрд ₽</th><th scope="col">МСП: база → прогноз (диапазон)</th><th scope="col">Балл активного сценария</th><th scope="col">Диапазон активного сценария</th>{scenarioComparisons.map((scenario) => <th key={scenario.key}>Балл: {scenario.title}</th>)}<th scope="col">Модельное место</th></tr></thead>
           <tbody>{filtered.map((row) => <tr key={row.id}><td>{row.name}</td><td>{fmt(row.investment, 1)}</td><td className="score-cell">{fmt(row.projectedInvestments, 1)}</td><td>{row.projectedInvestments == null ? '—' : `${fmt(row.investmentsLow, 1)}–${fmt(row.investmentsHigh, 1)}`}</td><td>{row.sme == null ? '—' : `${fmt(row.sme, 0)} → ${fmt(row.projectedSme, 0)} (${fmt(row.smeLow, 0)}–${fmt(row.smeHigh, 0)})`}</td><td>{fmt(row.projectedScore, 1)}</td><td>{row.projectedScore == null ? '—' : `${fmt(row.scoreLow, 1)}–${fmt(row.scoreHigh, 1)}`}</td>{scenarioComparisons.map((scenario) => <td key={scenario.key}>{fmt(scenario.rows.find((candidate) => candidate.id === row.id)?.projectedScore, 1)}</td>)}<td>{row.projectedRank == null ? '—' : `№ ${row.projectedRank}`}</td></tr>)}</tbody>
-        </table>{filtered.length === 0 && <div className="empty-state"><span>Территории не найдены</span><p>Измените поиск или фильтр.</p></div>}</div>
+        </table>{filtered.length === 0 && <div className="empty-state" role="status"><span>Территории не найдены</span><p>Измените поиск или фильтр.</p></div>}</div>
       </div>
 
       <div className="forecast-methodology">
