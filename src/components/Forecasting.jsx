@@ -155,10 +155,10 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
 
 
   const exportCsv = () => {
-    const headers = ['Муниципалитет', 'Группа', 'Инвестиции: база, млрд ₽', 'Инвестиции: прогноз, млрд ₽', 'Нижняя граница модели, млрд ₽', 'Верхняя граница модели, млрд ₽', 'МСП: база', 'МСП: прогноз', 'МСП: нижняя граница', 'МСП: верхняя граница', 'Прогнозный балл', 'Модельное место'];
+    const headers = ['Муниципалитет', 'Группа', 'Инвестиции: база, млрд ₽', 'Инвестиции: прогноз, млрд ₽', 'Нижняя граница модели, млрд ₽', 'Верхняя граница модели, млрд ₽', 'МСП: база', 'МСП: прогноз', 'МСП: нижняя граница', 'МСП: верхняя граница', 'Прогнозный балл', 'Нижняя граница индекса', 'Верхняя граница индекса', 'Модельное место'];
     const rows = filtered.map((row) => [
       row.name, row.group || '', row.investment, row.projectedInvestments, row.investmentsLow, row.investmentsHigh,
-      row.sme, row.projectedSme, row.smeLow, row.smeHigh, row.projectedScore, row.projectedRank,
+      row.sme, row.projectedSme, row.smeLow, row.smeHigh, row.projectedScore, row.scoreLow, row.scoreHigh, row.projectedRank,
     ]);
     // Prevent spreadsheet formula execution for text cells in exported CSV.
     // Numeric values remain numeric (including legitimate negative scenario outputs).
@@ -281,7 +281,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
         <div className="forecast-control-card">
           <div className="forecast-results-heading"><div><span className="micro-label">FACTOR CONTRIBUTION</span><h3>Влияние факторов на индекс</h3></div></div>
           <p className="forecast-scenario-description">Среднее изменение прогнозного балла относительно того же расчёта без отдельного фактора, балла на муниципалитет.</p>
-          <div className="forecast-factor-list">{factorSummary.map((factor) => <div key={factor.key}><span>{factor.label}</span><strong className={factor.average < 0 ? 'is-negative' : factor.average > 0 ? 'is-positive' : ''}>{factor.average == null ? '—' : pct(factor.average)}</strong></div>)}</div>
+          <div className="forecast-factor-list">{factorSummary.map((factor) => <div key={factor.key}><span>{factor.label}</span><strong className={factor.average < 0 ? 'is-negative' : factor.average > 0 ? 'is-positive' : ''}>{factor.average == null ? '—' : `${factor.average > 0 ? '+' : ''}${fmt(factor.average, 2)} балла`}</strong></div>)}</div>
           <p className="forecast-footnote">Коэффициенты влияния — открытые экспертные допущения прототипа (экспорт × 0,20; издержки и кадровый дефицит × −0,15), а не оценки из статистической регрессии. Их нужно согласовать и калибровать.</p>
         </div>
       </section>
