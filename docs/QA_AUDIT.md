@@ -4,7 +4,7 @@
 **QA branch:** `feat/qa-testing`  
 **Baseline:** `main` at `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`  
 **QA PR:** [#12](https://github.com/vanakazamkin-tech/yugra/pull/12), draft, not merged  
-**Verified QA head:** `05db7572b24b6e3af6c836772bb06934820e28d0`
+**Last documented QA head:** `05db7572b24b6e3af6c836772bb06934820e28d0` (a later documentation-only commit follows this checkpoint)
 
 ## Scope and integrity
 
@@ -71,6 +71,11 @@ Read-only inspection of project `dmbikidqikjupkghywbz`:
 - **#9 — risks:** addresses the unknown-direction coverage defect and adds repeated-deterioration explanations. Build verification passed. Review behavior at missing/undefined/null directions and streak boundaries before merge.
 - **#10 — UI:** additive visualization changes; source review reports no calculation or data-access changes. Build verification passed. Browser-level visual and interaction testing remains outstanding.
 - **#12 — QA:** consolidated regression runner, isolated QA workflow, and this audit record. Draft only; no merge.
+
+Latest branch-head CI rechecks (6 Nov 2026):
+- PR #8 head `c76beb43fc1bc084790ffd861187307c0becfe56`: Build verification run [#42270352992](https://github.com/vanakazamkin-tech/yugra/actions/runs/42270352992) — success.
+- PR #9 head `d737807c175c9c2a08d80dca64294a226898ed44`: Build verification run [#42270207426](https://github.com/vanakazamkin-tech/yugra/actions/runs/42270207426) — success.
+- PR #10 head `11cb8e973db097dc53e27bf14a53864f00b38ab4`: Build verification run [#42270399826](https://github.com/vanakazamkin-tech/yugra/actions/runs/42270399826) — success (confirmed after initial in-progress observation).
 
 ## Verification limitations
 
