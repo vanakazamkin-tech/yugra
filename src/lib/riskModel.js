@@ -125,7 +125,7 @@ export function buildRiskModel(municipalities = [], series = []) {
 }
 
 
-const rowKey = (row) => String(row.municipality_id) + '|' + String(row.reference_year);
+const rowKey = (row) => [row.municipality_id, row.reference_year, comparablePeriod(row)].join('|');
 export function deriveMunicipalIndicators(rows = []) {
   const verified = (Array.isArray(rows) ? rows : []).filter((row) =>
     row && row.verification_status === 'verified'
@@ -141,14 +141,14 @@ export function deriveMunicipalIndicators(rows = []) {
     grouped.get(key)[row.indicator_code] = row;
   }
   const derived = [];
-  const push = (base, code, name, value, unit, directionNote) => {
+  const push = (base, code, name, value, unit, directionNote, referencePeriod = base.reference_period || 'annual') => {
     if (!base || !Number.isFinite(value)) return;
     derived.push({
       municipality_id: base.municipality_id,
       indicator_code: code,
       indicator_name: name,
       reference_year: Number(base.reference_year),
-      reference_period: 'annual',
+      reference_period: referencePeriod,
       value,
       unit,
       source_id: 'derived_from_verified_municipal_indicators',
@@ -167,18 +167,18 @@ export function deriveMunicipalIndicators(rows = []) {
     const expenditure = Number(bucket.budget_total_expenditure?.value);
     const base = bucket.budget_total_revenue;
     if (base && total > 0 && finite(nonGrant)) {
-      push(base, 'derived_budget_own_revenue_share', 'Доля доходов без безвозмездных поступлений в общих доходах бюджета', nonGrant / total * 100, '%', 'Чем выше доля, тем меньше формальная зависимость доходов от безвозмездных поступлений; это не полная оценка бюджетной устойчивости.');
+      push(base, 'derived_budget_own_revenue_share', 'Доля доходов без безвозмездных поступлений в общих доходах бюджета', nonGrant / total * 100, '%', 'Чем выше доля, тем меньше формальная зависимость доходов от безвозмездных поступлений; это не полная оценка бюджетной устойчивости.', base.reference_period || 'annual');
     }
     if (base && total > 0 && finite(transfers)) {
-      push(base, 'derived_budget_transfer_dependency', 'Доля безвозмездных поступлений в общих доходах бюджета', transfers / total * 100, '%', 'Рост доли рассматривается как сигнал зависимости от межбюджетных трансфертов.');
+      push(base, 'derived_budget_transfer_dependency', 'Доля безвозмездных поступлений в общих доходах бюджета', transfers / total * 100, '%', 'Рост доли рассматривается как сигнал зависимости от межбюджетных трансфертов.', base.reference_period || 'annual');
     }
     if (base && total > 0 && finite(expenditure) && expenditure > 0) {
-      push(base, 'derived_budget_balance_ratio', 'Отношение доходов к расходам бюджета', (total - expenditure) / expenditure * 100, '%', 'Положительное значение означает превышение доходов над расходами в пределах данного отчётного периода; требуется сверка методики исполнения бюджета.');
+      push(base, 'derived_budget_balance_ratio', 'Отношение доходов к расходам бюджета', (total - expenditure) / expenditure * 100, '%', 'Положительное значение означает превышение доходов над расходами в пределах данного отчётного периода; требуется сверка методики исполнения бюджета.', base.reference_period || 'annual');
     }
     const investment = bucket.fixed_capital_investment_non_mining;
     const population = bucket.population_municipality;
     if (investment && population && Number(population.value) > 0) {
-      push(investment, 'derived_investment_per_capita', 'Инвестиции в основной капитал без добычи на одного жителя', Number(investment.value) / Number(population.value), 'руб./чел.', 'Номинальная интенсивность инвестиций; не является реальным темпом роста и не скорректирована на инфляцию.');
+      push(investment, 'derived_investment_per_capita', 'Инвестиции в основной капитал без добычи на одного жителя', Number(investment.value) / Number(population.value), 'руб./чел.', 'Номинальная интенсивность инвестиций; не является реальным темпом роста и не скорректирована на инфляцию.', investment.reference_period || 'annual');
     }
   }
 
