@@ -28,7 +28,7 @@ assert.equal(indicatorSeriesGroup({ indicator_code: 'employees_education' }), 's
   'education employee headcount belongs to the social context group');
 assert.equal(indicatorMethodFor({ indicator_code: 'employees_education' }).direction, 'context',
   'education employee headcount must not be scored without a service-coverage denominator');
-assert.match(sectorEmploymentMethod.limitation, /только два муниципалитета/,
+assert.match(sectorEmploymentMethod.limitation, /только по Когалыму и Сургуту/,
   'sectoral employee headcounts must disclose their current two-municipality coverage');
 assert.equal(indicatorSeriesGroup({ indicator_code: 'housing_commissioned_reported' }), 'production',
   'housing commissioning is construction activity, not infrastructure availability');
