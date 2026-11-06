@@ -191,7 +191,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       [indexModeRequested ? 'Годовое изменение индекса, баллов' : 'Годовое изменение концептуального балла, %', params.score_growth_rate],
       ['Источник базового балла', indexModeRequested ? 'Интегральный индекс; только complete при approved-контракте' : 'Концептуальный municipalities.score'],
       ['Версия методики индекса', indexContractApproved ? indexContract.version : 'Не утверждена / не подключена'],
-      ['Условная неопределённость, %/год', params.uncertainty_rate],
+      [indexModeRequested ? 'Неопределённость индекса, баллов' : 'Условная неопределённость, %/год', params.uncertainty_rate],
       ['Шок экспортной выручки, % (допущение)', params.export_shock_pct],
       ['Рост издержек, % (допущение)', params.cost_pressure_pct],
       ['Кадровый дефицит, % (допущение)', params.labor_shortage_pct],
@@ -257,7 +257,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
           <div className="forecast-parameter-list">
             <label><span>Годовой рост инвестиций, %</span><strong>{fmt(n(params.investment_growth_rate), 1)}%</strong><input aria-label="Годовой рост инвестиций" type="range" min="-10" max="20" step="0.5" value={params.investment_growth_rate} onChange={(e) => setParam('investment_growth_rate', Number(e.target.value))}/></label>
             <label><span>Годовой рост субъектов МСП, %</span><strong>{fmt(n(params.sme_growth_rate), 1)}%</strong><input aria-label="Годовой рост субъектов МСП" type="range" min="-10" max="20" step="0.5" value={params.sme_growth_rate} onChange={(e) => setParam('sme_growth_rate', Number(e.target.value))}/></label>
-            <label><span>{indexModeRequested ? 'Изменение индекса, баллов/год' : 'Годовое изменение балла, %'}</span><strong>{fmt(n(params.score_growth_rate), 1)}%</strong><input aria-label="Годовое изменение балла" type="range" min="-10" max="10" step="0.5" value={params.score_growth_rate} onChange={(e) => setParam('score_growth_rate', Number(e.target.value))}/></label>
+            <label><span>{indexModeRequested ? 'Изменение индекса, баллов/год' : 'Годовое изменение балла, %'}</span><strong>{fmt(n(params.score_growth_rate), 1)}{indexModeRequested ? ' балла' : '%'}</strong><input aria-label="Годовое изменение балла" type="range" min="-10" max="10" step="0.5" value={params.score_growth_rate} onChange={(e) => setParam('score_growth_rate', Number(e.target.value))}/></label>
             <label><span>{indexModeRequested ? 'Неопределённость индекса, баллов' : 'Условная неопределённость, %/год'}</span><strong>±{fmt(n(params.uncertainty_rate), 1)}%</strong><input aria-label="Допущение неопределённости" type="range" min="0" max="25" step="0.5" value={params.uncertainty_rate} onChange={(e) => setParam('uncertainty_rate', Number(e.target.value))}/></label>
             <label><span>Шок экспортной выручки, %</span><strong>{fmt(n(params.export_shock_pct), 1)}%</strong><input aria-label="Шок экспортной выручки" type="range" min="-20" max="10" step="1" value={params.export_shock_pct} onChange={(e) => setParam('export_shock_pct', Number(e.target.value))}/></label>
             <label><span>Изменение издержек, %</span><strong>{fmt(n(params.cost_pressure_pct), 1)}%</strong><input aria-label="Изменение издержек" type="range" min="-10" max="20" step="1" value={params.cost_pressure_pct} onChange={(e) => setParam('cost_pressure_pct', Number(e.target.value))}/></label>
