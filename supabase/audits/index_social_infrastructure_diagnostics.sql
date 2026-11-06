@@ -67,6 +67,7 @@ with candidates as (
   from public.municipality_indicators
   where geographic_level = 'municipality'
     and verification_status = 'verified'
+    and indicator_code not in ('population_municipality', 'population_urban_municipality', 'population_rural_municipality')
     and (
       indicator_name ~* '(образован|дошколь|школ|учащ|ученик|студент|здравоохран|медицин|врач|фельдшер|коеч|больниц|поликлиник|жиль|водоснабж|водоотвед|газифиц|дорог|транспорт|связ|интернет|культур|спорт|библиотек|благоустрой|отход|обеспеченн|учрежден|населенн.*без|мощност|мест в|посещени)'
       or indicator_code ~* '(education|school|preschool|health|doctor|hospital|bed|housing|water|road|transport|internet|culture|sport|utility|social|welfare|facility|access)'
