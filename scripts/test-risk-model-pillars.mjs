@@ -95,12 +95,12 @@ const derivedRows = deriveMunicipalIndicators([
   sourceRow('budget_total_revenue', 100, '2024-Q2'),
   sourceRow('budget_revenue_excluding_grants', 40, '2024-Q2'),
   sourceRow('budget_total_expenditure', 80, '2024-Q2'),
-  sourceRow('budget_total_revenue', 200, '2024-Q3'),
+  sourceRow('budget_total_revenue', 200, '2024-Q3', 'тыс. руб.', { source_id: 'budget_main', source_url: 'https://example.com/budget-main.pdf' }),
   sourceRow('budget_revenue_excluding_grants', 60, '2024-Q3'),
-  sourceRow('budget_intergovernmental_transfers', 50, '2024-Q3'),
+  sourceRow('budget_intergovernmental_transfers', 50, '2024-Q3', 'тыс. руб.', { source_id: 'budget_appendix', source_url: 'https://example.com/budget-appendix.pdf' }),
   sourceRow('budget_total_expenditure', 180, '2024-Q3'),
-  sourceRow('fixed_capital_investment_non_mining', 1000, 'annual', 'руб.'),
-  sourceRow('population_municipality', 10, '2024-01-01', 'человек'),
+  sourceRow('fixed_capital_investment_non_mining', 1000, 'annual', 'руб.', { source_id: 'investment_source', source_url: 'https://example.com/investment.pdf' }),
+  sourceRow('population_municipality', 10, '2024-01-01', 'человек', { source_id: 'population_source', source_url: 'https://example.com/population.xlsx' }),
   sourceRow('population_municipality', 9, '2022-01-01', 'человек', { reference_year: 2022 }),
   sourceRow('budget_total_revenue', 100, '2024-Q3', 'руб.', { municipality_id: 'm2' }),
   sourceRow('budget_revenue_excluding_grants', 40, '2024-Q3', 'тыс. руб.', { municipality_id: 'm2' }),
@@ -115,6 +115,15 @@ assert.equal(derivedRows.find((row) => row.indicator_code === 'derived_investmen
 assert.equal(derivedRows.find((row) => row.indicator_code === 'derived_population_growth_rate')?.reference_period, 'annual', 'population growth is explicitly annualized');
 assert.equal(derivedRows.some((row) => row.municipality_id === 'm2' && row.indicator_code === 'derived_budget_own_revenue_share'), false, 'ratios with incompatible units must not be calculated');
 assert.equal(derivedRows.some((row) => row.value === 999), false, 'unverified and settlement-level rows must not enter derived municipal indicators');
+const transferDerived = derivedRows.find((row) => row.indicator_code === 'derived_budget_transfer_dependency');
+assert.deepEqual(transferDerived.source_ids, ['budget_main', 'budget_appendix'], 'derived indicators must retain every contributing source ID');
+assert.deepEqual(transferDerived.source_urls, ['https://example.com/budget-main.pdf', 'https://example.com/budget-appendix.pdf'], 'derived indicators must retain every contributing source URL');
+assert.equal(transferDerived.source_url, null, 'legacy single-source URL must be empty when provenance has multiple sources');
+assert.ok(transferDerived.notes.includes('budget_main, budget_appendix'), 'derivation notes must expose contributing source IDs');
+const investmentDerived = derivedRows.find((row) => row.indicator_code === 'derived_investment_per_capita');
+assert.deepEqual(investmentDerived.source_ids, ['investment_source', 'population_source'], 'per-capita investment must cite both investment and population inputs');
+assert.equal(investmentDerived.source_url, null, 'per-capita investment must not imply that one source supports both inputs');
+
 
 
 console.log('Indicator classification and resilience model pillar tests passed.');
