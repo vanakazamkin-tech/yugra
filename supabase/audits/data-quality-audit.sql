@@ -122,6 +122,21 @@ select count(*) total_sources,
   count(*) filter(where last_checked_at is null) missing_last_checked_at
 from public.data_sources;
 
+-- Source records needing an actual re-check or a confirmed refresh cadence.
+-- Do not bulk-fill last_checked_at: it must represent a real inspection event.
+select id,name,category,import_status,update_frequency,url,
+  case
+    when last_checked_at is null and (update_frequency is null or btrim(update_frequency)='')
+      then 'missing_check_and_frequency'
+    when last_checked_at is null then 'missing_check'
+    else 'missing_frequency'
+  end follow_up
+from public.data_sources
+where last_checked_at is null
+   or update_frequency is null
+   or btrim(update_frequency)=''
+order by import_status,category,name;
+
 -- A repeated landing-page URL does not prove duplicate datasets.
 select lower(trim(trailing '/' from url)) normalized_url,count(*) source_records,
   array_agg(id order by id) source_ids
