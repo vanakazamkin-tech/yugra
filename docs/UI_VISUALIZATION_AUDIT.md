@@ -313,3 +313,7 @@ The shared municipality and text filters in the risk workspace now expose the cu
 ## Mandatory concept-data disclaimer in report output (7 November 2026)
 
 The report preview and print/PDF document now always state that summary scores and derived values come from the project's conceptual dataset and are not official statistics, and that new official statistical series have not yet been uploaded. The notice remains present even when the optional extended methodology section is disabled. When selected, verified official observations continue to appear as a separate layer with source, period, and geographic level. The report CSV already includes a per-row `Статус данных` column marking demonstration values as non-official; this behavior is unchanged.
+
+## Explicit empty states in printed report output (7 November 2026)
+
+The print/PDF report now handles two incomplete configurations explicitly: when the selected chart metric has no values in the report selection, it prints a clear explanation instead of an empty chart area; when no detail fields are selected, it prints a notice instead of a table containing only municipality metadata. Existing preview behavior, selection logic, calculations, and CSV export are unchanged.
