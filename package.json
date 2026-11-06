@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check:map-coverage": "node scripts/check-map-coverage.mjs"
+    "check:map-coverage": "node scripts/check-map-coverage.mjs",
+    "check:risk-pilot-csv": "node scripts/check-risk-pilot-csv.mjs"
   },
   "dependencies": {
     "react": "^18.2.0",
