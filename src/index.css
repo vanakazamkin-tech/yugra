@@ -1884,3 +1884,39 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sync-status { border-radius:0 0 9px 9px; }
 @media(max-width:1180px) { .site-header { flex-wrap:wrap; padding:12px 0 8px; } .main-nav { order:3; flex:1 0 100%; justify-content:flex-start; overflow-x:auto; scrollbar-width:none; padding:3px 0 7px; } .main-nav::-webkit-scrollbar { display:none; } .header-motto { margin-left:auto; } }
 @media(max-width:640px) { .site-header { gap:7px; } .brand-emblem { width:46px; height:46px; flex-basis:46px; } .brand-title { font-size:29px; } .brand-subtitle { font-size:11px; } .header-motto { font-size:7px; } .main-nav { margin:0 -4px; } .nav-item { min-height:39px; padding:0 10px; font-size:10px; } .nav-item .ui-icon { width:14px; height:14px; } }
+
+
+/* Main workspace: stronger editorial hierarchy and a premium regional dashboard */
+.intro-panel { padding:clamp(22px,3vw,34px); border-color:#d8c9ad; border-radius:18px; background:linear-gradient(115deg,rgba(255,252,245,.98),rgba(247,240,226,.96)); box-shadow:0 12px 32px rgba(42,61,43,.065); }
+.intro-top { grid-template-columns:minmax(0,1fr) minmax(250px,330px); gap:clamp(20px,3vw,42px); min-height:190px; }
+.intro-copy h1 { max-width:760px; font-size:clamp(34px,3.7vw,51px); line-height:1.04; letter-spacing:-.045em; }
+.intro-copy h1 em { color:#a17b45; }
+.intro-copy > p { max-width:650px; font-size:13px; line-height:1.8; color:#6e7b6d; }
+.intro-art { height:190px; grid-template-columns:minmax(0,1fr) 52px; border-radius:4px 18px 4px 18px; box-shadow:inset 0 0 0 5px rgba(255,251,243,.7),0 9px 24px rgba(47,62,43,.08); }
+.intro-art-image img { width:100%; height:100%; object-fit:cover; object-position:center 43%; }
+.catalog-toolbar { gap:28px; padding-top:24px; margin-top:24px; }
+.search-box { height:51px; border-radius:10px; }
+.filter-block { padding-bottom:2px; }
+.slice-bar { align-items:center; padding:17px 15px 0; margin:18px -5px 0; border-top:1px solid #e5dac7; }
+.slice-label { padding-top:0; }
+.slice-chip { min-height:34px; padding:8px 12px; border-radius:20px; background:#fbf7ee; }
+.slice-chip.active { color:#f9f4e8; border-color:#31583e; background:#31583e; box-shadow:0 3px 9px rgba(34,76,52,.16); }
+.filter-toggle { min-height:34px; border-radius:20px; }
+.stats-grid { gap:14px; margin:18px 0 20px; }
+.metric-card { min-height:108px; padding:18px 19px; border-radius:14px; background:linear-gradient(145deg,#fffdf8,#f8f2e7); box-shadow:0 7px 19px rgba(37,59,42,.055); transition:transform .18s,box-shadow .18s; }
+.metric-card:hover { transform:translateY(-3px); box-shadow:0 12px 25px rgba(37,59,42,.1); }
+.metric-icon { width:43px; height:43px; border-radius:12px; background:#e9eee4; color:#31583e; }
+.metric-card:nth-child(2) .metric-icon,.metric-card:nth-child(4) .metric-icon { background:#f1e8d7; color:#9b7540; }
+.metric-copy strong { font:600 clamp(23px,2.3vw,31px)/1.1 'Playfair Display',Georgia,serif; letter-spacing:-.025em; }
+.metric-copy small { line-height:1.5; }
+.dashboard-grid-home { gap:17px; align-items:stretch; }
+.dashboard-grid-home > .panel,.dashboard-grid-home .map-panel,.dashboard-grid-home .ranking-panel { border-radius:16px; border-color:#dfd3bd; box-shadow:0 9px 26px rgba(39,53,39,.055); }
+.dashboard-grid-home .map-panel,.dashboard-grid-home .ranking-panel { padding:21px; }
+.dashboard-grid-home .section-heading { padding-bottom:14px; margin-bottom:14px; border-bottom:1px solid #eee5d7; }
+.dashboard-grid-home .heading-label h2 { font:600 22px 'Playfair Display',Georgia,serif; }
+.dashboard-grid-home .map-stage { border:1px solid #e6dccb; border-radius:12px; background:radial-gradient(ellipse at 50% 45%,#f5f0e5,#eee7d8); overflow:hidden; }
+.dashboard-grid-home .map-legend { padding-top:13px; }
+.dashboard-grid-home .ranking-table-wrap { border-radius:10px; border:1px solid #e8decd; overflow:hidden; }
+.dashboard-grid-home .ranking-table th { background:#f0e9dc; }
+@media(max-width:880px) { .intro-top { grid-template-columns:minmax(0,1fr) 245px; gap:18px; } .intro-art { height:165px; } }
+@media(max-width:640px) { .intro-panel { padding:19px 16px; } .intro-top { grid-template-columns:1fr; } .intro-art { height:150px; max-width:100%; } .intro-copy h1 { font-size:34px; } .catalog-toolbar { grid-template-columns:1fr; gap:15px; } .slice-bar { padding-inline:0; } .stats-grid { gap:9px; } .metric-card { min-height:100px; padding:12px 10px; gap:8px; } .metric-icon { width:34px; height:34px; } .metric-copy strong { font-size:22px; } .dashboard-grid-home .map-panel,.dashboard-grid-home .ranking-panel { padding:14px; } }
