@@ -165,3 +165,16 @@ test('summary reports coverage and does not convert missing values to zero', () 
   assert.ok(summary.averageScore > 0);
   assert.equal(summarizeForecast([{ projectedScore: null, projectedInvestments: null }]).investmentTotal, null);
 });
+
+test('coefficient sensitivity is transparent and matches one-year score effects', () => {
+  const municipality = [{ id: 'a', name: 'A', score: 60 }];
+  const exportPositive = buildForecasts(municipality, { export_shock_pct: 10 }, 1)[0];
+  const costIncrease = buildForecasts(municipality, { cost_pressure_pct: 10 }, 1)[0];
+  const laborIncrease = buildForecasts(municipality, { labor_shortage_pct: 10 }, 1)[0];
+  assert.equal(exportPositive.adjustedScoreRate, 2);
+  assert.equal(costIncrease.adjustedScoreRate, -1.5);
+  assert.equal(laborIncrease.adjustedScoreRate, -1.5);
+  assert.ok(Math.abs(exportPositive.projectedScore - 61.2) < 1e-10);
+  assert.ok(Math.abs(costIncrease.projectedScore - 59.1) < 1e-10);
+  assert.ok(Math.abs(laborIncrease.projectedScore - 59.1) < 1e-10);
+});
