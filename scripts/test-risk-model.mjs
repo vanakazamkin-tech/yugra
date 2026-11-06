@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { buildRiskModel } from '../src/lib/riskModel.js';
+import { buildRiskModel, deriveMunicipalIndicators } from '../src/lib/riskModel.js';
 
 const municipalities = [1, 2, 3].map((id) => ({ id, name: 'Муниципалитет ' + id }));
 const indicators = [
@@ -31,3 +31,30 @@ for (const id of [1, 2, 3]) {
 assert.equal(result.byMunicipality[1].pillars.find((p) => p.key === 'labour').indicators, 2);
 assert.equal(result.byMunicipality[1].pillars.find((p) => p.key === 'finance').indicators, 1);
 console.log('OK: index calculated; six pillars mapped; annual periods compared consistently.');
+
+const budgetFixture = [];
+for (const [year, period, total, own, transfers, expenditure] of [
+  [2024, 'annual', 100, 20, 80, 95],
+  [2025, '2025-Q3', 200, 80, 120, 190],
+]) {
+  for (const [indicator_code, value] of [
+    ['budget_total_revenue', total],
+    ['budget_revenue_excluding_grants', own],
+    ['budget_intergovernmental_transfers', transfers],
+    ['budget_total_expenditure', expenditure],
+  ]) {
+    budgetFixture.push({
+      municipality_id: 'test-town', indicator_code, indicator_name: indicator_code,
+      reference_year: year, reference_period: period, value, unit: 'тыс. руб.',
+      verification_status: 'verified', geographic_level: 'municipality',
+    });
+  }
+}
+const derivedBudget = deriveMunicipalIndicators(budgetFixture)
+  .filter((row) => row.indicator_code === 'derived_budget_own_revenue_share');
+assert.equal(derivedBudget.length, 2, 'annual and quarterly budget ratios must remain separate');
+assert.deepEqual(derivedBudget.map((row) => row.reference_period).sort(), ['2025-Q3', 'annual']);
+assert.equal(derivedBudget.find((row) => row.reference_period === 'annual').value, 20);
+assert.equal(derivedBudget.find((row) => row.reference_period === '2025-Q3').value, 40);
+console.log('OK: derived budget indicators preserve source reporting periods and do not mix annual and quarterly data.');
+
