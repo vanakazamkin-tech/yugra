@@ -65,3 +65,10 @@ const oktmoRows = oktmoCrosswalk.slice(1).map(line => line.split(','));
 assert.equal(new Set(oktmoRows.map(row => row[0])).size, 22, 'OKTMO crosswalk municipality IDs must be unique');
 assert.ok(oktmoRows.every(row => row[3] === '' && row[9] === 'pending'), 'OKTMO values must remain blank and all rows pending until verified');
 console.log('Rosstat OKTMO crosswalk template checks passed.');
+
+
+const rosstatCoveragePlan = readFileSync('docs/ROSTAT_BDPMO_COVERAGE_PLAN_2026-11-07.md', 'utf8');
+assert.match(rosstatCoveragePlan, /2005–2025/, 'secondary BD PMO dataset coverage must match the live dataset page');
+assert.doesNotMatch(rosstatCoveragePlan, /2005–2026/, 'secondary BD PMO dataset must not claim an unsupported 2026 data period');
+assert.match(rosstatCoveragePlan, /603 показателя и 33 раздела/, 'secondary dataset scope must remain explicit');
+console.log('Rosstat source-period documentation checks passed.');
