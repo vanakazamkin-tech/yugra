@@ -21,23 +21,27 @@ const RISK_WATCH_SERIES = { social: ['social', 'health', 'education'] };
 const finite = (v) => Number.isFinite(Number(v)) && v !== null && v !== '';
 const clamp = (v, min = 0, max = 100) => Math.max(min, Math.min(max, v));
 
-// Count adverse changes only across genuinely consecutive comparable periods.
-// Unknown/custom period frequencies are excluded from early-warning streaks.
-function comparablePeriodSequence(point) {
+// Explicit period metadata is required. reference_year alone never proves annual frequency.
+export function parseRiskPeriod(point = {}) {
   const period = String(point?.reference_period ?? '').trim();
-  const year = Number(point?.reference_year) || Number(period.match(/^(\d{4})/)?.[1]);
+  if (!period) return null;
+  const declaredYear = Number(point?.reference_year);
+  const yearFromLabel = Number(period.match(/^(\\d{4})(?=$|[-_\\s])/i)?.[1]);
+  const year = Number.isInteger(declaredYear) && declaredYear >= 1900 && declaredYear <= 2200
+    ? declaredYear : yearFromLabel;
   if (!Number.isInteger(year) || year < 1900 || year > 2200) return null;
-
-  const quarter = period.match(/(?:^|[-_\s])Q([1-4])$/i);
+  if (yearFromLabel && yearFromLabel !== year) return null;
+  const quarter = period.match(/^(?:\\d{4}[-_\\s]?)?Q([1-4])$/i);
   if (quarter) return { year, frequency: 'quarter', slot: Number(quarter[1]) };
-
-  const half = period.match(/(?:^|[-_\s])H([12])$/i);
+  const half = period.match(/^(?:\\d{4}[-_\\s]?)?H([12])$/i);
   if (half) return { year, frequency: 'half', slot: Number(half[1]) };
-
-  if (!period || /^(?:annual|year|год|годовой|\d{4})$/i.test(period)) {
-    return { year, frequency: 'annual', slot: 0 };
-  }
+  if (/^(?:annual|year|год|годовой|\\d{4})$/i.test(period)) return { year, frequency: 'annual', slot: 0 };
   return null;
+}
+
+function consecutiveComparablePeriods(current, previous) {
+  const a = parseRiskPeriod(current), b = parseRiskPeriod(previous);
+  return Boolean(a && b && a.frequency === b.frequency && a.slot === b.slot && a.year - b.year === 1);
 }
 
 export function countConsecutiveAdverseIntervals(points = [], direction = 'context') {
@@ -45,11 +49,7 @@ export function countConsecutiveAdverseIntervals(points = [], direction = 'conte
   let streak = 0;
   for (let index = points.length - 1; index > 0; index -= 1) {
     const current = points[index], previous = points[index - 1];
-    const currentPeriod = comparablePeriodSequence(current), previousPeriod = comparablePeriodSequence(previous);
-    const comparable = currentPeriod && previousPeriod
-      && currentPeriod.frequency === previousPeriod.frequency
-      && currentPeriod.slot === previousPeriod.slot
-      && currentPeriod.year - previousPeriod.year === 1;
+    const comparable = consecutiveComparablePeriods(current, previous);
     if (!comparable) break;
     const currentValue = Number(current?.numericValue), previousValue = Number(previous?.numericValue);
     if (!Number.isFinite(currentValue) || !Number.isFinite(previousValue)) break;
@@ -138,8 +138,9 @@ export function buildRiskModel(municipalities = [], series = []) {
     if (!item || item.direction === 'context' || !finite(item.latest?.numericValue)) continue;
     const pillarKey = MODEL_PILLAR_BY_SERIES[item.pillar?.key];
     if (!pillarKey) continue;
-    const year = Number(item.latest.reference_year) || 0;
-    const key = [item.code, item.unit, item.latest.reference_period || '', year].join('|');
+    const parsedPeriod = parseRiskPeriod(item.latest);
+    if (!parsedPeriod) continue;
+    const key = [item.code, item.unit, parsedPeriod.frequency, parsedPeriod.slot, parsedPeriod.year].join('|');
     if (!comparable.has(key)) comparable.set(key, []);
     comparable.get(key).push(item);
   }
