@@ -109,7 +109,7 @@ export function buildRiskModel(municipalities = [], series = [], weightOverrides
       sum + (MODEL_PILLARS.find((base) => base.key === p.key)?.weight || 0), 0);
     // Score eligibility and data coverage use fixed base weights: user tuning must not
     // make sparse data look complete by assigning zero weight to missing dimensions.
-    const resilience = available.length >= 2 && baseAvailableWeight >= 0.35
+    const resilience = available.length >= 2 && baseAvailableWeight >= 0.35 && availableWeight > 0
       ? available.reduce((sum, p) => sum + p.score * p.weight, 0) / availableWeight
       : null;
     const baseCoverage = baseAvailableWeight * 100;
