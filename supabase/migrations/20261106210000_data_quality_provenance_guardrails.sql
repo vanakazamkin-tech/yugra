@@ -46,11 +46,13 @@ on conflict (indicator_id, source_id, source_role) do nothing;
 
 -- Block repeat imports from the same source; allow other sources to report
 -- the same observation key so disagreements remain reviewable.
+-- Unit is part of the key: the same source may legitimately publish distinct
+-- measures in different units for the same municipality/indicator/period.
 create unique index if not exists uq_municipality_indicators_source_observation
   on public.municipality_indicators (
     municipality_id, indicator_code, reference_year, reference_period,
-    geographic_level, (coalesce(geographic_name, '')), source_id
+    unit, geographic_level, (coalesce(geographic_name, '')), source_id
   );
 
 comment on index public.uq_municipality_indicators_source_observation is
-  'Prevents duplicate observations from the same source while allowing cross-source comparisons and disagreements.';
+  'Prevents duplicate observations from the same source while allowing cross-source comparisons, unit-specific measures, and disagreements.';
