@@ -2,7 +2,8 @@
 
 **Date:** 2026-11-06  
 **QA branch:** `feat/qa-testing`  
-**Baseline:** `main` at `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`  
+**Original QA baseline:** `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`  
+**Current main:** `5cedff13fd3ea3521c5aa4befdfd75dc12ae1499` (one documentation-only commit ahead)  
 **QA PR:** [#12](https://github.com/vanakazamkin-tech/yugra/pull/12), draft, not merged  
 **Last verified QA head:** `0541e7dfd0df998a51e9ba0fdee715644f797405`
 
@@ -12,7 +13,7 @@
 - The existing `feat/qa-testing` branch was identical to `main` before QA work. No existing work was overwritten.
 - PRs #8 (index methodology), #9 (risk analysis), #10 (UI visualization), #11 (data quality), and #13 (forecasting) remain separate workstreams and must be reviewed as PR code, not assumed to be in `main`.
 - QA changes are isolated in `feat/qa-testing` and proposed through draft PR #12. No merge was performed.
-- Latest check confirms `main` still points to `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`.
+- Latest check: `main` advanced to `5cedff13fd3ea3521c5aa4befdfd75dc12ae1499` through one documentation-only commit adding the proposed index methodology. It does not merge PR #8 or change application code. QA PR #12 still contains its original baseline ancestry; no rebase/merge was performed.
 - Repository API reports branch protection disabled on `main` (no required status checks). This is a process risk: merges are not technically gated by required CI checks.
 - No production deployment, database migration, or data mutation was performed during this audit.
 
@@ -75,7 +76,7 @@ Read-only inspection of project `dmbikidqikjupkghywbz`:
 
 ## Pull-request review notes
 
-- **#8 — index methodology:** current head `e2e12926a5fb412fc17faba3b6d9fc50158d760a`. The separate strict six-pillar module is not wired into the user-facing rating, which is the correct safety boundary pending approval. Previous build verification run [#42272748191](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272748191) failed because the diagnostics contract disagrees with its test; the same mismatch remains in the latest source inspected. A newer build run [#42272850279](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272850279) was in progress at last check. Do not call this a production index.
+- **#8 — index methodology:** current head `37dec24d4985ff7d86249b7581ec7c91a70b2829`. The separate strict six-pillar module is not wired into the user-facing rating, which is the correct safety boundary pending approval. Build verification [#42272931815](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272931815) failed at `test-resilience-index.mjs:38`: `excludedIndicatorGroups` is a numeric count in implementation but the test calls `.some()` expecting an array. The mismatch remains in the latest source inspected; later tests and production build were skipped. Do not call this a production index.
 - **#9 — risks:** current head `efe34ddfe0ded3d46ac3674eb36b4b7896fa0270`; Build verification [#42272582437](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272582437) passed. Unknown-direction handling is explicit, but the two timeline edge cases remain unresolved: blank period becomes annual, and `reference_year` overrides a contradictory year embedded in `reference_period`. Unknown-direction handling is explicit, but the two timeline edge cases remain unresolved: blank period becomes annual, and `reference_year` overrides a contradictory year embedded in `reference_period`.
 - **#10 — UI:** current head `1447e97b92094daf50765a94adc8ab6797832cc7`; Build verification [#42272584819](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272584819) passed. Additive visualization changes; source review reports no calculation or data-access changes. Browser-level visual and interaction testing remains outstanding.
 - **#11 — data quality:** current PR head `a16c80b9557084842911b3d3aa6ad53e2b0f690d`; Build verification [#42272618590](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272618590) passed. The migration suite checks provenance backfill idempotency, source-observation uniqueness, caller-safe diagnostic view access, and no automatic rewriting of observations. A prior run on head `3701436` failed because a test asserted an obsolete period-regex contract; the PR was updated and the latest head passes. The disposable PostgreSQL integration job also passed migration reapplication, privilege, and uniqueness checks. This does not authorize applying migrations to production.
@@ -83,7 +84,7 @@ Read-only inspection of project `dmbikidqikjupkghywbz`:
 - **#12 — QA:** consolidated regression runner, isolated QA workflow, and this audit record. Draft only; no merge.
 
 Latest branch-head CI rechecks (6 Nov 2026):
-- PR #8 head `e2e12926a5fb412fc17faba3b6d9fc50158d760a`: Build verification run [#42272850279](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272850279) — in progress at last check; previous head failed the index diagnostics contract test.
+- PR #8 head `37dec24d4985ff7d86249b7581ec7c91a70b2829`: Build verification run [#42272931815](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272931815) — failure at the same diagnostics contract test.
 - PR #9 head `efe34ddfe0ded3d46ac3674eb36b4b7896fa0270`: Build verification run [#42272582437](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272582437) — success. Missing-period and contradictory-year edge cases remain.
 - PR #10 head `1447e97b92094daf50765a94adc8ab6797832cc7`: Build verification run [#42272584819](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272584819) — success.
 - PR #11 head `a16c80b9557084842911b3d3aa6ad53e2b0f690d`: Build verification run [#42272618590](https://github.com/vanakazamkin-tech/yugra/actions/runs/42272618590) — success.
