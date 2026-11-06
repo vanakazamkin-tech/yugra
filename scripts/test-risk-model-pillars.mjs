@@ -12,6 +12,7 @@ assert.equal(directionForRiskIndicator({ indicator_code: 'derived_budget_transfe
 
 // Period metadata is mandatory: year alone must never be silently promoted to annual.
 assert.equal(parseRiskPeriod({ reference_year: 2024, reference_period: '' }), null);
+assert.equal(parseRiskPeriod({ reference_year: 2024, reference_period: '   ' }), null, 'whitespace-only periods must remain unknown');
 assert.equal(parseRiskPeriod({ reference_year: 2024 }), null);
 assert.deepEqual(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-Q1' }), { year: 2024, frequency: 'quarter', slot: 1 });
 assert.deepEqual(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-H2' }), { year: 2024, frequency: 'half', slot: 2 });
@@ -134,6 +135,8 @@ const serviceRisk = buildRiskModel(municipalities, serviceSeries).byMunicipality
 assert.ok(serviceRisk?.active, 'health and education signals must activate the social stage in the budget-services chain');
 assert.deepEqual(serviceRisk.hits, ['budget', 'social'], 'health and education must count as one social-stage hit, not duplicate hits');
 
+const unknownDirectionSeries = series.map((item) => ({ ...item, direction: undefined }));
+assert.equal(buildRiskModel(municipalities, unknownDirectionSeries).byMunicipality.m1.score, null, 'unknown directions must not be treated as lower-is-better peer scores');
 const insufficient = buildRiskModel(municipalities, series.filter((item) => item.pillar.key === 'investment'));
 assert.equal(insufficient.byMunicipality.m1.score, null, 'one 20% pillar must not produce a resilience score');
 assert.equal(MODEL_PILLARS.find((pillar) => pillar.key === 'social').weight, 0.15, 'the existing social weight must remain unchanged');
