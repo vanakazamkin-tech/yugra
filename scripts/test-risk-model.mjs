@@ -143,7 +143,31 @@ const zeroModel = buildRiskModel(partialMunicipalities.slice(0, 3), zeroFixture)
 assert.notEqual(zeroModel.byMunicipality[1].score, null,
   'zero is a valid observed value and must not be treated as missing');
 assert.ok(zeroModel.byMunicipality[1].score >= 0 && zeroModel.byMunicipality[1].score <= 100);
+
 console.log('OK: zero observations remain valid numeric inputs.');
+
+const weightedFixture = ['investment', 'employment'].flatMap((code) =>
+  [1, 2, 3].map((municipalityId) => ({
+    municipalityId, code, unit: '%', direction: 'higher', adverse: null,
+    pillar: { key: code }, points: [{}],
+    latest: { numericValue: code === 'investment' ? municipalityId * 10 : (4 - municipalityId) * 10,
+      reference_year: 2025, reference_period: 'annual' },
+  }))
+);
+const economyHeavy = buildRiskModel(partialMunicipalities.slice(0, 3), weightedFixture, {
+  economy: 80, labour: 20, demography: 0, finance: 0, social: 0, infrastructure: 0,
+});
+const labourHeavy = buildRiskModel(partialMunicipalities.slice(0, 3), weightedFixture, {
+  economy: 20, labour: 80, demography: 0, finance: 0, social: 0, infrastructure: 0,
+});
+assert.notEqual(economyHeavy.byMunicipality[1].score, labourHeavy.byMunicipality[1].score,
+  'changing configured pillar weights must recalculate the composite index');
+assert.ok(Math.abs(economyHeavy.pillars.reduce((sum, pillar) => sum + pillar.weight, 0) - 1) < 1e-9,
+  'configured weights must normalize to 100 percent');
+assert.equal(economyHeavy.byMunicipality[1].availableWeight, 100,
+  'coverage must use the normalized configured weights');
+console.log('OK: configurable pillar weights normalize and recalculate the index.');
+
 
 
 
