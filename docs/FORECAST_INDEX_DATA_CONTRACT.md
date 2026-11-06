@@ -94,3 +94,10 @@ The forecasting index adapter is a tested integration boundary, not a production
 - exact-period differences between otherwise broad annual, population-date, and budget YTD observations.
 
 The conceptual forecast remains explicitly separate. No production Supabase migration, RLS/grant change, data import, or deployment is authorized by this document.
+
+
+## 7. Multi-source provenance dependency (PR #11)
+
+PR #11 (`feat/data-quality`) proposes `private.municipality_indicator_source_links` to retain multiple source documents for one observation, including `primary`, `input`, `methodology`, `validation`, and `context` roles. This is a useful future contract for derived indicators, but PR #11 remains open and the live Supabase project currently has no tables in schema `private`; the migration has not been applied. Do not assume that the multi-source relation is available in production.
+
+The current adapter requires the primary `sourceId` and `sourceUrl` fields carried by each `resilienceIndex.js` indicator result. This protects traceability to one primary observation source; it does not yet prove complete multi-source lineage for derived indicators. Until the PR #11 provenance layer is deployed and a trusted server-side loader can read it, exclude multi-source derived indicators from an approved index run or attach a separately verified provenance manifest and extend the result contract/tests. Do not expose the private source-link table to browser roles merely to satisfy the index UI.
