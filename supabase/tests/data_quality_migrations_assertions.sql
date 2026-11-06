@@ -16,9 +16,18 @@ end $$;
 insert into public.municipality_indicators(municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,verification_status,geographic_level,geographic_name) values
  ('test-municipality','test_indicator','Test indicator',2025,'annual',11,'thousand persons','src-primary','https://example.test/primary','verified','municipality',null),
  ('test-municipality','test_indicator','Test indicator',2025,'annual',12,'persons','src-primary','https://example.test/primary','verified','settlement','Test settlement'),
- ('test-municipality','test_indicator','Test indicator',2025,'annual',13,'thousand persons','src-secondary','https://example.test/secondary','needs_review','municipality',null);
-do $$
+ ('test-municipality','test_indicator','Test indicator',2025,'annual',13,'thousand persons','src-secondary','https://example.test/secondary','needs_review','municipality',null),
+ ('test-municipality','test_indicator','Test indicator',2025,'annual',14,'persons','src-secondary','https://example.test/secondary','needs_review','municipality',null);
+do $
 begin
+ if not exists (
+   select 1 from public.municipality_indicator_quality_issues
+   where issue_code = 'incompatible_source_units'
+     and municipality_id = 'test-municipality'
+     and indicator_code = 'test_indicator'
+ ) then
+   raise exception 'cross-source incompatible units are not reported';
+ end if;
  begin
   insert into public.municipality_indicators(municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,verification_status,geographic_level,geographic_name)
   values('test-municipality','test_indicator','Test indicator',2025,'annual',99,'thousand persons','src-primary','https://example.test/primary','verified','municipality',null);
