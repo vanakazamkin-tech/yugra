@@ -120,6 +120,8 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
   ]));
   const repeatedDeterioration = bad.filter((signal) => Number(signal.adverseStreak) >= 2);
   const sharpChanges = bad.filter((signal) => signal.sharpChange === true);
+  const conflictNote = collapsed.conflicts.length ? ` Исключено противоречивых семейств: ${collapsed.conflicts.join(', ')}.` : '';
+  const conflictReasons = collapsed.conflicts.length ? [`Исключены противоречивые семейства сигналов: ${collapsed.conflicts.join(', ')}`] : [];
   const common = {
     usable, bad, thresholds: settings,
     conflictingSignalFamilies: collapsed.conflicts,
@@ -135,28 +137,28 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
   if (usable.length < settings.minimumUsable) {
     return {
       ...common, level: 'insufficient',
-      explanation: `Недостаточно данных: оцениваемых рядов ${usable.length}, требуется не менее ${settings.minimumUsable}. Неопределённые и контекстные показатели не учитываются как положительные.`,
-      reasons: ['Недостаточное покрытие показателями с однозначным направлением'],
+      explanation: `Недостаточно данных: оцениваемых рядов ${usable.length}, требуется не менее ${settings.minimumUsable}. Неопределённые и контекстные показатели не учитываются как положительные.${conflictNote}`,
+      reasons: ['Недостаточное покрытие показателями с однозначным направлением', ...conflictReasons],
     };
   }
   if (bad.length >= settings.criticalSignals && affectedPillars.size >= settings.criticalPillars) {
     return {
       ...common, level: 'critical',
-      explanation: `Зафиксировано ${bad.length} негативных сигналов в ${affectedPillars} направлениях; достигнуты оба настраиваемых порога повышенного внимания.`,
-      reasons: [`Негативных сигналов: ${bad.length} из требуемых ${settings.criticalSignals}`, `Затронуто направлений: ${affectedPillars.size} из требуемых ${settings.criticalPillars}`],
+      explanation: `Зафиксировано ${bad.length} негативных сигналов в ${affectedPillars} направлениях; достигнуты оба настраиваемых порога повышенного внимания.${conflictNote}`,
+      reasons: [`Негативных сигналов: ${bad.length} из требуемых ${settings.criticalSignals}`, `Затронуто направлений: ${affectedPillars.size} из требуемых ${settings.criticalPillars}`, ...conflictReasons],
     };
   }
   if (bad.length > 0) {
     return {
       ...common, level: 'watch',
-      explanation: `Есть ${bad.length} негативных сигнал(а/ов) в ${affectedPillars} направлениях, но критерий одновременного межотраслевого ухудшения не достигнут.`,
-      reasons: [`Негативных сигналов: ${bad.length}`, `Затронуто направлений: ${affectedPillars.size}`],
+      explanation: `Есть ${bad.length} негативных сигнал(а/ов) в ${affectedPillars} направлениях, но критерий одновременного межотраслевого ухудшения не достигнут.${conflictNote}`,
+      reasons: [`Негативных сигналов: ${bad.length}`, `Затронуто направлений: ${affectedPillars.size}`, ...conflictReasons],
     };
   }
   return {
     ...common, level: 'stable',
-    explanation: `Среди ${usable.length} оцениваемых рядов негативных изменений не выявлено. Это не подтверждает отсутствие рисков в направлениях без данных или с контекстными показателями.`,
-    reasons: ['Негативных сигналов среди оцениваемых рядов нет'],
+    explanation: `Среди ${usable.length} оцениваемых рядов негативных изменений не выявлено. Это не подтверждает отсутствие рисков в направлениях без данных или с контекстными показателями.${conflictNote}`,
+    reasons: ['Негативных сигналов среди оцениваемых рядов нет', ...conflictReasons],
   };
 }
 
