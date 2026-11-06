@@ -4,12 +4,12 @@
 **QA branch:** `feat/qa-testing`  
 **Baseline:** `main` at `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`  
 **QA PR:** [#12](https://github.com/vanakazamkin-tech/yugra/pull/12), draft, not merged  
-**Last documented QA head:** `05db7572b24b6e3af6c836772bb06934820e28d0` (a later documentation-only commit follows this checkpoint)
+**Last verified QA head:** `0c51274b914dff66635a36287b9d30e0d2141fa0`
 
 ## Scope and integrity
 
 - Repository default branch is `main`.
-- The existing `feat/qa-testing` branch was identical to `main) before QA work. No existing work was overwritten.
+- The existing `feat/qa-testing` branch was identical to `main` before QA work. No existing work was overwritten.
 - PRs #8 (index methodology), #9 (risk analysis), and #10 (UI visualization) remain separate workstreams and must be reviewed as PR code, not assumed to be in `main`.
 - QA changes are isolated in `feat/qa-testing` and proposed through draft PR #12. No merge was performed.
 - Latest check confirms `main` still points to `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`.
@@ -20,8 +20,8 @@
 
 | Priority | Finding | Evidence / impact | Owner |
 |---|---|---|---|
-| Medium — review required | Risk streak helper treats a missing period as annual | In `src/lib/riskModel.js`, `comparablePeriodSequence()` returns an annual sequence when `reference_period` is empty, provided a year exists. This can count two adjacent year-stamped observations with no explicit frequency as consecutive annual intervals. The risk PR documentation says unknown periods break streaks, so the behavior and contract are inconsistent. Recommend requiring an explicit annual marker (or an approved source-specific annual default) and adding tests for blank/null period. | Risks (#9) |
-| Medium — review required | Risk streak helper does not reject year mismatch between `reference_year` and a year embedded in `reference_period` | The helper prefers `reference_year` and only parses the period year as fallback. A malformed row such as `reference_year=2023`, `reference_period='2024-Q1'` is therefore silently assigned to 2023. If the adjacent point has a matching sequence, an invalid pair may be counted. Recommend rejecting contradictory year metadata and adding a regression test. | Risks (#9) |
+| Medium — review required | Missing period is silently treated as annual in the risk pipeline | `src/components/UnifiedRiskForecast.jsx` maps an empty `reference_period` to the signature `annual`; `src/lib/riskModel.js` also treats an empty period as annual in `comparablePeriodSequence()`. Thus two observations with unknown frequency can be counted as consecutive annual intervals. Require an explicit annual marker or approved source-specific default; add blank/null period tests at both normalization and streak layers. | Risks (#9) |
+| Medium — review required | Risk timeline accepts contradictory year metadata | Both `periodOrder()` in `UnifiedRiskForecast.jsx` and `comparablePeriodSequence()` in `riskModel.js` prefer `reference_year` over a year embedded in `reference_period`. A row such as `reference_year=2023`, `reference_period='2024-Q1'` is silently placed in 2023 and may contribute to a streak. Reject contradictory year metadata and test both ordering and streak calculation. | Risks (#9) |
 
 
 | Priority | Finding | Evidence / impact | Owner |
@@ -39,8 +39,8 @@
 
 Verified on latest QA head `05db7572b24b6e3af6c836772bb06934820e28d0`:
 
-- **QA branch verification** — [GitHub Actions run #42269385316](https://github.com/vanakazamkin-tech/yugra/actions/runs/42269385316): completed successfully.
-- **Build verification** — [GitHub Actions run #42269396983](https://github.com/vanakazamkin-tech/yugra/actions/runs/42269396983): completed successfully.
+- **QA branch verification** — [GitHub Actions run #42271362101](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271362101): completed successfully on QA head `0c51274b914dff66635a36287b9d30e0d2141fa0`.
+- **Build verification** — [GitHub Actions run #42271371312](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271371312): pull-request build verification was in progress at last check; previous QA-head production build passed in run [#42271362101](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271362101).
   - dependency installation: success;
   - migration staging syntax and filters: success;
   - forecast coverage classification: success;
@@ -81,7 +81,7 @@ Read-only inspection of project `dmbikidqikjupkghywbz`:
 Latest branch-head CI rechecks (6 Nov 2026):
 - PR #8 current head `c6e071df47f86264647c3f80a5aec09e8172ab9f`: Build verification run [#42271210379](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271210379) — success.
 - PR #9 current head `c3081572d13e417fcece7fb72c5216e86d015624`: Build verification run [#42271206695](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271206695) — success.
-- PR #10 current head `cf50b17c050e5fd3fa4ac42fc026d3e580922e06`: Build verification run [#42271257735](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271257735) — in progress at the time of this update.
+- PR #10 current head `cf50b17c050e5fd3fa4ac42fc026d3e580922e06`: Build verification run [#42271257735](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271257735) — success.
 
 ## Verification limitations
 
