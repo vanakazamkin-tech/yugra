@@ -36,9 +36,13 @@ export function buildRiskSeries(rows) {
     });
     const points = [];
     let excludedConflictingPeriods = 0;
+    let latestConflictOrder = Number.NEGATIVE_INFINITY;
     candidates.forEach((duplicates) => {
       if (new Set(duplicates.map((item) => item.numericValue)).size > 1) {
         excludedConflictingPeriods += 1;
+        const parsedConflict = parseRiskPeriod(duplicates[0]);
+        const conflictOrder = parsedConflict ? parsedConflict.year * 10 + parsedConflict.slot : Number.NEGATIVE_INFINITY;
+        latestConflictOrder = Math.max(latestConflictOrder, conflictOrder);
         return;
       }
       duplicates.sort((a, b) => new Date(b.retrieved_at || 0) - new Date(a.retrieved_at || 0));
@@ -69,11 +73,12 @@ export function buildRiskSeries(rows) {
       && currentPeriod.frequency === previousPeriod.frequency
       && currentPeriod.slot === previousPeriod.slot
       && currentPeriod.year - previousPeriod.year === 1;
-    const change = comparable ? latest.numericValue - previous.numericValue : null;
+    const conflictAfterLatest = latestConflictOrder > latest.order;
+    const change = comparable && !conflictAfterLatest ? latest.numericValue - previous.numericValue : null;
     const changePercent = comparable && previous.numericValue !== 0 ? change / Math.abs(previous.numericValue) * 100 : null;
     const direction = directionFor(latest);
     const adverse = change == null || direction === 'context' ? null : direction === 'lower' ? change > 0 : change < 0;
-    const adverseStreak = countConsecutiveAdverseIntervals(points, direction);
+    const adverseStreak = conflictAfterLatest ? 0 : countConsecutiveAdverseIntervals(points, direction);
     const sourcePresent = Boolean(latest.source_id || latest.source_url || (Array.isArray(latest.source_ids) && latest.source_ids.length) || (Array.isArray(latest.source_urls) && latest.source_urls.length));
     const historyConsistent = points.length >= 3 && points.slice(1).every((point, index) => {
       const current = parseRiskPeriod(point), prior = parseRiskPeriod(points[index]);
@@ -97,7 +102,7 @@ export function buildRiskSeries(rows) {
       confidenceLabel = 'Средняя';
       confidenceReason = 'Источник указан; последнее изменение сопоставимо, но история короткая.';
     }
-    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, signalFamily: riskSignalFamilyFor(latest.indicator_code), name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, adverseStreak, excludedConflictingPeriods, confidenceLevel, confidenceLabel, confidenceReason });
+    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, signalFamily: riskSignalFamilyFor(latest.indicator_code), name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, adverseStreak, excludedConflictingPeriods, conflictAfterLatest, confidenceLevel, confidenceLabel, confidenceReason });
   });
   return result;
 }
