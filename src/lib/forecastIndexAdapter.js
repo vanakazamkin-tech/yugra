@@ -16,6 +16,7 @@ const isFiniteIndex = (value) => {
 
 const hasTraceableCompleteResult = (result, expectedYear, expectedPeriod, diagnostics, minimumPeers, minimumCoveragePercent) => {
   if (!Array.isArray(result?.pillars) || result.pillars.length !== 6) return false;
+  const peerGroups = Array.isArray(diagnostics) ? diagnostics : [];
   return result.pillars.every((pillar) =>
     pillar
     && typeof pillar.key === 'string'
@@ -27,7 +28,7 @@ const hasTraceableCompleteResult = (result, expectedYear, expectedPeriod, diagno
       indicator
       && typeof indicator.code === 'string'
       && indicator.code.trim() !== ''
-      && (diagnostics || []).some((group) =>
+      && peerGroups.some((group) =>
         group?.code === indicator.code
         && group.comparable === true
         && Number(group.municipalityCount) >= minimumPeers
