@@ -54,8 +54,8 @@ export const INDICATOR_METHODS = {
   },
   derived_budget_own_revenue_share: {
     direction: 'higher', pillar: 'budget',
-    rationale: 'Доля доходов бюджета без безвозмездных поступлений: прокси финансовой самостоятельности.',
-    limitation: 'Не заменяет анализ налоговой базы, долговой нагрузки и устойчивости собственных доходов.',
+    rationale: 'Доля налоговых и неналоговых доходов в общих доходах бюджета — прозрачный прокси собственной доходной базы.',
+    limitation: 'Рассчитывается именно по налоговым и неналоговым доходам, а не по отдельной строке «доходы без безвозмездных поступлений из бюджета автономного округа»: эти два показателя различаются в официальной таблице. Не заменяет анализ налоговой базы, долговой нагрузки и устойчивости поступлений.',
   },
   derived_budget_transfer_dependency: {
     direction: 'context', pillar: 'budget',
@@ -434,12 +434,12 @@ export function deriveMunicipalIndicators(rows = []) {
       )[0];
     }
     const total = Number(bucket.budget_total_revenue?.value);
-    const nonGrant = Number(bucket.budget_revenue_excluding_grants?.value);
+    const taxNonTax = Number(bucket.budget_tax_non_tax_revenue?.value);
     const transfers = Number(bucket.budget_intergovernmental_transfers?.value);
     const expenditure = Number(bucket.budget_total_expenditure?.value);
     const base = bucket.budget_total_revenue;
-    if (base && total > 0 && finite(nonGrant)) {
-      push(base, 'derived_budget_own_revenue_share', 'Доля доходов без безвозмездных поступлений в общих доходах бюджета', nonGrant / total * 100, '%', 'Чем выше доля, тем меньше формальная зависимость доходов от безвозмездных поступлений; это не полная оценка бюджетной устойчивости.', base.reference_period || 'annual');
+    if (base && total > 0 && finite(taxNonTax)) {
+      push(base, 'derived_budget_own_revenue_share', 'Доля налоговых и неналоговых доходов в общих доходах бюджета', taxNonTax / total * 100, '%', 'Расчёт по отдельной строке официальной таблицы «Налоговые и неналоговые доходы». Не подменять её строкой «Итого доходов (без безвозмездных поступлений)», которая имеет другое значение и отличается по всем 22 муниципалитетам за 2024 и 2025 годы.', base.reference_period || 'annual');
     }
     if (base && total > 0 && finite(transfers)) {
       push(base, 'derived_budget_transfer_dependency', 'Доля безвозмездных поступлений в общих доходах бюджета', transfers / total * 100, '%', 'Рост доли рассматривается как сигнал зависимости от межбюджетных трансфертов.', base.reference_period || 'annual');
