@@ -17,6 +17,7 @@ export const RISK_CHAINS = [
 ];
 
 const MODEL_PILLAR_BY_SERIES = Object.fromEntries(MODEL_PILLARS.flatMap((p) => p.series.map((key) => [key, p.key])));
+const RISK_WATCH_SERIES = { social: ['social', 'health', 'education'] };
 const finite = (v) => Number.isFinite(Number(v)) && v !== null && v !== '';
 const clamp = (v, min = 0, max = 100) => Math.max(min, Math.min(max, v));
 
@@ -86,7 +87,10 @@ export function buildRiskModel(municipalities = [], series = []) {
       ? clamp(deteriorationShare * 70 + Math.max(0, affectedPillars.size - 1) * 10)
       : null;
     const chains = RISK_CHAINS.map((chain) => {
-      const hits = chain.watch.filter((key) => own.some((item) => item.pillar.key === key && item.adverse === true));
+      const hits = chain.watch.filter((key) => {
+        const seriesKeys = RISK_WATCH_SERIES[key] || [key];
+        return own.some((item) => seriesKeys.includes(item.pillar.key) && item.adverse === true);
+      });
       return { ...chain, hits, matched: hits.length, active: hits.length >= 2 };
     }).filter((chain) => chain.matched > 0).sort((a, b) => b.matched - a.matched);
     byMunicipality[municipality.id] = {
