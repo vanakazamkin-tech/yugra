@@ -153,3 +153,11 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Searching the manual municipality list now displays an explicit empty state when no municipality matches, instead of leaving a blank list.
 - Selection rules, report scope, data, export content, and calculations are unchanged.
 - Browser/assistive-technology verification remains outstanding.
+
+## Missing-value clarity in municipality comparison (6 November 2026)
+
+- The comparison chart now counts finite, non-null values for the selected indicator before choosing its scale.
+- If no selected municipality has a usable value, the chart displays an explicit status message recommending another indicator or a source-data check.
+- If coverage is partial, the chart states how many territories have values and explicitly warns that missing values are not treated as zero.
+- Municipality rows and formatted values remain visible; no source data, metric definitions, ranking logic, or calculations were changed.
+- Verification is pending CI; interactive browser rendering has not yet been tested.
