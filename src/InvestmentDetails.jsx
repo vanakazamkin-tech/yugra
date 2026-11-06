@@ -2276,33 +2276,35 @@ export const InvestmentDetails = () => {
             </article>)}
           </div> : <p className="modal-no-official">Для этой территории пока нет проверенных официальных показателей в базе. Новые значения будут добавляться только после проверки источника, периода и территориальной привязки.</p>}
         </section>
-        {investmentSites.filter((site) => site.municipality_id === activeModalItem.id).length > 0 && <section className="modal-official-data" aria-labelledby="modal-sites-heading">
+        <section className="modal-official-data" aria-labelledby="modal-sites-heading">
           <div className="modal-official-heading"><h3 id="modal-sites-heading">Инвестиционные площадки</h3><span>{investmentSites.filter((site) => site.municipality_id === activeModalItem.id).length} объектов</span></div>
-          <div className="modal-official-list">{investmentSites.filter((site) => site.municipality_id === activeModalItem.id).map((site) => <article key={site.id} className="modal-official-row modal-site-row">
+          {investmentSites.some((site) => site.municipality_id === activeModalItem.id) ? <div className="modal-official-list">{investmentSites.filter((site) => site.municipality_id === activeModalItem.id).map((site) => <article key={site.id} className="modal-official-row modal-site-row">
             <div><strong>{site.name}</strong><span>{site.location_text || 'Адрес указан в первоисточнике'} · {site.site_type || 'тип не указан'}</span><span>Использование: {site.permitted_use || 'не указано'} · {site.offer_type || 'условия уточняются'}</span></div>
             <b>{site.area_hectares == null ? '—' : `${formatNumber(site.area_hectares, 2)} га`}</b>
             <a href={site.source_url} target="_blank" rel="noreferrer">Первоисточник ↗</a>
-          </article>)}</div>
-        </section>}
-        {facilities.filter((facility) => facility.municipality_id === activeModalItem.id).length > 0 && <section className="modal-official-data modal-facilities-passport" aria-labelledby="modal-facilities-heading">
+          </article>)}</div> : <p className="modal-no-official">Для этой территории инвестиционные площадки пока не представлены в базе. Это означает отсутствие загруженных записей, а не отсутствие площадок.</p>}
+        </section>
+        <section className="modal-official-data modal-facilities-passport" aria-labelledby="modal-facilities-heading">
           <div className="modal-official-heading"><h3 id="modal-facilities-heading">Образовательная инфраструктура</h3><span>{facilities.filter((facility) => facility.municipality_id === activeModalItem.id).length} объектов</span></div>
-          <p className="modal-no-official">В реестре доступны школы и дошкольные учреждения с адресами и координатами. Дата версии указана у каждого объекта; данные школ относятся к версии 16.12.2024.</p>
-          <details className="modal-facilities-details">
-            <summary>Показать список учреждений</summary>
-            <div className="modal-official-list">{facilities.filter((facility) => facility.municipality_id === activeModalItem.id).map((facility) => <article key={facility.id} className="modal-official-row modal-site-row">
-              <div><strong>{facility.name_short || facility.name_full}</strong><span>{facility.facility_category === 'preschool' ? 'Дошкольное учреждение' : 'Школа'} · {facility.address || 'адрес не указан'}</span><span>Среднегодовое число детей/учеников: {formatNumber(facility.annual_attendance)} · штат: {facility.staffing_percent == null ? '—' : `${formatNumber(facility.staffing_percent, 1)}%`}</span><span>Версия данных: {facility.source_updated_at ? new Intl.DateTimeFormat('ru-RU').format(new Date(facility.source_updated_at + 'T00:00:00')) : 'не указана'}</span></div>
-              <a href={facility.source_url} target="_blank" rel="noreferrer">Источник ↗</a>
-            </article>)}</div>
-          </details>
-        </section>}
-        {programExecution.filter((item) => item.municipality_id === activeModalItem.id).length > 0 && <section className="modal-official-data" aria-labelledby="modal-programs-heading">
+          {facilities.some((facility) => facility.municipality_id === activeModalItem.id) ? <>
+            <p className="modal-no-official">В реестре доступны школы и дошкольные учреждения с адресами и координатами. Дата версии указана у каждого объекта; данные школ относятся к версии 16.12.2024.</p>
+            <details className="modal-facilities-details">
+              <summary>Показать список учреждений</summary>
+              <div className="modal-official-list">{facilities.filter((facility) => facility.municipality_id === activeModalItem.id).map((facility) => <article key={facility.id} className="modal-official-row modal-site-row">
+                <div><strong>{facility.name_short || facility.name_full}</strong><span>{facility.facility_category === 'preschool' ? 'Дошкольное учреждение' : 'Школа'} · {facility.address || 'адрес не указан'}</span><span>Среднегодовое число детей/учеников: {formatNumber(facility.annual_attendance)} · штат: {facility.staffing_percent == null ? '—' : `${formatNumber(facility.staffing_percent, 1)}%`}</span><span>Версия данных: {facility.source_updated_at ? new Intl.DateTimeFormat('ru-RU').format(new Date(facility.source_updated_at + 'T00:00:00')) : 'не указана'}</span></div>
+                <a href={facility.source_url} target="_blank" rel="noreferrer">Источник ↗</a>
+              </article>)}</div>
+            </details>
+          </> : <p className="modal-no-official">Для этой территории образовательные учреждения пока не представлены в базе. Это не означает, что на территории нет школ или детских садов.</p>}
+        </section>
+        <section className="modal-official-data" aria-labelledby="modal-programs-heading">
           <div className="modal-official-heading"><h3 id="modal-programs-heading">Исполнение муниципальных программ</h3><span>{programExecution.filter((item) => item.municipality_id === activeModalItem.id).length} отчёта</span></div>
-          <div className="modal-official-list">{programExecution.filter((item) => item.municipality_id === activeModalItem.id).map((item) => <article key={item.id} className="modal-official-row">
+          {programExecution.some((item) => item.municipality_id === activeModalItem.id) ? <div className="modal-official-list">{programExecution.filter((item) => item.municipality_id === activeModalItem.id).map((item) => <article key={item.id} className="modal-official-row">
             <div><strong>{item.program_name}</strong><span>Отчёт на {new Intl.DateTimeFormat('ru-RU').format(new Date(item.report_date + 'T00:00:00'))} · уточнённый бюджет {formatNumber(item.revised_budget_thousand / 1000, 2)} млн ₽</span></div>
             <b>{formatNumber(item.execution_percent, 1)}%</b>
             <a href={item.source_url} target="_blank" rel="noreferrer">Первоисточник ↗</a>
-          </article>)}</div>
-        </section>}
+          </article>)}</div> : <p className="modal-no-official">Отчёты об исполнении программ для этой территории пока не загружены. Нулевое количество записей не означает нулевое исполнение.</p>}
+        </section>
         <button type="button" className="primary-button modal-print" onClick={() => { setReportScope('selected'); setReportSelectedIds([activeModalItem.id]); setActiveModalItem(null); navigateToTab('reports'); }}><Icon name="file"/>Создать отчёт по территории</button>
       </section></div>}
     </div>
