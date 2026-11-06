@@ -116,11 +116,11 @@ assert.equal(partialModel.byMunicipality[4].availableWeight, 0,
   'missing data must not be converted to an artificial zero score');
 console.log('OK: insufficient and missing coverage remains explicitly unscored.');
 
-const makeScoreFixture = (middleValue) => ['economy', 'labour'].flatMap((pillarKey, pillarIndex) =>
+const makeScoreFixture = (seriesKey) => ['investment', 'employment'].flatMap((seriesCode) =>
   [1, 2, 3].map((municipalityId) => ({
-    municipalityId, code: pillarKey, unit: '%', direction: 'higher', adverse: null,
-    pillar: { key: pillarKey }, points: [{}, {}],
-    latest: { numericValue: municipalityId === 2 ? middleValue : municipalityId * 10,
+    municipalityId, code: seriesCode, unit: '%', direction: 'higher', adverse: null,
+    pillar: { key: seriesCode }, points: [{}, {}],
+    latest: { numericValue: municipalityId === 2 ? seriesKey : municipalityId * 10,
       reference_year: 2025, reference_period: 'annual' },
   }))
 );
