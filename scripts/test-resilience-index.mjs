@@ -46,7 +46,7 @@ const dirty = [
 const filtered = calculateMunicipalIndex(dirty, municipalities, { referenceYear: 2025, referencePeriod: 'annual', indicatorDefinitions: definitions });
 assert.equal(filtered.results.m1.index, null, 'duplicate logical key must be excluded, not arbitrarily resolved');
 assert.ok(filtered.diagnostics.duplicateLogicalKeysExcluded > 0);
-assert.equal(filtered.diagnostics.eligibleRows, rows.length + 1);
+assert.equal(filtered.diagnostics.eligibleRows, rows.length + 2, 'a unit-mismatched row remains eligible but forms an insufficient peer group');
 
 const twoYearRows = rows.map((row) => ({ ...row, reference_year: 2024 }));
 const wrongPeriod = calculateMunicipalIndex(twoYearRows, municipalities, { referenceYear: 2025, referencePeriod: 'annual', indicatorDefinitions: definitions });
