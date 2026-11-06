@@ -95,6 +95,8 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql
       - name: Verify migration effects, security grants, and uniqueness behavior
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_assertions.sql
+      - name: Execute read-only post-migration audit against integration schema
+        run: psql -v ON_ERROR_STOP=1 -f supabase/audits/data-quality-post-migration-audit.sql
       - name: Verify standalone legacy-index compatibility
         run: |
           createdb yugra_migration_test_legacy_index
