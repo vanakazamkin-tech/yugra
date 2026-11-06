@@ -297,3 +297,7 @@ When the scenario catalogue cannot be loaded from Supabase, the interface falls 
 ## Correct municipality coverage count in the sustainability comparison (7 November 2026)
 
 The comparison heading counted municipalities using an optional-chained score check against null. When a model result was absent (undefined), that check incorrectly treated it as available. The condition now excludes both null and undefined, so the displayed “with sufficient coverage” count includes only municipalities with an actual calculated score. No scoring formula, threshold, or underlying data was changed.
+
+## Stress-test controls follow actual index coverage (7 November 2026)
+
+The index sensitivity panel previously rendered sliders for all six pillars, including pillars with no comparable observations in the selected municipality. Those controls could not affect the recalculated score because the calculation correctly uses only scored pillars. The panel now renders controls only for pillars whose score is present and explicitly explains that directions without comparable data are excluded. The index formula, available-pillar weighting, and scenario calculations are unchanged.
