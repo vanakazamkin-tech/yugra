@@ -1,10 +1,10 @@
 # Yugra18 — QA audit checkpoint
 
-**Date:** 2026-11-06  
+**Date:** 2026-11-07  
 **QA branch:** `feat/qa-testing`  
 **QA PR:** [#12](https://github.com/vanakazamkin-tech/yugra/pull/12), Draft, not merged  
 **Main:** `5cedff13fd3ea3521c5aa4befdfd75dc12ae1499`  
-**QA commit reviewed before this report refresh:** `a57c23eb147446a389fedf719ed110663e7a3039`
+**QA commit reviewed before this report refresh:** `5ab1c5be410d78808db8a437d30f3f7b9776bae5`
 
 ## Scope and safety
 
@@ -26,19 +26,6 @@
 | #13 — forecasting | `40abd4f39e719429cded4090cf606470f5d8779e` | Latest observed prior Build [#42268245956](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268245956) — passed; no new head observed |
 
 All PRs #8–#13 remain open and unmerged. PR #12 remains Draft. The connected Supabase migration history currently ends at `20261106171350`; the three new PR #11 migrations have not been applied.
-
-## Current branch-head verification (historical snapshot)
-
-| PR | Current head | Latest verified GitHub Actions |
-|---|---|---|
-| #8 — index | `0e25c4338bc234daa00300c8525192719bf39659` | Build [#42275573440](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275573440) — running at latest check |
-| #9 — risks | `fcd481cba422916fdf1f8b8f5408409113ce28ec` | Build [#42275563325](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275563325) — passed |
-| #10 — UI | `a6246f588f03bd1b5592ac6a0f46662d4e72195d` | Build [#42275501999](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275501999) — passed |
-| #11 — data quality | `9368b66c7f12242137f5c0ea4d593c46d1bce78c` | Build [#42274693883](https://github.com/vanakazamkin-tech/yugra/actions/runs/42274693883) — passed |
-| #12 — QA | `a57c23eb147446a389fedf719ed110663e7a3039` | QA [#42275565219](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275565219) — running; Build [#42275563325](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275563325) passed on parent commit `fcd481cba422916fdf1f8b8f5408409113ce28ec` |
-| #13 — forecasting | `40abd4f39e719429cded4090cf606470f5d8779e` | Prior Build [#42268245956](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268245956) — passed; no newer run observed |
-
-PR #8's earlier tie-boundary assertion has been corrected in the current head: the fixture now places equal values across the quartile cutoff, and the test expects the overlap metric to be unavailable. The current head build passes.
 
 ## Confirmed findings requiring owner review
 
@@ -97,8 +84,9 @@ Previously inspected project `dmbikidqikjupkghywbz` (snapshot, not a fresh live 
 ## Next QA actions
 
 1. Confirm the latest QA workflow and build results for the current PR #12 head.
-2. Re-run all branch-head checks if any owner pushes new commits.
-3. Add browser E2E coverage for index navigation, municipality comparisons, forecast controls, risk warnings, passport selection, exports, and offline/error states when a runnable browser environment is available.
-4. Ask owners of PR #9 and #13 to address the confirmed metadata and numeric coercion findings.
-5. Recheck the live Vercel deployment only after the provider's build-rate limit clears.
-6. Keep production database and RLS changes outside QA scope unless explicitly authorized.
+2. Require PR #11 to correct the constraint-backed index migration and make its disposable fixture match the live schema before approval.
+3. Re-run all branch-head checks if any owner pushes new commits.
+4. Add browser E2E coverage for index navigation, municipality comparisons, forecast controls, risk warnings, passport selection, exports, and offline/error states when a runnable browser environment is available.
+5. Ask owners of PR #9 and #13 to address the confirmed metadata and numeric coercion findings.
+6. Recheck the live Vercel deployment only after the provider's build-rate limit clears.
+7. Keep production database and RLS changes outside QA scope unless explicitly authorized.
