@@ -1,12 +1,12 @@
-// Explainable municipal resilience and early-warning model.
-// Scores are comparative pilot indicators, never probabilities of crisis.
+// Explainable municipal risk diagnostics and early-warning rules.
+// This module does not calculate the six-pillar resilience index.
 export const MODEL_PILLARS = [
-  { key: 'economy', title: 'Экономика и инвестиции', weight: 0.20, series: ['investment', 'business', 'production'] },
-  { key: 'labour', title: 'Рынок труда и доходы', weight: 0.20, series: ['employment', 'income'] },
-  { key: 'demography', title: 'Демография и миграция', weight: 0.15, series: ['migration', 'demography'] },
-  { key: 'finance', title: 'Муниципальные финансы', weight: 0.15, series: ['budget'] },
-  { key: 'social', title: 'Социальная сфера', weight: 0.15, series: ['social', 'health', 'education'] },
-  { key: 'infrastructure', title: 'Инфраструктура и среда', weight: 0.15, series: ['infrastructure'] },
+  { key: 'economy', title: 'Экономика и инвестиции', series: ['investment', 'business', 'production'] },
+  { key: 'labour', title: 'Рынок труда и доходы', series: ['employment', 'income'] },
+  { key: 'demography', title: 'Демография и миграция', series: ['migration', 'demography'] },
+  { key: 'finance', title: 'Муниципальные финансы', series: ['budget'] },
+  { key: 'social', title: 'Социальная сфера', series: ['social', 'health', 'education'] },
+  { key: 'infrastructure', title: 'Инфраструктура и среда', series: ['infrastructure'] },
 ];
 
 export const RISK_CHAINS = [
@@ -125,92 +125,43 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
   };
 }
 
-function percentile(value, values, higherIsBetter) {
-  const sorted = values.filter(finite).map(Number).sort((a, b) => a - b);
-  if (sorted.length < 3) return null;
-  const below = sorted.filter((v) => v < Number(value)).length;
-  const equal = sorted.filter((v) => v === Number(value)).length;
-  const rank = (below + Math.max(0, equal - 1) / 2) / Math.max(1, sorted.length - 1) * 100;
-  return higherIsBetter ? rank : 100 - rank;
-}
-
 export function buildRiskModel(municipalities = [], series = []) {
-  const comparable = new Map();
-  for (const item of series) {
-    if (!item || !['higher', 'lower'].includes(item.direction) || !finite(item.latest?.numericValue)) continue;
-    const pillarKey = MODEL_PILLAR_BY_SERIES[item.pillar?.key];
-    if (!pillarKey) continue;
-    const parsedPeriod = parseRiskPeriod(item.latest);
-    if (!parsedPeriod) continue;
-    const key = [item.code, item.unit, parsedPeriod.frequency, parsedPeriod.slot, parsedPeriod.year].join('|');
-    if (!comparable.has(key)) comparable.set(key, []);
-    comparable.get(key).push(item);
-  }
-
-  const scored = new Map();
-  for (const group of comparable.values()) {
-    if (new Set(group.map((x) => x.municipalityId)).size < 3) continue;
-    const values = group.map((x) => x.latest.numericValue);
-    for (const item of group) {
-      const score = percentile(item.latest.numericValue, values, item.direction === 'higher');
-      if (score === null) continue;
-      const trend = item.adverse === null ? 50 : item.adverse ? 20 : 80;
-      const indicatorScore = score * 0.8 + trend * 0.2;
-      const municipalityKey = String(item.municipalityId);
-      if (!scored.has(municipalityKey)) scored.set(municipalityKey, []);
-      scored.get(municipalityKey).push({ ...item, peerScore: score, indicatorScore, modelPillar: MODEL_PILLAR_BY_SERIES[item.pillar.key] });
-    }
-  }
-
   const byMunicipality = {};
   for (const municipality of municipalities) {
-    const own = scored.get(String(municipality.id)) || [];
+    const own = (Array.isArray(series) ? series : []).filter((item) => String(item.municipalityId) === String(municipality.id));
+    const usable = own.filter((item) =>
+      ['higher', 'lower'].includes(item.direction) && (item.adverse === true || item.adverse === false)
+    );
+    const adverse = usable.filter((item) => item.adverse === true);
+    const affectedPillars = new Set(adverse.map((item) => MODEL_PILLAR_BY_SERIES[item.pillar?.key]).filter(Boolean));
+    const availablePillars = new Set(usable.map((item) => MODEL_PILLAR_BY_SERIES[item.pillar?.key]).filter(Boolean));
     const pillars = MODEL_PILLARS.map((pillar) => {
-      const items = own.filter((item) => item.modelPillar === pillar.key);
+      const items = usable.filter((item) => MODEL_PILLAR_BY_SERIES[item.pillar?.key] === pillar.key);
       return {
-        ...pillar,
-        score: items.length ? items.reduce((sum, item) => sum + item.indicatorScore, 0) / items.length : null,
+        key: pillar.key,
+        title: pillar.title,
+        series: pillar.series,
         indicators: items.length,
         adverse: items.filter((item) => item.adverse === true).length,
-        series: items,
+        totalSeries: own.filter((item) => MODEL_PILLAR_BY_SERIES[item.pillar?.key] === pillar.key).length,
       };
     });
-    const available = pillars.filter((p) => p.score !== null);
-    const availableWeight = available.reduce((sum, p) => sum + p.weight, 0);
-    // A pilot score is useful with two independently covered dimensions and >=35% of base weights.
-    // The UI must always show coverage so a partial score cannot be mistaken for a complete assessment.
-    const resilience = available.length >= 2 && availableWeight >= 0.35
-      ? available.reduce((sum, p) => sum + p.score * p.weight, 0) / availableWeight
-      : null;
-    const coverage = availableWeight * 100;
-    const historyDepth = own.length ? own.reduce((sum, item) => sum + Math.min(1, item.points.length / 4), 0) / own.length : 0;
-    const confidence = resilience === null ? 0 : clamp(coverage * (0.65 + historyDepth * 0.35));
-    const adverse = own.filter((item) => item.adverse === true);
-    const affectedPillars = new Set(adverse.map((item) => item.modelPillar));
-    const deteriorationShare = own.length ? adverse.length / own.length : 0;
-    const priority = own.length >= 2
-      ? clamp(deteriorationShare * 70 + Math.max(0, affectedPillars.size - 1) * 10)
-      : null;
     const chains = RISK_CHAINS.map((chain) => {
       const hits = chain.watch.filter((key) => {
         const seriesKeys = RISK_WATCH_SERIES[key] || [key];
-        return own.some((item) => seriesKeys.includes(item.pillar.key) && item.adverse === true);
+        return own.some((item) => seriesKeys.includes(item.pillar?.key) && item.adverse === true);
       });
       return { ...chain, hits, matched: hits.length, active: hits.length >= 2 };
     }).filter((chain) => chain.matched > 0).sort((a, b) => b.matched - a.matched);
     byMunicipality[municipality.id] = {
       municipalityId: municipality.id,
-      score: resilience === null ? null : Math.round(resilience * 10) / 10,
-      confidence: Math.round(confidence),
-      assessmentStatus: resilience === null ? 'insufficient' : available.length < 4 || coverage < 70 ? 'partial' : 'expanded',
-      availablePillars: available.length,
-      availableWeight: Math.round(availableWeight * 100),
-      pillars,
+      totalSeries: own.length,
+      usableIndicators: usable.length,
+      availablePillars: availablePillars.size,
       adverseCount: adverse.length,
       affectedPillars: affectedPillars.size,
-      priority: priority === null ? null : Math.round(priority),
+      pillars,
       chains,
-      scoredIndicators: own.length,
     };
   }
   return { byMunicipality, pillars: MODEL_PILLARS, chains: RISK_CHAINS };
@@ -342,28 +293,6 @@ export function deriveMunicipalIndicators(rows = []) {
   return derived;
 }
 
-
-export function projectScoreScenarios(baseScore, scenarios = [], horizon = 1) {
-  if (!finite(baseScore)) return [];
-  const years = clamp(Math.trunc(Number(horizon) || 1), 1, 3);
-  const base = clamp(Number(baseScore));
-  return (Array.isArray(scenarios) ? scenarios : []).map((scenario) => {
-    const rateValue = Number(scenario?.score_growth_rate ?? 0);
-    const uncertaintyValue = Number(scenario?.uncertainty_rate ?? 0);
-    const rate = Number.isFinite(rateValue) ? rateValue : 0;
-    const uncertainty = Number.isFinite(uncertaintyValue) ? Math.max(0, uncertaintyValue) : 0;
-    const project = (annualRate) => clamp(base * Math.pow(Math.max(0.01, 1 + annualRate / 100), years));
-    return {
-      ...scenario,
-      rate,
-      uncertainty,
-      horizon: years,
-      value: project(rate),
-      low: project(rate - uncertainty),
-      high: project(rate + uncertainty),
-    };
-  });
-}
 
 export function backtestAnnualSeries(series) {
   const points = Array.isArray(series?.points) ? series.points : [];
