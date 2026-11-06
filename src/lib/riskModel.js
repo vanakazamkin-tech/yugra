@@ -36,15 +36,52 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
     criticalSignals: normalize(thresholds?.criticalSignals, DEFAULT_RISK_THRESHOLDS.criticalSignals, 1, 20),
     criticalPillars: normalize(thresholds?.criticalPillars, DEFAULT_RISK_THRESHOLDS.criticalPillars, 1, 6),
   };
-  const usable = (Array.isArray(signals) ? signals : []).filter((signal) => signal && signal.adverse !== null);
+  // Only explicit true/false values are assessable. Missing/unknown directions
+  // must never be counted as healthy observations.
+  const usable = (Array.isArray(signals) ? signals : []).filter(
+    (signal) => signal && (signal.adverse === true || signal.adverse === false)
+  );
   const bad = usable.filter((signal) => signal.adverse === true);
   const affectedPillars = new Set(bad.map((signal) => signal.pillar?.key).filter(Boolean));
-  if (usable.length < settings.minimumUsable) return { level: 'insufficient', usable, bad, thresholds: settings };
-  if (bad.length >= settings.criticalSignals && affectedPillars.size >= settings.criticalPillars) {
-    return { level: 'critical', usable, bad, thresholds: settings };
+  const pillarCounts = Object.fromEntries([...affectedPillars].map((key) => [
+    key, bad.filter((signal) => signal.pillar?.key === key).length,
+  ]));
+  const repeatedDeterioration = bad.filter((signal) => Number(signal.adverseStreak) >= 2);
+  const common = {
+    usable, bad, thresholds: settings,
+    usableCount: usable.length,
+    adverseCount: bad.length,
+    affectedPillars: affectedPillars.size,
+    pillarCounts,
+    repeatedDeterioration,
+    earlyWarning: repeatedDeterioration.length > 0,
+  };
+  if (usable.length < settings.minimumUsable) {
+    return {
+      ...common, level: 'insufficient',
+      explanation: `Недостаточно данных: оцениваемых рядов ${usable.length}, требуется не менее ${settings.minimumUsable}. Неопределённые и контекстные показатели не учитываются как положительные.`,
+      reasons: ['Недостаточное покрытие показателями с однозначным направлением'],
+    };
   }
-  if (bad.length > 0) return { level: 'watch', usable, bad, thresholds: settings };
-  return { level: 'stable', usable, bad, thresholds: settings };
+  if (bad.length >= settings.criticalSignals && affectedPillars.size >= settings.criticalPillars) {
+    return {
+      ...common, level: 'critical',
+      explanation: `Зафиксировано ${bad.length} негативных сигналов в ${affectedPillars} направлениях; достигнуты оба настраиваемых порога повышенного внимания.`,
+      reasons: [`Негативных сигналов: ${bad.length} из требуемых ${settings.criticalSignals}`, `Затронуто направлений: ${affectedPillars.size} из требуемых ${settings.criticalPillars}`],
+    };
+  }
+  if (bad.length > 0) {
+    return {
+      ...common, level: 'watch',
+      explanation: `Есть ${bad.length} негативных сигнал(а/ов) в ${affectedPillars} направлениях, но критерий одновременного межотраслевого ухудшения не достигнут.`,
+      reasons: [`Негативных сигналов: ${bad.length}`, `Затронуто направлений: ${affectedPillars.size}`],
+    };
+  }
+  return {
+    ...common, level: 'stable',
+    explanation: `Среди ${usable.length} оцениваемых рядов негативных изменений не выявлено. Это не подтверждает отсутствие рисков в направлениях без данных или с контекстными показателями.`,
+    reasons: ['Негативных сигналов среди оцениваемых рядов нет'],
+  };
 }
 
 function percentile(value, values, higherIsBetter) {
