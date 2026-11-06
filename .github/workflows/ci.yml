@@ -95,4 +95,12 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql
       - name: Verify migration effects, security grants, and uniqueness behavior
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_assertions.sql
+      - name: Verify standalone legacy-index compatibility
+        run: |
+          createdb yugra_migration_test_legacy_index
+          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_bootstrap_legacy_index.sql
+          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql
+          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106230000_add_municipality_indicator_quality_view.sql
+          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql
+          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_assertions.sql
 
