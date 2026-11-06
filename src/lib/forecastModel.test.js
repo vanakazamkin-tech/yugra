@@ -32,7 +32,7 @@ test('blank strings, whitespace, null, booleans and malformed values remain miss
 
 test('numeric strings and real zero are preserved', () => {
   const row = buildForecasts([{
-    id: 'zero', name: 'Ноль', score: '0', smeCount: '0',
+    id: 'zero', name: 'Ноль', score: 0, smeCount: '0',
     investments: { volumeBillion: '0' },
   }], { investment_growth_rate: 10, sme_growth_rate: 10, score_growth_rate: 10 }, 3)[0];
   assert.equal(row.score, 0);
