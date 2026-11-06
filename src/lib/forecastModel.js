@@ -152,6 +152,6 @@ export function summarizeForecast(rows = []) {
     averageScoreLow: average(valid, 'scoreLow'),
     averageScoreHigh: average(valid, 'scoreHigh'),
     investmentTotal,
-    investmentCoverage: investmentRows.length,
+    investmentCoverage: safeRows.filter((row) => numeric(row?.projectedInvestments) != null).length,
   };
 }
