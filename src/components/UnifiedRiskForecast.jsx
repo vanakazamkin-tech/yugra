@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { isEligibleAnnualForecastSeries } from '../lib/forecastCoverage.js';
-import { backtestAnnualSeries, buildRiskModel, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios, RISK_CHAINS } from '../lib/riskModel.js';
+import { assessRiskSignals, backtestAnnualSeries, buildRiskModel, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios, RISK_CHAINS } from '../lib/riskModel.js';
 import './UnifiedRiskForecast.css';
 import { PILLARS, classify } from '../lib/indicatorClassification.js';
 
@@ -77,14 +77,6 @@ const RISK = {
   stable: { label: 'Негативных сигналов нет', short: 'Без сигналов', color: 'green' },
   insufficient: { label: 'Недостаточно данных', short: 'Нет оценки', color: 'neutral' },
 };
-function assess(signals) {
-  const usable = signals.filter((s) => s.adverse !== null);
-  const bad = usable.filter((s) => s.adverse);
-  if (usable.length < 2) return { level: 'insufficient', usable, bad };
-  if (bad.length >= 3 && new Set(bad.map((s) => s.pillar.key)).size >= 2) return { level: 'critical', usable, bad };
-  if (bad.length > 0) return { level: 'watch', usable, bad };
-  return { level: 'stable', usable, bad };
-}
 const DEFAULT_SCENARIOS = [
   { key: 'cautious', title: 'Стрессовый', summary: 'Неблагоприятные внешние условия и рост издержек.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18 },
   { key: 'base', title: 'Базовый', summary: 'Продолжение наблюдаемых тенденций при текущих условиях.', investment_growth_rate: 4, sme_growth_rate: 3, score_growth_rate: 1.5, uncertainty_rate: 7 },
@@ -107,6 +99,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
   const [scenarioSource, setScenarioSource] = useState('встроенные шаблоны');
   const [scenarioError, setScenarioError] = useState('');
   const [modelShocks, setModelShocks] = useState({ economy: 0, labour: 0, demography: 0, finance: 0, social: 0, infrastructure: 0 });
+  const [riskThresholds, setRiskThresholds] = useState(DEFAULT_RISK_THRESHOLDS);
 
   useEffect(() => {
     let cancelled = false;
@@ -149,13 +142,13 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
   ), [series, municipalityId, search, municipalityNames]);
   const municipalityAnalysis = useMemo(() => municipalities.map((m) => {
     const own = series.filter((s) => s.municipalityId === m.id);
-    const assessment = assess(own);
+    const assessment = assessRiskSignals(own, riskThresholds);
     const pillars = PILLARS.map((p) => ({ ...p, series: own.filter((s) => s.pillar.key === p.key) })).filter((p) => p.series.length);
     return { ...m, own, pillars, ...assessment, coverage: own.length, model: riskModel.byMunicipality[m.id] || null };
   }).sort((a, b) => {
     const priority = { critical: 0, watch: 1, stable: 2, insufficient: 3 };
     return priority[a.level] - priority[b.level] || b.bad.length - a.bad.length || String(a.name || a.id).localeCompare(String(b.name || b.id), 'ru-RU');
-  }), [municipalities, series, riskModel]);
+  }), [municipalities, series, riskModel, riskThresholds]);
   const filteredMunicipalities = municipalityAnalysis.filter((m) => municipalityId === 'ALL' || m.id === municipalityId);
   const counts = {
     critical: filteredMunicipalities.filter((m) => m.level === 'critical').length,
@@ -270,14 +263,23 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     </section>}
 
     {tab === 'overview' && <>
+      <section className="unified-section">
+        <div className="unified-section-head"><div><h2>Настройка порогов светофора</h2><p>Изменения сразу пересчитывают статусы муниципалитетов. Пороги являются настраиваемыми правилами прототипа, а не статистически откалиброванными нормативами.</p></div><button className="outline-button" onClick={() => setRiskThresholds(DEFAULT_RISK_THRESHOLDS)}>Сбросить пороги</button></div>
+        <div className="unified-forecast-controls risk-threshold-controls">
+          <label>Минимум рядов с понятным направлением: {riskThresholds.minimumUsable}<input type="range" min="1" max="5" step="1" value={riskThresholds.minimumUsable} onChange={(e) => setRiskThresholds((current) => ({ ...current, minimumUsable: Number(e.target.value) }))}/></label>
+          <label>Негативных сигналов для красной зоны: {riskThresholds.criticalSignals}<input type="range" min="2" max="10" step="1" value={riskThresholds.criticalSignals} onChange={(e) => setRiskThresholds((current) => ({ ...current, criticalSignals: Number(e.target.value), criticalPillars: Math.min(current.criticalPillars, Number(e.target.value)) }))}/></label>
+          <label>Направлений для красной зоны: {riskThresholds.criticalPillars}<input type="range" min="1" max={Math.min(6, riskThresholds.criticalSignals)} step="1" value={riskThresholds.criticalPillars} onChange={(e) => setRiskThresholds((current) => ({ ...current, criticalPillars: Number(e.target.value) }))}/></label>
+        </div>
+        <p className="unified-muted">Жёлтая зона — есть хотя бы один негативный сигнал после достижения минимального покрытия. Зелёная зона — негативных сигналов нет при достаточном числе оцениваемых рядов. При недостатке данных статус остаётся неопределённым.</p>
+      </section>
       <div className="unified-kpis">
-        <article className="risk-kpi risk-kpi-red"><div><small>НЕСКОЛЬКО УХУДШЕНИЙ</small><strong>{counts.critical}</strong><span>муниципалитетов с 3+ негативными сигналами</span></div></article>
+        <article className="risk-kpi risk-kpi-red"><div><small>НЕСКОЛЬКО УХУДШЕНИЙ</small><strong>{counts.critical}</strong><span>муниципалитетов с {riskThresholds.criticalSignals}+ негативными сигналами по {riskThresholds.criticalPillars}+ направлениям</span></div></article>
         <article className="risk-kpi risk-kpi-yellow"><div><small>ЕСТЬ УХУДШЕНИЯ</small><strong>{counts.watch}</strong><span>хотя бы один негативный сигнал</span></div></article>
-        <article className="risk-kpi risk-kpi-green"><div><small>БЕЗ НЕГАТИВНЫХ СИГНАЛОВ</small><strong>{counts.stable}</strong><span>не менее двух оцениваемых рядов</span></div></article>
+        <article className="risk-kpi risk-kpi-green"><div><small>БЕЗ НЕГАТИВНЫХ СИГНАЛОВ</small><strong>{counts.stable}</strong><span>не менее {riskThresholds.minimumUsable} оцениваемых рядов</span></div></article>
         <article className="risk-kpi risk-kpi-neutral"><div><small>НЕДОСТАТОЧНО ДАННЫХ</small><strong>{counts.insufficient}</strong><span>нельзя надёжно оценить динамику</span></div></article>
       </div>
       <section className="unified-section">
-        <div className="unified-section-head"><div><h2>Где ситуация требует внимания</h2><p>Список отсортирован по числу одновременно ухудшающихся направлений. Нажмите на территорию для подробного разбора.</p></div><button className="outline-button" onClick={() => exportCsv([['Муниципалитет','Статус','Оцениваемых рядов','Негативных сигналов','Показатели'], ...filteredMunicipalities.map((m) => [m.name,RISK[m.level].label,m.usable.length,m.bad.length,m.bad.map((s) => s.name).join(', ')])], 'yugra-risk-overview.csv')}>Экспорт CSV</button></div>
+        <div className="unified-section-head"><div><h2>Где ситуация требует внимания</h2><p>Список отсортирован по числу негативных сигналов; пороги красной зоны учитывают также число затронутых направлений. Нажмите на территорию для подробного разбора.</p></div><button className="outline-button" onClick={() => exportCsv([['Муниципалитет','Статус','Оцениваемых рядов','Негативных сигналов','Показатели'], ...filteredMunicipalities.map((m) => [m.name,RISK[m.level].label,m.usable.length,m.bad.length,m.bad.map((s) => s.name).join(', ')])], 'yugra-risk-overview.csv')}>Экспорт CSV</button></div>
         <div className="table-scroll"><table className="ranking-table risk-table"><thead><tr><th>Муниципалитет</th><th>Сигнал системы</th><th>Рядов с направлением</th><th>Ухудшений</th><th>Что ухудшается</th><th></th></tr></thead><tbody>
           {filteredMunicipalities.map((m) => <tr key={m.id}><td><strong>{m.name}</strong></td><td><span className={'risk-zone-badge risk-zone-' + (m.level === 'critical' ? 'red' : m.level === 'watch' ? 'yellow' : m.level === 'stable' ? 'green' : 'unknown')}>{RISK[m.level].label}</span></td><td>{m.usable.length}</td><td>{m.bad.length}</td><td>{m.bad.slice(0,3).map((s) => s.name).join('; ') || 'Нет подтверждённого ухудшения по оцениваемым рядам'}</td><td><button className="outline-button" onClick={() => { setSelectedMunicipality(m.id); setTab('municipality'); }}>Разобрать</button></td></tr>)}
         </tbody></table></div>

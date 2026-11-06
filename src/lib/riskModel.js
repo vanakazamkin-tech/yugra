@@ -21,6 +21,32 @@ const RISK_WATCH_SERIES = { social: ['social', 'health', 'education'] };
 const finite = (v) => Number.isFinite(Number(v)) && v !== null && v !== '';
 const clamp = (v, min = 0, max = 100) => Math.max(min, Math.min(max, v));
 
+export const DEFAULT_RISK_THRESHOLDS = Object.freeze({
+  minimumUsable: 2,
+  criticalSignals: 3,
+  criticalPillars: 2,
+});
+
+export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESHOLDS) {
+  const normalize = (value, fallback, min, max) => Number.isFinite(Number(value))
+    ? clamp(Math.trunc(Number(value)), min, max)
+    : fallback;
+  const settings = {
+    minimumUsable: normalize(thresholds?.minimumUsable, DEFAULT_RISK_THRESHOLDS.minimumUsable, 1, 10),
+    criticalSignals: normalize(thresholds?.criticalSignals, DEFAULT_RISK_THRESHOLDS.criticalSignals, 1, 20),
+    criticalPillars: normalize(thresholds?.criticalPillars, DEFAULT_RISK_THRESHOLDS.criticalPillars, 1, 6),
+  };
+  const usable = (Array.isArray(signals) ? signals : []).filter((signal) => signal && signal.adverse !== null);
+  const bad = usable.filter((signal) => signal.adverse === true);
+  const affectedPillars = new Set(bad.map((signal) => signal.pillar?.key).filter(Boolean));
+  if (usable.length < settings.minimumUsable) return { level: 'insufficient', usable, bad, thresholds: settings };
+  if (bad.length >= settings.criticalSignals && affectedPillars.size >= settings.criticalPillars) {
+    return { level: 'critical', usable, bad, thresholds: settings };
+  }
+  if (bad.length > 0) return { level: 'watch', usable, bad, thresholds: settings };
+  return { level: 'stable', usable, bad, thresholds: settings };
+}
+
 function percentile(value, values, higherIsBetter) {
   const sorted = values.filter(finite).map(Number).sort((a, b) => a - b);
   if (sorted.length < 3) return null;

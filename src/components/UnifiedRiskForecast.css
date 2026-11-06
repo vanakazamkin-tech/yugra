@@ -143,3 +143,5 @@
 .unified-system .unified-principles-grid article p{margin:7px 0 0;color:#69736b;font-size:12px;line-height:1.6}
 .unified-system .unified-hero h1{max-width:850px;font-size:clamp(25px,3vw,38px);line-height:1.13}
 @media(max-width:650px){.unified-system .unified-principles-grid{grid-template-columns:1fr}.unified-system .unified-concept-flow article{padding:15px}}
+
+.unified-system .risk-threshold-controls{grid-template-columns:repeat(3,minmax(0,1fr));align-items:end}.unified-system .risk-threshold-controls label{display:flex;flex-direction:column;gap:9px;font-size:12px;color:var(--text-secondary,#777)}.unified-system .risk-threshold-controls input{width:100%;accent-color:#315b43}@media(max-width:650px){.unified-system .risk-threshold-controls{grid-template-columns:1fr}}
