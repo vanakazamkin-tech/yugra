@@ -36,6 +36,9 @@ assert.match(postMigrationAuditSql, /municipality_indicator_quality_issues/i, 'p
 assert.match(postMigrationAuditSql, /unchecked_access_restrictions/i, 'post-migration audit must expose unchecked source restrictions');
 assert.match(postMigrationAuditSql, /reference_period !~ '[^']*\[0-9\]\{4\}/i, 'post-migration period audit must preserve explicit canonical vocabulary');
 console.log('Extended provenance and source-quality audit contract checks passed.');
+assert.match(auditSql, /count\(distinct municipality_id\) filter\(where geographic_level = 'municipality'\)/i, 'municipal coverage must exclude settlement-level observations');
+assert.match(auditSql, /where geographic_level = 'municipality'[\s\S]*group by indicator_code/i, 'highest-coverage municipal panel must use municipality-level rows only');
+assert.match(auditSql, /where geographic_level <> 'municipality'[\s\S]*group by geographic_level/i, 'non-municipal observations must be reported separately');
 assert.match(auditSql, /union select source_id from public\.municipality_indicator_import_review/i, 'catalog usage audit must include import-review records');
 assert.match(auditSql, /orphan_source_references/i, 'audit must report orphan source references by relation');
 assert.match(auditSql, /municipality_indicator_import_review[\s\S]*municipality_indicator_import_staging/i, 'source reference inventory must include review and staging relations');
