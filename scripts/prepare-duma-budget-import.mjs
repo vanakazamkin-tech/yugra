@@ -151,6 +151,7 @@ const rowWarnings = [];
 const duplicateKeys = [];
 const seen = new Map();
 const municipalityCoverage = new Map();
+const indicatorMunicipalityCoverage = new Map();
 
 for (const [index, cells] of parsed.slice(1).entries()) {
   const line = index + 2;
@@ -208,6 +209,14 @@ for (const [index, cells] of parsed.slice(1).entries()) {
     municipalityCoverage.set(year, years);
   }
 
+  if (municipalityId && row.indicator_code && Number.isInteger(year)) {
+    const indicatorYears = indicatorMunicipalityCoverage.get(row.indicator_code) ?? new Map();
+    const indicatorMunicipalities = indicatorYears.get(year) ?? new Set();
+    indicatorMunicipalities.add(municipalityId);
+    indicatorYears.set(year, indicatorMunicipalities);
+    indicatorMunicipalityCoverage.set(row.indicator_code, indicatorYears);
+  }
+
   if (municipalityId && row.indicator_code && Number.isInteger(year) && row.unit) {
     const key = [municipalityId, row.indicator_code, year, row.unit, measureType].join('|');
     if (seen.has(key)) duplicateKeys.push({ key, first_csv_line: seen.get(key), duplicate_csv_line: line });
@@ -227,6 +236,14 @@ const coverageByYear = Object.fromEntries([2023, 2024].map((year) => [
   },
 ]));
 
+const coverageByIndicatorYear = Object.fromEntries([...indicatorMunicipalityCoverage.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([code, years]) => [
+  code,
+  Object.fromEntries([2023, 2024].map((year) => {
+    const count = years.get(year)?.size ?? 0;
+    return [year, { municipality_count: count, expected_municipality_count: 22, complete: count === 22 }];
+  })),
+]));
+
 const result = {
   generated_at: new Date().toISOString(),
   input_file: path.basename(inputPath),
@@ -235,6 +252,7 @@ const result = {
   staged_rows: records.length,
   excluded_control_total_rows: excludedTotals,
   coverage_by_year: coverageByYear,
+  coverage_by_indicator_year: coverageByIndicatorYear,
   duplicate_keys: duplicateKeys,
   warning_count: rowWarnings.length,
   row_warnings: rowWarnings,
