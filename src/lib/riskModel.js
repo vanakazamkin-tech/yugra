@@ -112,7 +112,18 @@ export function buildRiskModel(municipalities = [], series = []) {
 }
 
 
-const rowKey = (row) => String(row.municipality_id) + '|' + String(row.reference_year);
+const rowKey = (row) => [
+  String(row.municipality_id),
+  String(row.reference_year),
+  String(row.reference_period || ''),
+].join('|');
+
+const sameUnit = (left, right) => {
+  const leftUnit = String(left?.unit ?? '').trim();
+  const rightUnit = String(right?.unit ?? '').trim();
+  return Boolean(leftUnit) && leftUnit === rightUnit;
+};
+
 export function deriveMunicipalIndicators(rows = []) {
   const verified = (Array.isArray(rows) ? rows : []).filter((row) =>
     row && row.verification_status === 'verified'
@@ -122,20 +133,27 @@ export function deriveMunicipalIndicators(rows = []) {
     && Number.isInteger(Number(row.reference_year))
   );
   const grouped = new Map();
+  const populationByMunicipalityYear = new Map();
   for (const row of verified) {
     const key = rowKey(row);
     if (!grouped.has(key)) grouped.set(key, {});
     grouped.get(key)[row.indicator_code] = row;
+    if (row.indicator_code === 'population_municipality') {
+      const populationKey = String(row.municipality_id) + '|' + String(row.reference_year);
+      if (!populationByMunicipalityYear.has(populationKey)) populationByMunicipalityYear.set(populationKey, []);
+      populationByMunicipalityYear.get(populationKey).push(row);
+    }
   }
+
   const derived = [];
-  const push = (base, code, name, value, unit, directionNote) => {
+  const push = (base, code, name, value, unit, directionNote, referencePeriod = base?.reference_period || null) => {
     if (!base || !Number.isFinite(value)) return;
     derived.push({
       municipality_id: base.municipality_id,
       indicator_code: code,
       indicator_name: name,
       reference_year: Number(base.reference_year),
-      reference_period: 'annual',
+      reference_period: referencePeriod,
       value,
       unit,
       source_id: 'derived_from_verified_municipal_indicators',
@@ -147,32 +165,48 @@ export function deriveMunicipalIndicators(rows = []) {
       notes: 'Расчётный показатель, получен из подтверждённых исходных муниципальных наблюдений. ' + directionNote,
     });
   };
+
   for (const bucket of grouped.values()) {
-    const total = Number(bucket.budget_total_revenue?.value);
-    const nonGrant = Number(bucket.budget_revenue_excluding_grants?.value);
-    const transfers = Number(bucket.budget_intergovernmental_transfers?.value);
-    const expenditure = Number(bucket.budget_total_expenditure?.value);
-    const base = bucket.budget_total_revenue;
-    if (base && total > 0 && finite(nonGrant)) {
-      push(base, 'derived_budget_own_revenue_share', 'Доля доходов без безвозмездных поступлений в общих доходах бюджета', nonGrant / total * 100, '%', 'Чем выше доля, тем меньше формальная зависимость доходов от безвозмездных поступлений; это не полная оценка бюджетной устойчивости.');
+    const totalRow = bucket.budget_total_revenue;
+    const nonGrantRow = bucket.budget_revenue_excluding_grants;
+    const transfersRow = bucket.budget_intergovernmental_transfers;
+    const expenditureRow = bucket.budget_total_expenditure;
+    const total = Number(totalRow?.value);
+    const nonGrant = Number(nonGrantRow?.value);
+    const transfers = Number(transfersRow?.value);
+    const expenditure = Number(expenditureRow?.value);
+    const hasPeriod = Boolean(String(totalRow?.reference_period || '').trim());
+
+    // Ratios are calculated only from the same municipality, year, period and unit.
+    // A quarterly observation must never be relabelled as annual.
+    if (hasPeriod && totalRow && total > 0 && nonGrantRow && sameUnit(totalRow, nonGrantRow) && finite(nonGrant)) {
+      push(totalRow, 'derived_budget_own_revenue_share', 'Доля доходов без безвозмездных поступлений в общих доходах бюджета', nonGrant / total * 100, '%', 'Чем выше доля, тем меньше формальная зависимость доходов от безвозмездных поступлений; это не полная оценка бюджетной устойчивости.');
     }
-    if (base && total > 0 && finite(transfers)) {
-      push(base, 'derived_budget_transfer_dependency', 'Доля безвозмездных поступлений в общих доходах бюджета', transfers / total * 100, '%', 'Рост доли рассматривается как сигнал зависимости от межбюджетных трансфертов.');
+    if (hasPeriod && totalRow && total > 0 && transfersRow && sameUnit(totalRow, transfersRow) && finite(transfers)) {
+      push(totalRow, 'derived_budget_transfer_dependency', 'Доля безвозмездных поступлений в общих доходах бюджета', transfers / total * 100, '%', 'Рост доли рассматривается как сигнал зависимости от межбюджетных трансфертов.');
     }
-    if (base && total > 0 && finite(expenditure) && expenditure > 0) {
-      push(base, 'derived_budget_balance_ratio', 'Отношение доходов к расходам бюджета', (total - expenditure) / expenditure * 100, '%', 'Положительное значение означает превышение доходов над расходами в пределах данного отчётного периода; требуется сверка методики исполнения бюджета.');
+    if (hasPeriod && totalRow && total > 0 && expenditureRow && sameUnit(totalRow, expenditureRow) && finite(expenditure) && expenditure > 0) {
+      push(totalRow, 'derived_budget_balance_ratio', 'Отношение доходов к расходам бюджета', (total - expenditure) / expenditure * 100, '%', 'Положительное значение означает превышение доходов над расходами в пределах данного отчётного периода; требуется сверка методики исполнения бюджета.');
     }
+
     const investment = bucket.fixed_capital_investment_non_mining;
-    const population = bucket.population_municipality;
-    if (investment && population && Number(population.value) > 0) {
-      push(investment, 'derived_investment_per_capita', 'Инвестиции в основной капитал без добычи на одного жителя', Number(investment.value) / Number(population.value), 'руб./чел.', 'Номинальная интенсивность инвестиций; не является реальным темпом роста и не скорректирована на инфляцию.');
+    if (investment) {
+      const populationKey = String(investment.municipality_id) + '|' + String(investment.reference_year);
+      const populationRows = populationByMunicipalityYear.get(populationKey) || [];
+      // A single population snapshot for the same calendar year is required.
+      if (populationRows.length === 1 && Number(populationRows[0].value) > 0) {
+        push(investment, 'derived_investment_per_capita', 'Инвестиции в основной капитал без добычи на одного жителя', Number(investment.value) / Number(populationRows[0].value), 'руб./чел.', 'Номинальная интенсивность инвестиций; не является реальным темпом роста и не скорректирована на инфляцию.', investment.reference_period || null);
+      }
     }
   }
 
   const populationByMunicipality = new Map();
-  for (const row of verified.filter((item) => item.indicator_code === 'population_municipality')) {
-    if (!populationByMunicipality.has(row.municipality_id)) populationByMunicipality.set(row.municipality_id, []);
-    populationByMunicipality.get(row.municipality_id).push(row);
+  for (const history of populationByMunicipalityYear.values()) {
+    if (history.length !== 1) continue;
+    const row = history[0];
+    const municipalityId = String(row.municipality_id);
+    if (!populationByMunicipality.has(municipalityId)) populationByMunicipality.set(municipalityId, []);
+    populationByMunicipality.get(municipalityId).push(row);
   }
   for (const history of populationByMunicipality.values()) {
     const points = history.sort((a, b) => Number(a.reference_year) - Number(b.reference_year));
@@ -181,7 +215,7 @@ export function deriveMunicipalIndicators(rows = []) {
     const span = Number(last.reference_year) - Number(first.reference_year);
     if (span <= 0) continue;
     const annualized = (Math.pow(Number(last.value) / Number(first.value), 1 / span) - 1) * 100;
-    push(last, 'derived_population_growth_rate', 'Среднегодовое изменение численности населения за доступный период', annualized, '% в год', 'Расчёт по крайним доступным годам; не заменяет полный демографический баланс рождаемости, смертности и миграции.');
+    push(last, 'derived_population_growth_rate', 'Среднегодовое изменение численности населения за доступный период', annualized, '% в год', 'Расчёт по крайним доступным годам; не заменяет полный демографический баланс рождаемости, смертности и миграции.', 'annual');
   }
   return derived;
 }
