@@ -136,6 +136,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
   const [scenarioSource, setScenarioSource] = useState('встроенные шаблоны');
   const [scenarioError, setScenarioError] = useState('');
   const [modelShocks, setModelShocks] = useState({ economy: 0, labour: 0, demography: 0, finance: 0, social: 0, infrastructure: 0 });
+  const [pillarWeights, setPillarWeights] = useState(() => Object.fromEntries(MODEL_PILLARS.map((pillar) => [pillar.key, Math.round(pillar.weight * 100)])));
 
   useEffect(() => {
     let cancelled = false;
@@ -170,7 +171,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     return [...base, ...deriveMunicipalIndicators(base)];
   }, [officialIndicators, programExecution]);
   const series = useMemo(() => buildSeries(rows), [rows]);
-  const riskModel = useMemo(() => buildRiskModel(municipalities, series), [municipalities, series]);
+  const riskModel = useMemo(() => buildRiskModel(municipalities, series, pillarWeights), [municipalities, series, pillarWeights]);
   const municipalityNames = useMemo(() => new Map(municipalities.map((m) => [m.id, m.name])), [municipalities]);
   const visibleSeries = useMemo(() => series.filter((s) =>
     (municipalityId === 'ALL' || s.municipalityId === municipalityId)
@@ -354,7 +355,8 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     {tab === 'model' && <section className="unified-section">
       <div className="unified-section-head"><div><h2>Интегральная оценка устойчивости</h2><p>Интегральная сравнительная оценка шести компонентов устойчивости. Система рассчитывает доступные компоненты и отдельно показывает полноту покрытия, чтобы неполные данные не маскировались под точный рейтинг.</p></div><span>Пилотная методика · версия 1.0</span></div>
       <div className="unified-warning"><strong>Методическое ограничение.</strong> Это сравнительная пилотная оценка, а не утверждённый официальный индекс. Индекс рассчитывается при наличии минимум двух сопоставимых компонентов и не менее 35% исходного весового покрытия. Частичная оценка обязательно маркируется; при недостаточном покрытии значение не подменяется нулём. Недостающие данные не заменяются нулями и не получают условно положительную оценку.</div>
-      <div className="unified-model-weight-grid">{MODEL_PILLARS.map((p) => <article className="unified-model-weight" key={p.key}><strong>{p.title}</strong><b>{Math.round(p.weight * 100)}%</b><small>{p.series.join(' · ')}</small></article>)}</div>
+      <div className="unified-model-weight-grid">{riskModel.pillars.map((p) => <article className="unified-model-weight" key={p.key}><strong>{p.title}</strong><b>{Math.round(p.weight * 100)}%</b><small>{p.series.join(' · ')}</small><input type="range" min="0" max="100" step="1" value={pillarWeights[p.key]} aria-label={'Вес направления: ' + p.title} onChange={(e) => setPillarWeights((old) => ({ ...old, [p.key]: Number(e.target.value) }))} /></article>)}</div>
+      <div className="unified-weight-controls"><span>Настраиваемые веса автоматически нормируются до 100%. Нулевой вес исключает направление из интегральной оценки.</span><button className="outline-button" onClick={() => setPillarWeights(Object.fromEntries(MODEL_PILLARS.map((pillar) => [pillar.key, Math.round(pillar.weight * 100)])))}>Вернуть базовые веса</button></div>
       <div className="unified-section-head"><div><h3>Сравнение территорий</h3><p>Шкала 0–100 показывает относительное положение среди муниципалитетов по сопоставимым рядам, а не абсолютный уровень благополучия.</p></div><span>{municipalityAnalysis.filter((m) => m.model?.score !== null).length} из {municipalities.length} с достаточным покрытием</span></div>
       <div className="table-scroll"><table className="ranking-table"><thead><tr><th>Муниципалитет</th><th>Индекс</th><th>Покрытие весов</th><th>Глубина истории</th><th>Направлений</th><th>Состав оценки</th><th>Периоды</th><th>Негативных сигналов</th></tr></thead><tbody>
         {[...municipalityAnalysis].sort((a,b) => (b.model?.score ?? -1) - (a.model?.score ?? -1)).map((m) => <tr key={m.id}><td><strong>{m.name}</strong></td><td>{m.model?.score == null ? 'Недостаточно данных' : <b>{fmt(m.model.score,1)} / 100{m.model.assessmentStatus === 'partial' ? ' · частично' : ''}</b>}</td><td>{m.model?.availableWeight ?? 0}%</td><td>{m.model?.score == null ? 'Не оценивается' : (m.model.historyCoverage + '% · до 4 наблюдений на ряд')}</td><td>{m.model?.availablePillars ?? 0}/6</td><td>{m.model?.pillars.filter((p) => p.score !== null).map((p) => p.title).join(', ') || '—'}</td><td>{m.model?.latestPeriods?.join(', ') || '—'}</td><td>{m.model?.adverseCount ?? 0}</td></tr>)}
