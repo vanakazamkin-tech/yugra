@@ -19,7 +19,7 @@ const n = (value) => numericValue(value) ?? 0;
 const fmt = (value, digits) => value == null || value === '' ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: digits == null ? 1 : digits, minimumFractionDigits: 0 }).format(value);
 const pct = (value) => (value > 0 ? '+' : '') + fmt(value, 1) + '%';
 
-export default function Forecasting({ municipalities, supabase, isSupabaseConfigured, officialIndicators = [], programExecution = [], officialDataStatus = 'offline', officialDataSyncedAt = null }) {
+export default function Forecasting({ municipalities, supabase, isSupabaseConfigured, officialIndicators = [], programExecution = [], officialDataStatus = 'offline', officialDataSyncedAt = null, scoreSource = 'conceptual-score', indexResults = null, indexContract = null }) {
   const [scenarios, setScenarios] = useState(FALLBACK_SCENARIOS);
   const [scenarioKey, setScenarioKey] = useState('base');
   const [horizon, setHorizon] = useState(3);
@@ -87,7 +87,17 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
   }, [isSupabaseConfigured, supabase]);
 
   const activeScenario = scenarios.find((item) => item.key === scenarioKey) || scenarios[0];
-  const forecasts = useMemo(() => buildForecasts(municipalities || [], params, horizon), [municipalities, params, horizon]);
+  const indexModeRequested = scoreSource === 'resilience-index';
+  const forecastOptions = useMemo(() => ({
+    scoreSource: indexModeRequested ? 'resilience-index' : 'conceptual-score',
+    indexResults,
+    indexContract,
+  }), [indexModeRequested, indexResults, indexContract]);
+  const indexContractApproved = indexModeRequested
+    && indexContract?.status === 'approved'
+    && typeof indexContract?.version === 'string'
+    && indexContract.version.trim() !== '';
+  const forecasts = useMemo(() => buildForecasts(municipalities || [], params, horizon, forecastOptions), [municipalities, params, horizon, forecastOptions]);
   const scenarioComparisons = useMemo(() => scenarios.map((scenario) => {
     const scenarioParams = {
       investment_growth_rate: scenario.investment_growth_rate,
@@ -98,9 +108,9 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       cost_pressure_pct: scenario.cost_pressure_pct ?? 0,
       labor_shortage_pct: scenario.labor_shortage_pct ?? 0,
     };
-    const rows = buildForecasts(municipalities || [], scenarioParams, horizon);
+    const rows = buildForecasts(municipalities || [], scenarioParams, horizon, forecastOptions);
     return { ...scenario, rows, summary: summarizeForecast(rows) };
-  }), [scenarios, municipalities, horizon]);
+  }), [scenarios, municipalities, horizon, forecastOptions]);
   const factorSummary = useMemo(() => {
     const rows = forecasts.filter((row) => row.projectedScore != null);
     return ['exportShock', 'costPressure', 'laborShortage'].map((key) => {
@@ -178,7 +188,9 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       ['Горизонт, лет', horizon],
       ['Годовой темп инвестиций, %', params.investment_growth_rate],
       ['Годовой темп МСП, %', params.sme_growth_rate],
-      ['Годовое изменение балла, %', params.score_growth_rate],
+      [indexModeRequested ? 'Годовое изменение индекса, баллов' : 'Годовое изменение концептуального балла, %', params.score_growth_rate],
+      ['Источник базового балла', indexModeRequested ? 'Интегральный индекс; только complete при approved-контракте' : 'Концептуальный municipalities.score'],
+      ['Версия методики индекса', indexContractApproved ? indexContract.version : 'Не утверждена / не подключена'],
       ['Условная неопределённость, %/год', params.uncertainty_rate],
       ['Шок экспортной выручки, % (допущение)', params.export_shock_pct],
       ['Рост издержек, % (допущение)', params.cost_pressure_pct],
@@ -217,6 +229,8 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
 
       <div className="forecast-warning"><strong>Концептуальная модель, не официальный прогноз.</strong><span>Проверенных временных рядов по всем 22 территориям нет. Это сценарный эксперимент с заданными пользователем темпами, а не статистически обученная модель и не вероятность развития событий.</span><span className="forecast-coverage-note">Пять групп из паспорта проекта: занятость, доходы населения, местный бюджет, миграция и инвестиции. Текущий расчётный прототип использует инвестиции, число субъектов МСП и концептуальный балл; занятость, доходы, бюджет и миграция пока не входят в вычислительное ядро. Подтверждённых сопоставимых муниципальных рядов миграции сейчас нет. Пропуски не подменяются нулями.</span></div>
 
+      {indexModeRequested && <div className="forecast-warning"><strong>{indexContractApproved ? 'Режим интегрального индекса: контракт утверждён, но покрытие проверяется отдельно.' : 'Режим интегрального индекса заблокирован.'}</strong><span>{indexContractApproved ? 'В расчёт допускаются только муниципалитеты со статусом complete и значением индекса 0–100. Неполное покрытие остаётся пустым; концептуальный балл не подставляется.' : 'Нет утверждённой версии методики. Индексные баллы не рассчитываются, а концептуальный municipalities.score не используется как запасное значение.'}</span></div>}
+
       <section className="forecast-coverage-panel" aria-labelledby="forecast-coverage-title">
         <div className="forecast-coverage-heading">
           <div><h3 id="forecast-coverage-title">Покрытие официальными данными</h3><p>Сколько муниципалитетов имеют хотя бы одно подтверждённое наблюдение в каждой группе. Это охват, а не полнота всех показателей и периодов.</p></div>
@@ -243,8 +257,8 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
           <div className="forecast-parameter-list">
             <label><span>Годовой рост инвестиций, %</span><strong>{fmt(n(params.investment_growth_rate), 1)}%</strong><input aria-label="Годовой рост инвестиций" type="range" min="-10" max="20" step="0.5" value={params.investment_growth_rate} onChange={(e) => setParam('investment_growth_rate', Number(e.target.value))}/></label>
             <label><span>Годовой рост субъектов МСП, %</span><strong>{fmt(n(params.sme_growth_rate), 1)}%</strong><input aria-label="Годовой рост субъектов МСП" type="range" min="-10" max="20" step="0.5" value={params.sme_growth_rate} onChange={(e) => setParam('sme_growth_rate', Number(e.target.value))}/></label>
-            <label><span>Годовое изменение балла, %</span><strong>{fmt(n(params.score_growth_rate), 1)}%</strong><input aria-label="Годовое изменение балла" type="range" min="-10" max="10" step="0.5" value={params.score_growth_rate} onChange={(e) => setParam('score_growth_rate', Number(e.target.value))}/></label>
-            <label><span>Условная неопределённость, %/год</span><strong>±{fmt(n(params.uncertainty_rate), 1)}%</strong><input aria-label="Допущение неопределённости" type="range" min="0" max="25" step="0.5" value={params.uncertainty_rate} onChange={(e) => setParam('uncertainty_rate', Number(e.target.value))}/></label>
+            <label><span>{indexModeRequested ? 'Изменение индекса, баллов/год' : 'Годовое изменение балла, %'}</span><strong>{fmt(n(params.score_growth_rate), 1)}%</strong><input aria-label="Годовое изменение балла" type="range" min="-10" max="10" step="0.5" value={params.score_growth_rate} onChange={(e) => setParam('score_growth_rate', Number(e.target.value))}/></label>
+            <label><span>{indexModeRequested ? 'Неопределённость индекса, баллов' : 'Условная неопределённость, %/год'}</span><strong>±{fmt(n(params.uncertainty_rate), 1)}%</strong><input aria-label="Допущение неопределённости" type="range" min="0" max="25" step="0.5" value={params.uncertainty_rate} onChange={(e) => setParam('uncertainty_rate', Number(e.target.value))}/></label>
             <label><span>Шок экспортной выручки, %</span><strong>{fmt(n(params.export_shock_pct), 1)}%</strong><input aria-label="Шок экспортной выручки" type="range" min="-20" max="10" step="1" value={params.export_shock_pct} onChange={(e) => setParam('export_shock_pct', Number(e.target.value))}/></label>
             <label><span>Изменение издержек, %</span><strong>{fmt(n(params.cost_pressure_pct), 1)}%</strong><input aria-label="Изменение издержек" type="range" min="-10" max="20" step="1" value={params.cost_pressure_pct} onChange={(e) => setParam('cost_pressure_pct', Number(e.target.value))}/></label>
             <label><span>Кадровый дефицит, %</span><strong>{fmt(n(params.labor_shortage_pct), 1)}%</strong><input aria-label="Кадровый дефицит" type="range" min="-10" max="20" step="1" value={params.labor_shortage_pct} onChange={(e) => setParam('labor_shortage_pct', Number(e.target.value))}/></label>
@@ -300,7 +314,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
 
       <div className="forecast-methodology">
         <h3>Как считается прогноз</h3>
-        <div className="forecast-method-grid"><p><strong>1. Базовый срез.</strong> Для каждой территории берётся доступное значение инвестиций, МСП и балла. Если исходного значения нет, показатель не рассчитывается и отображается прочерком; агрегаты учитывают только территории с доступными значениями.</p><p><strong>2. Сценарная траектория.</strong> Показатель через N лет = базовое значение × (1 + заданный годовой темп)<sup>N</sup>. Темпы задаются ползунками, а не оцениваются по официальной истории.</p><p><strong>3. Диапазон чувствительности.</strong> Для инвестиций и МСП границы рассчитываются отдельно при темпе роста ± заданная неопределённость × √N; для модельного балла границы дополнительно ограничиваются шкалой 0–100. Это стресс-диапазоны допущений, не доверительные интервалы и не измеренные вероятности.</p><p><strong>4. Факторы модельного балла.</strong> Базовое изменение балла корректируется тремя явно заданными допущениями: экспортная выручка, издержки и кадровый дефицит. Коэффициенты показаны рядом с результатом и не обучались на данных.</p><p><strong>5. Ранжирование.</strong> Модельное место сортируется по прогнозному баллу. Такая перестановка демонстрирует сценарий, но не прогнозирует официальные рейтинговые баллы без воспроизводимой методики рейтинга.</p></div>
+        <div className="forecast-method-grid"><p><strong>1. Базовый срез.</strong> Для каждой территории берётся доступное значение инвестиций, МСП и балла. Если исходного значения нет, показатель не рассчитывается и отображается прочерком; агрегаты учитывают только территории с доступными значениями.</p><p><strong>2. Сценарная траектория.</strong> Инвестиции и МСП рассчитываются сложным ростом. Концептуальный балл также использует условную процентную траекторию; утверждённый процентильный индекс, если он подключён, изменяется аддитивно в баллах за год, поскольку процентильная шкала не является шкалой отношений. Темпы задаются ползунками, а не оцениваются по официальной истории.</p><p><strong>3. Диапазон чувствительности.</strong> Для инвестиций и МСП границы рассчитываются отдельно при темпе роста ± заданная неопределённость × √N; для модельного балла границы дополнительно ограничиваются шкалой 0–100. Это стресс-диапазоны допущений, не доверительные интервалы и не измеренные вероятности.</p><p><strong>4. Факторы модельного балла.</strong> Базовое изменение балла корректируется тремя явно заданными допущениями: экспортная выручка, издержки и кадровый дефицит. Коэффициенты показаны рядом с результатом и не обучались на данных.</p><p><strong>5. Ранжирование.</strong> Модельное место сортируется по прогнозному баллу. Такая перестановка демонстрирует сценарий, но не прогнозирует официальные рейтинговые баллы без воспроизводимой методики рейтинга.</p></div>
         <p className="forecast-footnote">Все параметры демонстрационные и редактируемые. До принятия решений их следует заменить экспертно согласованными допущениями, проверить исходные данные и сравнить модель с фактическими наблюдениями. Название сценария само по себе не означает вероятность его реализации.</p>
       </div>
     </section>
