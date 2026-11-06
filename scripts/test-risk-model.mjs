@@ -13,6 +13,14 @@ assert.equal(indicatorDirection({ indicator_code: 'derived_budget_own_revenue_sh
 assert.equal(indicatorDirection({ indicator_code: 'registered_unemployment_rate' }), 'lower');
 assert.equal(indicatorDirection({ indicator_code: 'registered_unemployed_count' }), 'context',
   'absolute unemployment counts must not be treated as comparable rates');
+assert.equal(indicatorDirection({ indicator_code: 'average_monthly_salary_annual' }), 'higher',
+  'full-year municipal nominal salary may be used as a qualified income proxy');
+assert.equal(indicatorDirection({ indicator_code: 'average_monthly_salary_q1' }), 'context',
+  'quarterly salary variants must not duplicate the annual income indicator in the composite index');
+assert.equal(indicatorDirection({ indicator_code: 'average_monthly_salary_h1' }), 'context',
+  'half-year salary variants must remain contextual until a non-duplicative aggregation rule exists');
+assert.match(indicatorMethodFor({ indicator_code: 'average_monthly_salary_annual' }).limitation, /девятью муниципалитетами/,
+  'salary method must disclose its limited municipal coverage');
 assert.equal(indicatorDirection({ indicator_code: 'sme_employment_share' }), 'context',
   'structural SME employment share must remain contextual');
 assert.ok(indicatorMethodFor({ indicator_code: 'sme_per_10k' }).rationale.length > 0);
