@@ -274,3 +274,23 @@
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Interactive map: preserve the semantics of focusable SVG regions and city targets. */
+.yugra-app .ugra-map-svg :where(path[role="button"], g[role="button"]):focus-visible {
+  outline: none;
+}
+.yugra-app .ugra-map-svg path[role="button"]:focus-visible {
+  stroke: #a4773f;
+  stroke-width: 3.8;
+  filter: drop-shadow(0 0 3px rgba(164, 119, 63, .48));
+}
+.yugra-app .ugra-map-svg g[role="button"]:focus-visible circle:first-of-type {
+  stroke: #a4773f;
+  stroke-width: 2.5;
+  fill: rgba(194, 149, 86, .16);
+}
+.yugra-app .ugra-map-svg g[role="button"]:focus-visible circle:nth-of-type(2) {
+  stroke: #fffaf1;
+  stroke-width: 2;
+}
