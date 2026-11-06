@@ -152,13 +152,13 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     </header>
     <div className="unified-warning"><strong>Статус концепта.</strong> Расчёты используют подтверждённые муниципальные наблюдения и производные коэффициенты. Интегральный индекс рассчитывается отдельно по методологии направления №1; этот риск-модуль его не пересчитывает. Сценарный прогноз — отдельный контур направления №2. Рисковые сигналы основаны на наблюдаемой динамике и не являются вероятностью кризиса. Для управленческого применения необходимы экспертная калибровка и историческая валидация.</div>
     <nav className="unified-tabs" role="group" aria-label="Разделы аналитики">
-      <button type="button" type="button" className={tab === 'concept' ? 'active' : ''} aria-pressed={tab === 'concept'} onClick={() => setTab('concept')}>Концепция модели</button>
-      <button type="button" type="button" className={tab === 'overview' ? 'active' : ''} aria-pressed={tab === 'overview'} onClick={() => setTab('overview')}>Панель модели</button>
-      <button type="button" type="button" className={tab === 'municipality' ? 'active' : ''} aria-pressed={tab === 'municipality'} onClick={() => setTab('municipality')}>Разбор муниципалитета</button>
-      <button type="button" type="button" className={tab === 'forecast' ? 'active' : ''} aria-pressed={tab === 'forecast'} onClick={() => setTab('forecast')}>Сценарный прогноз</button>
-      <button type="button" type="button" className={tab === 'model' ? 'active' : ''} aria-pressed={tab === 'model'} onClick={() => setTab('model')}>Профиль рисков</button>
-      <button type="button" type="button" className={tab === 'chains' ? 'active' : ''} aria-pressed={tab === 'chains'} onClick={() => setTab('chains')}>Каналы санкционного давления и риски</button>
-      <button type="button" type="button" className={tab === 'indicators' ? 'active' : ''} aria-pressed={tab === 'indicators'} onClick={() => setTab('indicators')}>Показатели и данные</button>
+      <button type="button" className={tab === 'concept' ? 'active' : ''} aria-pressed={tab === 'concept'} onClick={() => setTab('concept')}>Концепция модели</button>
+      <button type="button" className={tab === 'overview' ? 'active' : ''} aria-pressed={tab === 'overview'} onClick={() => setTab('overview')}>Панель модели</button>
+      <button type="button" className={tab === 'municipality' ? 'active' : ''} aria-pressed={tab === 'municipality'} onClick={() => setTab('municipality')}>Разбор муниципалитета</button>
+      <button type="button" className={tab === 'forecast' ? 'active' : ''} aria-pressed={tab === 'forecast'} onClick={() => setTab('forecast')}>Сценарный прогноз</button>
+      <button type="button" className={tab === 'model' ? 'active' : ''} aria-pressed={tab === 'model'} onClick={() => setTab('model')}>Профиль рисков</button>
+      <button type="button" className={tab === 'chains' ? 'active' : ''} aria-pressed={tab === 'chains'} onClick={() => setTab('chains')}>Каналы санкционного давления и риски</button>
+      <button type="button" className={tab === 'indicators' ? 'active' : ''} aria-pressed={tab === 'indicators'} onClick={() => setTab('indicators')}>Показатели и данные</button>
     </nav>
     <div className="unified-filters">
       <label>Территория<select value={municipalityId} onChange={(e) => { setMunicipalityId(e.target.value); setSelectedMunicipality(e.target.value === 'ALL' ? '' : e.target.value); }}><option value="ALL">Все муниципалитеты</option>{municipalities.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
