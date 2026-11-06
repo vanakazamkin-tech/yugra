@@ -132,3 +132,9 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - The rating page's municipality-group filter is now a named control group; each option exposes its selected state through `aria-pressed`.
 - The rating table's municipality count is exposed as a polite status announcement when the visible result set changes.
 - Existing filter predicates, sort order, data, and visual styling are unchanged.
+
+## Responsive analytics navigation (6 November 2026)
+
+- The seven-section analytics switcher now allows long labels to wrap cleanly and keeps its controls at a consistent touch-friendly minimum height.
+- At phone widths, the switcher uses a two-column grid and lets the final, seventh section span the full row rather than leaving an isolated half-width control.
+- Existing tab order, selected state, content switching, calculations, and the project's visual palette are unchanged.
