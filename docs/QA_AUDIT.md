@@ -671,3 +671,12 @@ PR #10 обновил head до 312a140...; текущий CI #42285817027 succe
 ## Обновлённый вердикт
 
 На этом снимке зелёные CI PR #8/#9/#10/#12; PR #11 имеет реальное падение build при успешной migration integration; PR #13 имеет новый head без CI и mergeable=false. Общая интеграционная сборка не сформирована. Ни одна из этих проверок не подтверждает production Supabase migration или production deployment. Browser E2E, responsive/accessibility остаются невыполненными.
+
+
+### Follow-up после замечаний QA (07.11.2026, поздний снимок)
+
+Авторы обновили оба затронутых направления:
+- PR #11 head теперь 49bea1089dde068edbe8854ae797237b135f7634, mergeable=true; новый run #42286092389 запущен. На момент снимка обе jobs (build и data-migrations-integration) ещё in_progress. Поэтому предыдущий failure #42285887441 не считать исправленным, пока новый build не завершится.
+- PR #13 head теперь 218fa6313ebba37bb458075e43e470b9c5939832, mergeable=true; новый run #42286049731. Его build job завершилась success. Полный статус run на момент снимка ещё in_progress; повторно проверить итоговое состояние перед финальным sign-off.
+
+Последний QA docs commit: 5c027ce2a38559a26b3dc3f53c2d4a1662661726. Combined status показывает только Vercel build-rate-limit failure; отдельный GitHub Actions run для документационного коммита не обнаружен. Это ограничение Vercel не трактуется как провал QA test suite.
