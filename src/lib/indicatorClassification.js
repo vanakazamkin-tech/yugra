@@ -18,7 +18,7 @@ export const PILLARS = [
 export const classify = (row) => {
   // "Муниципального образования" describes the territory, not the education sector.
   const text = (safeText(row.indicator_code) + ' ' + safeText(row.indicator_name))
-    .replace(/муниципального\\s+образования/gi, '');
+    .replace(/муниципального\s+образования/gi, '');
   if (/(sme_employment_share|доля.*работников.*малых и средних)/i.test(text)) return PILLARS.find((p) => p.key === 'employment');
   if (/(sme|small_business|entrepreneur|мсп|предприним)/i.test(text)) return PILLARS.find((p) => p.key === 'business');
   return PILLARS.find((p) => p.match.test(text)) || { key: 'other', title: 'Прочие показатели', note: 'Дополнительные показатели проекта' };
