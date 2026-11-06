@@ -2058,13 +2058,15 @@ export const InvestmentDetails = () => {
             <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2>Сравнение муниципалитетов</h2><p>Выберите от двух до четырёх территорий и сравните показатели бок о бок</p></div></div><div className="toolbar-actions"><button type="button" className="outline-button" onClick={() => setSelectedCompareIds(DEFAULT_COMPARE_IDS.filter((id) => municipalities.some((m) => m.id === id)))}><Icon name="refresh"/>Сбросить выбор</button><button type="button" className="primary-button" onClick={() => { setReportScope('selected'); setReportSelectedIds(selectedCompareIds); navigateToTab('reports'); }}><Icon name="file"/>Отчёт по сравнению</button></div></div>
             <div className="compare-workspace">
               <aside className="compare-picker">
-                <div className="picker-title"><div><strong>Территории для сравнения</strong><span>Выбрано {selectedCompareIds.length} из 4</span></div><span className="picker-counter">{selectedCompareIds.length}/4</span></div>
+                <div className="picker-title"><div><strong>Территории для сравнения</strong><span>Выбрано {selectedCompareIds.length} из 4</span></div><span className="picker-counter" role="status" aria-live="polite" aria-atomic="true">{selectedCompareIds.length}/4</span></div>
                 <label className="search-box picker-search"><Icon name="search"/><input aria-label="Поиск территории для сравнения" value={comparisonSearch} onChange={(e) => setComparisonSearch(e.target.value)} placeholder="Найти муниципалитет…"/></label>
+                <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">Найдено муниципалитетов: {comparisonCandidates.length}</p>
                 <div className="compare-options">{comparisonCandidates.map((m) => {
                   const checked = selectedCompareIds.includes(m.id);
                   const disabled = !checked && selectedCompareIds.length >= 4;
                   return <label key={m.id} className={`compare-option ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}`}><input type="checkbox" checked={checked} disabled={disabled} onChange={() => toggleCompare(m.id)}/><span className="compare-checkmark"><Icon name="check"/></span><span className="compare-option-copy"><strong>{m.name}</strong><small>Группа {m.group2024} · место {m.rank2024}</small></span><span className="compare-option-score">{formatNumber(m.score)}</span></label>;
                 })}</div>
+                {comparisonCandidates.length === 0 && <p className="empty-state" role="status">Муниципалитеты по запросу не найдены. Проверьте написание или измените поисковый запрос.</p>}
                 <p className="picker-note"><Icon name="info"/> Можно сравнить до четырёх территорий. Используется текущий набор данных; пропущенные показатели обозначены прочерком.</p>
               </aside>
               <div className="compare-analysis">
