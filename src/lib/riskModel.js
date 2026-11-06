@@ -196,7 +196,7 @@ export const INDICATOR_METHODS = {
 export function indicatorSeriesGroup(row) {
   const code = canonicalIndicatorCode(row?.indicator_code);
   if (/^(housing_commissioned|housing_construction|pokachi_housing_commissioning|sovetsky_housing_commissioning_plan)/.test(code)) return 'production';
-  if (/^(sovetsky_local_road_repair|sovetsky_engineering_network_repair|sovetsky_noncompliant_roads_share)/.test(code)) return 'infrastructure';
+  if (/^(sovetsky_local_road_repair|sovetsky_engineering_network_repair|sovetsky_noncompliant_roads_share|kogalym_no_regular_transport_population_share)/.test(code)) return 'infrastructure';
   return null;
 }
 
@@ -208,6 +208,14 @@ export function indicatorMethodFor(row) {
       pillar: 'production',
       rationale: 'Объём ввода или строительства жилья — показатель строительной активности.',
       limitation: 'Не измеряет обеспеченность жильём, его качество, износ фонда или доступность коммунальной инфраструктуры; плановые и фактические значения нельзя смешивать.',
+    };
+  }
+  if (code === 'kogalym_no_regular_transport_population_share') {
+    return {
+      direction: 'lower',
+      pillar: 'infrastructure',
+      rationale: 'Доля населения, не имеющего регулярного транспортного сообщения с административным центром муниципального образования: меньшая доля означает более высокую транспортную доступность.',
+      limitation: 'В текущей базе наблюдения есть только по одному муниципалитету; показатель нельзя использовать для межмуниципального ранжирования до получения сопоставимых значений по другим территориям и проверки единства знаменателя.',
     };
   }
   if (/^(sovetsky_local_road_repair|sovetsky_engineering_network_repair)/.test(code)) {
