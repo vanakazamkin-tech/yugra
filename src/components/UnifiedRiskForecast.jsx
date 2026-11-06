@@ -14,6 +14,7 @@ const PILLARS = [
   { key: 'demography', title: 'Демография', match: /(population|birth|death|населен|рождаем|смертн)/i, note: 'Численность и структура населения' },
   { key: 'infrastructure', title: 'Инфраструктура', match: /(facility|school|preschool|road|housing|network|учрежден|школ|дорог|жиль|сет)/i, note: 'Инфраструктурные объекты и среда' },
 ];
+const clamp = (value, min = 0, max = 100) => Math.max(min, Math.min(max, value));
 const number = (v) => v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v);
 const fmt = (v, digits = 1) => v == null || !Number.isFinite(Number(v)) ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: digits }).format(Number(v));
 const pct = (v) => v == null ? '—' : (v > 0 ? '+' : '') + fmt(v, 1) + '%';
