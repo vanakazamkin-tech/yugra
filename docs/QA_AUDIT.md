@@ -514,3 +514,61 @@ QA PR #12 CI зелёный; PR #13 CI зелёный на новом head; PR #
 Все эти PR по-прежнему основаны на `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`, тогда как текущий main — `9f99481a3843862a17fd9cf640fee48b4ef901ba`; они отстают на 5 commits. PR #13 в последней проверке показывал `mergeable=false`; в PR оставлено повторное замечание о синхронизации и проверке merge state. PR #9/#11/#12/#13 требуют обновления от актуального main и повторной проверки на новых SHA.
 
 **QA вердикт:** последние индивидуальные прогоны PR #9/#11/#12 зелёные; PR #13 ожидает завершения CI на новом SHA. Общая интеграция, browser E2E, responsive/accessibility, production Supabase migration и production deployment не подтверждены.
+
+
+---
+
+# Дополнение к аудиту — проверка фактических пересечений PR (07.11.2026)
+
+## 1. Все последние индивидуальные CI завершились успешно
+
+| PR | Head SHA | Build verification |
+|---|---|---|
+| #8 | `3b3cbca00ae24ddf70224cda39f33bd2b1444acb` | #42284818725 — success |
+| #9 | `c55e02630bfe8fcd6e0303dcb4353763acc155b6` | #42284810591 — success |
+| #10 | `413c6dbac9632b4d2c8fac9212055d1ed407ec76` | #42284850858 — success |
+| #11 | `08a3792016398dad040857b6fdbd2a949398a483` | #42284777257 — success |
+| #12 | `dbbbd913df48bf99ac37c343abd9a4c857a224c3` | #42284741284 — success |
+| #13 | `7ef9452763bef0f935d71fa4f8c811f5e4695572` | #42284664070 — success |
+
+У PR #11 успешны обе jobs: `build` и `data-migrations-integration`.
+
+## 2. Подтверждённые пересечения содержимого, не только списка файлов
+
+Проверены фактические версии файлов из PR heads:
+
+### PR #8 / #13 — методология
+Обе ветки меняют `docs/INDEX_METHODOLOGY.md`. Версия PR #8 — около 12.9 KB, PR #13 — около 8.8 KB. Они не эквивалентны: PR #8 содержит более широкий материал по методологии/устойчивости; PR #13 включает раздел про acceptedNames и точное исходное название показателя. Простая замена одной версии другой может потерять часть требований. Нужен ручной semantic merge.
+
+### PR #9 / #10 — риск UI
+Обе ветки меняют `src/components/UnifiedRiskForecast.jsx`.
+- PR #9 использует `buildRiskSeries` из `riskSeries.js` и fail-closed provenance/geography gates.
+- PR #10 добавляет `projectScoreScenarios`, `classify` и другие UI/сценарные изменения.
+Нужно объединить обе реализации, сохранив защиту качества данных и сценарный интерфейс.
+
+### PR #10 / #13 — прогнозирование
+Обе ветки меняют `src/components/Forecasting.jsx`. PR #10 содержит UI сценариев/визуализацию, PR #13 подключает `buildForecasts`, `normalizeScenarioRows`, `summarizeForecast`, `sumFiniteValues` и новые параметры сценариев. Нужен ручной merge, после которого тестировать UI и model integration вместе.
+
+### PR #10 / #11 / #13 — workflow и package scripts
+Все три ветки меняют `.github/workflows/ci.yml` и/или `package.json`.
+- PR #10 добавляет `check:map-coverage` и map coverage step.
+- PR #11 добавляет `test:data-quality`, source/data-quality tests и отдельную `data-migrations-integration` job.
+- PR #13 добавляет `test` (`node --test src/lib/*.test.js`) и запуск forecast unit tests через `npm test`.
+Текущий workflow PR #13 содержит forecast tests, но не содержит отдельную migration integration job PR #11; package.json PR #13 не содержит `test:data-quality` PR #11 и `check:map-coverage` PR #10. Если принять одну версию целиком, часть проверок исчезнет. Итоговый интегрированный workflow должен запускать все эти проверки.
+
+## 3. Состояние PR и база
+
+На момент снимка PR #9, #10 и #12 помечены как draft. PR #8, #11 и #13 не draft. Draft не обязательно означает техническую ошибку, но эти PR нельзя считать объявленными авторами готовыми к финальному review.
+
+Текущий main: `9f99481a3843862a17fd9cf640fee48b4ef901ba`.
+PR #8/#10 основаны на текущем main. PR #9/#11/#12/#13 всё ещё основаны на `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c` и отстают от main на 5 commits.
+
+## 4. Действия QA
+
+В PR #8/#9/#10/#11/#13 оставлены отдельные комментарии с конкретными пересечениями и обязательными условиями ручного объединения. Автоматическое разрешение конфликтов через выбор целой версии файла не рекомендуется.
+
+## 5. Вердикт
+
+**Все шесть последних индивидуальных CI зелёные, но общий интеграционный кандидат не сформирован.** Наиболее существенный риск сейчас — потеря проверок и функциональности при разрешении общих файлов `ci.yml`, `package.json`, `UnifiedRiskForecast.jsx`, `Forecasting.jsx` и `INDEX_METHODOLOGY.md`.
+
+Не выполнять merge до semantic merge этих файлов, синхронизации отстающих веток с main и успешного общего CI. Browser E2E, responsive/accessibility, production Supabase migration и production deployment остаются невыполненными.
