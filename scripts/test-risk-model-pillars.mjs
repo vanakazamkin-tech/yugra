@@ -18,6 +18,7 @@ assert.deepEqual(parseRiskPeriod({ reference_year: 2024, reference_period: '2024
 assert.deepEqual(parseRiskPeriod({ reference_year: 2024, reference_period: 'annual' }), { year: 2024, frequency: 'annual', slot: 0 });
 assert.equal(parseRiskPeriod({ reference_year: 2023, reference_period: '2024-Q1' }), null, 'period label and reference year conflict must be rejected');
 assert.equal(parseRiskPeriod({ reference_year: 1800, reference_period: 'annual' }), null, 'out-of-range years must be rejected');
+assert.equal(parseRiskPeriod({ reference_year: 1800, reference_period: '2024-Q1' }), null, 'an invalid declared year must not be replaced by a year inferred from the period label');
 assert.equal(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-M13' }), null, 'unknown frequency must not be inferred as annual');
 
 const riskRow = (year, period, value, overrides = {}) => ({
