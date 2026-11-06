@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { isEligibleAnnualForecastSeries } from '../lib/forecastCoverage.js';
-import { backtestAnnualSeries, buildRiskModel, deriveMunicipalIndicators, MODEL_PILLARS, RISK_CHAINS } from '../lib/riskModel.js';
+import { backtestAnnualSeries, buildRiskModel, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios, RISK_CHAINS } from '../lib/riskModel.js';
 import './UnifiedRiskForecast.css';
 import { PILLARS, classify } from '../lib/indicatorClassification.js';
 
@@ -93,6 +93,7 @@ const DEFAULT_SCENARIOS = [
 const periodLabel = (row) => safeText(row?.reference_period) || String(row?.reference_year || '—');
 const directionText = (s) => s.direction === 'higher' ? 'снижение — негативный сигнал' : s.direction === 'lower' ? 'рост — негативный сигнал' : 'изменение требует контекста';
 const sourceUrlsFor = (row) => [...new Set((Array.isArray(row?.source_urls) ? row.source_urls : row?.source_url ? [row.source_url] : []).filter((url) => typeof url === 'string' && url.trim()))];
+const scenarioTone = (key) => key === 'cautious' ? 'pessimistic' : key === 'ambitious' ? 'optimistic' : 'base';
 
 export default function UnifiedRiskForecast({ municipalities = [], officialIndicators = [], programExecution = [], supabase, isSupabaseConfigured, officialDataStatus = 'offline', officialDataSyncedAt = null }) {
   const [tab, setTab] = useState('overview');
@@ -197,6 +198,14 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     const uncertainty = Math.max(0, Number(s.uncertainty_rate ?? 0));
     return { ...s, rate, value, low: forecastSeries.latest.numericValue * Math.pow(Math.max(0.01, 1 + (rate - uncertainty) / 100), horizon), high: forecastSeries.latest.numericValue * Math.pow(Math.max(0.01, 1 + (rate + uncertainty) / 100), horizon) };
   }) : [];
+  const modelScoreAfterShocks = selected?.model?.score == null ? null : (() => {
+    const availablePillars = selected.model.pillars.filter((pillar) => pillar.score != null);
+    const availableWeight = availablePillars.reduce((sum, pillar) => sum + pillar.weight, 0);
+    return availableWeight > 0
+      ? clamp(availablePillars.reduce((sum, pillar) => sum + (pillar.score + modelShocks[pillar.key]) * pillar.weight, 0) / availableWeight, 0, 100)
+      : null;
+  })();
+  const modelScenarioRows = modelScoreAfterShocks == null ? [] : projectScoreScenarios(modelScoreAfterShocks, scenarios, horizon);
   const lastYear = forecastSeries?.latest?.reference_year || '—';
   const syncLabel = officialDataSyncedAt ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(officialDataSyncedAt)) : null;
 
@@ -312,7 +321,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
       {forecastSeries ? <>
         <div className="unified-base-card"><div><span>Последнее фактическое значение</span><strong>{fmt(forecastSeries.latest.numericValue,2)} {forecastSeries.unit}</strong></div><div><span>Последний год</span><strong>{lastYear}</strong></div><div><span>Наблюдений в ряду</span><strong>{history.length}</strong></div><div><span>Средний исторический темп</span><strong>{pct(stableRate)}</strong></div></div>
         <div className="unified-explanation"><h3>Как читать прогноз</h3><p>Базовая динамика оценивается по среднему годовому темпу доступных фактических наблюдений. Сценарные параметры из {scenarioSource} задают дополнительное отклонение только для инвестиций и показателей МСП. Для остальных показателей используется только наблюдаемая динамика и пользовательский шок, чтобы не переносить неподходящие допущения на другие экономические величины. Это анализ чувствительности, не обученная модель и не вероятность наступления сценария.</p></div>
-        <div className="unified-scenario-grid">{forecastRows.map((r) => <article key={r.key} className={'unified-scenario scenario-' + r.key}><span>{r.title}</span><strong>{fmt(r.value,2)} <small>{forecastSeries.unit}</small></strong><p>{pct(r.rate)} в год · диапазон {fmt(r.low,2)}–{fmt(r.high,2)} · через {horizon} г.</p><div className="unified-track"><i style={{width: Math.max(2,Math.min(100,Math.abs(r.value)/(Math.max(1,...forecastRows.map((x) => Math.abs(x.value))))*100)) + '%'}}/></div><small>{r.summary || ''}</small></article>)}</div>
+        <div className="unified-scenario-grid">{forecastRows.map((r) => <article key={r.key} className={'unified-scenario scenario-' + scenarioTone(r.key)}><span>{r.title}</span><strong>{fmt(r.value,2)} <small>{forecastSeries.unit}</small></strong><p>{pct(r.rate)} в год · диапазон {fmt(r.low,2)}–{fmt(r.high,2)} · через {horizon} г.</p><div className="unified-track"><i style={{width: Math.max(2,Math.min(100,Math.abs(r.value)/(Math.max(1,...forecastRows.map((x) => Math.abs(x.value))))*100)) + '%'}}/></div><small>{r.summary || ''}</small></article>)}</div>
         <div className="unified-backtest"><div><span>Проверка на исторических периодах</span><strong>{forecastBacktest.count ? fmt(forecastBacktest.mape,1)+'%' : 'Недостаточно истории'}</strong><small>Средняя абсолютная процентная ошибка · тестовых точек: {forecastBacktest.count}</small></div><div><span>Смещение прогноза</span><strong>{forecastBacktest.bias == null ? '—' : pct(forecastBacktest.bias)}</strong><small>Положительное значение — модель завышала фактические значения</small></div><div><span>Статус проверки</span><strong>{forecastBacktest.status === 'pilot' ? 'Пилотная проверка' : forecastBacktest.status === 'very_small_sample' ? 'Малая выборка' : 'Не рассчитана'}</strong><small>Walk-forward: каждый следующий год прогнозируется только по предыдущим наблюдениям</small></div></div>
         {history.length < 3 && <div className="unified-warning"><strong>Ограниченная история.</strong> В ряду только два наблюдения. Темп между ними нестабилен и не позволяет проверить качество прогноза на прошлых периодах. Используйте сценарии как ориентир чувствительности.</div>}
         <div className="table-scroll"><table className="ranking-table"><thead><tr><th>Фактический год</th><th>Фактическое значение</th><th>Изменение к предыдущему году</th></tr></thead><tbody>{history.map((p,i) => <tr key={i}><td>{p.reference_year || periodLabel(p)}</td><td>{fmt(p.numericValue,2)} {forecastSeries.unit}</td><td>{i ? pct((p.numericValue/history[i-1].numericValue-1)*100) : 'Базовое наблюдение'}</td></tr>)}</tbody></table></div>
@@ -335,7 +344,11 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
       <div className="unified-section-head"><div><h3>Проверка чувствительности индекса</h3><p>Измените условные баллы направлений и посмотрите, как меняется интегральная оценка. Это стресс-тест, не прогноз вероятности.</p></div></div>
       {selected?.model?.score != null ? <>
         <div className="unified-shock-grid">{MODEL_PILLARS.map((p) => <label key={p.key}><span>{p.title}: <b>{modelShocks[p.key] > 0 ? '+' : ''}{modelShocks[p.key]} баллов</b></span><input type="range" min="-20" max="20" step="1" value={modelShocks[p.key]} onChange={(e) => setModelShocks((old) => ({...old,[p.key]:Number(e.target.value)}))}/></label>)}</div>
-        <div className="unified-model-result"><span>Индекс после условного воздействия</span><strong>{fmt(clamp(selected.model.pillars.filter((p) => p.score != null).reduce((sum,p) => sum + (p.score + modelShocks[p.key]) * p.weight,0) / Math.max(.0001,selected.model.pillars.filter((p) => p.score != null).reduce((sum,p) => sum+p.weight,0)),0,100),1)} / 100</strong><button className="outline-button" onClick={() => setModelShocks({economy:0,labour:0,demography:0,finance:0,social:0,infrastructure:0})}>Сбросить воздействия</button></div>
+        <div className="unified-model-result"><span>Индекс после условного воздействия</span><strong>{fmt(modelScoreAfterShocks,1)} / 100</strong><button className="outline-button" onClick={() => setModelShocks({economy:0,labour:0,demography:0,finance:0,social:0,infrastructure:0})}>Сбросить воздействия</button></div>
+         <div className="unified-section-head"><div><h3>Сценарная траектория интегрального индекса</h3><p>Три сценарных темпа из каталога Supabase применяются к текущей оценке после ручного стресс-теста направлений.</p></div><span>Покрытие исходной оценки: {selected.model.availableWeight}%</span></div>
+         <div className="unified-forecast-controls"><label>Горизонт сценария: {horizon} года<input type="range" min="1" max="3" step="1" value={horizon} onChange={(e) => setHorizon(Number(e.target.value))}/></label></div>
+         <div className="unified-scenario-grid">{modelScenarioRows.map((r) => <article key={r.key} className={'unified-scenario scenario-' + scenarioTone(r.key)}><span>{r.title}</span><strong>{fmt(r.value,1)} <small>/ 100</small></strong><p>{pct(r.rate)} в год · диапазон {fmt(r.low,1)}–{fmt(r.high,1)} · через {horizon} г.</p><small>{r.summary || ''}</small></article>)}</div>
+         <div className="unified-method-note"><strong>Ограничение сценарного расчёта.</strong> Темп <code>score_growth_rate</code> и диапазон <code>uncertainty_rate</code> — экспертные параметры каталога сценариев, а не коэффициенты, оценённые регрессией. Диапазон не является доверительным интервалом или вероятностью. Если исходный индекс частичный, сценарная траектория наследует его неполное покрытие.</div>
       </> : <p className="empty-state">Для выбранной территории недостаточно сопоставимых данных, чтобы рассчитывать интегральный индекс и проводить стресс-тест.</p>}
       <div className="unified-method-note"><strong>Методика версии 1.0.</strong> Внутри сопоставимой группы «код показателя × единица × период × год» значения переводятся в процентильную шкалу. Для показателей, где большее значение благоприятно, используется прямой процентиль; для показателей с обратной направленностью — инвертированный. Итог индикатора: 80% относительного уровня и 20% сигнала динамики. Баллы направлений агрегируются с предварительными экспертными весами 20/20/15/15/15/15 с перераспределением только между реально доступными направлениями. Весовая структура и коэффициенты подлежат экспертной калибровке и проверке на истории.</div>
     </section>}
