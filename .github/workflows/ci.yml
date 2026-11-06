@@ -2,7 +2,7 @@ name: Build verification
 
 on:
   push:
-    branches: [main, feature/municipal-data-coverage-matrix, 'fix/**']
+    branches: [main, feature/municipal-data-coverage-matrix, 'fix/**', 'feat/**']
   # Keep incremental fix branches covered by the same regression and build checks.
   # Classification tests protect geography, sector semantics, and the six-pillar mapping.
   # The same workflow is used for data-classification and risk-chain regression updates.
@@ -39,6 +39,8 @@ jobs:
         run: node scripts/test-risk-data-gates.mjs
       - name: Test indicator classification and resilience model pillars
         run: node scripts/test-risk-model-pillars.mjs
+      - name: Test six-pillar resilience index methodology
+        run: node scripts/test-resilience-index.mjs
       - name: Test official comparison comparability
         run: node scripts/test-official-comparison-gates.mjs
       - name: Test analytical report official-data gates
