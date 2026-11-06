@@ -73,3 +73,63 @@ from public.municipality_indicators
 where reference_period !~ '^(annual|[0-9]{4}|[0-9]{4}-Q[1-4]|[0-9]{4}-H[1-2]|[0-9]{4}-[0-9]{2}-[0-9]{2})$'
 group by reference_period
 order by rows desc,reference_period;
+
+-- Observation preservation checkpoint. Compare these counts with the saved
+-- pre-migration baseline; counts alone do not prove value-level preservation.
+select count(*) observations,
+  count(distinct id) distinct_observation_ids,
+  count(*) filter(where verification_status='verified') verified_rows,
+  count(*) filter(where verification_status='needs_review') review_rows,
+  count(*) filter(where verification_status='demonstration') demonstration_rows,
+  count(*) filter(where source_id is null) missing_source_ids,
+  count(*) filter(where source_url is null or btrim(source_url)='') missing_source_urls
+from public.municipality_indicators;
+
+-- The new identity index must be UNIQUE and contain eight key attributes.
+-- Inspect the definition as well as the count; expression keys are included.
+select i.indisunique is true as is_unique,
+  i.indnkeyatts as key_attribute_count,
+  pg_get_indexdef(i.indexrelid) as index_definition
+from pg_index i
+where i.indexrelid = to_regclass('public.uq_municipality_indicators_source_observation');
+
+-- Security posture of the new private table and diagnostic view.
+-- Expected: RLS=true; anon/authenticated cannot use private schema or read
+-- either object; service_role has the explicitly intended access.
+select
+  has_schema_privilege('anon','private','USAGE') as anon_private_schema_usage,
+  has_schema_privilege('authenticated','private','USAGE') as authenticated_private_schema_usage,
+  has_schema_privilege('service_role','private','USAGE') as service_role_private_schema_usage,
+  has_table_privilege('anon','private.municipality_indicator_source_links','SELECT') as anon_can_read_provenance,
+  has_table_privilege('authenticated','private.municipality_indicator_source_links','SELECT') as authenticated_can_read_provenance,
+  has_table_privilege('service_role','private.municipality_indicator_source_links','SELECT') as service_role_can_read_provenance,
+  has_table_privilege('anon','public.municipality_indicator_quality_issues','SELECT') as anon_can_read_quality_view,
+  has_table_privilege('authenticated','public.municipality_indicator_quality_issues','SELECT') as authenticated_can_read_quality_view,
+  has_table_privilege('service_role','public.municipality_indicator_quality_issues','SELECT') as service_role_can_read_quality_view,
+  coalesce((
+    select c.relrowsecurity
+    from pg_class c join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='private' and c.relname='municipality_indicator_source_links'
+  ),false) as provenance_rls_enabled,
+  coalesce((
+    select c.reloptions @> array['security_invoker=true']
+    from pg_class c join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public' and c.relname='municipality_indicator_quality_issues'
+  ),false) as quality_view_security_invoker;
+
+-- The five nullable metadata fields should all exist after migration.
+select column_name,is_nullable,data_type
+from information_schema.columns
+where table_schema='public' and table_name='data_sources'
+  and column_name in ('data_owner','temporal_coverage','data_type','access_restrictions','retrieved_at')
+order by column_name;
+
+-- Duplicate check using the same full identity as the new unique index.
+-- Expected result: zero rows.
+select municipality_id,indicator_code,reference_year,reference_period,unit,
+  geographic_level,coalesce(geographic_name,'') geographic_name,source_id,count(*) duplicate_rows
+from public.municipality_indicators
+group by municipality_id,indicator_code,reference_year,reference_period,unit,
+  geographic_level,coalesce(geographic_name,''),source_id
+having count(*)>1
+order by duplicate_rows desc;
