@@ -18,9 +18,9 @@ const RISK = {
   insufficient: { label: 'Недостаточно данных', short: 'Нет оценки', color: 'neutral' },
 };
 const DEFAULT_SCENARIOS = [
-  { key: 'cautious', title: 'Стрессовый', summary: 'Неблагоприятные внешние условия и рост издержек.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18 },
-  { key: 'base', title: 'Базовый', summary: 'Продолжение наблюдаемых тенденций при текущих условиях.', investment_growth_rate: 4, sme_growth_rate: 3, score_growth_rate: 1.5, uncertainty_rate: 7 },
-  { key: 'ambitious', title: 'Благоприятный', summary: 'Улучшение инвестиционной активности и деловой среды.', investment_growth_rate: 8, sme_growth_rate: 6, score_growth_rate: 3, uncertainty_rate: 12 },
+  { key: 'cautious', title: 'Стрессовый', summary: 'Неблагоприятные внешние условия и рост издержек.', investment_growth_rate: -8, sme_growth_rate: -4, uncertainty_rate: 18 },
+  { key: 'base', title: 'Базовый', summary: 'Продолжение наблюдаемых тенденций при текущих условиях.', investment_growth_rate: 4, sme_growth_rate: 3, uncertainty_rate: 7 },
+  { key: 'ambitious', title: 'Благоприятный', summary: 'Улучшение инвестиционной активности и деловой среды.', investment_growth_rate: 8, sme_growth_rate: 6, uncertainty_rate: 12 },
 ];
 const periodLabel = (row) => safeText(row?.reference_period) || String(row?.reference_year || '—');
 const directionText = (s) => s.direction === 'higher' ? 'снижение — негативный сигнал' : s.direction === 'lower' ? 'рост — негативный сигнал' : 'изменение требует контекста';
@@ -46,7 +46,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     async function loadScenarios() {
       if (!supabase || !isSupabaseConfigured) return;
       try {
-        const { data, error } = await supabase.from('forecast_scenarios').select('key,title,summary,investment_growth_rate,sme_growth_rate,score_growth_rate,uncertainty_rate,display_order').eq('is_active', true).order('display_order', { ascending: true });
+        const { data, error } = await supabase.from('forecast_scenarios').select('key,title,summary,investment_growth_rate,sme_growth_rate,uncertainty_rate,display_order').eq('is_active', true).order('display_order', { ascending: true });
         if (cancelled) return;
         if (error) throw error;
         if (Array.isArray(data) && data.length) {
