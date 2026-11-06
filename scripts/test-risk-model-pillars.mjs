@@ -44,6 +44,21 @@ const identicalDuplicateSeries = buildRiskSeries([
 ]);
 assert.deepEqual(identicalDuplicateSeries[0].latest.source_ids, ['test-source', 'second-source'], 'identical duplicate observations must retain all contributing source IDs');
 
+const sharpDrop = buildRiskSeries([
+  riskRow(2023, 'annual', 100), riskRow(2024, 'annual', 80),
+]);
+assert.equal(sharpDrop[0].adverse, true, 'a comparable decline remains a negative signal');
+assert.equal(sharpDrop[0].sharpChange, true, 'a 20% adverse change exceeds the default 10% abrupt-change threshold');
+const smallDrop = buildRiskSeries([
+  riskRow(2023, 'annual', 100), riskRow(2024, 'annual', 95),
+]);
+assert.equal(smallDrop[0].sharpChange, false, 'a 5% adverse change is not classified as abrupt by default');
+const customSharpThreshold = buildRiskSeries([
+  riskRow(2023, 'annual', 100), riskRow(2024, 'annual', 80),
+], { ...DEFAULT_RISK_THRESHOLDS, sharpChangePercent: 25 });
+assert.equal(customSharpThreshold[0].sharpChange, false, 'the abrupt-change threshold must be configurable');
+assert.equal(assessRiskSignals([{ ...riskSignal(true, 'economy'), sharpChange: true }]).sharpChangeCount, 1, 'sharp changes must be counted separately from the overall risk level');
+
 const highConfidenceSeries = buildRiskSeries([
   riskRow(2022, 'annual', 70), riskRow(2023, 'annual', 65), riskRow(2024, 'annual', 60),
 ]);
@@ -173,7 +188,7 @@ const insufficient = buildRiskModel(municipalities, series.filter((item) => item
 assert.equal(insufficient.byMunicipality.m1.availablePillars, 1, 'one observed direction remains one risk-coverage direction');
 assert.equal(Object.hasOwn(MODEL_PILLARS.find((pillar) => pillar.key === 'social'), 'weight'), false, 'risk directions must not carry or reapply index weights');
 const riskSignal = (adverse, pillar) => ({ adverse, pillar: { key: pillar } });
-assert.deepEqual(DEFAULT_RISK_THRESHOLDS, { minimumUsable: 2, criticalSignals: 3, criticalPillars: 2 }, 'default thresholds must preserve the existing traffic-light behavior');
+assert.deepEqual(DEFAULT_RISK_THRESHOLDS, { minimumUsable: 2, criticalSignals: 3, criticalPillars: 2, sharpChangePercent: 10 }, 'default thresholds must preserve the existing traffic-light behavior');
 assert.equal(assessRiskSignals([riskSignal(false, 'economy')]).level, 'insufficient', 'one usable signal is insufficient under the default threshold');
 assert.equal(assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 'labour')]).level, 'stable', 'no negative signals with sufficient coverage is green');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(false, 'labour')]).level, 'watch', 'one negative signal is yellow');
