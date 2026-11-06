@@ -2,13 +2,13 @@ name: Build verification
 
 on:
   push:
-    branches: [main, feature/municipal-data-coverage-matrix, 'fix/**', feat/data-quality]
+    branches: [main, feature/municipal-data-coverage-matrix, 'fix/**', 'feat/**', 'integration/yugra18-six-directions-2026-11-07']
   # Keep incremental fix branches covered by the same regression and build checks.
   # Classification tests protect geography, sector semantics, and the six-pillar mapping.
   # The same workflow is used for data-classification and risk-chain regression updates.
   # Recheck expanded business and labour indicator families after classifier refinement.
   pull_request:
-    branches: [main]
+    branches: [main, integration/yugra18-six-directions-2026-11-07]
   workflow_dispatch:
 
 permissions:
@@ -41,6 +41,10 @@ jobs:
         run: node scripts/test-risk-data-gates.mjs
       - name: Test indicator classification and resilience model pillars
         run: node scripts/test-risk-model-pillars.mjs
+      - name: Test six-pillar resilience index methodology
+        run: node scripts/test-resilience-index.mjs
+      - name: Validate Rosstat municipality crosswalk
+        run: node scripts/validate-rosstat-crosswalk.mjs
       - name: Test official comparison comparability
         run: node scripts/test-official-comparison-gates.mjs
       - name: Test analytical report official-data gates
