@@ -36,6 +36,13 @@ const periodYearFromLabelSeries = buildRiskSeries([
 assert.equal(periodYearFromLabelSeries.length, 1, 'period year labels must preserve distinct observations when reference_year is absent');
 assert.equal(periodYearFromLabelSeries[0].adverse, true, 'validated year labels may support same-quarter year-over-year comparison');
 assert.equal(periodYearFromLabelSeries[0].confidenceLevel, 'medium', 'two comparable observations with source metadata receive medium confidence');
+const identicalDuplicateSeries = buildRiskSeries([
+  riskRow(2022, 'annual', 70),
+  riskRow(2023, 'annual', 60),
+  riskRow(2023, 'annual', 60, { source_id: 'second-source' }),
+]);
+assert.deepEqual(identicalDuplicateSeries[0].latest.source_ids, ['test-source', 'second-source'], 'identical duplicate observations must retain all contributing source IDs');
+
 const highConfidenceSeries = buildRiskSeries([
   riskRow(2022, 'annual', 70), riskRow(2023, 'annual', 65), riskRow(2024, 'annual', 60),
 ]);
