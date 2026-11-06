@@ -12,11 +12,11 @@ assert.equal(percentileScore(-1, [-2, -1, 0, 1, 2], 'lower'), 70, 'lower-is-bett
 assert.equal(percentileScore(0, [0, 0, 0, 0, 0], 'higher'), 50, 'an all-tied peer group must not divide by zero');
 
 const municipalities = Array.from({ length: 6 }, (_, i) => ({ id: 'm' + (i + 1), name: 'MO ' + (i + 1) }));
-const definitions = INDEX_PILLARS.map((pillar) => ({ code: 'x_' + pillar.key, name: pillar.title, pillar: pillar.key, direction: 'higher' }));
+const definitions = INDEX_PILLARS.map((pillar) => ({ code: 'x_' + pillar.key, name: pillar.title, pillar: pillar.key, direction: 'higher', acceptedNames: ['Тестовый показатель ' + pillar.key] }));
 const rows = [];
 for (const definition of definitions) {
   municipalities.forEach((municipality, i) => rows.push({
-    municipality_id: municipality.id, indicator_code: definition.code, value: i + 1, unit: 'ед.',
+    municipality_id: municipality.id, indicator_code: definition.code, indicator_name: definition.acceptedNames[0], value: i + 1, unit: 'ед.',
     reference_year: 2025, reference_period: 'annual', geographic_level: 'municipality',
     verification_status: 'verified', source_id: 'source-' + definition.code, source_url: 'https://example.test/' + definition.code,
   }));
@@ -26,6 +26,23 @@ assert.equal(model.results.m1.index, 8.33);
 assert.equal(model.results.m6.index, 91.67);
 assert.equal(model.results.m1.status, 'complete');
 assert.equal(model.results.m1.coveragePercent, 100, 'indicator coverage is based on distinct approved codes');
+
+const wrongNameRows = rows.map((row) => row.indicator_code === 'x_economy'
+  ? { ...row, indicator_name: 'Неутверждённое название' }
+  : row);
+const wrongNames = calculateMunicipalIndex(wrongNameRows, municipalities, {
+  referenceYear: 2025, referencePeriod: 'annual', indicatorDefinitions: definitions,
+});
+assert.equal(wrongNames.results.m1.index, null, 'unapproved source indicator names must not enter the index');
+assert.equal(wrongNames.diagnostics.rowsRejectedForUnapprovedIndicatorName, 6);
+assert.ok(wrongNames.diagnostics.excludedIndicatorGroups.some((item) => item.code === 'x_economy'));
+
+const incompleteDefinition = definitions.map(({ acceptedNames, ...definition }) => definition);
+const invalidNameDefinition = calculateMunicipalIndex(rows, municipalities, {
+  referenceYear: 2025, referencePeriod: 'annual', indicatorDefinitions: incompleteDefinition,
+});
+assert.equal(invalidNameDefinition.results.m1.index, null, 'definitions without approved source-name aliases must be rejected');
+assert.ok(invalidNameDefinition.diagnostics.definitionErrors.some((item) => item.reason === 'invalid_or_unapproved_definition_or_source_names'));
 assert.equal(model.results.m1.pillars.length, 6);
 const sensitivity = calculateLeaveOneOutSensitivity(model.results.m1);
 assert.equal(sensitivity.available, true);
@@ -70,6 +87,7 @@ for (const definition of definitions) {
   tenMunicipalities.forEach((municipality, i) => mixedUnitRows.push({
     municipality_id: municipality.id,
     indicator_code: definition.code,
+    indicator_name: definition.acceptedNames[0],
     value: i + 1,
     unit: definition.code === 'x_economy' && i >= 5 ? 'тыс. ед.' : 'ед.',
     reference_year: 2025,
