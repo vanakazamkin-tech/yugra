@@ -43,6 +43,7 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Keeps the municipal map list sections mounted as stable components, preventing unnecessary DOM remounts when hover/focus state changes.
 - Makes the municipal passport dialog keyboard-contained: Tab/Shift+Tab stay inside the dialog, Escape closes it, focus returns to the opener, and background page scrolling is locked while the dialog is open.
 - Explicitly marks interface action buttons as `type="button"` so they cannot accidentally submit a form if the page is later wrapped in one.
+- Extends explicit button types to the forecasting and risk workspaces; a repository-wide JSX scan found and corrected 15 remaining buttons across those two modules.
 - Keeps the existing Yugra palette, ornament assets and component hierarchy intact.
 
 ## Known review notes / items for dedicated follow-up
@@ -62,5 +63,6 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Map keyboard semantics reviewed: the SVG root exposes a labelled group; each existing region/city target retains its button role and Enter/Space handling.
 - Municipal passport dialog keyboard behavior reviewed in source: focus containment, Escape close, focus restoration, and background scroll lock are implemented.
 - Map-list rendering reviewed: list sections are now stable module-level components rather than nested component definitions.
+- All seven JSX/TSX source files scanned for buttons without an explicit type; the 15 remaining buttons in forecast and risk workspaces were corrected. No untyped buttons remain in the scan.
 - GitHub Actions `Build verification` run #1007 passed on head `d14ec9fa3527c2f9d63db995e770847a70683a46`: dependency installation, all data-integrity regression checks, and production bundle build succeeded.
 - Local browser-based visual regression was not run in this environment; viewport-specific manual verification remains outstanding.
