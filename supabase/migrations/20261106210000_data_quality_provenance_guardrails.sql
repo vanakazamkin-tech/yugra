@@ -72,7 +72,7 @@ create unique index if not exists uq_municipality_indicators_source_observation
 -- Production has this legacy index owned by a UNIQUE constraint. A plain
 -- DROP INDEX fails with dependent-object error in that schema. Keep a fallback
 -- for older/test installations where it exists as a standalone index.
-do $
+do $drop_legacy$
 begin
   if exists (
     select 1
@@ -87,7 +87,7 @@ begin
     drop index if exists public.municipality_indicators_observation_unique;
   end if;
 end;
-$;
+$drop_legacy$;
 
 comment on index public.uq_municipality_indicators_source_observation is
   'Prevents duplicate observations from the same source using the full municipality/indicator/period/unit/geography identity while allowing cross-source comparisons and disagreements.';
