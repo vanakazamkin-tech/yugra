@@ -25,13 +25,18 @@ const clamp = (v, min = 0, max = 100) => Math.max(min, Math.min(max, v));
 // Unknown/custom period frequencies are excluded from early-warning streaks.
 function comparablePeriodSequence(point) {
   const period = String(point?.reference_period ?? '').trim();
-  const year = Number(point?.reference_year) || Number(period.match(/^\d{4}/)?.[0]);
+  const year = Number(point?.reference_year) || Number(period.match(/^(\d{4})/)?.[1]);
   if (!Number.isInteger(year) || year < 1900 || year > 2200) return null;
-  const quarter = period.match(/Q([1-4])/i);
-  if (quarter) return year;
-  const half = period.match(/H([12])/i);
-  if (half) return year;
-  if (!period || /annual|год|^\d{4}$/i.test(period)) return year;
+
+  const quarter = period.match(/(?:^|[-_\s])Q([1-4])$/i);
+  if (quarter) return { year, frequency: 'quarter', slot: Number(quarter[1]) };
+
+  const half = period.match(/(?:^|[-_\s])H([12])$/i);
+  if (half) return { year, frequency: 'half', slot: Number(half[1]) };
+
+  if (!period || /^(?:annual|year|год|годовой|\d{4})$/i.test(period)) {
+    return { year, frequency: 'annual', slot: 0 };
+  }
   return null;
 }
 
@@ -41,7 +46,11 @@ export function countConsecutiveAdverseIntervals(points = [], direction = 'conte
   for (let index = points.length - 1; index > 0; index -= 1) {
     const current = points[index], previous = points[index - 1];
     const currentPeriod = comparablePeriodSequence(current), previousPeriod = comparablePeriodSequence(previous);
-    if (currentPeriod == null || previousPeriod == null || currentPeriod - previousPeriod !== 1) break;
+    const comparable = currentPeriod && previousPeriod
+      && currentPeriod.frequency === previousPeriod.frequency
+      && currentPeriod.slot === previousPeriod.slot
+      && currentPeriod.year - previousPeriod.year === 1;
+    if (!comparable) break;
     const currentValue = Number(current?.numericValue), previousValue = Number(previous?.numericValue);
     if (!Number.isFinite(currentValue) || !Number.isFinite(previousValue)) break;
     const adverse = direction === 'lower' ? currentValue > previousValue : currentValue < previousValue;
@@ -50,6 +59,7 @@ export function countConsecutiveAdverseIntervals(points = [], direction = 'conte
   }
   return streak;
 }
+
 export const DEFAULT_RISK_THRESHOLDS = Object.freeze({
   minimumUsable: 2,
   criticalSignals: 3,
