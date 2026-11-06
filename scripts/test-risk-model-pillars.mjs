@@ -88,6 +88,16 @@ assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'e
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 2, criticalSignals: 2, criticalPillars: 2 }).level, 'critical', 'custom thresholds must recalculate the traffic-light status');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 3, criticalSignals: 2, criticalPillars: 2 }).level, 'insufficient', 'the minimum coverage threshold must take precedence over negative signals');
 
+
+assert.equal(assessRiskSignals([riskSignal(true, 'economy'), { adverse: undefined, pillar: { key: 'labour' } }]).level, 'insufficient', 'unknown-direction rows must not count toward coverage');
+const repeated = assessRiskSignals([{ ...riskSignal(true, 'economy'), adverseStreak: 2 }, riskSignal(false, 'labour')]);
+assert.equal(repeated.level, 'watch', 'a repeated signal in one direction does not automatically become critical');
+assert.equal(repeated.earlyWarning, true, 'two consecutive adverse intervals must activate early warning');
+assert.equal(repeated.affectedPillars, 1, 'affected pillar count must be explicit');
+assert.match(repeated.explanation, /негативных сигнал/, 'assessment must explain its assigned level');
+const noWarning = assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 'labour')]);
+assert.equal(noWarning.earlyWarning, false, 'no adverse streak must not produce an early warning');
+
 const indexScenarios = projectScoreScenarios(60, [
   { key: 'cautious', score_growth_rate: -3, uncertainty_rate: 18 },
   { key: 'base', score_growth_rate: 1.5, uncertainty_rate: 7 },
