@@ -191,6 +191,41 @@ test('forecast can use only complete results from an explicitly approved index c
   assert.equal(approved.find((row) => row.id === 'invalid').projectedScore, null);
 });
 
+
+test('approved percentile index uses additive points rather than compound percentage growth', () => {
+  const rows = buildForecasts([
+    { id: 'm1', name: 'Муниципалитет', score: 60 },
+  ], {
+    score_growth_rate: 1.5,
+    uncertainty_rate: 0,
+    export_shock_pct: 10,
+    cost_pressure_pct: 0,
+    labor_shortage_pct: 0,
+  }, 3, {
+    scoreSource: 'resilience-index',
+    indexContract: { status: 'approved', version: '1.0' },
+    indexResults: { m1: { status: 'complete', index: 82.5 } },
+  });
+  assert.equal(rows[0].score, 82.5);
+  assert.equal(rows[0].adjustedScoreRate, 3.5);
+  assert.equal(rows[0].projectedScore, 93);
+  assert.equal(rows[0].scoreProjectionMode, 'additive_index_points');
+  assert.equal(rows[0].scoreMethodologyVersion, '1.0');
+  assert.equal(rows[0].factorImpacts.find((factor) => factor.key === 'exportShock').scorePoints, 6);
+});
+
+test('approved percentile index projection respects the 0–100 scale without compounding', () => {
+  const rows = buildForecasts([
+    { id: 'm1', name: 'Муниципалитет' },
+  ], { score_growth_rate: 10, uncertainty_rate: 0 }, 3, {
+    scoreSource: 'resilience-index',
+    indexContract: { status: 'approved', version: '1.0' },
+    indexResults: { m1: { status: 'complete', index: 95 } },
+  });
+  assert.equal(rows[0].projectedScore, 100);
+  assert.equal(rows[0].scoreProjectionMode, 'additive_index_points');
+});
+
 test('approved index mode never falls back to municipality.score when an index result is absent', () => {
   const rows = buildForecasts([
     { id: 'missing-index', name: 'Нет индекса', score: 88 },
