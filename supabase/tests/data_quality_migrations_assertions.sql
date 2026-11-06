@@ -18,7 +18,7 @@ insert into public.municipality_indicators(municipality_id,indicator_code,indica
  ('test-municipality','test_indicator','Test indicator',2025,'annual',12,'persons','src-primary','https://example.test/primary','verified','settlement','Test settlement'),
  ('test-municipality','test_indicator','Test indicator',2025,'annual',13,'thousand persons','src-secondary','https://example.test/secondary','needs_review','municipality',null),
  ('test-municipality','test_indicator','Test indicator',2025,'annual',14,'persons','src-secondary','https://example.test/secondary','needs_review','municipality',null);
-do $
+do $duplicate_check$
 begin
  if not exists (
    select 1 from public.municipality_indicator_quality_issues
@@ -34,7 +34,7 @@ begin
   raise exception 'duplicate full identity unexpectedly accepted';
  exception when unique_violation then null;
  end;
-end $$;
+end $duplicate_check$;
 select 'integration assertions passed' as result;
 
 -- Security contract: private provenance stays private to API roles, while
