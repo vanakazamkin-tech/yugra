@@ -212,6 +212,8 @@ test('adapter blocks complete-looking results below the approved peer coverage t
     referencePeriod: 'year',
   });
   assert.equal(options.indexContract.status, 'approved');
+  assert.equal(options.diagnostics.available, false);
+  assert.equal(options.diagnostics.reason, 'no_municipality_meets_approved_index_gates');
   assert.deepEqual(options.indexResults.a, { status: 'invalid_index_result', index: null });
   assert.equal(options.diagnostics.invalidCount, 2);
 });
