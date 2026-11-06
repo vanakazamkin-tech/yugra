@@ -25,7 +25,7 @@ assert.equal(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-M13
 const riskRow = (year, period, value, overrides = {}) => ({
   municipality_id: 'm-risk', indicator_code: 'employment_rate', indicator_name: 'Уровень занятости',
   reference_year: year, reference_period: period, value, unit: '%',
-  verification_status: 'verified', geographic_level: 'municipality', ...overrides,
+  verification_status: 'verified', geographic_level: 'municipality', source_id: 'test-source', ...overrides,
 });
 const periodYearFromLabelSeries = buildRiskSeries([
   { ...riskRow(null, '2022-Q1', 70), reference_year: null },
@@ -33,6 +33,11 @@ const periodYearFromLabelSeries = buildRiskSeries([
 ]);
 assert.equal(periodYearFromLabelSeries.length, 1, 'period year labels must preserve distinct observations when reference_year is absent');
 assert.equal(periodYearFromLabelSeries[0].adverse, true, 'validated year labels may support same-quarter year-over-year comparison');
+assert.equal(periodYearFromLabelSeries[0].confidenceLevel, 'medium', 'two comparable observations with source metadata receive medium confidence');
+const highConfidenceSeries = buildRiskSeries([
+  riskRow(2022, 'annual', 70), riskRow(2023, 'annual', 65), riskRow(2024, 'annual', 60),
+]);
+assert.equal(highConfidenceSeries[0].confidenceLevel, 'high', 'three continuous annual observations with source metadata receive high confidence');
 
 const missingPeriodSeries = buildRiskSeries([
   riskRow(2022, '', 70), riskRow(2023, '', 60),
@@ -51,6 +56,7 @@ const conflictingSeries = buildRiskSeries([
   riskRow(2024, 'annual', 60), riskRow(2024, 'annual', 80, { source_id: 'conflicting_source' }),
 ]);
 assert.equal(conflictingSeries[0].excludedConflictingPeriods, 1, 'conflicting duplicates must be excluded and counted');
+assert.equal(conflictingSeries[0].confidenceLevel, 'low', 'a conflicting period must lower the series confidence');
 assert.equal(conflictingSeries[0].latest.reference_year, 2022, 'conflicting period must not be selected as latest');
 assert.equal(conflictingSeries[0].adverse, null, 'excluded conflicting value must not create a risk signal');
 
