@@ -132,11 +132,13 @@ assert.ok(changed.byMunicipality[2].score > baseline.byMunicipality[2].score,
   'higher-is-better source change must improve the comparative score');
 console.log('OK: index responds to changes in source indicator values.');
 
-const zeroFixture = [0, 10, 20].map((value, index) => ({
-  municipalityId: index + 1, code: 'zero-safe', unit: 'ед.', direction: 'higher', adverse: null,
-  pillar: { key: 'investment' }, points: [{}],
-  latest: { numericValue: value, reference_year: 2025, reference_period: 'annual' },
-}));
+const zeroFixture = ['investment', 'employment'].flatMap((code) =>
+  [0, 10, 20].map((value, index) => ({
+    municipalityId: index + 1, code, unit: 'ед.', direction: 'higher', adverse: null,
+    pillar: { key: code }, points: [{}],
+    latest: { numericValue: value, reference_year: 2025, reference_period: 'annual' },
+  }))
+);
 const zeroModel = buildRiskModel(partialMunicipalities.slice(0, 3), zeroFixture);
 assert.notEqual(zeroModel.byMunicipality[1].score, null,
   'zero is a valid observed value and must not be treated as missing');
