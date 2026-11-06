@@ -88,3 +88,16 @@ left join public.municipality_indicators i
   on i.municipality_id=m.id and i.indicator_code=t.indicator_code
 group by t.indicator_code
 order by municipalities_covered desc,t.indicator_code;
+
+
+-- Source readiness is a separate dimension from indicator coverage.
+-- Identified sources are candidates only; they do not imply extracted observations.
+select id,name,import_status,last_checked_at,notes
+from public.data_sources
+where id in (
+  'rosstat_hmao_municipal_monitoring_2023_2025',
+  'rosstat_oktmo_open_data_2026_10',
+  'rosstat_oktmo_codingtable_2026_10',
+  'rosstat_bdmo_indicator_list_2026'
+)
+order by id;
