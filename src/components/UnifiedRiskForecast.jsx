@@ -211,7 +211,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     };
     const csv = '\uFEFF' + data.map((r) => r.map(escape).join(';')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   return <section className="panel full-panel unified-system">
