@@ -34,7 +34,7 @@ assert.match(metadataMigration, /add column if not exists access_restrictions te
 assert.match(postMigrationAuditSql, /observations_without_provenance_link/i, 'post-migration audit must identify observations without provenance');
 assert.match(postMigrationAuditSql, /municipality_indicator_quality_issues/i, 'post-migration audit must summarize diagnostic flags');
 assert.match(postMigrationAuditSql, /unchecked_access_restrictions/i, 'post-migration audit must expose unchecked source restrictions');
-assert.match(auditSql, /reference_period !~ '[^']*\[0-9\]\{4\}/i, 'period audit must preserve explicit canonical vocabulary');
+assert.match(postMigrationAuditSql, /reference_period !~ '[^']*\[0-9\]\{4\}/i, 'post-migration period audit must preserve explicit canonical vocabulary');
 console.log('Extended provenance and source-quality audit contract checks passed.');
 assert.match(auditSql, /union select source_id from public\.municipality_indicator_import_review/i, 'catalog usage audit must include import-review records');
 assert.match(auditSql, /orphan_source_references/i, 'audit must report orphan source references by relation');
