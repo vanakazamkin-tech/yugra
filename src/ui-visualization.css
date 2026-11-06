@@ -294,3 +294,19 @@
   stroke: #fffaf1;
   stroke-width: 2;
 }
+
+
+/* Keyboard-operable horizontal table regions and live forecast result feedback. */
+.yugra-app [role="region"][tabindex="0"][aria-label^="Таблица данных"] {
+  scroll-margin-block: 12px;
+}
+.yugra-app [role="region"][tabindex="0"][aria-label^="Таблица данных"]:focus-visible {
+  outline: 3px solid rgba(177, 139, 82, .78);
+  outline-offset: 3px;
+}
+.yugra-app .forecast-results-count {
+  margin: 6px 0 0;
+  color: var(--ui-muted);
+  font-size: .82rem;
+  font-variant-numeric: tabular-nums;
+}
