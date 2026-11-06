@@ -343,3 +343,121 @@ export function compareMunicipalRankings(baselineScores = {}, scenarioScores = {
       : null,
   };
 }
+
+
+// Inspect whether indicators inside a pillar move together after normalization,
+// and quantify each indicator's leave-one-out influence on complete municipal indices.
+// High positive rank correlation is a review flag only; it never deletes an indicator.
+export function analyzeIndicatorDominance(indexResult, options = {}) {
+  const results = indexResult?.results;
+  if (!results || typeof results !== 'object') {
+    return { available: false, reason: 'calculated_index_results_required', pillars: [] };
+  }
+  const minimumPairs = Math.max(5, Math.trunc(Number(options.minimumPairs) || 5));
+  const overlapThreshold = Number.isFinite(Number(options.overlapThreshold))
+    ? Math.min(1, Math.max(0, Number(options.overlapThreshold)))
+    : 0.9;
+  const municipalities = Object.values(results);
+  const pillarReports = [];
+
+  for (const pillar of INDEX_PILLARS) {
+    const byCode = new Map();
+    const pillarByMunicipality = new Map();
+    for (const municipality of municipalities) {
+      const pillarResult = municipality.pillars?.find((item) => item.key === pillar.key);
+      if (!pillarResult) continue;
+      const scores = new Map();
+      for (const item of pillarResult.indicators || []) {
+        if (isFiniteValue(item.score)) scores.set(String(item.code), Number(item.score));
+      }
+      pillarByMunicipality.set(String(municipality.municipalityId), { municipality, pillarResult, scores });
+      for (const [code, score] of scores) {
+        if (!byCode.has(code)) byCode.set(code, new Map());
+        byCode.get(code).set(String(municipality.municipalityId), score);
+      }
+    }
+
+    const indicators = [...byCode.entries()].map(([code, scores]) => {
+      const influence = [];
+      let pillarCount = 0;
+      for (const { municipality, pillarResult } of pillarByMunicipality.values()) {
+        if (pillarResult.indicators?.some((item) => String(item.code) === code)) pillarCount += 1;
+        if (!Number.isFinite(municipality.index) || !Number.isFinite(pillarResult.score)) continue;
+        const remaining = (pillarResult.indicators || []).filter((item) => String(item.code) !== code);
+        if (!remaining.length) continue;
+        const replacement = remaining.reduce((sum, item) => sum + Number(item.score), 0) / remaining.length;
+        const scenarioIndex = INDEX_PILLARS.reduce((sum, current) => {
+          const currentResult = municipality.pillars.find((item) => item.key === current.key);
+          const score = current.key === pillar.key ? replacement : currentResult?.score;
+          return sum + Number(score) * current.weight;
+        }, 0);
+        influence.push(scenarioIndex - municipality.index);
+      }
+      const absolute = influence.map(Math.abs);
+      return {
+        code,
+        municipalityCount: scores.size,
+        pillarCoverageCount: pillarCount,
+        nominalWeightWithinPillar: pillarCount ? Math.round((1 / Math.max(1, indicatorsCount(pillarByMunicipality, code))) * 10000) / 10000 : null,
+        meanAbsoluteIndexShift: absolute.length ? Math.round((absolute.reduce((sum, value) => sum + value, 0) / absolute.length) * 100) / 100 : null,
+        maximumAbsoluteIndexShift: absolute.length ? Math.round(Math.max(...absolute) * 100) / 100 : null,
+        evaluatedMunicipalities: influence.length,
+        leaveOneOutAvailable: influence.length > 0,
+      };
+    });
+
+    const pairs = [];
+    const codes = [...byCode.keys()].sort();
+    for (let leftIndex = 0; leftIndex < codes.length; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < codes.length; rightIndex += 1) {
+        const leftCode = codes[leftIndex];
+        const rightCode = codes[rightIndex];
+        const commonIds = [...byCode.get(leftCode).keys()].filter((id) => byCode.get(rightCode).has(id)).sort();
+        if (commonIds.length < minimumPairs) {
+          pairs.push({ leftCode, rightCode, pairCount: commonIds.length, spearman: null, classification: 'insufficient_pairs' });
+          continue;
+        }
+        const leftValues = commonIds.map((id) => ({ id, value: byCode.get(leftCode).get(id) }));
+        const rightValues = commonIds.map((id) => ({ id, value: byCode.get(rightCode).get(id) }));
+        const leftRanks = averageRanks(leftValues);
+        const rightRanks = averageRanks(rightValues);
+        const rho = pearsonCorrelation(commonIds.map((id) => leftRanks.get(id)), commonIds.map((id) => rightRanks.get(id)));
+        const rounded = rho === null ? null : Math.round(rho * 10000) / 10000;
+        const classification = rounded === null
+          ? 'constant_or_undefined'
+          : rounded >= overlapThreshold
+            ? 'possible_positive_overlap_review'
+            : rounded <= -overlapThreshold
+              ? 'strong_inverse_relationship_review'
+              : 'no_high_rank_correlation_flag';
+        pairs.push({ leftCode, rightCode, pairCount: commonIds.length, spearman: rounded, classification });
+      }
+    }
+
+    pillarReports.push({
+      pillar: pillar.key,
+      title: pillar.title,
+      indicatorCount: indicators.length,
+      indicators,
+      pairs,
+      reviewFlags: pairs.filter((pair) => pair.classification === 'possible_positive_overlap_review'
+        || pair.classification === 'strong_inverse_relationship_review'),
+      note: 'Корреляция рангов — диагностический сигнал, не доказательство дублирования или причинности.',
+    });
+  }
+  return {
+    available: true,
+    municipalityCount: municipalities.length,
+    minimumPairs,
+    positiveOverlapThreshold: overlapThreshold,
+    pillars: pillarReports,
+  };
+}
+
+function indicatorsCount(pillarByMunicipality, code) {
+  const counts = [];
+  for (const { pillarResult } of pillarByMunicipality.values()) {
+    if (pillarResult.indicators?.some((item) => String(item.code) === code)) counts.push(1);
+  }
+  return counts.length;
+}
