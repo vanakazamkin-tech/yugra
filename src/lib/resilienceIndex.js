@@ -88,7 +88,7 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
     definitionByCode.set(code, definition);
   }
 
-  const targetRows = (Array.isArray(rows) ? rows : []).filter((row) =>
+  const baseEligibleRows = (Array.isArray(rows) ? rows : []).filter((row) =>
     row
     && row.verification_status === 'verified'
     && row.geographic_level === 'municipality'
@@ -98,9 +98,11 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
     && String(row.reference_period ?? '') === period
     && isFiniteValue(row.value)
     && definitionByCode.has(String(row.indicator_code))
-    && definitionByCode.get(String(row.indicator_code)).acceptedNames.includes(String(row.indicator_name || '').trim())
     && row.municipality_id != null
     && String(row.unit || '').trim() !== ''
+  );
+  const targetRows = baseEligibleRows.filter((row) =>
+    definitionByCode.get(String(row.indicator_code)).acceptedNames.includes(String(row.indicator_name || '').trim())
   );
 
   // Ambiguous duplicate observations are excluded as a whole; never "last row wins".
@@ -214,10 +216,7 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
     diagnostics: {
       inputRows: Array.isArray(rows) ? rows.length : 0,
       eligibleRows: targetRows.length,
-      rowsRejectedForUnapprovedIndicatorName: (Array.isArray(rows) ? rows : []).filter((row) =>
-        row && definitionByCode.has(String(row.indicator_code))
-        && !definitionByCode.get(String(row.indicator_code)).acceptedNames.includes(String(row.indicator_name || '').trim())
-      ).length,
+      rowsRejectedForUnapprovedIndicatorName: baseEligibleRows.length - targetRows.length,
       uniqueRows: uniqueRows.length,
       duplicateLogicalKeysExcluded: duplicates.length,
       duplicateKeys: duplicates,
