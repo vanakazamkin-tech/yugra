@@ -1,4 +1,4 @@
--- Additive data-lineage layer and same-source duplicate guard.
+-- Add additive provenance layer and align uniqueness with the full observation identity.
 -- Existing observations remain unchanged. Cross-source observations are intentionally
 -- allowed because different documents may report different values for the same key.
 
@@ -44,15 +44,32 @@ from public.municipality_indicators mi
 where mi.source_id is not null and mi.source_url is not null and btrim(mi.source_url) <> ''
 on conflict (indicator_id, source_id, source_role) do nothing;
 
--- Block repeat imports from the same source; allow other sources to report
--- the same observation key so disagreements remain reviewable.
--- Unit is part of the key: the same source may legitimately publish distinct
--- measures in different units for the same municipality/indicator/period.
+-- Preflight the intended full identity before creating its unique index.
+-- A failure aborts the migration without deleting or rewriting any observation.
+do $$
+begin
+  if exists (
+    select 1
+    from public.municipality_indicators
+    group by municipality_id, indicator_code, reference_year, reference_period,
+      unit, geographic_level, coalesce(geographic_name, ''), source_id
+    having count(*) > 1
+  ) then
+    raise exception 'Cannot install source observation identity index: same-source duplicates exist for the full identity key';
+  end if;
+end;
+$$;
+
+-- Unit and geographic scope are part of the observation identity.
+-- Create the complete index first, then remove the older narrower unique index.
+-- Keeping the old index would continue rejecting legitimate unit/geography variants.
 create unique index if not exists uq_municipality_indicators_source_observation
   on public.municipality_indicators (
     municipality_id, indicator_code, reference_year, reference_period,
     unit, geographic_level, (coalesce(geographic_name, '')), source_id
   );
 
+drop index if exists public.municipality_indicators_observation_unique;
+
 comment on index public.uq_municipality_indicators_source_observation is
-  'Prevents duplicate observations from the same source while allowing cross-source comparisons, unit-specific measures, and disagreements.';
+  'Prevents duplicate observations from the same source using the full municipality/indicator/period/unit/geography identity while allowing cross-source comparisons and disagreements.';
