@@ -1,4 +1,4 @@
-do $
+do $assert_index$
 declare
  link_count integer;
  metadata_count integer;
@@ -42,7 +42,7 @@ begin
  and column_name in ('data_owner','temporal_coverage','data_type','access_restrictions','retrieved_at');
  if metadata_count<>5 then raise exception 'expected 5 metadata columns, got %',metadata_count; end if;
  if to_regclass('public.municipality_indicator_quality_issues') is null then raise exception 'quality view missing'; end if;
-end $$;
+end $assert_index$;
 insert into public.municipality_indicators(municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,verification_status,geographic_level,geographic_name) values
  ('test-municipality','test_indicator','Test indicator',2025,'annual',11,'thousand persons','src-primary','https://example.test/primary','verified','municipality',null),
  ('test-municipality','test_indicator','Test indicator',2025,'annual',12,'persons','src-primary','https://example.test/primary','verified','settlement','Test settlement'),
