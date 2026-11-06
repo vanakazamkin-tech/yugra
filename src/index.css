@@ -1864,3 +1864,23 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 @media(max-width:1050px) { .concept-module-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .concept-showcase { grid-template-columns:minmax(0,1fr) minmax(270px,.8fr); } }
 @media(max-width:760px) { .concept-showcase { grid-template-columns:1fr; padding:24px; } .concept-visual { min-height:330px; margin:5px 0; } .concept-showcase-bottom { grid-template-columns:repeat(2,1fr); gap:13px 0; } .concept-showcase-bottom > div:nth-child(2) { border:0; } .concept-section-heading { align-items:flex-start; flex-direction:column; gap:8px; } .concept-principles { grid-template-columns:1fr; gap:12px; } }
 @media(max-width:560px) { .concept-module-grid { grid-template-columns:1fr; } .concept-module { min-height:0; } .concept-flow-steps { grid-template-columns:1fr 1fr; gap:18px; } .concept-flow-steps > i { display:none; } .concept-principle-list { grid-template-columns:1fr; } .concept-disclaimer { align-items:flex-start; flex-wrap:wrap; } .concept-disclaimer-stamp { margin-left:53px; } .concept-float-top { right:-3%; }.concept-float-bottom { left:-3%; } }
+
+
+/* Navigation refinement: make the concept feel like a coherent digital product */
+.site-header { min-height:92px; gap:18px; padding:0 2px; border-bottom-color:rgba(174,139,82,.32); }
+.brand-lockup { gap:10px; transition:transform .2s; }
+.brand-lockup:hover { transform:translateY(-1px); }
+.brand-emblem { width:54px; height:54px; flex-basis:54px; }
+.brand-title { font-size:34px; letter-spacing:-.06em; }
+.brand-subtitle { font-size:12px; }
+.main-nav { flex:1 1 auto; justify-content:flex-end; gap:4px; }
+.nav-item { min-height:43px; align-self:center; padding:0 12px; border:1px solid transparent; border-radius:8px; font-size:11px; }
+.nav-item:hover { border-color:#e4d8c2; border-bottom-color:#d7c49f; background:#fffaf1; }
+.nav-item.active { border:1px solid #dfcfb1; border-bottom:1px solid #c39a5e; border-radius:8px; background:linear-gradient(145deg,#f4ecdc,#fffaf1); box-shadow:0 3px 10px rgba(52,73,49,.055); }
+.nav-item .ui-icon { width:16px; height:16px; }
+.header-motto { flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:5px; font-size:8px; letter-spacing:.13em; }
+.header-motto .concept-corner { padding:4px 8px; border:1px solid #d6c39f; border-radius:3px; color:#8d7047; background:#f6eedf; font-size:8px; letter-spacing:.18em; }
+.header-motto .motto-mark { display:none; }
+.sync-status { border-radius:0 0 9px 9px; }
+@media(max-width:1180px) { .site-header { flex-wrap:wrap; padding:12px 0 8px; } .main-nav { order:3; flex:1 0 100%; justify-content:flex-start; overflow-x:auto; scrollbar-width:none; padding:3px 0 7px; } .main-nav::-webkit-scrollbar { display:none; } .header-motto { margin-left:auto; } }
+@media(max-width:640px) { .site-header { gap:7px; } .brand-emblem { width:46px; height:46px; flex-basis:46px; } .brand-title { font-size:29px; } .brand-subtitle { font-size:11px; } .header-motto { font-size:7px; } .main-nav { margin:0 -4px; } .nav-item { min-height:39px; padding:0 10px; font-size:10px; } .nav-item .ui-icon { width:14px; height:14px; } }
