@@ -47,6 +47,7 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Makes all 17 horizontally scrollable data-table wrappers in the main workspace, forecast workspace and risk workspace keyboard-focusable named regions; visible focus styling makes the active scroll area clear.
 - Adds explicit `scope="col"` semantics to 121 table column headers across those three UI modules.
 - Announces the filtered result count in the forecast table with a polite live region, so search and municipality-filter changes are conveyed to assistive technology.
+- Exposes the active sort column and direction on the corresponding ranking-table header with `aria-sort`; inactive headers do not claim a sort state. The visible municipality count is also announced when the selected table view changes.
 - Keeps the existing Yugra palette, ornament assets and component hierarchy intact.
 
 ## Known review notes / items for dedicated follow-up
