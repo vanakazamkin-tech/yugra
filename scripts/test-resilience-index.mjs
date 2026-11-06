@@ -8,6 +8,9 @@ assert.equal(percentileScore(3, [1, 2, 3, 3, 5], 'lower'), 40);
 assert.equal(percentileScore(true, [1, 2, 3, 4, 5], 'higher'), null, 'boolean values are not valid statistical observations');
 assert.equal(percentileScore([3], [1, 2, 3, 4, 5], 'higher'), null, 'array coercion must not create a numeric observation');
 assert.equal(percentileScore(Symbol('invalid'), [1, 2, 3, 4, 5], 'higher'), null, 'unsupported value types must be rejected without throwing');
+assert.equal(percentileScore('0x10', [1, 2, 3, 4, 5], 'higher'), null, 'hexadecimal strings are not decimal statistical observations');
+assert.equal(percentileScore('0b10', [1, 2, 3, 4, 5], 'higher'), null, 'binary strings are not decimal statistical observations');
+assert.equal(percentileScore('1e3', [100, 500, 1000, 1500, 2000], 'higher'), 50, 'valid decimal scientific notation remains supported');
 assert.equal(percentileScore(5, [1, 2, 3, 4], 'higher'), null, 'fewer than five peers must be insufficient');
 assert.equal(percentileScore(3, [1, 2, 3, 4, 5], 'sideways'), null);
 assert.equal(percentileScore(0, [-2, -1, 0, 1, 2], 'higher'), 50, 'zero and negative observations are valid numeric inputs');
@@ -32,6 +35,10 @@ assert.equal(model.results.m1.coveragePercent, 100, 'indicator coverage is based
 assert.equal(model.results.m1.approvedIndicatorCount, 6);
 assert.equal(model.results.m1.coveredIndicatorCount, 6);
 assert.equal(model.results.m1.missingIndicatorCount, 0);
+const firstIndicatorGroup = model.diagnostics.indicatorGroups[0];
+assert.equal(firstIndicatorGroup.peerCoveragePercent, 100);
+assert.deepEqual(firstIndicatorGroup.peerMunicipalityIds, municipalities.map((municipality) => municipality.id));
+assert.equal(firstIndicatorGroup.peerMunicipalityCountOutsideRegistry, 0);
 assert.deepEqual(model.results.m1.coveredPillarKeys, INDEX_PILLARS.map((pillar) => pillar.key));
 assert.deepEqual(model.results.m1.missingPillarKeys, []);
 const reorderedModel = calculateMunicipalIndex(rows.slice().reverse(), municipalities.slice().reverse(), {
@@ -95,6 +102,7 @@ assert.equal(partial.results.m1.index, null, 'missing pillar must not be zero-fi
 assert.equal(partial.results.m1.status, 'insufficient_coverage');
 assert.equal(partial.results.m1.availableWeightPercent, 85);
 assert.equal(partial.results.m1.coveragePercent, 83.33, 'missing one of six approved indicator codes must be visible in coverage');
+assert.ok(partial.diagnostics.indicatorGroups.every((group) => group.peerCoveragePercent === 100), 'peer coverage must be measured against the declared municipality universe');
 
 const dirty = [
   ...rows,
