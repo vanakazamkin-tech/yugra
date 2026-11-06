@@ -20,22 +20,22 @@ from public.municipalities m
 left join public.municipality_indicators i on i.municipality_id=m.id
 group by m.id,m.name order by m.name;
 
--- Same-source duplicates (errors).
-select municipality_id,indicator_code,reference_year,reference_period,
+-- Same-source duplicates under the full observation identity (errors).
+select municipality_id,indicator_code,reference_year,reference_period,unit,
  geographic_level,coalesce(geographic_name,'') geographic_name,source_id,count(*) duplicate_rows
 from public.municipality_indicators
-group by municipality_id,indicator_code,reference_year,reference_period,
+group by municipality_id,indicator_code,reference_year,reference_period,unit,
  geographic_level,coalesce(geographic_name,''),source_id
 having count(*)>1 order by duplicate_rows desc;
 
 -- Cross-source disagreements (review; do not auto-select a winner).
-select municipality_id,indicator_code,reference_year,reference_period,
+select municipality_id,indicator_code,reference_year,reference_period,unit,
  geographic_level,coalesce(geographic_name,'') geographic_name,
  count(distinct source_id) sources,count(distinct value) distinct_values,
  jsonb_agg(jsonb_build_object('source_id',source_id,'value',value,
    'status',verification_status,'source_url',source_url) order by source_id) source_values
 from public.municipality_indicators
-group by municipality_id,indicator_code,reference_year,reference_period,
+group by municipality_id,indicator_code,reference_year,reference_period,unit,
  geographic_level,coalesce(geographic_name,'')
 having count(distinct source_id)>1
 order by distinct_values desc,sources desc;
