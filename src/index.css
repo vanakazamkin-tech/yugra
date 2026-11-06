@@ -1920,3 +1920,49 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .dashboard-grid-home .ranking-table th { background:#f0e9dc; }
 @media(max-width:880px) { .intro-top { grid-template-columns:minmax(0,1fr) 245px; gap:18px; } .intro-art { height:165px; } }
 @media(max-width:640px) { .intro-panel { padding:19px 16px; } .intro-top { grid-template-columns:1fr; } .intro-art { height:150px; max-width:100%; } .intro-copy h1 { font-size:34px; } .catalog-toolbar { grid-template-columns:1fr; gap:15px; } .slice-bar { padding-inline:0; } .stats-grid { gap:9px; } .metric-card { min-height:100px; padding:12px 10px; gap:8px; } .metric-icon { width:34px; height:34px; } .metric-copy strong { font-size:22px; } .dashboard-grid-home .map-panel,.dashboard-grid-home .ranking-panel { padding:14px; } }
+
+
+/* Map experience — cartographic plate, clear territory navigation and refined passport */
+.full-panel:has(.map-layout) { padding:clamp(18px,2.5vw,30px); border-radius:18px; border-color:#d9c9ad; background:linear-gradient(145deg,#fffdf8 0%,#f7f1e6 100%); box-shadow:0 12px 32px rgba(39,53,39,.065); }
+.full-panel:has(.map-layout) > .section-heading { align-items:center; padding:0 2px 19px; margin-bottom:18px; border-bottom:1px solid #e7dcc9; }
+.full-panel:has(.map-layout) .heading-label h2 { font:600 clamp(23px,2.6vw,31px)/1.1 'Playfair Display',Georgia,serif; letter-spacing:-.025em; }
+.full-panel:has(.map-layout) .heading-label p { margin-top:6px; font-size:12px; }
+.map-layout { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(260px,.72fr); gap:18px; align-items:stretch; }
+.map-layout .large-map { min-height:570px; padding:20px; border:1px solid #d9cfbc; border-radius:15px; background:radial-gradient(ellipse at 48% 48%,#fffdf7 0%,#f1eadb 68%,#e9e0ce 100%); box-shadow:inset 0 0 0 5px rgba(255,255,255,.48),0 8px 24px rgba(43,59,42,.055); position:relative; }
+.map-layout .large-map::before { content:'ХАНТЫ-МАНСИЙСКИЙ АВТОНОМНЫЙ ОКРУГ'; position:absolute; left:24px; top:18px; color:#9b8b70; font-size:9px; font-weight:800; letter-spacing:.16em; }
+.map-layout .large-map::after { content:'ЮГРА'; position:absolute; right:24px; bottom:18px; color:rgba(49,88,62,.12); font:600 36px 'Playfair Display',Georgia,serif; letter-spacing:.12em; pointer-events:none; }
+.map-layout .large-map .ugra-map-svg { max-height:610px; }
+.map-region { stroke:#fffaf1; stroke-width:2.8; cursor:pointer; transition:fill .2s,filter .2s,opacity .2s; }
+.map-region:hover,.map-region-hover { fill:#c29556!important; filter:drop-shadow(0 5px 5px rgba(37,58,42,.24)); }
+.map-region:focus-visible,.map-city-target:focus-visible { outline:none; filter:drop-shadow(0 0 4px #b88748); }
+.map-city-target { cursor:pointer; }
+.map-city-dot { transition:r .2s,fill .2s; }
+.map-city-target:hover .map-city-dot { fill:#31583e; stroke:#fff; stroke-width:2.5; }
+.map-list { max-height:650px; overflow:auto; padding:18px 16px; border:1px solid #e2d6c1; border-radius:14px; background:rgba(255,252,245,.82); scrollbar-color:#c8b895 transparent; }
+.map-list-section + .map-list-section { padding-top:17px; margin-top:15px; border-top:1px solid #e9dfcf; }
+.map-list-section h3 { display:flex; align-items:center; gap:9px; margin-bottom:12px; font-size:17px; }
+.map-list-section h3::before { content:''; width:17px; height:2px; background:#bd9458; }
+.map-list-item { min-height:44px; padding:7px 9px; border-radius:9px; }
+.map-list-item:hover,.map-list-item.is-hovered { border-color:#c9b48f; background:#f0e8d8; box-shadow:0 3px 9px rgba(43,59,42,.06); }
+.map-list-initial { border-radius:9px; background:#e8ecdf; }
+.map-list-group { border-radius:20px; padding:5px 8px; }
+.map-layout.map-only { grid-template-columns:1fr; }
+.map-layout.map-only .large-map { min-height:650px; }
+.municipality-modal { width:min(720px,100%); max-height:min(88vh,900px); overflow:auto; padding:32px 34px 30px; border-radius:20px 6px 20px 6px; background:linear-gradient(145deg,#fffdf8,#f7f0e4); }
+.municipality-modal::after { content:''; position:absolute; right:-25px; top:30px; width:100px; height:100px; background:url('/images/khanty-prosperity-seal.svg') center/contain no-repeat; opacity:.055; pointer-events:none; }
+.modal-topline { position:relative; z-index:1; }
+.municipality-modal h2 { max-width:85%; font-size:clamp(28px,4vw,38px); }
+.modal-intro { max-width:580px; line-height:1.65; }
+.modal-group-line { gap:12px; margin:17px 0 13px; }
+.modal-demo-label { display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid #e5d5b8; border-radius:8px; background:#f4ecdc; color:#876b40; font-size:9px; font-weight:800; letter-spacing:.055em; line-height:1.5; }
+.modal-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:15px 0 20px; }
+.modal-stats > div { min-height:86px; padding:14px 15px; border:1px solid #e5dac8; border-radius:11px; background:rgba(255,255,255,.62); }
+.modal-stats > div:first-child { background:#edf0e7; border-color:#d8dfcf; }
+.modal-stats > div > span { display:block; color:#7c887a; font-size:10px; line-height:1.45; }
+.modal-stats > div > strong { display:block; margin-top:7px; color:#244b35; font:600 24px 'Playfair Display',Georgia,serif; font-variant-numeric:tabular-nums; }
+.modal-official-data { margin-top:17px; padding-top:17px; border-top:1px solid #e6dccb; }
+.modal-official-heading h3 { font:600 18px 'Playfair Display',Georgia,serif; }
+.modal-official-row { padding:12px 13px; border-radius:9px; background:rgba(244,239,228,.7); }
+.modal-official-row + .modal-official-row { margin-top:7px; }
+@media(max-width:850px) { .map-layout { grid-template-columns:1fr; } .map-layout .large-map { min-height:440px; } .map-list { max-height:440px; } }
+@media(max-width:560px) { .full-panel:has(.map-layout) { padding:15px 12px; } .map-layout .large-map { min-height:320px; padding:9px; } .map-layout .large-map::before { left:12px; top:10px; font-size:7px; } .map-layout .large-map::after { right:12px; bottom:10px; font-size:25px; } .municipality-modal { padding:26px 17px 20px; } .modal-stats { gap:7px; } .modal-stats > div { min-height:78px; padding:10px; } .modal-stats > div > strong { font-size:21px; } }
