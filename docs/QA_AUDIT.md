@@ -586,3 +586,33 @@ PR #8/#10 основаны на текущем main. PR #9/#11/#12/#13 всё е
 PR #9/#11/#12/#13 всё ещё основаны на старом base `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`; PR #8/#10 указывают base текущего main `9f99481a3843862a17fd9cf640fee48b4ef901ba`. При этом PR #10 имеет отдельный текущий mergeable=false blocker.
 
 Итог: 5 из 6 текущих heads имеют подтверждённый зелёный CI; PR #10 — нет. Это не отменяет уже установленные semantic overlaps и отсутствие общей интеграционной сборки.
+
+
+## Проверка regressions после новых commits (07.11.2026)
+
+### PR #13 — найден и исправлен fail-open в выборе источника балла
+
+На head `710fa7fca19268778994cae9fa96ac8488d28f83` CI #42285377818 упал: `npm test`, 21/22 тестов прошло. Тест `forecast can use only complete results from an explicitly approved index contract` ожидал `projectedScore === null`, но получил `75`.
+
+Причина: при явно заданном `scoreSource: 'resilience-index'` и неутверждённом контракте модель переключалась на `municipality.score`. Это был fail-open fallback, противоречащий контракту режима индекса.
+
+В PR #13 оставлен blocker с требованием не ослаблять тест. На следующем head `494beff16b2a5aeac584f4bdb97136e9f500afc8` код исправлен: добавлен отдельный `indexModeRequested`; если режим индекса явно запрошен, но контракт не approved/неполон, `scoreRaw` становится null, fallback на концептуальный score не происходит. CI #42285531824 завершился success. Это подтверждает, что исправление прошло текущий forecast unit test и build job.
+
+### Новые подтверждённые статусы
+
+| PR | Head SHA | Run | Результат |
+|---|---|---|---|
+| #8 | `747670efc1cf5c1a1c6652a1bc5e5a4399fede29` | #42285233396 | success |
+| #9 | `eeedd2d3c0e4fa56c8e1107aa4ab459a10c930fb` | #42285480380 | success |
+| #10 | `2b751860b0b04dae95b232ed97de6b929d12e07b` | #42285426216 | success |
+| #11 | `162ffc6e63f9ef84c8a4d9d0233f1f1d22e38841` | #42285519200 | success; build + migration integration |
+| #12 | `909f69325193aa403c7f3b2d305c7e8d207bc011` | #42285322080 | success |
+| #13 | `494beff16b2a5aeac584f4bdb97136e9f500afc8` | #42285531824 | success |
+
+PR #9 был перебазирован на текущий main `9f99481a3843862a17fd9cf640fee48b4ef901ba` (behind 0). PR #11 и #13 по сравнению с main всё ещё behind 5 commits. PR #10 после предыдущего `mergeable=false` снова показывает mergeable=true и новый head прошёл CI. PR #9 остаётся draft; PR #10 draft; PR #12 draft.
+
+На момент этой проверки PR #9 уже имел run #42285480380 success. Текущая ветка PR #13 прошла новый CI; прежний failure относится к предыдущему SHA и не должен скрываться из истории — он был реальным regression, который исправлен в следующем commit.
+
+## Обновлённый QA вывод
+
+Прогресс есть: новый fail-open в прогнозной модели найден по CI, исправлен автором и проверен успешным CI. Миграционная интеграция PR #11 снова прошла на новом SHA. Однако #11/#13 ещё отстают от main, draft PR остаются неготовыми к финальному review, а ручная интеграция общих файлов и общий CI по объединённому дереву всё ещё не выполнены. Browser E2E, accessibility/responsive и production validation по-прежнему не выполнены.
