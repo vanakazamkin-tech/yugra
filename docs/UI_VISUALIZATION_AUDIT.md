@@ -217,3 +217,11 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Record counts remain visible and are consistent with the passport coverage summary.
 - Existing records, filters, source links, calculations, and database content are unchanged.
 - This is a source-level UX correction. Browser verification and a successful build for the latest branch head remain outstanding.
+
+## Municipality map coverage regression guard (7 November 2026)
+
+- Added `scripts/check-map-coverage.mjs` and the `npm run check:map-coverage` package script.
+- The check compares municipality IDs in `data/municipalities-detailed.json` with map feature IDs in `src/ugraMapGeo.js`, and fails on missing or duplicate IDs.
+- A source-data comparison during this change found 22 map features and 22 municipality records, with no missing or duplicate IDs.
+- The check is intended to prevent a future data/map edit from silently removing a municipality from either the map or the data-backed list.
+- The check logic and current ID sets were inspected against the GitHub source. The script has not been executed in a local Node environment in this session; build and browser checks remain outstanding.
