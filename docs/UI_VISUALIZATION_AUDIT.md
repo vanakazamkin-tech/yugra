@@ -161,3 +161,12 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - If coverage is partial, the chart states how many territories have values and explicitly warns that missing values are not treated as zero.
 - Municipality rows and formatted values remain visible; no source data, metric definitions, ranking logic, or calculations were changed.
 - Verification is pending CI; interactive browser rendering has not yet been tested.
+
+## Municipality passport data-coverage summary (7 November 2026)
+
+- Added a compact coverage summary to each municipality passport for four available datasets: verified official indicators, investment sites, education facilities, and municipal-program execution reports.
+- Each category displays the number of records associated with the selected municipality; empty categories are explicit rather than silently omitted from the overview.
+- The summary reflects the official-data catalogue state (loading, connected, error, or not connected) and displays the last successful catalogue sync time when available.
+- Added responsive two-column layout for narrow screens, retaining the existing Khanty-inspired palette and modal structure.
+- Counts describe records present in the current database only; they are not completeness scores and do not imply that missing indicators equal zero.
+- No source records, indicator calculations, ranking logic, or methodology were changed. Browser verification remains pending CI.
