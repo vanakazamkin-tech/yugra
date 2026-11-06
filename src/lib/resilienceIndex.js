@@ -11,7 +11,7 @@ export const INDEX_PILLARS = Object.freeze([
 ]);
 
 const PILLAR_KEYS = new Set(INDEX_PILLARS.map((item) => item.key));
-const DECIMAL_VALUE_PATTERN = /^[+-]?(?:\d+(?:\\.\d*)?|\\.\d+)(?:[eE][+-]?\d+)?$/;
+const DECIMAL_VALUE_PATTERN = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
 
 const isFiniteValue = (value) => {
   if (typeof value === 'number') return Number.isFinite(value);
