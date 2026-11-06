@@ -72,8 +72,10 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
   const definitionErrors = [];
   const duplicateDefinitions = new Set();
   for (const definition of definitions) {
-    if (!definition?.code || !PILLAR_KEYS.has(definition.pillar) || !['higher', 'lower'].includes(definition.direction)) {
-      definitionErrors.push({ code: definition?.code || null, reason: 'invalid_or_unapproved_definition' });
+    if (!definition?.code || !PILLAR_KEYS.has(definition.pillar) || !['higher', 'lower'].includes(definition.direction)
+      || !Array.isArray(definition.acceptedNames) || definition.acceptedNames.length === 0
+      || definition.acceptedNames.some((name) => typeof name !== 'string' || name.trim() === '')) {
+      definitionErrors.push({ code: definition?.code || null, reason: 'invalid_or_unapproved_definition_or_source_names' });
       continue;
     }
     const code = String(definition.code);
@@ -96,6 +98,7 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
     && String(row.reference_period ?? '') === period
     && isFiniteValue(row.value)
     && definitionByCode.has(String(row.indicator_code))
+    && definitionByCode.get(String(row.indicator_code)).acceptedNames.includes(String(row.indicator_name || '').trim())
     && row.municipality_id != null
     && String(row.unit || '').trim() !== ''
   );
@@ -211,6 +214,10 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
     diagnostics: {
       inputRows: Array.isArray(rows) ? rows.length : 0,
       eligibleRows: targetRows.length,
+      rowsRejectedForUnapprovedIndicatorName: (Array.isArray(rows) ? rows : []).filter((row) =>
+        row && definitionByCode.has(String(row.indicator_code))
+        && !definitionByCode.get(String(row.indicator_code)).acceptedNames.includes(String(row.indicator_name || '').trim())
+      ).length,
       uniqueRows: uniqueRows.length,
       duplicateLogicalKeysExcluded: duplicates.length,
       duplicateKeys: duplicates,
