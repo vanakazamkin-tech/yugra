@@ -205,7 +205,9 @@ export function buildRiskModel(municipalities = [], series = [], weightOverrides
     for (const item of group) {
       const score = percentile(item.latest.numericValue, values, item.direction === 'higher');
       if (score === null) continue;
-      const trend = item.adverse === null ? 50 : item.adverse ? 20 : 80;
+      const stableTrend = item.change === 0
+        || (item.changePercent != null && Number.isFinite(Number(item.changePercent)) && Math.abs(Number(item.changePercent)) < 0.5);
+      const trend = item.adverse === null || stableTrend ? 50 : item.adverse ? 20 : 80;
       const indicatorScore = score * 0.8 + trend * 0.2;
       const municipalityKey = String(item.municipalityId);
       if (!scored.has(municipalityKey)) scored.set(municipalityKey, []);
