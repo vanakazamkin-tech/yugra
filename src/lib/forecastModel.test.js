@@ -15,6 +15,41 @@ test('empty inputs and empty municipality lists return an empty result', () => {
   assert.equal(summarizeForecast([]).averageScore, null);
 });
 
+test('blank strings, whitespace, null, booleans and malformed values remain missing', () => {
+  for (const missing of ['', '   ', '\\t', null, undefined, 'not-a-number', true, false, {}, NaN, Infinity]) {
+    const row = buildForecasts([{
+      id: String(missing), name: 'Invalid', score: missing, smeCount: missing,
+      investments: { volumeBillion: missing },
+    }], {}, 1)[0];
+    assert.equal(row.score, null, String(missing));
+    assert.equal(row.projectedScore, null, String(missing));
+    assert.equal(row.sme, null, String(missing));
+    assert.equal(row.projectedSme, null, String(missing));
+    assert.equal(row.investment, null, String(missing));
+    assert.equal(row.projectedInvestments, null, String(missing));
+  }
+});
+
+test('numeric strings and real zero are preserved', () => {
+  const row = buildForecasts([{
+    id: 'zero', name: 'Ноль', score: '0', smeCount: '0',
+    investments: { volumeBillion: '0' },
+  }], { investment_growth_rate: 10, sme_growth_rate: 10, score_growth_rate: 10 }, 3)[0];
+  assert.equal(row.score, 0);
+  assert.equal(row.projectedInvestments, 0);
+  assert.equal(row.projectedSme, 0);
+  assert.equal(row.projectedScore, 0);
+});
+
+test('negative baselines are rejected and score must remain within the index scale', () => {
+  for (const score of [-1, 101]) {
+    const row = buildForecasts([{ id: 'x', name: 'X', score, smeCount: -1, investments: { volumeBillion: -2 } }], {}, 1)[0];
+    assert.equal(row.projectedScore, null);
+    assert.equal(row.projectedInvestments, null);
+    assert.equal(row.projectedSme, null);
+  }
+});
+
 test('projects only available non-negative baselines and preserves missing values', () => {
   const rows = buildForecasts(sample, { investment_growth_rate: 5, sme_growth_rate: 2, score_growth_rate: 1, uncertainty_rate: 3 }, 2);
   const b = rows.find((row) => row.id === 'b');
@@ -22,18 +57,6 @@ test('projects only available non-negative baselines and preserves missing value
   assert.equal(b.projectedSme, null);
   assert.ok(b.projectedScore > 80);
   assert.equal(rows.find((row) => row.id === 'c').projectedScore, null);
-  const negative = buildForecasts([{ id: 'x', name: 'X', score: 10, smeCount: -1, investments: { volumeBillion: -2 } }], {}, 1)[0];
-  assert.equal(negative.projectedInvestments, null);
-  assert.equal(negative.projectedSme, null);
-});
-
-test('zero values are valid observations and remain zero', () => {
-  const row = buildForecasts([{ id: 'zero', name: 'Ноль', score: 0, smeCount: 0, investments: { volumeBillion: 0 } }], {
-    investment_growth_rate: 10, sme_growth_rate: 10, score_growth_rate: 10,
-  }, 3)[0];
-  assert.equal(row.projectedInvestments, 0);
-  assert.equal(row.projectedSme, 0);
-  assert.equal(row.projectedScore, 0);
 });
 
 test('negative annual rates reduce projected values without creating negatives', () => {
@@ -56,7 +79,26 @@ test('stress factors reduce the score and expose marginal contributions', () => 
   assert.ok(positive.factorImpacts[0].scorePoints > 0);
 });
 
-test('index and uncertainty bounds remain inside the 0–100 scale under extreme inputs', () => {
+test('factor signs and isolated effects follow documented assumptions', () => {
+  const baseline = buildForecasts([{ id: 'a', name: 'A', score: 60 }], {}, 1)[0].projectedScore;
+  const exportDown = buildForecasts([{ id: 'a', name: 'A', score: 60 }], { export_shock_pct: -10 }, 1)[0].projectedScore;
+  const costUp = buildForecasts([{ id: 'a', name: 'A', score: 60 }], { cost_pressure_pct: 10 }, 1)[0].projectedScore;
+  const laborUp = buildForecasts([{ id: 'a', name: 'A', score: 60 }], { labor_shortage_pct: 10 }, 1)[0].projectedScore;
+  assert.ok(exportDown < baseline);
+  assert.ok(costUp < baseline);
+  assert.ok(laborUp < baseline);
+});
+
+test('scenario factors combine additively in annual rate and compound over years', () => {
+  const row = buildForecasts([{ id: 'a', name: 'A', score: 50 }], {
+    score_growth_rate: 2, export_shock_pct: 10, cost_pressure_pct: -10, labor_shortage_pct: -10,
+  }, 3)[0];
+  const annualRate = 2 + 10 * 0.2 + (-10) * -0.15 + (-10) * -0.15;
+  assert.equal(row.adjustedScoreRate, annualRate);
+  assert.ok(Math.abs(row.projectedScore - 50 * Math.pow(1 + annualRate / 100, 3)) < 1e-10);
+});
+
+test('extreme inputs are bounded and all score ranges remain ordered', () => {
   const row = buildForecasts([{ id: 'x', name: 'X', score: 99, investments: {}, smeCount: 1 }], {
     score_growth_rate: 10000, uncertainty_rate: 10000,
   }, 3)[0];
@@ -67,11 +109,44 @@ test('index and uncertainty bounds remain inside the 0–100 scale under extreme
   assert.ok(Number.isFinite(row.projectedScore));
 });
 
-test('horizon is rounded and constrained to the supported 1–3 year range', () => {
-  const twoYears = buildForecasts(sample, { score_growth_rate: 1 }, 2).find((row) => row.id === 'a');
+test('1, 2 and 3 year horizons use compound growth', () => {
+  const municipality = [{ id: 'a', name: 'A', score: 60, smeCount: 100, investments: { volumeBillion: 20 } }];
+  for (const years of [1, 2, 3]) {
+    const row = buildForecasts(municipality, { score_growth_rate: 10, investment_growth_rate: 10, sme_growth_rate: 10 }, years)[0];
+    assert.ok(Math.abs(row.projectedScore - 60 * Math.pow(1.1, years)) < 1e-10);
+    assert.ok(Math.abs(row.projectedInvestments - 20 * Math.pow(1.1, years)) < 1e-10);
+    assert.equal(row.projectedSme, Math.round(100 * Math.pow(1.1, years)));
+  }
+});
+
+test('horizon is constrained to the supported 1–3 year range', () => {
   const clamped = buildForecasts(sample, { score_growth_rate: 1 }, 5).find((row) => row.id === 'a');
-  assert.ok(twoYears.projectedScore > 60);
   assert.equal(clamped.projectedScore, 60 * Math.pow(1.01, 3));
+});
+
+test('duplicate and absent identifiers do not overwrite municipality ranks', () => {
+  const rows = buildForecasts([
+    { id: 'same', name: 'A', score: 80 },
+    { id: 'same', name: 'B', score: 60 },
+    { name: 'C', score: 70 },
+  ], {}, 1);
+  assert.equal(rows.find((row) => row.name === 'A').projectedRank, 1);
+  assert.equal(rows.find((row) => row.name === 'B').projectedRank, 3);
+  assert.equal(rows.find((row) => row.name === 'C').projectedRank, 2);
+});
+
+test('overflowing projections and totals are exposed as unavailable, not Infinity', () => {
+  const rows = buildForecasts([
+    { id: 'huge', name: 'Huge', score: 50, investments: { volumeBillion: Number.MAX_VALUE }, smeCount: Number.MAX_VALUE },
+  ], { investment_growth_rate: 100, sme_growth_rate: 100 }, 3);
+  assert.equal(rows[0].projectedInvestments, null);
+  assert.equal(rows[0].projectedSme, null);
+  const summary = summarizeForecast([
+    { projectedScore: 10, scoreLow: 9, scoreHigh: 11, projectedInvestments: Number.MAX_VALUE },
+    { projectedScore: 20, scoreLow: 19, scoreHigh: 21, projectedInvestments: Number.MAX_VALUE },
+  ]);
+  assert.equal(summary.investmentTotal, null);
+  assert.equal(summary.averageScore, 15);
 });
 
 test('scenario calculation is deterministic and does not mutate historical inputs', () => {
