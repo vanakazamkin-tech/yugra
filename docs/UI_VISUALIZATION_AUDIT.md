@@ -225,3 +225,10 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - A source-data comparison during this change found 22 map features and 22 municipality records, with no missing or duplicate IDs.
 - The check is intended to prevent a future data/map edit from silently removing a municipality from either the map or the data-backed list.
 - The check logic and current ID sets were inspected against the GitHub source. The script has not been executed in a local Node environment in this session; build and browser checks remain outstanding.
+
+## CI integration for map coverage (7 November 2026)
+
+- The shared GitHub Actions workflow now includes `feat/ui-visualization` in its push branch filter.
+- CI runs `node --check scripts/check-map-coverage.mjs` and `npm run check:map-coverage` before the production build.
+- This makes the map/data ID consistency guard part of the branch's automated checks rather than a documented manual command only.
+- The workflow change is committed, but its execution result must be read from GitHub Actions after the push; this entry does not claim that the new run has passed.
