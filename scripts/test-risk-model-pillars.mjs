@@ -63,6 +63,10 @@ const highConfidenceSeries = buildRiskSeries([
   riskRow(2022, 'annual', 70), riskRow(2023, 'annual', 65), riskRow(2024, 'annual', 60),
 ]);
 assert.equal(highConfidenceSeries[0].confidenceLevel, 'high', 'three continuous annual observations with source metadata receive high confidence');
+const incompleteSourceHistory = buildRiskSeries([
+  riskRow(2022, 'annual', 70, { source_id: null }), riskRow(2023, 'annual', 65),
+]);
+assert.equal(incompleteSourceHistory[0].confidenceLevel, 'low', 'confidence must not be high when an earlier observation lacks source provenance');
 
 const missingPeriodSeries = buildRiskSeries([
   riskRow(2022, '', 70), riskRow(2023, '', 60),
