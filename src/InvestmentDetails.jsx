@@ -164,7 +164,7 @@ const downloadCsv = (items, fields, filename) => {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
 export const InvestmentDetails = () => {
@@ -1245,7 +1245,7 @@ export const InvestmentDetails = () => {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const downloadSectorEmploymentCsv = () => {
@@ -1270,7 +1270,7 @@ export const InvestmentDetails = () => {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const downloadOfficialRiskSignalCsv = () => {
@@ -1300,7 +1300,7 @@ export const InvestmentDetails = () => {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const downloadSurgutComparableTrendCsv = () => {
@@ -1340,7 +1340,7 @@ export const InvestmentDetails = () => {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const downloadOfficialComparisonCsv = () => {
@@ -1369,7 +1369,7 @@ export const InvestmentDetails = () => {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const handleExportPDF = () => window.print();
   const resetFilters = () => {
