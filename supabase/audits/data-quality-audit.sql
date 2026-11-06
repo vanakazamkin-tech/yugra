@@ -151,8 +151,8 @@ order by ds.import_status;
 
 -- Provenance coverage after the provenance migration.
 -- A missing link is a review item; do not synthesize links from guessed URLs.
-select count(*) observations,
-  count(*) filter(where l.indicator_id is null) observations_without_provenance_link,
+select count(distinct mi.id) observations,
+  count(distinct mi.id) filter(where l.indicator_id is null) observations_without_provenance_link,
   count(distinct l.indicator_id) observations_with_provenance,
   count(*) filter(where l.source_role = 'primary') primary_source_links,
   count(*) filter(where l.source_role <> 'primary') supporting_source_links
