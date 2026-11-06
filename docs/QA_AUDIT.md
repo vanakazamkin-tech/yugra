@@ -79,9 +79,9 @@ Read-only inspection of project `dmbikidqikjupkghywbz`:
 - **#12 — QA:** consolidated regression runner, isolated QA workflow, and this audit record. Draft only; no merge.
 
 Latest branch-head CI rechecks (6 Nov 2026):
-- PR #8 current head `1b1d2632ef967b27dd6178306c897a42c592621c`: Build verification run [#42270478519](https://github.com/vanakazamkin-tech/yugra/actions/runs/42270478519) — success.
-- PR #9 current head `4fd6dd42201e67b08c1f8a35c981261308517501`: Build verification run [#42270732133](https://github.com/vanakazamkin-tech/yugra/actions/runs/42270732133) — success.
-- PR #10 head `11cb8e973db097dc53e27bf14a53864f00b38ab4`: Build verification run [#42270399826](https://github.com/vanakazamkin-tech/yugra/actions/runs/42270399826) — success (confirmed after initial in-progress observation).
+- PR #8 current head `c6e071df47f86264647c3f80a5aec09e8172ab9f`: Build verification run [#42271210379](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271210379) — success.
+- PR #9 current head `c3081572d13e417fcece7fb72c5216e86d015624`: Build verification run [#42271206695](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271206695) — success.
+- PR #10 current head `cf50b17c050e5fd3fa4ac42fc026d3e580922e06`: Build verification run [#42271257735](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271257735) — in progress at the time of this update.
 
 ## Verification limitations
 
