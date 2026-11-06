@@ -164,7 +164,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
       <label>Территория<select value={municipalityId} onChange={(e) => { setMunicipalityId(e.target.value); setSelectedMunicipality(e.target.value === 'ALL' ? '' : e.target.value); }}><option value="ALL">Все муниципалитеты</option>{municipalities.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
       <label className="unified-search">Поиск<input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Показатель или муниципалитет" aria-label="Поиск показателя или муниципалитета"/></label>
     </div>
-
+    <p className="unified-muted" role="status" aria-live="polite" aria-atomic="true">В текущей выборке показателей: {visibleSeries.length} рядов</p>
 
     {tab === 'concept' && <section className="unified-section unified-concept">
       <div className="unified-section-head"><div><h2>Архитектура модели прогнозирования</h2><p>Логика системы: от внешнего санкционного шока до оценки последствий для социально-экономической устойчивости муниципалитета.</p></div><span>Концептуальная схема</span></div>
