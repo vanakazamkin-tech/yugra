@@ -500,3 +500,17 @@ PR #13 получил новый успешный прогон на SHA `47b7bcb
 ## Текущий вердикт
 
 QA PR #12 CI зелёный; PR #13 CI зелёный на новом head; PR #9 и PR #11 находятся в новых CI-прогонах. Общая интеграция по-прежнему не подтверждена. Browser E2E, responsive/accessibility, production Supabase migration и production deployment не выполнялись.
+
+
+---
+
+# Дополнение к аудиту — подтверждение исправления PR #9 и повторный head PR #13 (07.11.2026)
+
+- PR #9: head `8b347ee686a2051b7662161afd71725dbeb722f7`, Build verification #42284626985 завершился success. Предыдущая ошибка helper initialization в `test-risk-model-pillars.mjs` на этом прогоне не воспроизвелась.
+- PR #11: head `3be0b99eec0f1efa1e23a29b973622d3bed57cb1`, Build verification #42284450469 завершился success; обе jobs (`build` и `data-migrations-integration`) успешны.
+- PR #12: QA audit head `ab4b98d39aaac90b97e4ab67f11450519520fe90`, Build verification #42284545498 завершился success.
+- PR #13: новый head `7ef9452763bef0f935d71fa4f8c811f5e4695572`; Build verification #42284664070 находится в процессе на момент фиксации. Предыдущий head PR #13 проходил CI, но это не подтверждает новый SHA.
+
+Все эти PR по-прежнему основаны на `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`, тогда как текущий main — `9f99481a3843862a17fd9cf640fee48b4ef901ba`; они отстают на 5 commits. PR #13 в последней проверке показывал `mergeable=false`; в PR оставлено повторное замечание о синхронизации и проверке merge state. PR #9/#11/#12/#13 требуют обновления от актуального main и повторной проверки на новых SHA.
+
+**QA вердикт:** последние индивидуальные прогоны PR #9/#11/#12 зелёные; PR #13 ожидает завершения CI на новом SHA. Общая интеграция, browser E2E, responsive/accessibility, production Supabase migration и production deployment не подтверждены.
