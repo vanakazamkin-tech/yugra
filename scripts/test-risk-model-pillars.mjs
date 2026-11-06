@@ -1,13 +1,60 @@
 import assert from 'node:assert/strict';
 import { classify } from '../src/lib/indicatorClassification.js';
 import { directionForRiskIndicator } from '../src/lib/riskDirection.js';
-import { assessRiskSignals, buildRiskModel, countConsecutiveAdverseIntervals, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios } from '../src/lib/riskModel.js';
+import { assessRiskSignals, buildRiskModel, countConsecutiveAdverseIntervals, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, parseRiskPeriod, projectScoreScenarios } from '../src/lib/riskModel.js';
+import { buildRiskSeries } from '../src/lib/riskSeries.js';
 
 assert.equal(directionForRiskIndicator({ indicator_code: 'derived_investment_per_capita', indicator_name: 'Инвестиции в основной капитал без добычи на одного жителя' }), 'context', 'nominal per-capita investment must not be treated as real growth without a deflator');
 assert.equal(directionForRiskIndicator({ indicator_code: 'fixed_capital_investment_growth_preliminary', indicator_name: 'Индекс физического объёма инвестиций в основной капитал' }), 'higher', 'physical-volume investment index can be evaluated directionally');
 assert.equal(directionForRiskIndicator({ indicator_code: 'average_monthly_salary_annual', indicator_name: 'Среднемесячная номинальная заработная плата' }), 'context', 'nominal salary without inflation adjustment must remain contextual');
 assert.equal(directionForRiskIndicator({ indicator_code: 'sme_employment_share', indicator_name: 'Доля среднесписочной численности работников МСП в численности работников всех предприятий и организаций' }), 'context', 'SME employment share is not an automatically positive diversification signal');
 assert.equal(directionForRiskIndicator({ indicator_code: 'derived_budget_transfer_dependency', indicator_name: 'Доля безвозмездных поступлений в общих доходах бюджета' }), 'lower', 'transfer dependency remains a lower-is-better signal');
+
+// Period metadata is mandatory: year alone must never be silently promoted to annual.
+assert.equal(parseRiskPeriod({ reference_year: 2024, reference_period: '' }), null);
+assert.equal(parseRiskPeriod({ reference_year: 2024 }), null);
+assert.deepEqual(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-Q1' }), { year: 2024, frequency: 'quarter', slot: 1 });
+assert.deepEqual(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-H2' }), { year: 2024, frequency: 'half', slot: 2 });
+assert.deepEqual(parseRiskPeriod({ reference_year: 2024, reference_period: 'annual' }), { year: 2024, frequency: 'annual', slot: 0 });
+assert.equal(parseRiskPeriod({ reference_year: 2023, reference_period: '2024-Q1' }), null, 'period label and reference year conflict must be rejected');
+assert.equal(parseRiskPeriod({ reference_year: 1800, reference_period: 'annual' }), null, 'out-of-range years must be rejected');
+assert.equal(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-M13' }), null, 'unknown frequency must not be inferred as annual');
+
+const riskRow = (year, period, value, overrides = {}) => ({
+  municipality_id: 'm-risk', indicator_code: 'employment_rate', indicator_name: 'Уровень занятости',
+  reference_year: year, reference_period: period, value, unit: '%',
+  verification_status: 'verified', geographic_level: 'municipality', ...overrides,
+});
+const missingPeriodSeries = buildRiskSeries([
+  riskRow(2022, '', 70), riskRow(2023, '', 60),
+]);
+assert.equal(missingPeriodSeries[0].adverse, null, 'empty periods must not produce an annual comparison');
+assert.equal(missingPeriodSeries[0].adverseStreak, 0, 'empty periods must break early-warning streaks');
+
+const gapSeries = buildRiskSeries([
+  riskRow(2022, 'annual', 70), riskRow(2024, 'annual', 60),
+]);
+assert.equal(gapSeries[0].change, null, 'non-consecutive annual observations must not be compared');
+assert.equal(gapSeries[0].adverse, null, 'a missing year must not create a current adverse signal');
+
+const conflictingSeries = buildRiskSeries([
+  riskRow(2022, 'annual', 70), riskRow(2023, 'annual', 65),
+  riskRow(2024, 'annual', 60), riskRow(2024, 'annual', 80, { source_id: 'conflicting_source' }),
+]);
+assert.equal(conflictingSeries[0].excludedConflictingPeriods, 1, 'conflicting duplicates must be excluded and counted');
+assert.equal(conflictingSeries[0].latest.reference_year, 2023, 'conflicting period must not be selected as latest');
+assert.equal(conflictingSeries[0].adverse, null, 'excluded conflicting value must not create a risk signal');
+
+const invalidYearSeries = buildRiskSeries([
+  riskRow(2023, '2024-Q1', 70), riskRow(2024, '2024-Q1', 60),
+]);
+assert.equal(invalidYearSeries[0].adverse, null, 'a year-period conflict must not create a risk signal');
+
+assert.equal(countConsecutiveAdverseIntervals([
+  { reference_year: 2022, reference_period: 'annual', numericValue: -10 },
+  { reference_year: 2023, reference_period: 'annual', numericValue: -12 },
+], 'higher'), 1, 'negative numeric observations remain valid values for direction-aware comparisons');
+
 
 
 
