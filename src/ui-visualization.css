@@ -1,0 +1,276 @@
+/* Yugra18 — интерфейсный слой визуализации.
+   Не меняет расчёты, источники данных или поведение существующих фильтров. */
+.yugra-app {
+  --ui-ink: #263b32;
+  --ui-muted: #72796f;
+  --ui-line: rgba(105, 91, 67, .18);
+  --ui-paper: #fffdf8;
+  --ui-paper-soft: #f7f3ea;
+  color: var(--ui-ink);
+}
+.yugra-app :where(button, a, input, select, textarea, summary):focus-visible {
+  outline: 3px solid rgba(177, 139, 82, .72);
+  outline-offset: 3px;
+}
+.yugra-app :where(.site-header, .main-nav, .catalog-toolbar, .slice-bar, .section-heading, .table-footer, .map-card-footer) {
+  min-width: 0;
+}
+.yugra-app .site-header {
+  gap: clamp(14px, 2vw, 28px);
+}
+.yugra-app .main-nav {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(177,139,82,.55) transparent;
+}
+.yugra-app .nav-item {
+  white-space: nowrap;
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+}
+.yugra-app .panel {
+  min-width: 0;
+}
+.yugra-app .section-heading {
+  align-items: center;
+  gap: 16px;
+}
+.yugra-app .section-heading > :last-child {
+  flex-shrink: 0;
+}
+.yugra-app .heading-label {
+  min-width: 0;
+}
+.yugra-app .heading-label h2,
+.yugra-app .heading-label p {
+  overflow-wrap: anywhere;
+}
+.yugra-app .stats-grid,
+.yugra-app .insight-grid,
+.yugra-app .data-page-summary,
+.yugra-app .data-quality-kpis,
+.yugra-app .official-coverage-metrics {
+  align-items: stretch;
+}
+.yugra-app .metric-card,
+.yugra-app .insight-card,
+.yugra-app .data-page-summary > article,
+.yugra-app .data-quality-kpis > article,
+.yugra-app .official-coverage-metrics > article {
+  min-width: 0;
+  min-height: 112px;
+}
+.yugra-app .metric-copy strong,
+.yugra-app .insight-card > strong,
+.yugra-app .data-page-summary strong,
+.yugra-app .data-quality-kpis strong,
+.yugra-app .official-coverage-metrics strong,
+.yugra-app .modal-stats strong {
+  font-variant-numeric: tabular-nums lining-nums;
+  overflow-wrap: anywhere;
+}
+.yugra-app .catalog-toolbar,
+.yugra-app .slice-bar,
+.yugra-app .advanced-filter-grid {
+  align-items: end;
+}
+.yugra-app .search-box,
+.yugra-app .filter-block,
+.yugra-app .filter-row,
+.yugra-app .slice-options {
+  min-width: 0;
+}
+.yugra-app .filter-row,
+.yugra-app .slice-options {
+  flex-wrap: wrap;
+}
+.yugra-app .filter-pill,
+.yugra-app .slice-chip {
+  min-height: 36px;
+  transition: background-color .16s ease, border-color .16s ease, transform .16s ease;
+}
+.yugra-app .filter-pill:hover,
+.yugra-app .slice-chip:hover {
+  transform: translateY(-1px);
+}
+.yugra-app .active-filter-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+.yugra-app .table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+.yugra-app .ranking-table {
+  font-variant-numeric: tabular-nums;
+}
+.yugra-app .ranking-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.yugra-app .ranking-table tbody tr {
+  transition: background-color .14s ease;
+}
+.yugra-app .ranking-table tbody tr:hover {
+  background: rgba(190, 166, 125, .09);
+}
+.yugra-app .ranking-table td,
+.yugra-app .ranking-table th {
+  overflow-wrap: anywhere;
+}
+.yugra-app .map-stage {
+  min-width: 0;
+  overflow: hidden;
+}
+.yugra-app .map-stage svg {
+  max-width: 100%;
+}
+.yugra-app .official-coverage-teaser,
+.yugra-app .data-quality-panel,
+.yugra-app .data-page-hero {
+  min-width: 0;
+}
+.yugra-app .official-coverage-footer,
+.yugra-app .data-page-hero-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.yugra-app .modal-backdrop {
+  padding: clamp(10px, 3vw, 28px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.yugra-app .municipality-modal {
+  width: min(100%, 900px);
+  max-height: min(92dvh, 1000px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.yugra-app .modal-official-row {
+  min-width: 0;
+}
+.yugra-app .modal-official-row > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.yugra-app .modal-stats > div {
+  min-width: 0;
+}
+.yugra-app .forecast-page,
+.yugra-app .unified-system {
+  min-width: 0;
+}
+.yugra-app .forecast-page :where(input, select, button),
+.yugra-app .unified-system :where(input, select, button) {
+  max-width: 100%;
+}
+.yugra-app .forecast-page .forecast-coverage-grid,
+.yugra-app .unified-system .unified-kpis,
+.yugra-app .unified-system .unified-scenario-grid {
+  align-items: stretch;
+}
+.yugra-app .forecast-page .forecast-coverage-card,
+.yugra-app .unified-system .unified-scenario,
+.yugra-app .unified-system .risk-kpi {
+  min-width: 0;
+}
+.yugra-app .forecast-page .forecast-coverage-card strong,
+.yugra-app .unified-system .risk-kpi strong {
+  font-variant-numeric: tabular-nums;
+}
+.yugra-app :where(.report-chart-list, .report-table-scroll) {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.yugra-app .report-chart-row {
+  min-width: 0;
+}
+.yugra-app .report-chart-name {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1050px) {
+  .yugra-app .site-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .yugra-app .main-nav {
+    order: 3;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 5px;
+  }
+  .yugra-app .main-nav .nav-item {
+    flex: 0 0 auto;
+  }
+}
+@media (max-width: 760px) {
+  .yugra-app .section-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .yugra-app .section-heading > :last-child {
+    margin-left: auto;
+  }
+  .yugra-app .catalog-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .yugra-app .filter-row,
+  .yugra-app .slice-options {
+    gap: 7px;
+  }
+  .yugra-app .active-filter-summary {
+    align-items: flex-start;
+  }
+  .yugra-app .table-scroll .ranking-table {
+    min-width: 760px;
+  }
+  .yugra-app .municipality-modal {
+    max-height: 94dvh;
+  }
+}
+@media (max-width: 520px) {
+  .yugra-app .site-header {
+    gap: 10px;
+  }
+  .yugra-app .main-nav {
+    gap: 5px;
+  }
+  .yugra-app .section-heading > :last-child {
+    margin-left: 0;
+  }
+  .yugra-app .metric-card,
+  .yugra-app .insight-card {
+    min-height: 100px;
+  }
+  .yugra-app .table-footer,
+  .yugra-app .map-card-footer,
+  .yugra-app .official-coverage-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .yugra-app .modal-backdrop {
+    padding: 7px;
+  }
+  .yugra-app .municipality-modal {
+    width: 100%;
+    padding: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .yugra-app *,
+  .yugra-app *::before,
+  .yugra-app *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
