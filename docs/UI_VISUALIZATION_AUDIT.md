@@ -138,3 +138,10 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - The seven-section analytics switcher now allows long labels to wrap cleanly and keeps its controls at a consistent touch-friendly minimum height.
 - At phone widths, the switcher uses a two-column grid and lets the final, seventh section span the full row rather than leaving an isolated half-width control.
 - Existing tab order, selected state, content switching, calculations, and the project's visual palette are unchanged.
+
+## CSV download lifecycle follow-up (6 November 2026)
+
+- The main analytical workspace, conceptual forecast export, and unified risk/forecast export now defer revoking each generated object URL until one second after the download click.
+- This avoids revoking the temporary file URL synchronously while the browser is still initiating the download, improving compatibility across browsers.
+- CSV contents, column definitions, scenario metadata, filenames, and calculations are unchanged.
+- This is a source-level compatibility fix; browser download verification remains outstanding.
