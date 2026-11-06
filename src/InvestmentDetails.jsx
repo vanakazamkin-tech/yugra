@@ -1548,14 +1548,14 @@ export const InvestmentDetails = () => {
               <div className="catalog-toolbar">
                 <label className="search-box"><Icon name="search"/><input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Поиск по названию муниципалитета…" aria-label="Поиск по названию муниципалитета"/><span className="search-shortcut">⌕</span></label>
                 <div className="filter-block"><span className="filter-caption">Группа рейтинга</span><div className="filter-row" aria-label="Фильтр по группе">
-                  {[['ALL', 'Все группы'], ['A', 'Группа A'], ['B', 'Группа B']].map(([value, label]) => <button type="button" key={value} className={`filter-pill ${selectedGroup === value ? 'selected' : ''}`} onClick={() => setSelectedGroup(value)}>{label}{selectedGroup === value && <span className="filter-check">✓</span>}</button>)}
+                  {[['ALL', 'Все группы'], ['A', 'Группа A'], ['B', 'Группа B']].map(([value, label]) => <button type="button" key={value} className={`filter-pill ${selectedGroup === value ? 'selected' : ''}`} aria-pressed={selectedGroup === value} onClick={() => setSelectedGroup(value)}>{label}{selectedGroup === value && <span className="filter-check">✓</span>}</button>)}
                 </div></div>
               </div>
               <div className="slice-bar"><div className="slice-label"><Icon name="sliders"/> Быстрые срезы</div><div className="slice-options">
-                {[['all', 'Все территории'], ['top', 'Топ-5 рейтинга'], ['investment', 'Инвестиции ≥ 50 млрд ₽'], ['growth', 'Рост ≥ 103%'], ['business', 'Оценка бизнеса ≥ 4,5']].map(([value, label]) => <button type="button" key={value} className={`slice-chip ${activeSlice === value ? 'active' : ''}`} onClick={() => setActiveSlice(value)}>{label}</button>)}
-              </div><button type="button" className={`filter-toggle ${advancedFiltersOpen ? 'open' : ''}`} onClick={() => setAdvancedFiltersOpen((open) => !open)}><Icon name="sliders"/>{advancedFiltersOpen ? 'Скрыть фильтры' : 'Расширенные фильтры'}<Icon name="chevron"/></button></div>
+                {[['all', 'Все территории'], ['top', 'Топ-5 рейтинга'], ['investment', 'Инвестиции ≥ 50 млрд ₽'], ['growth', 'Рост ≥ 103%'], ['business', 'Оценка бизнеса ≥ 4,5']].map(([value, label]) => <button type="button" key={value} className={`slice-chip ${activeSlice === value ? 'active' : ''}`} aria-pressed={activeSlice === value} onClick={() => setActiveSlice(value)}>{label}</button>)}
+              </div><button type="button" className={`filter-toggle ${advancedFiltersOpen ? 'open' : ''}`} aria-expanded={advancedFiltersOpen} aria-controls="advanced-municipality-filters" onClick={() => setAdvancedFiltersOpen((open) => !open)}><Icon name="sliders"/>{advancedFiltersOpen ? 'Скрыть фильтры' : 'Расширенные фильтры'}<Icon name="chevron"/></button></div>
               {(searchTerm.trim() || selectedGroup !== 'ALL' || activeSlice !== 'all' || Object.values(filters).some((value) => value !== '')) && <div className="active-filter-summary"><span>Активные фильтры · найдено <strong>{filteredMunicipalities.length}</strong> из {municipalities.length}</span><button type="button" className="text-action" onClick={resetFilters}><Icon name="refresh"/>Сбросить</button></div>}
-              {advancedFiltersOpen && <div className="advanced-filter-grid">
+              {advancedFiltersOpen && <div className="advanced-filter-grid" id="advanced-municipality-filters">
                 <label><span>Балл от</span><input type="number" value={filters.minScore} onChange={(e) => setFilter('minScore', e.target.value)} placeholder="Например, 250"/></label>
                 <label><span>Балл до</span><input type="number" value={filters.maxScore} onChange={(e) => setFilter('maxScore', e.target.value)} placeholder="Без ограничения"/></label>
                 <label><span>Инвестиции от, млрд ₽</span><input type="number" min="0" value={filters.minInvestments} onChange={(e) => setFilter('minInvestments', e.target.value)} placeholder="0"/></label>
@@ -1986,7 +1986,7 @@ export const InvestmentDetails = () => {
               <div className="facility-toolbar">
                 <label className="search-box"><Icon name="search"/><input value={facilitySearch} onChange={(event) => setFacilitySearch(event.target.value)} placeholder="Поиск по названию или адресу…" aria-label="Поиск образовательного объекта"/></label>
                 <div className="filter-row" aria-label="Фильтр типа образовательного объекта">
-                  {[['all','Все'],['school','Школы'],['preschool','Детские сады']].map(([value,label]) => <button type="button" key={value} className={`filter-pill ${facilityFilter === value ? 'selected' : ''}`} onClick={() => setFacilityFilter(value)}>{label}</button>)}
+                  {[['all','Все'],['school','Школы'],['preschool','Детские сады']].map(([value,label]) => <button type="button" key={value} className={`filter-pill ${facilityFilter === value ? 'selected' : ''}`} aria-pressed={facilityFilter === value} onClick={() => setFacilityFilter(value)}>{label}</button>)}
                 </div>
               </div>
               <div className="facility-list-meta">Показано <strong>{filteredFacilities.length}</strong> из {facilities.length} объектов. Численность учеников и детей — среднегодовое значение из источника, не нормативная вместимость.</div>
