@@ -146,8 +146,13 @@ export function deriveMunicipalIndicators(rows = []) {
   }
 
   const derived = [];
-  const push = (base, code, name, value, unit, directionNote, referencePeriod = base?.reference_period || null) => {
+  const push = (base, code, name, value, unit, directionNote, provenanceRows = [base], referencePeriod = base?.reference_period || null) => {
     if (!base || !Number.isFinite(value)) return;
+    const inputs = (Array.isArray(provenanceRows) ? provenanceRows : [base]).filter(Boolean);
+    const sourceIds = [...new Set(inputs.map((row) => String(row.source_id || '').trim()).filter(Boolean))];
+    const sourceUrls = [...new Set(inputs.map((row) => String(row.source_url || '').trim()).filter(Boolean))];
+    const retrievedAt = inputs.map((row) => row.retrieved_at).filter(Boolean).sort((a, b) => new Date(b) - new Date(a))[0] || base.retrieved_at || null;
+    const sourceNote = sourceIds.length ? ' Источники исходных наблюдений: ' + sourceIds.join(', ') + '.' : '';
     derived.push({
       municipality_id: base.municipality_id,
       indicator_code: code,
@@ -157,12 +162,15 @@ export function deriveMunicipalIndicators(rows = []) {
       value,
       unit,
       source_id: 'derived_from_verified_municipal_indicators',
-      source_url: base.source_url || null,
-      retrieved_at: base.retrieved_at || null,
+      source_ids: sourceIds,
+      source_urls: sourceUrls,
+      // Keep the legacy single-link field only when it is unambiguous.
+      source_url: sourceUrls.length === 1 ? sourceUrls[0] : null,
+      retrieved_at: retrievedAt,
       verification_status: 'verified',
       geographic_level: 'municipality',
       geographic_name: base.geographic_name || null,
-      notes: 'Расчётный показатель, получен из подтверждённых исходных муниципальных наблюдений. ' + directionNote,
+      notes: 'Расчётный показатель, получен из подтверждённых исходных муниципальных наблюдений.' + sourceNote + ' ' + directionNote,
     });
   };
 
@@ -180,13 +188,13 @@ export function deriveMunicipalIndicators(rows = []) {
     // Ratios are calculated only from the same municipality, year, period and unit.
     // A quarterly observation must never be relabelled as annual.
     if (hasPeriod && totalRow && total > 0 && nonGrantRow && sameUnit(totalRow, nonGrantRow) && finite(nonGrant)) {
-      push(totalRow, 'derived_budget_own_revenue_share', 'Доля доходов без безвозмездных поступлений в общих доходах бюджета', nonGrant / total * 100, '%', 'Чем выше доля, тем меньше формальная зависимость доходов от безвозмездных поступлений; это не полная оценка бюджетной устойчивости.');
+      push(totalRow, 'derived_budget_own_revenue_share', 'Доля доходов без безвозмездных поступлений в общих доходах бюджета', nonGrant / total * 100, '%', 'Чем выше доля, тем меньше формальная зависимость доходов от безвозмездных поступлений; это не полная оценка бюджетной устойчивости.', [totalRow, nonGrantRow]);
     }
     if (hasPeriod && totalRow && total > 0 && transfersRow && sameUnit(totalRow, transfersRow) && finite(transfers)) {
-      push(totalRow, 'derived_budget_transfer_dependency', 'Доля безвозмездных поступлений в общих доходах бюджета', transfers / total * 100, '%', 'Рост доли рассматривается как сигнал зависимости от межбюджетных трансфертов.');
+      push(totalRow, 'derived_budget_transfer_dependency', 'Доля безвозмездных поступлений в общих доходах бюджета', transfers / total * 100, '%', 'Рост доли рассматривается как сигнал зависимости от межбюджетных трансфертов.', [totalRow, transfersRow]);
     }
     if (hasPeriod && totalRow && total > 0 && expenditureRow && sameUnit(totalRow, expenditureRow) && finite(expenditure) && expenditure > 0) {
-      push(totalRow, 'derived_budget_balance_ratio', 'Отношение доходов к расходам бюджета', (total - expenditure) / expenditure * 100, '%', 'Положительное значение означает превышение доходов над расходами в пределах данного отчётного периода; требуется сверка методики исполнения бюджета.');
+      push(totalRow, 'derived_budget_balance_ratio', 'Отношение доходов к расходам бюджета', (total - expenditure) / expenditure * 100, '%', 'Положительное значение означает превышение доходов над расходами в пределах данного отчётного периода; требуется сверка методики исполнения бюджета.', [totalRow, expenditureRow]);
     }
 
     const investment = bucket.fixed_capital_investment_non_mining;
@@ -195,7 +203,7 @@ export function deriveMunicipalIndicators(rows = []) {
       const populationRows = populationByMunicipalityYear.get(populationKey) || [];
       // A single population snapshot for the same calendar year is required.
       if (populationRows.length === 1 && Number(populationRows[0].value) > 0) {
-        push(investment, 'derived_investment_per_capita', 'Инвестиции в основной капитал без добычи на одного жителя', Number(investment.value) / Number(populationRows[0].value), 'руб./чел.', 'Номинальная интенсивность инвестиций; не является реальным темпом роста и не скорректирована на инфляцию.', investment.reference_period || null);
+        push(investment, 'derived_investment_per_capita', 'Инвестиции в основной капитал без добычи на одного жителя', Number(investment.value) / Number(populationRows[0].value), 'руб./чел.', 'Номинальная интенсивность инвестиций; не является реальным темпом роста и не скорректирована на инфляцию.', [investment, populationRows[0]], investment.reference_period || null);
       }
     }
   }
@@ -215,7 +223,7 @@ export function deriveMunicipalIndicators(rows = []) {
     const span = Number(last.reference_year) - Number(first.reference_year);
     if (span <= 0) continue;
     const annualized = (Math.pow(Number(last.value) / Number(first.value), 1 / span) - 1) * 100;
-    push(last, 'derived_population_growth_rate', 'Среднегодовое изменение численности населения за доступный период', annualized, '% в год', 'Расчёт по крайним доступным годам; не заменяет полный демографический баланс рождаемости, смертности и миграции.', 'annual');
+    push(last, 'derived_population_growth_rate', 'Среднегодовое изменение численности населения за доступный период', annualized, '% в год', 'Расчёт по крайним доступным годам; не заменяет полный демографический баланс рождаемости, смертности и миграции.', history, 'annual');
   }
   return derived;
 }
