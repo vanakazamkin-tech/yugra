@@ -197,6 +197,7 @@ export function indicatorSeriesGroup(row) {
   const code = canonicalIndicatorCode(row?.indicator_code);
   if (/^(housing_commissioned|housing_construction|pokachi_housing_commissioning|sovetsky_housing_commissioning_plan)/.test(code)) return 'production';
   if (/^(sovetsky_local_road_repair|sovetsky_engineering_network_repair|sovetsky_noncompliant_roads_share|kogalym_no_regular_transport_population_share)/.test(code)) return 'infrastructure';
+  if (code === 'pokachi_population_below_poverty') return 'social';
   return null;
 }
 
@@ -208,6 +209,14 @@ export function indicatorMethodFor(row) {
       pillar: 'production',
       rationale: 'Объём ввода или строительства жилья — показатель строительной активности.',
       limitation: 'Не измеряет обеспеченность жильём, его качество, износ фонда или доступность коммунальной инфраструктуры; плановые и фактические значения нельзя смешивать.',
+    };
+  }
+  if (code === 'pokachi_population_below_poverty') {
+    return {
+      direction: 'context',
+      pillar: 'social',
+      rationale: 'Доля населения с денежными доходами ниже прожиточного минимума характеризует масштаб денежной бедности.',
+      limitation: 'Ряд доступен только по Покачам за 2022–2024 годы; 2024 год обозначен администрацией как оценка, а методика расчёта в источнике раскрыта недостаточно. Не использовать для межмуниципального ранжирования и интегрального индекса до проверки сопоставимых официальных значений.',
     };
   }
   if (code === 'kogalym_no_regular_transport_population_share') {
