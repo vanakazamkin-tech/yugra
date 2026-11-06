@@ -232,6 +232,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     </header>
     <div className="unified-warning"><strong>Статус концепта.</strong> Расчёты используют подтверждённые муниципальные наблюдения и производные коэффициенты. Интегральный индекс, веса и сценарные воздействия — исследовательская методика концепта. Они не являются официальным рейтингом или вероятностью кризиса; выводы требуют проверки первоисточников и экспертной калибровки. Для управленческого применения необходимы экспертная калибровка и историческая валидация.</div>
     <nav className="unified-tabs" aria-label="Разделы аналитики">
+      <button className={tab === 'concept' ? 'active' : ''} onClick={() => setTab('concept')}>Концепция модели</button>
       <button className={tab === 'overview' ? 'active' : ''} onClick={() => setTab('overview')}>Панель модели</button>
       <button className={tab === 'municipality' ? 'active' : ''} onClick={() => setTab('municipality')}>Разбор муниципалитета</button>
       <button className={tab === 'forecast' ? 'active' : ''} onClick={() => setTab('forecast')}>Сценарный прогноз</button>
@@ -243,6 +244,34 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
       <label>Территория<select value={municipalityId} onChange={(e) => { setMunicipalityId(e.target.value); setSelectedMunicipality(e.target.value === 'ALL' ? '' : e.target.value); }}><option value="ALL">Все муниципалитеты</option>{municipalities.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
       <label className="unified-search">Поиск<input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Показатель или муниципалитет"/></label>
     </div>
+
+
+    {tab === 'concept' && <section className="unified-section unified-concept">
+      <div className="unified-section-head"><div><h2>Архитектура модели прогнозирования</h2><p>Логика системы: от внешнего санкционного шока до оценки последствий для социально-экономической устойчивости муниципалитета.</p></div><span>Концептуальная схема</span></div>
+      <div className="unified-concept-flow">
+        <article><small>01 · ВНЕШНЯЯ СРЕДА</small><strong>Санкционное давление</strong><p>Ограничения торговли, технологий, оборудования, финансовых операций и логистики; изменение сырьевой конъюнктуры и внешнего спроса.</p></article>
+        <div className="unified-concept-arrow">↓</div>
+        <article><small>02 · КАНАЛЫ ПЕРЕДАЧИ</small><strong>Воздействие на экономику</strong><p>Импортозамещение и технологическая доступность · инвестиции и издержки · экспортный спрос · бюджетные доходы · рынок труда · малый бизнес.</p></article>
+        <div className="unified-concept-arrow">↓</div>
+        <article><small>03 · УЯЗВИМОСТИ ТЕРРИТОРИЙ</small><strong>Структура муниципальной экономики</strong><p>Отраслевая концентрация, зависимость от крупных работодателей, бюджетная самостоятельность, кадровая база, демографическая ситуация и доступность инфраструктуры.</p></article>
+        <div className="unified-concept-arrow">↓</div>
+        <article><small>04 · АНАЛИТИЧЕСКОЕ ЯДРО</small><strong>Индикаторы и индекс устойчивости</strong><p>Сопоставление подтверждённых показателей, оценка динамики, выявление негативных сигналов и расчёт компонентов устойчивости с контролем полноты данных.</p></article>
+        <div className="unified-concept-arrow">↓</div>
+        <article><small>05 · ПРОГНОЗ И РИСКИ</small><strong>Сценарии и раннее предупреждение</strong><p>Базовый, стрессовый и адаптационный сценарии; проверка чувствительности; выявление цепочек взаимосвязанных рисков и горизонтов их проявления.</p></article>
+        <div className="unified-concept-arrow">↓</div>
+        <article><small>06 · РЕЗУЛЬТАТ ДЛЯ УПРАВЛЕНИЯ</small><strong>Профиль устойчивости и меры реагирования</strong><p>Паспорт муниципалитета, карта уязвимостей, приоритеты мониторинга, перечень требуемых данных и варианты адресных управленческих мер.</p></article>
+      </div>
+      <div className="unified-section-head"><div><h3>Шесть компонентов устойчивости</h3><p>Каждый компонент объединяет группу индикаторов. Веса являются стартовыми экспертными допущениями и должны пройти калибровку.</p></div></div>
+      <div className="unified-model-weight-grid">{MODEL_PILLARS.map((p) => <article className="unified-model-weight" key={p.key}><strong>{p.title}</strong><b>{Math.round(p.weight*100)}%</b><small>{p.series.join(' · ')}</small></article>)}</div>
+      <div className="unified-section-head"><div><h3>Принципы моделирования</h3></div></div>
+      <div className="unified-principles-grid">
+        <article><strong>Доказательность</strong><p>В расчёт попадают подтверждённые муниципальные наблюдения. Концептуальные сценарные параметры отделены от официальной статистики.</p></article>
+        <article><strong>Сопоставимость</strong><p>Сравнение выполняется по одному показателю, единице измерения, периоду и году. Несопоставимые ряды не объединяются.</p></article>
+        <article><strong>Объяснимость</strong><p>Каждый сигнал должен быть связан с конкретным индикатором, периодом, направлением изменения и источником.</p></article>
+        <article><strong>Неопределённость</strong><p>Система показывает полноту покрытия и ограничения. Недостающие значения не заменяются нулями и не считаются отсутствием риска.</p></article>
+      </div>
+      <div className="unified-warning"><strong>Граница текущего прототипа.</strong> Прямой индекс санкционной экспозиции пока не рассчитывается: для него нужны сопоставимые сведения об отраслевой структуре, импортной зависимости, критическом оборудовании, экспортных рынках и цепочках поставок. Пока система анализирует наблюдаемые муниципальные последствия и позволяет проверять гипотезы о каналах воздействия.</div>
+    </section>}
 
     {tab === 'overview' && <>
       <div className="unified-kpis">
