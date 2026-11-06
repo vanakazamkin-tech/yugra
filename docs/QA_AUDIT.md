@@ -738,3 +738,27 @@ PR #10 обновил head до 312a140...; текущий CI #42285817027 succe
 ### Ограничения
 
 PR #11 остаётся единственным подтверждённым semantic blocker в текущем наборе QA. При этом межветочные конфликты/семантические пересечения и необходимость общего интеграционного CI остаются. Production Supabase и production deployment не затрагивались.
+
+
+## QA-цикл: повторный снимок PR и CI (07.11.2026, следующий раунд)
+
+### Проверенные HEAD и GitHub Actions
+
+- PR #8 — `b2f2e4105f241a0a09ea10a152b412ac6b5d73f8`, run `42286802435`: build success; mergeable=true; base актуального main snapshot, behind 0.
+- PR #9 — `bd521be0271b4439a783e9bde12c864cb660562e`, run `42286777689`: build success; mergeable=true; behind 0; draft.
+- PR #10 — `e60a8e36bf5e00a1d2bb9f0de1222954d1fbbfcc`, run `42286911216`: build success; mergeable=true; behind 0; draft.
+- PR #11 — `66785ffb8e04bc69f03d039ac8f7877ae89a1282`, run `42286955496`: на момент проверки оба job (build и data-migrations-integration) выполнялись; mergeable=true; base отстаёт от main на 5 commits.
+- PR #12 — `90ebb364dd6a331805927e44310f9ba6b3a32052`, run `42286818620`: build success; mergeable=true; behind 5; draft.
+- PR #13 — `1c256024c4442f2c38ce75aa583d7f99581646d3`, run `42286791555`: build success; mergeable=true; behind 5.
+
+Для PR #8/#9/#10 база — `9f99481a3843862a17fd9cf640fee48b4ef901ba`; для PR #11/#12/#13 — `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`. Mergeable=true не заменяет интеграционную проверку.
+
+### PR #11 — blocker по NULL всё ещё открыт
+
+Повторно прочитан SQL именно на HEAD `66785ffb...`. Условия подсчёта непроверенных наблюдений в строках 27 и 60 всё ещё используют `verification_status <> 'verified'`. Тест на строке 60 проверяет только наличие этого текста и не моделирует SQL NULL semantics.
+
+Оставлен новый комментарий на актуальном HEAD (id `6694514129`). Требование прежнее: оба условия заменить на `verification_status IS DISTINCT FROM 'verified'` и добавить regression test с `verified`, `unverified`, `NULL`. CI run `42286955496` ещё выполнялся при фиксации этого снимка; зелёный CI не закрывает semantic defect.
+
+### Общий статус
+
+Все остальные последние build jobs, которые успели завершиться к моменту снимка, успешны. Нет доказательства единой интеграционной сборки всех шести веток; PR #11 остаётся с открытым semantic blocker. Production Supabase и production deployment не затрагивались.
