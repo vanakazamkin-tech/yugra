@@ -15,7 +15,7 @@ assert.match(migration, /source_url_snapshot text not null/i);
 assert.match(migration, /alter table private\.municipality_indicator_source_links enable row level security/i);
 assert.match(migration, /revoke all privileges on table private\.municipality_indicator_source_links\s+from public, anon, authenticated/i);
 assert.match(migration, /grant select, insert, update, delete on table private\.municipality_indicator_source_links\s+to service_role/i);
-assert.match(migration, /on conflict \(indicator_id, source_id, source_role\) do nothing/i);
+assert.match(migration, /on conflict \(indicator_id,\s*source_id,\s*source_role\) do nothing/i);
 assert.match(migration, /create unique index if not exists uq_municipality_indicators_source_observation/i);
 
 // The uniqueness guard includes source_id, so conflicting source observations coexist.
