@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { isEligibleAnnualForecastSeries } from '../lib/forecastCoverage.js';
-import { backtestAnnualSeries, buildRiskModel, canonicalIndicatorCode, deriveMunicipalIndicators, indicatorDirection, indicatorMethodFor, MODEL_PILLARS, RISK_CHAINS } from '../lib/riskModel.js';
+import { backtestAnnualSeries, buildRiskModel, canonicalIndicatorCode, deriveMunicipalIndicators, indicatorDirection, indicatorMethodFor, indicatorSeriesGroup, MODEL_PILLARS, RISK_CHAINS } from '../lib/riskModel.js';
 import './UnifiedRiskForecast.css';
 
 const PILLARS = [
@@ -22,6 +22,8 @@ const pct = (v) => v == null ? '—' : (v > 0 ? '+' : '') + fmt(v, 1) + '%';
 const safeText = (v) => String(v ?? '').trim();
 const classify = (row) => {
   const text = safeText(row.indicator_code) + ' ' + safeText(row.indicator_name);
+  const explicitGroup = indicatorSeriesGroup(row);
+  if (explicitGroup) return PILLARS.find((p) => p.key === explicitGroup);
   if (/(sme_employment_share|доля.*работников.*малых и средних)/i.test(text)) return PILLARS.find((p) => p.key === 'employment');
   if (/(sme|small_business|entrepreneur|мсп|предприним)/i.test(text)) return PILLARS.find((p) => p.key === 'business');
   return PILLARS.find((p) => p.match.test(text)) || { key: 'other', title: 'Прочие показатели', note: 'Дополнительные показатели проекта' };
