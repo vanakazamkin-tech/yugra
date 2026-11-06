@@ -14,7 +14,20 @@
 - PR #12 remains Draft; do not merge it as part of this QA work.
 - Main branch protection was previously observed disabled. This is a repository process risk; recheck before relying on required CI gating.
 
-## Current branch-head verification
+## Current branch-head verification (7 Nov 2026)
+
+| PR | Current head | Latest observed CI |
+|---|---|---|
+| #8 — index | `8a3758018bb3d8959e2f752097fdfb1af82060cd` | Build [#42275603972](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275603972) — passed |
+| #9 — risks | `1d0540c067040c477ea615ab2645a71bc9e4af4e` | Build [#42275806613](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275806613) — passed |
+| #10 — UI | `f12c7b6d5a915194df42722c756e78f4039534b5` | Build [#42275791134](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275791134) — passed |
+| #11 — data quality | `5371fb51f6498d84386106e66672669202c2377d` | Build [#42275673770](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275673770) — passed, but migration integration fixture does not match the live UNIQUE constraint (see blocking finding below) |
+| #12 — QA | `2a0f32e94b0ea8320f2243cc9dee243084839763` | QA [#42275681994](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275681994) and Build [#42275690608](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275690608) — passed |
+| #13 — forecasting | `40abd4f39e719429cded4090cf606470f5d8779e` | Latest observed prior Build [#42268245956](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268245956) — passed; no new head observed |
+
+All PRs #8–#13 remain open and unmerged. PR #12 remains Draft. The connected Supabase migration history currently ends at `20261106171350`; the three new PR #11 migrations have not been applied.
+
+## Current branch-head verification (historical snapshot)
 
 | PR | Current head | Latest verified GitHub Actions |
 |---|---|---|
@@ -42,6 +55,25 @@ These findings are static source-review findings. They have not been fixed in th
 - `.github/workflows/qa.yml` runs the suite and production build on pushes to `feat/qa-testing` and via manual dispatch.
 - `docs/QA_AUDIT.md` records verified branch heads, findings, limitations, and historical Supabase inspection.
 - No `package-lock.json` exists on the baseline; CI uses `npm install`, so dependency resolution is not fully locked/reproducible.
+
+## Live Supabase migration preflight — blocking finding (7 Nov 2026)
+
+A read-only inspection of the connected Supabase project `dmbikidqikjupkghywbz` found that the currently deployed relation has a **UNIQUE constraint** named `municipality_indicators_observation_unique` with definition `UNIQUE (municipality_id, indicator_code, reference_year, reference_period, source_id)`. PostgreSQL exposes its backing unique index under the same name. The three new PR #11 migrations are not present in the database migration history; no migration was applied during this inspection.
+
+In PR #11 migration `20261106210000_data_quality_provenance_guardrails.sql`, the new wider unique index is created and then the migration executes:
+`drop index if exists public.municipality_indicators_observation_unique;`
+
+**Blocking issue:** this index backs a table UNIQUE constraint. PostgreSQL will reject dropping the backing index directly while the constraint depends on it (the migration must drop the constraint with `ALTER TABLE ... DROP CONSTRAINT`, then ensure the replacement index is installed safely). The migration therefore is expected to fail on the connected database before completion.
+
+**Test gap:** `supabase/tests/data_quality_migrations_bootstrap.sql` creates `municipality_indicators_observation_unique` as a standalone unique index, not as a UNIQUE constraint. Consequently the disposable PostgreSQL integration test does not reproduce the live schema dependency and can pass while the migration fails against the actual project.
+
+Required owner action in PR #11:
+1. Reproduce the deployed schema exactly in the disposable bootstrap by defining the old UNIQUE constraint, not only a standalone index.
+2. Replace the direct `DROP INDEX` with a constraint-aware migration sequence; preserve the preflight and ensure the replacement uniqueness rule is installed without leaving an unsafe interval.
+3. Re-run the disposable migration integration test against both a constraint-backed fixture and the idempotent re-application case.
+4. Do not apply these migrations to production until the corrected migration passes against a schema snapshot matching the live project.
+
+This is a source-review + live catalog finding. The live check was read-only; no schema, data, policy, or migration history was changed.
 
 ## Historical read-only Supabase inspection
 
