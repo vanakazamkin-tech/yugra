@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { classify } from '../src/lib/indicatorClassification.js';
-import { buildRiskModel, deriveMunicipalIndicators, MODEL_PILLARS } from '../src/lib/riskModel.js';
+import { buildRiskModel, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios } from '../src/lib/riskModel.js';
 
 assert.equal(classify({ indicator_code: 'healthcare_facilities', indicator_name: 'Медицинские организации' }).key, 'health');
 assert.equal(classify({ indicator_code: 'hospital_beds', indicator_name: 'Количество больничных коек' }).key, 'health');
@@ -78,6 +78,18 @@ assert.deepEqual(serviceRisk.hits, ['budget', 'social'], 'health and education m
 const insufficient = buildRiskModel(municipalities, series.filter((item) => item.pillar.key === 'investment'));
 assert.equal(insufficient.byMunicipality.m1.score, null, 'one 20% pillar must not produce a resilience score');
 assert.equal(MODEL_PILLARS.find((pillar) => pillar.key === 'social').weight, 0.15, 'the existing social weight must remain unchanged');
+const indexScenarios = projectScoreScenarios(60, [
+  { key: 'cautious', score_growth_rate: -3, uncertainty_rate: 18 },
+  { key: 'base', score_growth_rate: 1.5, uncertainty_rate: 7 },
+  { key: 'ambitious', score_growth_rate: 3, uncertainty_rate: 12 },
+], 3);
+assert.equal(indexScenarios.length, 3, 'all three stored scenarios must produce an index trajectory');
+assert.equal(indexScenarios[0].value, 60 * Math.pow(0.97, 3), 'pessimistic index path must use the stored annual score growth rate');
+assert.equal(indexScenarios[0].low, 60 * Math.pow(0.79, 3), 'scenario uncertainty must define the lower sensitivity bound');
+assert.equal(indexScenarios[1].horizon, 3, 'the selected 1–3 year horizon must be retained');
+assert.equal(projectScoreScenarios(99, [{ score_growth_rate: 20, uncertainty_rate: 30 }], 3)[0].high, 100, 'index projections must stay within the 0–100 scale');
+assert.deepEqual(projectScoreScenarios(null, [{ score_growth_rate: 2 }], 3), [], 'an unavailable base index must not produce a forecast');
+
 
 const sourceRow = (indicator_code, value, reference_period, unit = 'тыс. руб.', overrides = {}) => ({
   municipality_id: 'm1',
