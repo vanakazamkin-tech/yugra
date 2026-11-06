@@ -263,3 +263,9 @@ This was a static source review only. It does not replace keyboard-only, screen-
 The optional official-observations table in the live report preview already had a horizontally scrollable wrapper, but unlike the other analytical tables its wrapper was not keyboard-focusable and had no accessible region name. The wrapper now uses `role="region"`, `tabIndex={0}`, and a Russian accessible name that explains horizontal scrolling. The table content, official-data filtering, print layout, and data values are unchanged.
 
 This is a source-level accessibility fix; keyboard operation still requires manual browser verification.
+
+## Skip-link focus destination (7 November 2026)
+
+The application already exposed a visible-on-focus “Перейти к содержимому” skip link targeting the main landmark. The target `<main id="main-content">` was not explicitly programmatically focusable. Added `tabIndex={-1}` so keyboard and assistive-technology users can move focus to the main content when activating the skip link. This does not add a persistent tab stop or change the visual design.
+
+Source-level check only; verify actual focus behavior in supported browsers during manual keyboard testing.
