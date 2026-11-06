@@ -170,3 +170,12 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Added responsive two-column layout for narrow screens, retaining the existing Khanty-inspired palette and modal structure.
 - Counts describe records present in the current database only; they are not completeness scores and do not imply that missing indicators equal zero.
 - No source records, indicator calculations, ranking logic, or methodology were changed. Browser verification remains pending CI.
+
+## Mobile chart and table readability (7 November 2026)
+
+- Comparison, report, and forecast bar charts switch to a two-line mobile row: territory name and numeric value remain visible on the first line, with the bar spanning the second line.
+- Long municipality names wrap instead of being cut off with ellipses at phone widths.
+- Forecast table filters stack vertically on narrow screens; the table remains horizontally scrollable rather than compressing columns until values become unreadable.
+- Added touch-friendly horizontal scrolling and a more visible, themed scrollbar for keyboard-accessible table regions.
+- Scenario cards use a single-column layout on phones, while comparison summary cards retain a compact two-column grid on very narrow screens.
+- No metric values, model assumptions, calculations, source records, or table columns were changed. Browser verification remains pending CI.
