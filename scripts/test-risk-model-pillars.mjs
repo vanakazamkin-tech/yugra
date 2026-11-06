@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { classify } from '../src/lib/indicatorClassification.js';
-import { buildRiskModel, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios } from '../src/lib/riskModel.js';
+import { assessRiskSignals, buildRiskModel, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios } from '../src/lib/riskModel.js';
 
 assert.equal(classify({ indicator_code: 'healthcare_facilities', indicator_name: 'Медицинские организации' }).key, 'health');
 assert.equal(classify({ indicator_code: 'hospital_beds', indicator_name: 'Количество больничных коек' }).key, 'health');
@@ -78,6 +78,16 @@ assert.deepEqual(serviceRisk.hits, ['budget', 'social'], 'health and education m
 const insufficient = buildRiskModel(municipalities, series.filter((item) => item.pillar.key === 'investment'));
 assert.equal(insufficient.byMunicipality.m1.score, null, 'one 20% pillar must not produce a resilience score');
 assert.equal(MODEL_PILLARS.find((pillar) => pillar.key === 'social').weight, 0.15, 'the existing social weight must remain unchanged');
+const riskSignal = (adverse, pillar) => ({ adverse, pillar: { key: pillar } });
+assert.deepEqual(DEFAULT_RISK_THRESHOLDS, { minimumUsable: 2, criticalSignals: 3, criticalPillars: 2 }, 'default thresholds must preserve the existing traffic-light behavior');
+assert.equal(assessRiskSignals([riskSignal(false, 'economy')]).level, 'insufficient', 'one usable signal is insufficient under the default threshold');
+assert.equal(assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 'labour')]).level, 'stable', 'no negative signals with sufficient coverage is green');
+assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(false, 'labour')]).level, 'watch', 'one negative signal is yellow');
+assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour'), riskSignal(true, 'finance')]).level, 'critical', 'three negative signals across two or more pillars are red by default');
+assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'economy'), riskSignal(true, 'economy')]).level, 'watch', 'multiple signals in one pillar do not satisfy the default cross-pillar red threshold');
+assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 2, criticalSignals: 2, criticalPillars: 2 }).level, 'critical', 'custom thresholds must recalculate the traffic-light status');
+assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 3, criticalSignals: 2, criticalPillars: 2 }).level, 'insufficient', 'the minimum coverage threshold must take precedence over negative signals');
+
 const indexScenarios = projectScoreScenarios(60, [
   { key: 'cautious', score_growth_rate: -3, uncertainty_rate: 18 },
   { key: 'base', score_growth_rate: 1.5, uncertainty_rate: 7 },
