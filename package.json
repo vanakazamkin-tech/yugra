@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test:risk": "node scripts/test-risk-model.mjs",
-    "test": "npm run test:risk"
+    "test": "npm run test:risk",
+    "prebuild": "npm run test"
   },
   "dependencies": {
     "react": "^18.2.0",
