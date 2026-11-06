@@ -4,7 +4,7 @@
 **QA branch:** `feat/qa-testing`  
 **QA PR:** [#12](https://github.com/vanakazamkin-tech/yugra/pull/12), Draft, not merged  
 **Main:** `5cedff13fd3ea3521c5aa4befdfd75dc12ae1499`  
-**QA commit reviewed before this report refresh:** `0286cf1b7e9160814fb04f7e8c7f23f9912ba698`
+**QA commit reviewed before this report refresh:** `a57c23eb147446a389fedf719ed110663e7a3039`
 
 ## Scope and safety
 
@@ -18,11 +18,11 @@
 
 | PR | Current head | Latest verified GitHub Actions |
 |---|---|---|
-| #8 — index | `106a6b59a292685febcc9ac3495812d204690abf` | Build [#42274561080](https://github.com/vanakazamkin-tech/yugra/actions/runs/42274561080) — passed |
-| #9 — risks | `bbf338b24f148f3e49eb788622475abb82017d53` | Build [#42274368191](https://github.com/vanakazamkin-tech/yugra/actions/runs/42274368191) — passed |
-| #10 — UI | `7e3a61699214086abb7d9e66042a59d1d3e82a87` | Build [#42274419676](https://github.com/vanakazamkin-tech/yugra/actions/runs/42274419676) — passed |
+| #8 — index | `0e25c4338bc234daa00300c8525192719bf39659` | Build [#42275573440](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275573440) — running at latest check |
+| #9 — risks | `fcd481cba422916fdf1f8b8f5408409113ce28ec` | Build [#42275563325](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275563325) — passed |
+| #10 — UI | `a6246f588f03bd1b5592ac6a0f46662d4e72195d` | Build [#42275501999](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275501999) — passed |
 | #11 — data quality | `9368b66c7f12242137f5c0ea4d593c46d1bce78c` | Build [#42274693883](https://github.com/vanakazamkin-tech/yugra/actions/runs/42274693883) — passed |
-| #12 — QA | `0286cf1b7e9160814fb04f7e8c7f23f9912ba698` | QA [#42275441945](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275441945) and Build [#42275450960](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275450960) — running at report time |
+| #12 — QA | `a57c23eb147446a389fedf719ed110663e7a3039` | QA [#42275565219](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275565219) — running; Build [#42275563325](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275563325) passed on parent commit `fcd481cba422916fdf1f8b8f5408409113ce28ec` |
 | #13 — forecasting | `40abd4f39e719429cded4090cf606470f5d8779e` | Prior Build [#42268245956](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268245956) — passed; no newer run observed |
 
 PR #8's earlier tie-boundary assertion has been corrected in the current head: the fixture now places equal values across the quartile cutoff, and the test expects the overlap metric to be unavailable. The current head build passes.
