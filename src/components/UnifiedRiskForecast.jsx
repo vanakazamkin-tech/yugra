@@ -13,6 +13,7 @@ const PILLARS = [
   { key: 'production', title: 'Производство и рынок', match: /(production|shipment|turnover|retail|goods|продукц|отгруж|оборот|торговл|ярмарк)/i, note: 'Производство, торговля и услуги' },
   { key: 'demography', title: 'Демография', match: /(population|birth|death|населен|рождаем|смертн)/i, note: 'Численность и структура населения' },
   { key: 'infrastructure', title: 'Инфраструктура', match: /(facility|school|preschool|road|housing|network|учрежден|школ|дорог|жиль|сет)/i, note: 'Инфраструктурные объекты и среда' },
+  { key: 'social', title: 'Социальная сфера', match: /(health|medical|hospital|doctor|education|school|preschool|social|здрав|медицин|больниц|врач|образован|дошколь|социальн)/i, note: 'Здравоохранение, образование и социальные услуги' },
 ];
 const clamp = (value, min = 0, max = 100) => Math.max(min, Math.min(max, value));
 const number = (v) => v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v);
@@ -40,7 +41,9 @@ const signature = (row) => {
   if (q) return 'Q' + q[1];
   if (h) return 'H' + h[1];
   if (/annual|год|^\d{4}$/.test(p.toLowerCase())) return 'annual';
-  if (/^\d{4}-\d{2}-\d{2}$/.test(p)) return 'date';
+  // Датированные срезы нельзя схлопывать в один общий тип date: разные даты — разные срезы.
+  const dated = p.match(/^\d{4}-(\d{2})-(\d{2})$/);
+  if (dated) return 'date-' + dated[1] + '-' + dated[2];
   return p || 'annual';
 };
 const periodOrder = (row) => {
