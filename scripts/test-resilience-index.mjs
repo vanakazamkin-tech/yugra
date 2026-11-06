@@ -3,8 +3,8 @@ import { calculateLeaveOneOutSensitivity, calculateMunicipalIndex, INDEX_PILLARS
 
 assert.equal(INDEX_PILLARS.reduce((sum, item) => sum + item.weight, 0), 1);
 assert.deepEqual(INDEX_PILLARS.map((item) => item.weight), [0.20, 0.20, 0.15, 0.15, 0.15, 0.15]);
-assert.equal(percentileScore(3, [1, 2, 3, 3, 5], 'higher'), 50);
-assert.equal(percentileScore(3, [1, 2, 3, 3, 5], 'lower'), 50);
+assert.equal(percentileScore(3, [1, 2, 3, 3, 5], 'higher'), 60);
+assert.equal(percentileScore(3, [1, 2, 3, 3, 5], 'lower'), 40);
 assert.equal(percentileScore(5, [1, 2, 3, 4], 'higher'), null, 'fewer than five peers must be insufficient');
 assert.equal(percentileScore(3, [1, 2, 3, 4, 5], 'sideways'), null);
 
@@ -23,7 +23,10 @@ assert.equal(model.results.m1.index, 8.33);
 assert.equal(model.results.m6.index, 91.67);
 assert.equal(model.results.m1.status, 'complete');
 assert.equal(model.results.m1.pillars.length, 6);
-assert.equal(calculateLeaveOneOutSensitivity(model.results.m1).available, true);
+const sensitivity = calculateLeaveOneOutSensitivity(model.results.m1);
+assert.equal(sensitivity.available, true);
+assert.equal(sensitivity.indicators.length, 6);
+assert.ok(sensitivity.indicators.every((item) => item.reason === 'pillar_becomes_unavailable'), 'removing the only indicator in a pillar must be reported as a coverage failure');
 
 const withMissing = rows.filter((row) => row.indicator_code !== 'x_infrastructure');
 const partial = calculateMunicipalIndex(withMissing, municipalities, { referenceYear: 2025, referencePeriod: 'annual', indicatorDefinitions: definitions });
@@ -52,5 +55,10 @@ assert.equal(wrongPeriod.results.m1.index, null, 'a different reference year mus
 const unapproved = calculateMunicipalIndex(rows, municipalities, { referenceYear: 2025, indicatorDefinitions: [] });
 assert.equal(unapproved.results.m1.index, null);
 assert.equal(unapproved.diagnostics.eligibleRows, 0);
+const missingPeriod = calculateMunicipalIndex(rows, municipalities, { referenceYear: 2025, indicatorDefinitions: definitions });
+assert.equal(missingPeriod.results.m1.index, null, 'period must be explicit rather than silently defaulting to annual');
+const duplicatedDefinition = calculateMunicipalIndex(rows, municipalities, { referenceYear: 2025, referencePeriod: 'annual', indicatorDefinitions: [...definitions, definitions[0]] });
+assert.equal(duplicatedDefinition.results.m1.index, null, 'ambiguous duplicate definitions must not silently re-enable an indicator');
+assert.ok(duplicatedDefinition.diagnostics.definitionErrors.some((item) => item.reason === 'duplicate_definition'));
 
 console.log('Six-pillar resilience index methodology tests passed.');
