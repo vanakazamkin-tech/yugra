@@ -232,3 +232,10 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - CI runs `node --check scripts/check-map-coverage.mjs` and `npm run check:map-coverage` before the production build.
 - This makes the map/data ID consistency guard part of the branch's automated checks rather than a documented manual command only.
 - The workflow change is committed, but its execution result must be read from GitHub Actions after the push; this entry does not claim that the new run has passed.
+
+## Keyboard focus on interactive SVG map (7 November 2026)
+
+- Added a visible `:focus-visible` treatment to SVG map targets with `role="button"`, including district paths and city target groups.
+- The focus treatment uses the existing warm-gold interface accent and a subtle drop shadow; it does not change the map's default appearance.
+- Pointer focus that is not keyboard-visible does not retain the focus outline.
+- Static source inspection confirms the selectors cover the SVG targets created by `UgraMap`. Browser and assistive-technology verification are still required.
