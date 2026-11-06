@@ -43,6 +43,18 @@ const invalidNameDefinition = calculateMunicipalIndex(rows, municipalities, {
 });
 assert.equal(invalidNameDefinition.results.m1.index, null, 'definitions without approved source-name aliases must be rejected');
 assert.ok(invalidNameDefinition.diagnostics.definitionErrors.some((item) => item.reason === 'invalid_or_unapproved_definition_or_source_names'));
+
+const approvedAliases = definitions.map((definition) => ({
+  ...definition,
+  acceptedNames: [...definition.acceptedNames, 'Утверждённый вариант названия ' + definition.pillar],
+}));
+const aliasRows = rows.map((row, index) => index % 2 === 0
+  ? { ...row, indicator_name: approvedAliases.find((item) => item.code === row.indicator_code).acceptedNames[1] }
+  : row);
+const aliasModel = calculateMunicipalIndex(aliasRows, municipalities, {
+  referenceYear: 2025, referencePeriod: 'annual', indicatorDefinitions: approvedAliases,
+});
+assert.equal(aliasModel.results.m1.index, 8.33, 'only explicitly approved source-name aliases may be combined in one peer group');
 assert.equal(model.results.m1.pillars.length, 6);
 const sensitivity = calculateLeaveOneOutSensitivity(model.results.m1);
 assert.equal(sensitivity.available, true);
