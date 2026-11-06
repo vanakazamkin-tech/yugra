@@ -53,7 +53,8 @@ function summarize(values) {
 }
 
 export function calculateMunicipalIndex(rows = [], municipalities = [], options = {}) {
-  const year = Number(options.referenceYear);
+  const rawYear = options.referenceYear;
+  const year = rawYear === null || rawYear === undefined || String(rawYear).trim() === '' ? NaN : Number(rawYear);
   const period = String(options.referencePeriod ?? '');
   const definitions = Array.isArray(options.indicatorDefinitions) ? options.indicatorDefinitions : [];
   const minPeers = Math.max(5, Math.trunc(Number(options.minimumPeers) || 5));
@@ -164,6 +165,7 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
     });
     const available = pillars.filter((pillar) => pillar.score !== null);
     const availableWeight = available.reduce((sum, pillar) => sum + pillar.weight, 0);
+    const coveredIndicatorCodes = new Set(indicatorScores.map((item) => item.code)).size;
     const complete = available.length === INDEX_PILLARS.length;
     // Partial weighted averages are intentionally not called an integrated index:
     // re-normalizing weights on different pillar sets makes municipalities incomparable.
@@ -177,7 +179,7 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
       status: complete ? 'complete' : 'insufficient_coverage',
       availablePillars: available.length,
       availableWeightPercent: Math.round(availableWeight * 10000) / 100,
-      coveragePercent: Math.round((indicatorScores.length / Math.max(1, definitions.length)) * 10000) / 100,
+      coveragePercent: definitionByCode.size ? Math.round((coveredIndicatorCodes / definitionByCode.size) * 10000) / 100 : 0,
       pillars,
       indicatorCount: indicatorScores.length,
       explanation: complete
