@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { isEligibleAnnualForecastSeries } from '../lib/forecastCoverage.js';
-import { assessRiskSignals, backtestAnnualSeries, buildRiskModel, countConsecutiveAdverseIntervals, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios, RISK_CHAINS } from '../lib/riskModel.js';
+import { assessRiskSignals, backtestAnnualSeries, buildRiskModel, countConsecutiveAdverseIntervals, DEFAULT_RISK_THRESHOLDS, parseRiskPeriod, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios, RISK_CHAINS } from '../lib/riskModel.js';
 import './UnifiedRiskForecast.css';
 import { PILLARS, classify } from '../lib/indicatorClassification.js';
 import { directionForRiskIndicator } from '../lib/riskDirection.js';
@@ -13,31 +13,17 @@ const safeText = (v) => String(v ?? '').trim();
 
 const directionFor = directionForRiskIndicator;
 const signature = (row) => {
-  const p = safeText(row.reference_period);
-  const q = p.match(/-Q([1-4])/i), h = p.match(/-H([12])/i);
-  if (q) return 'Q' + q[1];
-  if (h) return 'H' + h[1];
-  if (/annual|год|^\d{4}$/.test(p.toLowerCase())) return 'annual';
-  if (/^\d{4}-\d{2}-\d{2}$/.test(p)) return 'date';
-  return p || 'annual';
+  const parsed = parseRiskPeriod(row);
+  return parsed ? parsed.frequency + '-' + parsed.slot : 'unverified:' + safeText(row.reference_period).toLowerCase();
 };
 const periodOrder = (row) => {
-  const p = safeText(row.reference_period || row.reference_year);
-  const year = Number(row.reference_year) || Number(p.slice(0, 4)) || 0;
-  const q = p.match(/Q([1-4])/i), h = p.match(/H([12])/i);
-  if (q) return year * 10 + Number(q[1]);
-  if (h) return year * 10 + Number(h[1]) * 5;
-  const d = p.match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (d) return Number(d[1]) * 10000 + Number(d[2]) * 100 + Number(d[3]);
-  return year;
+  const parsed = parseRiskPeriod(row);
+  return parsed ? parsed.year * 10 + parsed.slot : Number.NEGATIVE_INFINITY;
 };
-function buildSeries(rows) {
+export function buildRiskSeries(rows) {
   const groups = new Map();
   (Array.isArray(rows) ? rows : []).forEach((row) => {
-    // Риск-оценка строится только на явно подтверждённых муниципальных наблюдениях.
-    // Отсутствующий статус или геоуровень не считаются подтверждением.
-    if (!row || row.verification_status !== 'verified') return;
-    if (row.geographic_level !== 'municipality') return;
+    if (!row || row.verification_status !== 'verified' || row.geographic_level !== 'municipality') return;
     const value = number(row.value);
     if (value == null || !safeText(row.municipality_id) || !safeText(row.indicator_code)) return;
     const key = [row.municipality_id, row.indicator_code, row.unit || '', signature(row)].join('|');
@@ -46,22 +32,38 @@ function buildSeries(rows) {
   });
   const result = [];
   groups.forEach((items, key) => {
-    const unique = new Map();
+    const candidates = new Map();
     items.forEach((item) => {
-      // Один временной срез не должен превращаться в несколько точек из-за разных источников.
       const natural = [item.reference_year, signature(item)].join('|');
-      if (!unique.has(natural) || new Date(item.retrieved_at || 0) > new Date(unique.get(natural).retrieved_at || 0)) unique.set(natural, item);
+      if (!candidates.has(natural)) candidates.set(natural, []);
+      candidates.get(natural).push(item);
     });
-    const points = [...unique.values()].sort((a, b) => a.order - b.order);
+    const points = [];
+    let excludedConflictingPeriods = 0;
+    candidates.forEach((duplicates) => {
+      if (new Set(duplicates.map((item) => item.numericValue)).size > 1) {
+        excludedConflictingPeriods += 1;
+        return;
+      }
+      duplicates.sort((a, b) => new Date(b.retrieved_at || 0) - new Date(a.retrieved_at || 0));
+      points.push(duplicates[0]);
+    });
+    points.sort((a, b) => a.order - b.order);
     if (!points.length) return;
     const latest = points[points.length - 1];
     const previous = points.length > 1 ? points[points.length - 2] : null;
-    const change = previous ? latest.numericValue - previous.numericValue : null;
-    const changePercent = previous && previous.numericValue !== 0 ? change / Math.abs(previous.numericValue) * 100 : null;
+    const currentPeriod = parseRiskPeriod(latest);
+    const previousPeriod = previous ? parseRiskPeriod(previous) : null;
+    const comparable = currentPeriod && previousPeriod
+      && currentPeriod.frequency === previousPeriod.frequency
+      && currentPeriod.slot === previousPeriod.slot
+      && currentPeriod.year - previousPeriod.year === 1;
+    const change = comparable ? latest.numericValue - previous.numericValue : null;
+    const changePercent = comparable && previous.numericValue !== 0 ? change / Math.abs(previous.numericValue) * 100 : null;
     const direction = directionFor(latest);
     const adverse = change == null || direction === 'context' ? null : direction === 'lower' ? change > 0 : change < 0;
     const adverseStreak = countConsecutiveAdverseIntervals(points, direction);
-    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, adverseStreak });
+    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, adverseStreak, excludedConflictingPeriods });
   });
   return result;
 }
@@ -127,7 +129,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     ];
     return [...base, ...deriveMunicipalIndicators(base)];
   }, [officialIndicators, programExecution]);
-  const series = useMemo(() => buildSeries(rows), [rows]);
+  const series = useMemo(() => buildRiskSeries(rows), [rows]);
   const riskModel = useMemo(() => buildRiskModel(municipalities, series), [municipalities, series]);
   const municipalityNames = useMemo(() => new Map(municipalities.map((m) => [m.id, m.name])), [municipalities]);
   const visibleSeries = useMemo(() => series.filter((s) =>
