@@ -69,7 +69,25 @@ create unique index if not exists uq_municipality_indicators_source_observation
     unit, geographic_level, (coalesce(geographic_name, '')), source_id
   );
 
-drop index if exists public.municipality_indicators_observation_unique;
+-- Production has this legacy index owned by a UNIQUE constraint. A plain
+-- DROP INDEX fails with dependent-object error in that schema. Keep a fallback
+-- for older/test installations where it exists as a standalone index.
+do $
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.municipality_indicators'::regclass
+      and conname = 'municipality_indicators_observation_unique'
+      and contype = 'u'
+  ) then
+    alter table public.municipality_indicators
+      drop constraint municipality_indicators_observation_unique;
+  else
+    drop index if exists public.municipality_indicators_observation_unique;
+  end if;
+end;
+$;
 
 comment on index public.uq_municipality_indicators_source_observation is
   'Prevents duplicate observations from the same source using the full municipality/indicator/period/unit/geography identity while allowing cross-source comparisons and disagreements.';
