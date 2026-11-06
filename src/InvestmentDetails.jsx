@@ -2060,15 +2060,23 @@ export const InvestmentDetails = () => {
                   <div className="comparison-chart-card" role="group" aria-label={`Диаграмма сравнения: ${comparisonMetricDef.label}`}><div className="chart-card-heading"><div><strong>{comparisonMetricDef.label}</strong><span>{comparisonMetricDef.unit === 'место' ? 'Меньший номер означает более высокую позицию' : `Единица измерения: ${comparisonMetricDef.unit}`}</span></div><span className="chart-chip">{comparisonItems.length} территории</span></div>
                     {(() => {
                       const values = comparisonItems.map((m) => comparisonMetricDef.get(m));
-                      const maxVal = comparisonMetric === 'rank2024' ? Math.max(...municipalities.map((m) => Number(m.rank2024 || 0)), 1) : Math.max(...values, 1);
-                      return comparisonItems.map((m, index) => {
+                      const availableValues = values.filter((value) => value != null && Number.isFinite(Number(value)));
+                      const maxVal = comparisonMetric === 'rank2024' ? Math.max(...municipalities.map((m) => Number(m.rank2024 || 0)), 1) : Math.max(...availableValues, 1);
+                      return <>
+                        {availableValues.length === 0
+                          ? <p className="empty-state" role="status">По выбранному показателю нет доступных значений для сравнения. Выберите другой показатель или проверьте исходные данные.</p>
+                          : availableValues.length < comparisonItems.length
+                            ? <p className="source-panel-note" role="status">Значения доступны для {availableValues.length} из {comparisonItems.length} территорий. Для остальных муниципалитетов данные не представлены; пустые значения не интерпретируются как ноль.</p>
+                            : null}
+                        {comparisonItems.map((m, index) => {
                         const val = comparisonMetricDef.get(m);
                         const barVal = val == null ? 0 : comparisonMetric === 'rank2024' ? maxVal + 1 - val : val;
                         const denom = comparisonMetric === 'rank2024' ? maxVal : Math.max(...values, 1);
                         const width = val == null ? 0 : Math.max(3, Math.min(100, (barVal / denom) * 100));
                         const paletteClass = ['bar-forest', 'bar-ochre', 'bar-moss', 'bar-russet'][index % 4];
                         return <div className="comparison-bar-row" key={m.id}><div className="comparison-bar-label"><span className="comparison-number">0{index + 1}</span><strong>{m.name}</strong></div><div className="comparison-bar-track" aria-hidden="true"><i className={paletteClass} style={{ width: `${width}%` }}/></div><strong className="comparison-bar-value">{comparisonMetricDef.format(m)}</strong></div>;
-                      });
+                        })}
+                      </>;
                     })()}
                   </div>
                   <div className="compare-value-grid">{comparisonItems.map((m, index) => <article className="compare-value-card" key={m.id}><span className={`compare-color-mark mark-${index + 1}`}/><span className="compare-value-name">{m.name}</span><strong>{comparisonMetricDef.format(m)}</strong><small>Группа {m.group2024} · место {m.rank2024}</small></article>)}</div>
