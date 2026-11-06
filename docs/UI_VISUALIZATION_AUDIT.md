@@ -115,3 +115,8 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Index sensitivity sliders are grouped as conditional impacts on the six index components.
 - The scenario trajectory horizon control is separately named. Individual controls retain their existing visible labels and values.
 - No thresholds, calculations, forecast behavior, or styling were changed.
+
+## Map list disclosure state (6 November 2026)
+
+- The map's show/hide list control now exposes its expanded/collapsed state through `aria-expanded`.
+- The state follows the existing map-list visibility state and does not change the layout, map interactions, or selection behavior.
