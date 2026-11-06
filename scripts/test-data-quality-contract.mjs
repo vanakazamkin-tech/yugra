@@ -59,7 +59,7 @@ assert.doesNotMatch(rosstatCoverageAudit, /\b(insert\s+into|update\s+public\.|de
 console.log('Rosstat BD PMO coverage audit contract checks passed.');
 
 
-const oktmoCrosswalk = readFileSync('supabase/imports/review/rosstat_municipality_oktmo_crosswalk_template.csv', 'utf8').trim().split(/\\r?\\n/);
+const oktmoCrosswalk = readFileSync('supabase/imports/review/rosstat_municipality_oktmo_crosswalk_template.csv', 'utf8').trim().split(/\r?\n/);
 assert.equal(oktmoCrosswalk.length - 1, 22, 'OKTMO crosswalk template must include all 22 current municipalities');
 const oktmoRows = oktmoCrosswalk.slice(1).map(line => line.split(','));
 assert.equal(new Set(oktmoRows.map(row => row[0])).size, 22, 'OKTMO crosswalk municipality IDs must be unique');
