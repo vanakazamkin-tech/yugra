@@ -2,7 +2,7 @@ name: Build verification
 
 on:
   push:
-    branches: [main, feature/municipal-data-coverage-matrix, 'fix/**']
+    branches: [main, feature/municipal-data-coverage-matrix, 'fix/**', 'feat/ui-visualization']
   # Keep incremental fix branches covered by the same regression and build checks.
   # Classification tests protect geography, sector semantics, and the six-pillar mapping.
   # The same workflow is used for data-classification and risk-chain regression updates.
@@ -47,5 +47,9 @@ jobs:
         run: node scripts/test-municipality-passport-gates.mjs
       - name: Test operational registry data integrity
         run: node scripts/test-operational-registry-gates.mjs
+      - name: Check municipality map coverage
+        run: |
+          node --check scripts/check-map-coverage.mjs
+          npm run check:map-coverage
       - name: Build production bundle
         run: npm run build
