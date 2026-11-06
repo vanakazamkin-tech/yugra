@@ -616,3 +616,21 @@ PR #9 был перебазирован на текущий main `9f99481a384386
 ## Обновлённый QA вывод
 
 Прогресс есть: новый fail-open в прогнозной модели найден по CI, исправлен автором и проверен успешным CI. Миграционная интеграция PR #11 снова прошла на новом SHA. Однако #11/#13 ещё отстают от main, draft PR остаются неготовыми к финальному review, а ручная интеграция общих файлов и общий CI по объединённому дереву всё ещё не выполнены. Browser E2E, accessibility/responsive и production validation по-прежнему не выполнены.
+
+
+### Снимок heads после последнего цикла синхронизации (07.11.2026)
+
+| PR | Head SHA | CI run | Итог |
+|---|---|---|---|
+| #8 | `cfc4b1e90624df25d1d7d6261d9cd9b0c48ff427` | #42285552549 | success |
+| #9 | `eeedd2d3c0e4fa56c8e1107aa4ab459a10c930fb` | #42285480380 | success |
+| #10 | `593f3b3e286b8729d2e5174c73073333cd8bf6ee` | #42285618889 | success |
+| #11 | `162ffc6e63f9ef84c8a4d9d0233f1f1d22e38841` | #42285519200 | success; build + migration integration |
+| #12 | `9599abc18d5ba53207c23fdce06bfcaa974e0070` | #42285675779 | success |
+| #13 | `494beff16b2a5aeac584f4bdb97136e9f500afc8` | #42285531824 | success |
+
+В этом снимке все шесть текущих heads имеют успешный CI. PR #8/#9/#10 основаны на актуальном main `9f99481a3843862a17fd9cf640fee48b4ef901ba`; PR #11/#12/#13 всё ещё отстают от main на 5 commits (merge base `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`). PR #9/#10/#12 имеют draft=true. PR #11/#13 не draft.
+
+PR #10 после очередного обновления head `593f3b3...` снова mergeable=true и его текущий CI success. PR #13 fail-open regression исправлен и проверен успешным forecast test/build run. PR #11 повторно прошёл migration integration.
+
+Последний QA docs commit `9599abc...` сам прошёл build job #42285675779 success. Vercel всё ещё сообщает `build-rate-limit`; это не результат GitHub build и не deployment. Общая сборка после semantic merge всех веток, browser E2E, responsive/accessibility и production Supabase validation ещё не выполнены.
