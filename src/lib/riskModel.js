@@ -28,9 +28,9 @@ function comparablePeriodSequence(point) {
   const year = Number(point?.reference_year) || Number(period.match(/^\d{4}/)?.[0]);
   if (!Number.isInteger(year) || year < 1900 || year > 2200) return null;
   const quarter = period.match(/Q([1-4])/i);
-  if (quarter) return year * 4 + Number(quarter[1]);
+  if (quarter) return year;
   const half = period.match(/H([12])/i);
-  if (half) return year * 2 + Number(half[1]);
+  if (half) return year;
   if (!period || /annual|год|^\d{4}$/i.test(period)) return year;
   return null;
 }
