@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { isEligibleAnnualForecastSeries } from '../lib/forecastCoverage.js';
-import { backtestAnnualSeries, buildRiskModel, deriveMunicipalIndicators, MODEL_PILLARS, RISK_CHAINS } from '../lib/riskModel.js';
+import { backtestAnnualSeries, buildRiskModel, canonicalIndicatorCode, deriveMunicipalIndicators, MODEL_PILLARS, RISK_CHAINS } from '../lib/riskModel.js';
 import './UnifiedRiskForecast.css';
 
 const PILLARS = [
@@ -68,9 +68,10 @@ function buildSeries(rows) {
     if (row.geographic_level !== 'municipality') return;
     const value = number(row.value);
     if (value == null || !safeText(row.municipality_id) || !safeText(row.indicator_code)) return;
-    const key = [row.municipality_id, row.indicator_code, row.unit || '', signature(row)].join('|');
+    const normalizedCode = canonicalIndicatorCode(row.indicator_code);
+    const key = [row.municipality_id, normalizedCode, row.unit || '', signature(row)].join('|');
     if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push({ ...row, numericValue: value, order: periodOrder(row) });
+    groups.get(key).push({ ...row, normalizedIndicatorCode: normalizedCode, numericValue: value, order: periodOrder(row) });
   });
   const result = [];
   groups.forEach((items, key) => {
@@ -98,7 +99,7 @@ function buildSeries(rows) {
     const changePercent = previous && previous.numericValue !== 0 ? change / Math.abs(previous.numericValue) * 100 : null;
     const direction = directionFor(latest);
     const adverse = change == null || direction === 'context' ? null : direction === 'lower' ? change > 0 : change < 0;
-    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse });
+    result.push({ key, municipalityId: latest.municipality_id, code: latest.normalizedIndicatorCode || canonicalIndicatorCode(latest.indicator_code), name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse });
   });
   return result;
 }
