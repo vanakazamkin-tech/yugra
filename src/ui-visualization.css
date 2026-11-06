@@ -524,6 +524,14 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
+.yugra-app .ugra-map-svg [role="button"]:focus-visible {
+  outline: 3px solid rgba(177, 139, 82, .9);
+  outline-offset: 4px;
+  filter: drop-shadow(0 0 3px rgba(177, 139, 82, .45));
+}
+.yugra-app .ugra-map-svg [role="button"]:focus:not(:focus-visible) {
+  outline: none;
+}
 .yugra-app .map-list-item {
   min-height: 44px;
   touch-action: manipulation;
