@@ -572,3 +572,17 @@ PR #8/#10 основаны на текущем main. PR #9/#11/#12/#13 всё е
 **Все шесть последних индивидуальных CI зелёные, но общий интеграционный кандидат не сформирован.** Наиболее существенный риск сейчас — потеря проверок и функциональности при разрешении общих файлов `ci.yml`, `package.json`, `UnifiedRiskForecast.jsx`, `Forecasting.jsx` и `INDEX_METHODOLOGY.md`.
 
 Не выполнять merge до semantic merge этих файлов, синхронизации отстающих веток с main и успешного общего CI. Browser E2E, responsive/accessibility, production Supabase migration и production deployment остаются невыполненными.
+
+
+## Последняя оперативная перепроверка heads (07.11.2026, поздний снимок)
+
+- PR #8: `3b3cbca00ae24ddf70224cda39f33bd2b1444acb`, run #42284818725 — success.
+- PR #9: `c55e02630bfe8fcd6e0303dcb4353763acc155b6`, run #42284810591 — success; PR draft.
+- PR #10: head обновился до `e187044e30b4d731df27ddc0f56ff13c909ad131`; на этот точный SHA Build verification ещё не обнаружен, GitHub metadata показывает `mergeable=false`; PR draft. Предыдущий success на `413c6db...` не засчитывается как проверка нового head. В PR #10 оставлен комментарий с просьбой разрешить merge state и повторить CI.
+- PR #11: `09d1f85488c6df24245d9911b961734ecc9bedd4`, run #42285055745 — success; jobs `build` и `data-migrations-integration` обе успешны.
+- PR #12: `611998acbdcdae2bbb8a344b895dbf30fda9476e`, run #42285184098 — success; PR draft.
+- PR #13: `1465e40987bbfb59d34219c98e47154c551a8737`, run #42285013626 — success.
+
+PR #9/#11/#12/#13 всё ещё основаны на старом base `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`; PR #8/#10 указывают base текущего main `9f99481a3843862a17fd9cf640fee48b4ef901ba`. При этом PR #10 имеет отдельный текущий mergeable=false blocker.
+
+Итог: 5 из 6 текущих heads имеют подтверждённый зелёный CI; PR #10 — нет. Это не отменяет уже установленные semantic overlaps и отсутствие общей интеграционной сборки.
