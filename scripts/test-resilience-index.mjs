@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { calculateLeaveOneOutSensitivity, calculateMunicipalIndex, compareMunicipalRankings, INDEX_PILLARS, percentileScore } from '../src/lib/resilienceIndex.js';
+import { analyzeIndicatorDominance, calculateLeaveOneOutSensitivity, calculateMunicipalIndex, compareMunicipalRankings, INDEX_PILLARS, percentileScore } from '../src/lib/resilienceIndex.js';
 
 assert.equal(INDEX_PILLARS.reduce((sum, item) => sum + item.weight, 0), 1);
 assert.deepEqual(INDEX_PILLARS.map((item) => item.weight), [0.20, 0.20, 0.15, 0.15, 0.15, 0.15]);
@@ -164,5 +164,43 @@ const insufficientRanking = compareMunicipalRankings(
 );
 assert.equal(insufficientRanking.available, false);
 assert.equal(insufficientRanking.reason, 'insufficient_common_municipalities');
+
+
+const dominanceDefinitions = [
+  ...definitions,
+  { code: 'x_economy_duplicate_candidate', name: 'Похожий показатель экономики', pillar: 'economy', direction: 'higher', acceptedNames: ['Похожий показатель экономики'] },
+  { code: 'x_economy_inverse_candidate', name: 'Обратный показатель экономики', pillar: 'economy', direction: 'higher', acceptedNames: ['Обратный показатель экономики'] },
+];
+const dominanceRows = [...rows];
+municipalities.forEach((municipality, i) => {
+  dominanceRows.push({
+    municipality_id: municipality.id, indicator_code: 'x_economy_duplicate_candidate',
+    indicator_name: 'Похожий показатель экономики', value: i + 10, unit: 'ед.',
+    reference_year: 2025, reference_period: 'annual', geographic_level: 'municipality',
+    verification_status: 'verified',
+  });
+  dominanceRows.push({
+    municipality_id: municipality.id, indicator_code: 'x_economy_inverse_candidate',
+    indicator_name: 'Обратный показатель экономики', value: 100 - i, unit: 'ед.',
+    reference_year: 2025, reference_period: 'annual', geographic_level: 'municipality',
+    verification_status: 'verified',
+  });
+});
+const dominanceModel = calculateMunicipalIndex(dominanceRows, municipalities, {
+  referenceYear: 2025, referencePeriod: 'annual', indicatorDefinitions: dominanceDefinitions,
+});
+const dominance = analyzeIndicatorDominance(dominanceModel);
+assert.equal(dominance.available, true);
+const economyDominance = dominance.pillars.find((item) => item.pillar === 'economy');
+assert.equal(economyDominance.indicatorCount, 3);
+assert.ok(economyDominance.pairs.some((pair) =>
+  pair.leftCode === 'x_economy' && pair.rightCode === 'x_economy_duplicate_candidate'
+  && pair.spearman === 1 && pair.classification === 'possible_positive_overlap_review'));
+assert.ok(economyDominance.pairs.some((pair) =>
+  pair.leftCode === 'x_economy' && pair.rightCode === 'x_economy_inverse_candidate'
+  && pair.spearman === -1 && pair.classification === 'strong_inverse_relationship_review'));
+assert.ok(economyDominance.indicators.every((item) => item.evaluatedMunicipalities === 6));
+assert.equal(economyDominance.indicators.find((item) => item.code === 'x_economy').nominalWeightWithinPillar, 0.3333);
+assert.equal(analyzeIndicatorDominance(null).available, false);
 
 console.log('Six-pillar resilience index methodology tests passed.');
