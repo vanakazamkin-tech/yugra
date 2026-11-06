@@ -97,7 +97,14 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
     definitionByCode.set(code, definition);
   }
 
-  const baseEligibleRows = (Array.isArray(rows) ? rows : []).filter((row) =>
+  const municipalityRows = Array.isArray(municipalities) ? municipalities : [];
+  const municipalityIdOf = (municipality) => {
+    const value = municipality?.id ?? municipality?.municipality_id;
+    return value == null ? '' : String(value).trim();
+  };
+  const declaredMunicipalityIds = [...new Set(municipalityRows.map(municipalityIdOf).filter(Boolean))].sort();
+  const declaredMunicipalityIdSet = new Set(declaredMunicipalityIds);
+  const baseCandidateRows = (Array.isArray(rows) ? rows : []).filter((row) =>
     row
     && row.verification_status === 'verified'
     && row.geographic_level === 'municipality'
@@ -109,6 +116,12 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
     && definitionByCode.has(String(row.indicator_code))
     && row.municipality_id != null
     && String(row.unit || '').trim() !== ''
+  );
+  const unknownMunicipalityIds = [...new Set(baseCandidateRows
+    .map((row) => String(row.municipality_id).trim())
+    .filter((id) => declaredMunicipalityIdSet.size > 0 && !declaredMunicipalityIdSet.has(id)))].sort();
+  const baseEligibleRows = baseCandidateRows.filter((row) =>
+    declaredMunicipalityIdSet.size === 0 || declaredMunicipalityIdSet.has(String(row.municipality_id).trim())
   );
   const targetRows = baseEligibleRows.filter((row) =>
     definitionByCode.get(String(row.indicator_code)).acceptedNames.includes(String(row.indicator_name || '').trim())
@@ -141,14 +154,6 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(row);
   }
-
-  const municipalityRows = Array.isArray(municipalities) ? municipalities : [];
-  const municipalityIdOf = (municipality) => {
-    const value = municipality?.id ?? municipality?.municipality_id;
-    return value == null ? '' : String(value).trim();
-  };
-  const declaredMunicipalityIds = [...new Set(municipalityRows.map(municipalityIdOf).filter(Boolean))].sort();
-  const declaredMunicipalityIdSet = new Set(declaredMunicipalityIds);
 
   const scoredByMunicipality = new Map();
   const indicatorDiagnostics = [];
@@ -268,6 +273,8 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
       inputRows: Array.isArray(rows) ? rows.length : 0,
       eligibleRows: targetRows.length,
       rowsRejectedForUnapprovedIndicatorName: baseEligibleRows.length - targetRows.length,
+      rowsRejectedForUnknownMunicipality: baseCandidateRows.length - baseEligibleRows.length,
+      unknownMunicipalityIds,
       uniqueRows: uniqueRows.length,
       duplicateLogicalKeysExcluded: duplicates.length,
       duplicateKeys: duplicates,
