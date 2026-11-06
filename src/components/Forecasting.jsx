@@ -3,7 +3,7 @@ import { buildForecastCoverage } from '../lib/forecastCoverage';
 import { buildForecasts, summarizeForecast } from '../lib/forecastModel';
 
 const FALLBACK_SCENARIOS = [
-  { id: null, key: 'cautious', title: 'Пессимистичный', summary: 'Неблагоприятный сценарий: снижение экспортной выручки, усиление санкционных ограничений, рост издержек предприятий и дефицит кадров.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18, export_shock_pct: -10, cost_pressure_pct: 8, labor_shortage_pct: 6, display_order: 1 },
+  { id: null, key: 'cautious', title: 'Стрессовый', summary: 'Неблагоприятный сценарий: снижение экспортной выручки, усиление санкционных ограничений, рост издержек предприятий и дефицит кадров.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18, export_shock_pct: -10, cost_pressure_pct: 8, labor_shortage_pct: 6, display_order: 1 },
   { id: null, key: 'base', title: 'Базовый', summary: 'Продолжение наблюдаемых тенденций при сохранении текущих внешних и внутренних условий.', investment_growth_rate: 4, sme_growth_rate: 3, score_growth_rate: 1.5, uncertainty_rate: 7, export_shock_pct: 0, cost_pressure_pct: 0, labor_shortage_pct: 0, display_order: 2 },
   { id: null, key: 'ambitious', title: 'Оптимистичный', summary: 'Улучшение инвестиционной активности, расширение занятости и реализация мер поддержки при доступности ресурсов.', investment_growth_rate: 8, sme_growth_rate: 6, score_growth_rate: 3, uncertainty_rate: 12, export_shock_pct: 4, cost_pressure_pct: -2, labor_shortage_pct: -2, display_order: 3 },
 ];
@@ -39,7 +39,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       if (!isSupabaseConfigured || !supabase) return;
       try {
         const result = await supabase.from('forecast_scenarios')
-          .select('id,key,title,summary,investment_growth_rate,sme_growth_rate,score_growth_rate,uncertainty_rate,display_order')
+          .select('id,key,title,summary,investment_growth_rate,sme_growth_rate,score_growth_rate,uncertainty_rate,export_shock_pct,cost_pressure_pct,labor_shortage_pct,display_order')
           .eq('is_active', true).order('display_order', { ascending: true });
         if (result.error) throw result.error;
         if (cancelled) return;
@@ -50,9 +50,9 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
             sme_growth_rate: n(s.sme_growth_rate),
             score_growth_rate: n(s.score_growth_rate),
             uncertainty_rate: n(s.uncertainty_rate),
-            export_shock_pct: FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.export_shock_pct ?? 0,
-            cost_pressure_pct: FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.cost_pressure_pct ?? 0,
-            labor_shortage_pct: FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.labor_shortage_pct ?? 0,
+            export_shock_pct: hasNumericValue(s.export_shock_pct) ? n(s.export_shock_pct) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.export_shock_pct ?? 0),
+            cost_pressure_pct: hasNumericValue(s.cost_pressure_pct) ? n(s.cost_pressure_pct) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.cost_pressure_pct ?? 0),
+            labor_shortage_pct: hasNumericValue(s.labor_shortage_pct) ? n(s.labor_shortage_pct) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.labor_shortage_pct ?? 0),
             display_order: s.display_order,
           }));
           setScenarios(normalized);
@@ -89,7 +89,8 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       cost_pressure_pct: scenario.cost_pressure_pct ?? 0,
       labor_shortage_pct: scenario.labor_shortage_pct ?? 0,
     };
-    return { ...scenario, summary: summarizeForecast(buildForecasts(municipalities || [], scenarioParams, horizon)) };
+    const rows = buildForecasts(municipalities || [], scenarioParams, horizon);
+    return { ...scenario, rows, summary: summarizeForecast(rows) };
   }), [scenarios, municipalities, horizon]);
   const factorSummary = useMemo(() => {
     const rows = forecasts.filter((row) => row.projectedScore != null);
@@ -276,7 +277,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
         <div className="forecast-control-card">
           <div className="forecast-results-heading"><div><span className="micro-label">SCENARIO COMPARISON</span><h3>Сравнение сценариев</h3></div></div>
           <div className="forecast-scenario-compare">{scenarioComparisons.map((scenario) => <article key={scenario.key} className={scenario.key === scenarioKey ? 'is-active' : ''}><strong>{scenario.title}</strong><span>Средний индекс: {fmt(scenario.summary.averageScore, 1)}</span><small>Диапазон: {fmt(scenario.summary.averageScoreLow, 1)}–{fmt(scenario.summary.averageScoreHigh, 1)}</small><small>Покрытие: {scenario.summary.scoreCoverage}/{scenario.summary.municipalityCount}</small></article>)}</div>
-          <p className="forecast-footnote">Сценарии рассчитаны на одном наборе исходных значений и выбранном горизонте. Сравнение не означает вероятность реализации.</p>
+          <p className="forecast-footnote">Сценарии рассчитаны на одном наборе исходных значений и выбранном горизонте. Сравнение не означает вероятность реализации. В таблице ниже доступны значения каждого сценария по отдельным муниципалитетам.</p>
         </div>
         <div className="forecast-control-card">
           <div className="forecast-results-heading"><div><span className="micro-label">FACTOR CONTRIBUTION</span><h3>Влияние факторов на индекс</h3></div></div>
@@ -288,8 +289,8 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
 
       <div className="forecast-table-panel">
         <div className="forecast-table-toolbar"><div><h3>Результаты по муниципалитетам</h3><p>Рейтинг рассчитан заново по модельному баллу; он не является официальным рейтингом.</p></div><div className="forecast-table-filters"><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск территории…" aria-label="Поиск территории в прогнозе"/><select aria-label="Выбрать муниципалитет" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}><option value="ALL">Все территории</option>{municipalities.map((m) => <option value={m.id} key={m.id}>{m.name}</option>)}</select></div></div>
-        <div className="table-scroll"><table className="ranking-table forecast-table"><thead><tr><th>Территория</th><th>Инвестиции: база</th><th>Прогноз, млрд ₽</th><th>Модельный диапазон, млрд ₽</th><th>МСП: база → прогноз (диапазон)</th><th>Прогнозный балл</th><th>Диапазон балла</th><th>Модельное место</th></tr></thead>
-          <tbody>{filtered.map((row) => <tr key={row.id}><td>{row.name}</td><td>{fmt(row.investment, 1)}</td><td className="score-cell">{fmt(row.projectedInvestments, 1)}</td><td>{row.projectedInvestments == null ? '—' : `${fmt(row.investmentsLow, 1)}–${fmt(row.investmentsHigh, 1)}`}</td><td>{row.sme == null ? '—' : `${fmt(row.sme, 0)} → ${fmt(row.projectedSme, 0)} (${fmt(row.smeLow, 0)}–${fmt(row.smeHigh, 0)})`}</td><td>{fmt(row.projectedScore, 1)}</td><td>{row.projectedScore == null ? '—' : `${fmt(row.scoreLow, 1)}–${fmt(row.scoreHigh, 1)}`}</td><td>{row.projectedRank == null ? '—' : `№ ${row.projectedRank}`}</td></tr>)}</tbody>
+        <div className="table-scroll"><table className="ranking-table forecast-table"><thead><tr><th>Территория</th><th>Инвестиции: база</th><th>Прогноз, млрд ₽</th><th>Модельный диапазон, млрд ₽</th><th>МСП: база → прогноз (диапазон)</th><th>Балл активного сценария</th><th>Диапазон активного сценария</th>{scenarioComparisons.map((scenario) => <th key={scenario.key}>Балл: {scenario.title}</th>)}<th>Модельное место</th></tr></thead>
+          <tbody>{filtered.map((row) => <tr key={row.id}><td>{row.name}</td><td>{fmt(row.investment, 1)}</td><td className="score-cell">{fmt(row.projectedInvestments, 1)}</td><td>{row.projectedInvestments == null ? '—' : `${fmt(row.investmentsLow, 1)}–${fmt(row.investmentsHigh, 1)}`}</td><td>{row.sme == null ? '—' : `${fmt(row.sme, 0)} → ${fmt(row.projectedSme, 0)} (${fmt(row.smeLow, 0)}–${fmt(row.smeHigh, 0)})`}</td><td>{fmt(row.projectedScore, 1)}</td><td>{row.projectedScore == null ? '—' : `${fmt(row.scoreLow, 1)}–${fmt(row.scoreHigh, 1)}`}</td>{scenarioComparisons.map((scenario) => <td key={scenario.key}>{fmt(scenario.rows.find((candidate) => candidate.id === row.id)?.projectedScore, 1)}</td>)}<td>{row.projectedRank == null ? '—' : `№ ${row.projectedRank}`}</td></tr>)}</tbody>
         </table>{filtered.length === 0 && <div className="empty-state"><span>Территории не найдены</span><p>Измените поиск или фильтр.</p></div>}</div>
       </div>
 
