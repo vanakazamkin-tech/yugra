@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { classify } from '../src/lib/indicatorClassification.js';
 import { directionForRiskIndicator } from '../src/lib/riskDirection.js';
-import { assessRiskSignals, buildRiskModel, countConsecutiveAdverseIntervals, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, parseRiskPeriod, projectScoreScenarios } from '../src/lib/riskModel.js';
+import { assessRiskSignals, buildRiskModel, countConsecutiveAdverseIntervals, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, parseRiskPeriod } from '../src/lib/riskModel.js';
 import { buildRiskSeries } from '../src/lib/riskSeries.js';
 
 assert.equal(directionForRiskIndicator({ indicator_code: 'derived_investment_per_capita', indicator_name: 'Инвестиции в основной капитал без добычи на одного жителя' }), 'context', 'nominal per-capita investment must not be treated as real growth without a deflator');
@@ -128,9 +128,9 @@ for (const definition of definitions) {
 }
 const model = buildRiskModel(municipalities, series);
 const m1 = model.byMunicipality.m1;
-assert.ok(m1.score !== null, 'two or more independently covered pillars should produce a partial score');
+assert.equal(Object.hasOwn(m1, 'score'), false, 'risk diagnostics must not calculate an integrated index score');
 assert.equal(m1.pillars.find((pillar) => pillar.key === 'social').indicators, 2, 'health and education series must map into the social model pillar');
-assert.equal(m1.availableWeight, 55, 'economy + labour + social base weights should remain unchanged');
+assert.equal(m1.availablePillars, 3, 'risk diagnostics count covered directions without applying index weights');
 const chain = m1.chains.find((item) => item.id === 'investment-employment');
 assert.ok(chain?.active, 'adverse investment and employment signals should activate their risk chain');
 
@@ -158,10 +158,10 @@ assert.ok(serviceRisk?.active, 'health and education signals must activate the s
 assert.deepEqual(serviceRisk.hits, ['budget', 'social'], 'health and education must count as one social-stage hit, not duplicate hits');
 
 const unknownDirectionSeries = series.map((item) => ({ ...item, direction: undefined }));
-assert.equal(buildRiskModel(municipalities, unknownDirectionSeries).byMunicipality.m1.score, null, 'unknown directions must not be treated as lower-is-better peer scores');
+assert.equal(buildRiskModel(municipalities, unknownDirectionSeries).byMunicipality.m1.usableIndicators, 0, 'unknown directions must not be counted as assessable risk indicators');
 const insufficient = buildRiskModel(municipalities, series.filter((item) => item.pillar.key === 'investment'));
-assert.equal(insufficient.byMunicipality.m1.score, null, 'one 20% pillar must not produce a resilience score');
-assert.equal(MODEL_PILLARS.find((pillar) => pillar.key === 'social').weight, 0.15, 'the existing social weight must remain unchanged');
+assert.equal(insufficient.byMunicipality.m1.availablePillars, 1, 'one observed direction remains one risk-coverage direction');
+assert.equal(Object.hasOwn(MODEL_PILLARS.find((pillar) => pillar.key === 'social'), 'weight'), false, 'risk directions must not carry or reapply index weights');
 const riskSignal = (adverse, pillar) => ({ adverse, pillar: { key: pillar } });
 assert.deepEqual(DEFAULT_RISK_THRESHOLDS, { minimumUsable: 2, criticalSignals: 3, criticalPillars: 2 }, 'default thresholds must preserve the existing traffic-light behavior');
 assert.equal(assessRiskSignals([riskSignal(false, 'economy')]).level, 'insufficient', 'one usable signal is insufficient under the default threshold');
@@ -189,19 +189,6 @@ assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2022, reference
 assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2022, reference_period: 'annual', numericValue: 100 }, { reference_year: 2023, reference_period: '2023-Q1', numericValue: 80 }], 'higher'), 0, 'annual and quarterly observations must not be compared');
 const noWarning = assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 'labour')]);
 assert.equal(noWarning.earlyWarning, false, 'no adverse streak must not produce an early warning');
-
-const indexScenarios = projectScoreScenarios(60, [
-  { key: 'cautious', score_growth_rate: -3, uncertainty_rate: 18 },
-  { key: 'base', score_growth_rate: 1.5, uncertainty_rate: 7 },
-  { key: 'ambitious', score_growth_rate: 3, uncertainty_rate: 12 },
-], 3);
-assert.equal(indexScenarios.length, 3, 'all three stored scenarios must produce an index trajectory');
-assert.equal(indexScenarios[0].value, 60 * Math.pow(0.97, 3), 'pessimistic index path must use the stored annual score growth rate');
-assert.equal(indexScenarios[0].low, 60 * Math.pow(0.79, 3), 'scenario uncertainty must define the lower sensitivity bound');
-assert.equal(indexScenarios[1].horizon, 3, 'the selected 1–3 year horizon must be retained');
-assert.equal(projectScoreScenarios(99, [{ score_growth_rate: 20, uncertainty_rate: 30 }], 3)[0].high, 100, 'index projections must stay within the 0–100 scale');
-assert.deepEqual(projectScoreScenarios(null, [{ score_growth_rate: 2 }], 3), [], 'an unavailable base index must not produce a forecast');
-
 
 const sourceRow = (indicator_code, value, reference_period, unit = 'тыс. руб.', overrides = {}) => ({
   municipality_id: 'm1',
