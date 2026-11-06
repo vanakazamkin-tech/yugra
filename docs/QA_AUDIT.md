@@ -382,8 +382,8 @@ Build verification #42283141738: success.
 - PR #8: ahead 94, behind 0; merge base = current main.
 - PR #10: ahead 84, behind 0; merge base = current main.
 - PR #9: ahead 84, behind 5; merge base = `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`.
-- PR #11: ahead 113, behind 5; merge base = `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`.
-- PR #12: ahead 38, behind 5; merge base = `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`.
+- PR #11: ahead 111, behind 5; merge base = `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`.
+- PR #12: ahead 39, behind 5; merge base = `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`.
 - PR #13: ahead 36, behind 5; merge base = `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`.
 
 Сравнение `fa006173...` с текущим main показывает, что main содержит пять дополнительных commits. Поэтому PR #9/#11/#12/#13 необходимо обновить относительно актуального main и повторить CI на новых head SHA. Не полагаться на зелёный CI старого merge base.
@@ -411,3 +411,14 @@ Build verification #42283141738: success.
 6. Не применять production migrations без schema preflight и плана отката.
 
 Browser E2E, production Supabase migration и production deployment по-прежнему не выполнены и не подтверждены этим аудитом.
+
+
+### Проверка точных compare counts
+
+Перепроверены сравнения **актуальных** head SHA (не предыдущих снимков):
+- PR #11 `41e564e2eb8b356f0bae8d897cee9c38aa39fb00`: ahead 111, behind 5 (ранее в таблицу ошибочно попало число 113 от старого head).
+- PR #12 после добавления аудита `c1a54af90208f1312f9fb0bb3cc1b76fb858e0c0`: ahead 39, behind 5 (предыдущий head имел ahead 38).
+- PR #9: ahead 84, behind 5.
+- PR #13: ahead 36, behind 5.
+
+Новый Build verification для QA audit commit `c1a54af...`, run #42283752642, завершился success.
