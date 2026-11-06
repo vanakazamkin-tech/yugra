@@ -257,3 +257,9 @@ A source-level review of the shared municipality passport dialog and analytical 
 - The visualization stylesheet includes a reduced-motion media query and visible focus styling.
 
 This was a static source review only. It does not replace keyboard-only, screen-reader, zoom, or real-device browser testing. The relevant CI run for commit `747bad35f3dd7790d693689355e532af4d5d9b90` completed successfully, including map coverage validation and the production bundle build.
+
+## Keyboard access to official-observations report table (7 November 2026)
+
+The optional official-observations table in the live report preview already had a horizontally scrollable wrapper, but unlike the other analytical tables its wrapper was not keyboard-focusable and had no accessible region name. The wrapper now uses `role="region"`, `tabIndex={0}`, and a Russian accessible name that explains horizontal scrolling. The table content, official-data filtering, print layout, and data values are unchanged.
+
+This is a source-level accessibility fix; keyboard operation still requires manual browser verification.
