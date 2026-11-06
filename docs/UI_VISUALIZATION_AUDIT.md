@@ -209,3 +209,11 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - CSV exports generated from the shared demonstration-metric exporter now include a `Статус данных` column on every row, identifying the exported values as demonstration values rather than official statistics.
 - The change does not alter values, formulas, selected municipalities, filters, or official-observation exports.
 - Browser download verification and a CI build for the resulting branch head remain outstanding.
+
+## Explicit empty states in municipality passports (7 November 2026)
+
+- Investment sites, education facilities, and municipal-program execution sections now remain visible when a municipality has no matching records.
+- Each empty section explains that records are not currently loaded for the territory; it does not imply that the real-world facilities, investment sites, or program activity do not exist.
+- Record counts remain visible and are consistent with the passport coverage summary.
+- Existing records, filters, source links, calculations, and database content are unchanged.
+- This is a source-level UX correction. Browser verification and a successful build for the latest branch head remain outstanding.
