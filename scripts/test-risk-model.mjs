@@ -28,6 +28,14 @@ assert.equal(indicatorSeriesGroup({ indicator_code: 'employees_education' }), 's
   'education employee headcount belongs to the social context group');
 assert.equal(indicatorMethodFor({ indicator_code: 'employees_education' }).direction, 'context',
   'education employee headcount must not be scored without a service-coverage denominator');
+assert.equal(indicatorSeriesGroup({ indicator_code: 'employees_water_supply' }), 'infrastructure',
+  'water and waste workforce belongs to infrastructure context');
+assert.equal(indicatorMethodFor({ indicator_code: 'employees_water_supply' }).direction, 'context',
+  'water and waste workforce must not be scored as service quality');
+assert.equal(indicatorSeriesGroup({ indicator_code: 'employees_hospitality' }), 'production',
+  'hospitality workforce belongs to production context');
+assert.equal(indicatorMethodFor({ indicator_code: 'employees_hospitality' }).direction, 'context',
+  'hospitality workforce must remain contextual without tourism activity denominators');
 assert.match(sectorEmploymentMethod.limitation, /только по Когалыму и Сургуту/,
   'sectoral employee headcounts must disclose their current two-municipality coverage');
 assert.equal(indicatorSeriesGroup({ indicator_code: 'housing_commissioned_reported' }), 'production',
