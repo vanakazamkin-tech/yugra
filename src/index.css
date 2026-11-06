@@ -2027,3 +2027,59 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .report-method-note { border-radius:4px 9px 9px 4px; background:#f1eee4; }
 @media(max-width:900px){.compare-picker{position:static}.report-workspace{grid-template-columns:1fr}.report-actions{position:static}}
 @media(max-width:600px){.compare-page,.reports-page{padding:15px 12px}.compare-page>.section-heading,.reports-page>.section-heading{align-items:flex-start;flex-direction:column}.analysis-toolbar{align-items:flex-start;flex-direction:column}.support-sim-results{padding:14px}.report-document-preview{padding:23px 15px 15px}}
+
+
+/* Unified data workspace and final responsive polish */
+.data-page { display:grid; gap:20px; min-width:0; }
+.data-page-hero { position:relative; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; overflow:hidden; padding:clamp(24px,3.2vw,40px); border:1px solid #d9c9aa; border-radius:18px 5px 18px 5px; background:linear-gradient(118deg,#203f31 0%,#315a43 62%,#49694b 100%); color:#fbf6e9; box-shadow:0 14px 34px rgba(31,57,41,.12); }
+.data-page-hero::before { content:''; position:absolute; inset:0; pointer-events:none; opacity:.12; background:url('/images/khanty-birch-motif.png') repeat-x bottom left/110px 32px; mask-image:linear-gradient(transparent 35%,#000 100%); }
+.data-page-hero > div:first-child { position:relative; z-index:1; max-width:720px; }
+.data-page-hero .eyebrow { color:#d9c69e; }
+.data-page-hero h1 { margin:13px 0 10px; color:#fffaf0; font:600 clamp(27px,3.5vw,42px)/1.08 'Playfair Display',Georgia,serif; letter-spacing:-.025em; }
+.data-page-hero p { max-width:650px; margin:0; color:rgba(255,250,240,.78); font-size:13px; line-height:1.75; }
+.data-page-hero-actions { position:relative; z-index:1; display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:9px; min-width:220px; }
+.data-page-hero-actions .outline-button { border-color:rgba(255,250,240,.35); color:#fff8e9; background:rgba(255,255,255,.07); }
+.data-page-hero-actions .outline-button:hover { background:rgba(255,255,255,.15); }
+.official-status-chip { border:1px solid rgba(239,219,174,.45); background:rgba(239,219,174,.12); color:#f2dfb7; }
+.data-page-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; }
+.data-page-summary article { position:relative; overflow:hidden; min-height:92px; padding:17px 19px; border:1px solid #e3d8c5; border-radius:11px 4px 11px 4px; background:linear-gradient(145deg,#fffdf8,#f6f0e5); box-shadow:0 5px 16px rgba(39,53,39,.035); }
+.data-page-summary article::after { content:''; position:absolute; right:-15px; bottom:-24px; width:75px; height:75px; border:1px solid rgba(173,143,91,.17); transform:rotate(45deg); }
+.data-page-summary article span { display:block; max-width:80%; color:#7e8979; font-size:10px; line-height:1.45; }
+.data-page-summary article strong { display:block; margin-top:7px; color:#2c513c; font:600 27px 'Playfair Display',Georgia,serif; font-variant-numeric:tabular-nums; }
+.data-quality-panel,.municipality-coverage-panel,.population-composition-panel,.population-trend-panel { padding:clamp(17px,2.2vw,25px); border:1px solid #e0d4c0; border-radius:14px 4px 14px 4px; background:linear-gradient(145deg,#fffdf8,#f8f3e9); box-shadow:0 7px 21px rgba(39,53,39,.045); }
+.data-quality-kpis { gap:10px; }
+.data-quality-kpis article { padding:16px; border:1px solid #e7ddcc; border-radius:9px; background:#fbf8f1; }
+.data-quality-kpis article strong { color:#2d563e; font:600 25px 'Playfair Display',Georgia,serif; }
+.data-quality-pillar-grid { gap:11px; }
+.data-quality-pillar { padding:15px; border:1px solid #e7ddcc; border-radius:10px 3px 10px 3px; background:rgba(255,255,255,.58); }
+.data-quality-pillar-track,.population-composition-track { overflow:hidden; border-radius:20px; background:#e9e4d8; }
+.data-quality-pillar-track i { border-radius:20px; background:linear-gradient(90deg,#496c50,#a78b58); }
+.data-quality-footnote { padding:12px 15px; border-left:2px solid #b99a63; background:#f3eee3; color:#777e70; line-height:1.65; }
+.data-load-error { border:1px solid #dfb7a9; border-radius:10px; background:#fbefea; }
+.municipality-coverage-table th { position:sticky; top:0; z-index:1; background:#eee8dc; }
+.municipality-coverage-table tbody tr:hover,.population-composition-table tbody tr:hover { background:#f3f0e7; }
+.municipality-coverage-status { display:inline-flex; align-items:center; gap:5px; }
+.population-trend-kpis article { border:1px solid #e5dac8; border-radius:9px; background:#faf7ef; }
+.population-trend-kpis article strong { color:#2d563e; font:600 23px 'Playfair Display',Georgia,serif; }
+.population-trend-chart-wrap { padding:16px; border:1px solid #e6dccb; border-radius:10px; background:#fffdf8; }
+.population-trend-chart { max-width:100%; }
+.data-dictionary-link { text-decoration:none; }
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible { outline:3px solid rgba(185,151,91,.62); outline-offset:3px; }
+@media(max-width:850px){
+ .data-page-hero { align-items:flex-start; flex-direction:column; }
+ .data-page-hero-actions { justify-content:flex-start; }
+}
+@media(max-width:640px){
+ .data-page { gap:13px; }
+ .data-page-hero { padding:22px 17px; border-radius:13px 4px 13px 4px; }
+ .data-page-hero-actions { display:grid; grid-template-columns:1fr 1fr; width:100%; }
+ .data-page-hero-actions .official-status-chip,.data-page-hero-actions .official-data-updated { grid-column:1/-1; }
+ .data-page-hero-actions .outline-button { justify-content:center; padding:10px 8px; font-size:10px; }
+ .data-page-summary { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+ .data-page-summary article { min-height:82px; padding:13px; }
+ .data-page-summary article strong { font-size:23px; }
+ .data-quality-panel,.municipality-coverage-panel,.population-composition-panel,.population-trend-panel { padding:15px 12px; }
+ .data-page .section-heading { align-items:flex-start; flex-direction:column; }
+ .data-page .section-tag { align-self:flex-start; }
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
