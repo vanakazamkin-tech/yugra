@@ -47,5 +47,9 @@ jobs:
         run: node scripts/test-municipality-passport-gates.mjs
       - name: Test operational registry data integrity
         run: node scripts/test-operational-registry-gates.mjs
+      - name: Check municipality map coverage
+        run: |
+          node --check scripts/check-map-coverage.mjs
+          npm run check:map-coverage
       - name: Build production bundle
         run: npm run build
