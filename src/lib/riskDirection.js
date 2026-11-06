@@ -5,10 +5,10 @@ export const directionForRiskIndicator = (row = {}) => {
   const name = String(row.indicator_name ?? '').trim().toLowerCase();
   const text = code + ' ' + name;
 
-  if (/(unemploy|registered_unemployed|poverty|below_poverty|death_rate|mortality|noncompliant_roads|arrears|deficit|debt|budget_transfer_dependency|derived_budget_transfer_dependency|аварийн|износ|смертн|бедност|безработ|не отвечающ.*норматив)/i.test(text)) return 'lower';
+  if (/(unemploy|registered_unemployed|poverty|below_poverty|death_rate|mortality|noncompliant_roads|arrears|deficit|debt|budget_transfer_dependency|derived_budget_transfer_dependency|needs_replacement|нуждающ.*замен|требующ.*замен|аварийн|износ|смертн|бедност|безработ|не отвечающ.*норматив)/i.test(text)) return 'lower';
 
   // Price-adjusted indices and explicitly real income measures can be directional.
-  if (/(employment_rate|employment_level|share_employed_population|sme_per_10k|real_disposable_income|real_income|industrial_production_index|physical_index|productivity|budget_own_revenue_share|budget_balance_ratio|population_growth_rate|derived_population_growth_rate|положительн.*миграц|уровень занятости|доля занятых|индекс физического объём|индекс физического объем|реальн.*доход)/i.test(text)) return 'higher';
+  if (/(employment_rate|employment_level|share_employed_population|sme_per_10k|real_disposable_income|real_income|industrial_production_index|physical_index|productivity|budget_own_revenue_share|budget_balance_ratio|population_growth_rate|derived_population_growth_rate|migration_balance|migration_net|миграционн.*сальдо|положительн.*миграц|уровень занятости|доля занятых|индекс физического объём|индекс физического объем|реальн.*доход)/i.test(text)) return 'higher';
 
   // Nominal per-capita investment is still nominal: per-capita normalization
   // removes population scale, not price growth. Keep it contextual without a deflator.
