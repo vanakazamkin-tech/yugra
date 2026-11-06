@@ -166,7 +166,7 @@ export function buildForecasts(municipalities = [], params = {}, horizon = 1, op
       hasScore,
       scoreSource: useApprovedIndex ? 'approved_resilience_index' : indexModeRequested ? 'unavailable_index_contract' : 'conceptual_score',
       scoreMethodologyVersion: useApprovedIndex ? safeOptions.indexContract.version : null,
-      scoreProjectionMode: useApprovedIndex ? 'additive_index_points' : 'compound_conceptual_score',
+      scoreProjectionMode: useApprovedIndex ? 'additive_index_points' : indexModeRequested ? 'unavailable_index_contract' : 'compound_conceptual_score',
       adjustedScoreRate,
     };
   });
