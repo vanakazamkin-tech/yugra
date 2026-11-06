@@ -18,6 +18,8 @@ assert.equal(classify({ indicator_code: 'fairs_count_q1', indicator_name: 'Чи�
 assert.equal(classify({ indicator_code: 'industrial_output_mln_rub', indicator_name: 'Объём промышленного производства' }).key, 'production');
 assert.equal(classify({ indicator_code: 'consumer_market_volume', indicator_name: 'Объём потребительского рынка города' }).key, 'production');
 assert.equal(classify({ indicator_code: 'kogalym_profitable_agri_org_share', indicator_name: 'Доля прибыльных сельскохозяйственных организаций' }).key, 'production');
+assert.equal(classify({ indicator_code: 'beloyarsky_oil_extraction', indicator_name: 'Добыча нефти' }).key, 'production');
+assert.equal(classify({ indicator_code: 'october_paid_services', indicator_name: 'Объём реализации платных услуг в действующих ценах' }).key, 'production');
 
 const municipalities = [{ id: 'm1' }, { id: 'm2' }, { id: 'm3' }];
 const definitions = [
