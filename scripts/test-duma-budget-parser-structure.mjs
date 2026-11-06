@@ -24,7 +24,7 @@ try {
       'scripts/prepare-duma-budget-import.mjs', input, `--out=${output}`,
     ], { encoding: 'utf8' });
     assert.notEqual(result.status, 0, `${testCase.name} must fail`);
-    assert.match(result.stderr, /CSV (contains duplicate column names|line \\d+ has|contains a quote inside an unquoted field|contains unexpected characters after a closing quote|contains an unclosed quoted field)/);
+    assert.match(result.stderr, /CSV (contains duplicate column names|line \d+ has|contains a quote inside an unquoted field|contains unexpected characters after a closing quote|contains an unclosed quoted field)/);
     await assert.rejects(fs.access(output));
   }
 } finally {
