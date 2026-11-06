@@ -55,5 +55,5 @@ assert.match(rosstatCoverageAudit, /8109001/, 'Rosstat coverage audit must inclu
 assert.match(rosstatCoverageAudit, /8010001/, 'Rosstat coverage audit must include housing commissioning candidate');
 assert.match(rosstatCoverageAudit, /missing_municipalities/, 'Rosstat coverage audit must expose municipality gaps');
 assert.match(rosstatCoverageAudit, /verification_status <> 'verified'/, 'Rosstat coverage audit must distinguish non-verified observations');
-assert.doesNotMatch(rosstatCoverageAudit, /\\b(insert\\s+into|update\\s+public\\.|delete\\s+from|truncate|alter\\s+table|drop\\s+table)\\b/i, 'Rosstat coverage audit must remain read-only');
+assert.doesNotMatch(rosstatCoverageAudit, /\b(insert\s+into|update\s+public\.|delete\s+from|truncate|alter\s+table|drop\s+table)\b/i, 'Rosstat coverage audit must remain read-only');
 console.log('Rosstat BD PMO coverage audit contract checks passed.');
