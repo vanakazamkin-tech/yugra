@@ -188,3 +188,10 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - SVG map targets use manipulation touch behavior and suppress the browser tap highlight without changing map selection handlers.
 - Small-screen footer actions stack vertically and retain a comfortable tap area.
 - Municipality IDs, map geometry, group classification, selected-item behavior, and all underlying data remain unchanged. Browser/device testing remains pending CI.
+
+## Municipality map passport action semantics (7 November 2026)
+
+- Interactive map targets now expose that activating a territory opens a dialog/passport (`aria-haspopup="dialog"`); their accessible names announce the territory and action.
+- The map description now explains mouse, touch, and keyboard selection and the passport-opening result, including the list position on narrow screens.
+- Municipality list buttons also announce the dialog action to assistive technology.
+- Selection callbacks and the existing municipality passport dialog remain unchanged; this is an accessibility clarification, not a change to data or navigation logic.
