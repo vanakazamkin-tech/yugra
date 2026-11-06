@@ -10,6 +10,10 @@ begin
     raise exception 'quality diagnostics view is missing';
   end if;
 
+  if not has_table_privilege('service_role', 'public.municipality_indicator_quality_issues', 'SELECT') then
+    raise exception 'service_role cannot read quality diagnostics';
+  end if;
+
   if not exists (
     select 1 from public.municipality_indicator_quality_issues
     where issue_code = 'conflicting_source_values'
@@ -35,7 +39,6 @@ begin
   ) then
     raise exception 'legitimate negative growth value was incorrectly classified as a conflict';
   end if;
-
 
   if not exists (
     select 1 from public.municipality_indicators
