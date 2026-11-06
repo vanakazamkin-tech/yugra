@@ -200,7 +200,7 @@ assert.ok(economyDominance.pairs.some((pair) =>
   pair.leftCode === 'x_economy' && pair.rightCode === 'x_economy_inverse_candidate'
   && pair.spearman === -1 && pair.classification === 'strong_inverse_relationship_review'));
 assert.ok(economyDominance.indicators.every((item) => item.evaluatedMunicipalities === 6));
-assert.equal(economyDominance.indicators.find((item) => item.code === 'x_economy').nominalWeightWithinPillar, 0.3333);
+assert.equal(economyDominance.indicators.find((item) => item.code === 'x_economy').meanNominalWeightWithinPillar, 0.3333);
 assert.equal(analyzeIndicatorDominance(null).available, false);
 
 console.log('Six-pillar resilience index methodology tests passed.');
