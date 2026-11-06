@@ -10,6 +10,14 @@ assert.equal(classify({ indicator_code: 'employees_hospitality', indicator_name:
 assert.equal(classify({ indicator_code: 'education_preschool', indicator_name: 'Дошкольные образовательные учреждения' }).key, 'education');
 assert.equal(classify({ indicator_code: 'social_support', indicator_name: 'Социальная поддержка населения' }).key, 'social');
 assert.equal(classify({ indicator_code: 'road_network', indicator_name: 'Протяжённость автомобильных дорог' }).key, 'infrastructure');
+assert.equal(classify({ indicator_code: 'registered_organizations_2024_04', indicator_name: 'Количество организаций по данным государственной регистрации' }).key, 'business');
+assert.equal(classify({ indicator_code: 'pokachi_construction_volume', indicator_name: 'Объём работ по виду деятельности «Строительство»' }).key, 'production');
+assert.equal(classify({ indicator_code: 'kogalym_taxable_land_share', indicator_name: 'Доля площади земельных участков, являющихся объектами налогообложения земельным налогом' }).key, 'budget');
+assert.equal(classify({ indicator_code: 'jobs_created_permanent', indicator_name: 'Создано постоянных рабочих мест' }).key, 'employment');
+assert.equal(classify({ indicator_code: 'fairs_count_q1', indicator_name: 'Число проведённых ярмарок, всего' }).key, 'production');
+assert.equal(classify({ indicator_code: 'industrial_output_mln_rub', indicator_name: 'Объём промышленного производства' }).key, 'production');
+assert.equal(classify({ indicator_code: 'consumer_market_volume', indicator_name: 'Объём потребительского рынка города' }).key, 'production');
+assert.equal(classify({ indicator_code: 'kogalym_profitable_agri_org_share', indicator_name: 'Доля прибыльных сельскохозяйственных организаций' }).key, 'production');
 
 const municipalities = [{ id: 'm1' }, { id: 'm2' }, { id: 'm3' }];
 const definitions = [
