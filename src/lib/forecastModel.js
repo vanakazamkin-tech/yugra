@@ -128,6 +128,13 @@ export function buildForecasts(municipalities = [], params = {}, horizon = 1) {
     });
 }
 
+export function sumFiniteValues(values = []) {
+  const valid = (Array.isArray(values) ? values : []).map(numeric).filter((value) => value != null);
+  if (!valid.length) return null;
+  const total = valid.reduce((sum, value) => sum + value, 0);
+  return Number.isFinite(total) ? total : null;
+}
+
 export function summarizeForecast(rows = []) {
   const safeRows = Array.isArray(rows) ? rows : [];
   const valid = safeRows.filter((row) => numeric(row?.projectedScore) != null);
@@ -137,12 +144,7 @@ export function summarizeForecast(rows = []) {
     // Incremental mean avoids overflowing an intermediate sum.
     return values.reduce((mean, value, index) => mean + (value - mean) / (index + 1), 0);
   };
-  const investmentRows = safeRows.filter((row) => numeric(row?.projectedInvestments) != null);
-  let investmentTotal = null;
-  if (investmentRows.length) {
-    const total = investmentRows.reduce((sum, row) => sum + numeric(row.projectedInvestments), 0);
-    investmentTotal = Number.isFinite(total) ? total : null;
-  }
+  const investmentTotal = sumFiniteValues(safeRows.map((row) => row?.projectedInvestments));
   return {
     municipalityCount: safeRows.length,
     scoreCoverage: valid.length,
