@@ -81,6 +81,7 @@ export function buildRiskSeries(rows, thresholds = DEFAULT_RISK_THRESHOLDS) {
     const sharpChangeThreshold = Number.isFinite(Number(thresholds?.sharpChangePercent)) ? Math.max(1, Math.min(100, Number(thresholds.sharpChangePercent))) : DEFAULT_RISK_THRESHOLDS.sharpChangePercent;
     const sharpChange = adverse === true && changePercent != null && Math.abs(changePercent) >= sharpChangeThreshold;
     const adverseStreak = conflictAfterLatest ? 0 : countConsecutiveAdverseIntervals(points, direction);
+    // Confidence requires provenance for every observation in the evaluated history.
     const sourcePresent = points.every((point) =>
       Boolean(point.source_id || point.source_url
         || (Array.isArray(point.source_ids) && point.source_ids.length)
