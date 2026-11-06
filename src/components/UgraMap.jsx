@@ -25,7 +25,9 @@ export const UgraMap = ({ municipalities, hoveredId, onHover, onSelect }) => {
   });
 
   return (
-    <svg viewBox={MAP_VIEWBOX} className="ugra-map-svg" role="img" aria-label="Интерактивная карта муниципальных образований Ханты-Мансийского автономного округа — Югры">
+    <svg viewBox={MAP_VIEWBOX} className="ugra-map-svg" role="group" aria-labelledby="ugra-map-title ugra-map-description">
+      <title id="ugra-map-title">Карта муниципальных образований Югры</title>
+      <desc id="ugra-map-description">Интерактивная карта. Районы и городские округа доступны для выбора мышью и клавиатурой; список территорий расположен рядом с картой.</desc>
       <defs>
         <filter id="ugra-map-shadow" x="-8%" y="-8%" width="116%" height="120%">
           <feDropShadow dx="0" dy="3" stdDeviation="3" floodColor="#213d2e" floodOpacity=".12" />
