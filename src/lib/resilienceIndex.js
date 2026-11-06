@@ -47,9 +47,18 @@ function summarize(values) {
   const q1 = quantile(sorted, 0.25);
   const q3 = quantile(sorted, 0.75);
   const iqr = q3 - q1;
-  const low = q1 - 1.5 * iqr;
-  const high = q3 + 1.5 * iqr;
-  return { min: sorted[0], max: sorted[sorted.length - 1], median: quantile(sorted, 0.5), q1, q3, outlierCount: sorted.filter((v) => v < low || v > high).length };
+  const lowerFence = q1 - 1.5 * iqr;
+  const upperFence = q3 + 1.5 * iqr;
+  return {
+    min: sorted[0],
+    max: sorted[sorted.length - 1],
+    median: quantile(sorted, 0.5),
+    q1,
+    q3,
+    lowerFence,
+    upperFence,
+    outlierCount: sorted.filter((v) => v < lowerFence || v > upperFence).length,
+  };
 }
 
 export function calculateMunicipalIndex(rows = [], municipalities = [], options = {}) {
@@ -125,6 +134,11 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
       municipalityCount: distinctMunicipalities.size,
       comparable: usable,
       distribution,
+      outliers: distribution
+        ? group
+          .filter((row) => Number(row.value) < distribution.lowerFence || Number(row.value) > distribution.upperFence)
+          .map((row) => ({ municipalityId: String(row.municipality_id), value: Number(row.value) }))
+        : [],
       reason: inconsistentUnits ? 'inconsistent_units_across_municipalities' : usable ? null : 'insufficient_peer_coverage',
       groupKey,
     });
