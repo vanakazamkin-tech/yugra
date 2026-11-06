@@ -325,3 +325,7 @@ The municipality comparison picker now announces the number of matching municipa
 ## Forecast selectors reflect eligible annual series (7 November 2026)
 
 The scenario-forecast municipality selector previously listed every municipality, including territories without an eligible annual series. Choosing such a territory could leave the previous series selected, making the control appear not to respond. The selector now lists only municipalities that actually have an eligible forecast series; the municipality and indicator selectors are disabled with explicit placeholder text when no eligible annual series exists. Forecast eligibility rules, calculations, and source data are unchanged.
+
+## Forecast table filter announcements (7 November 2026)
+
+The forecast results count is now a polite, atomic status region, and the no-matching-territories state is exposed as a status message. This makes updates caused by municipality selection and search filters easier to perceive with assistive technology. Filtering, row contents, sorting, and forecast calculations are unchanged.
