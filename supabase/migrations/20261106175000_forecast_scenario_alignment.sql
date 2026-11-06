@@ -25,7 +25,16 @@ update public.forecast_scenarios set
   cost_pressure_pct = case key when 'cautious' then 8 when 'ambitious' then -2 else 0 end,
   labor_shortage_pct = case key when 'cautious' then 6 when 'ambitious' then -2 else 0 end,
   updated_at = now()
-where key in ('cautious', 'base', 'ambitious');
+where key in ('cautious', 'base', 'ambitious')
+  and row(
+    title, summary, export_shock_pct, cost_pressure_pct, labor_shortage_pct
+  ) is distinct from row(
+    case key when 'cautious' then 'Стрессовый' else title end,
+    case key when 'cautious' then 'Неблагоприятные допущения: снижение экспортной выручки, усиление издержек и кадрового дефицита.' else summary end,
+    case key when 'cautious' then -10 when 'ambitious' then 4 else 0 end,
+    case key when 'cautious' then 8 when 'ambitious' then -2 else 0 end,
+    case key when 'cautious' then 6 when 'ambitious' then -2 else 0 end
+  );
 
 alter table public.forecast_runs
   drop constraint if exists forecast_runs_horizon_years_check;
