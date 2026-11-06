@@ -27,6 +27,11 @@ const run = {
   referenceYear: 2025,
   referencePeriod: 'year',
   indexScale: '0–100 percentile score',
+  diagnostics: {
+    indicatorGroups: ['economy', 'labour', 'demography', 'finance', 'social', 'infrastructure'].map((code) => ({
+      code, comparable: true, municipalityCount: 15, peerCoveragePercent: 68.18,
+    })),
+  },
   results: {
     a: { municipalityId: 'a', status: 'complete', index: 88.5, pillars: completePillars() },
     b: { municipalityId: 'b', status: 'insufficient_coverage', index: null },
@@ -45,7 +50,7 @@ test('adapter passes only complete finite 0–100 index results under an approve
     referencePeriod: 'year',
   });
   assert.equal(options.scoreSource, 'resilience-index');
-  assert.deepEqual(options.indexContract, { status: 'approved', version: '1.2.0' });
+  assert.deepEqual(options.indexContract, { status: 'approved', version: '1.2.0', minimumPeerMunicipalities: 15, minimumPeerCoveragePercent: 68.18 });
   assert.deepEqual(options.indexResults, {
     a: { status: 'complete', index: 88.5 },
     b: { status: 'insufficient_coverage', index: null },
@@ -81,7 +86,7 @@ test('adapter refuses candidate or unversioned methodology contracts', () => {
     assert.equal(options.indexContract.status, 'candidate');
     assert.equal(options.indexContract.version, null);
     assert.equal(options.diagnostics.available, false);
-    assert.equal(options.diagnostics.reason, 'approved_versioned_methodology_contract_required');
+    assert.equal(options.diagnostics.reason, 'approved_versioned_peer_coverage_contract_required');
   }
 });
 
@@ -179,6 +184,41 @@ test('adapter rejects pillar observations from a different year or period', () =
         a: { municipalityId: 'a', status: 'complete', index: 88.5, pillars: mixedPeriod },
       },
     },
+    municipalities,
+    indexContract: contract,
+    referenceYear: 2025,
+    referencePeriod: 'year',
+  });
+  assert.deepEqual(options.indexResults.a, { status: 'invalid_index_result', index: null });
+});
+
+
+test('adapter blocks complete-looking results below the approved peer coverage threshold', () => {
+  const lowCoverageRun = {
+    ...run,
+    diagnostics: {
+      indicatorGroups: run.diagnostics.indicatorGroups.map((group) => ({
+        ...group,
+        municipalityCount: 8,
+        peerCoveragePercent: 36.36,
+      })),
+    },
+  };
+  const options = createForecastIndexOptions({
+    indexRun: lowCoverageRun,
+    municipalities,
+    indexContract: contract,
+    referenceYear: 2025,
+    referencePeriod: 'year',
+  });
+  assert.equal(options.indexContract.status, 'approved');
+  assert.deepEqual(options.indexResults.a, { status: 'invalid_index_result', index: null });
+  assert.equal(options.diagnostics.invalidCount, 2);
+});
+
+test('adapter requires the index run to expose comparable peer diagnostics', () => {
+  const options = createForecastIndexOptions({
+    indexRun: { ...run, diagnostics: { indicatorGroups: null } },
     municipalities,
     indexContract: contract,
     referenceYear: 2025,
