@@ -310,3 +310,30 @@
   font-size: .82rem;
   font-variant-numeric: tabular-nums;
 }
+
+/* Keep the seven-section analytics switcher readable at tablet and phone widths. */
+.yugra-app .unified-system .unified-tabs {
+  width: 100%;
+  max-width: 100%;
+  align-items: stretch;
+}
+.yugra-app .unified-system .unified-tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 44px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+  line-height: 1.35;
+}
+@media (max-width: 760px) {
+  .yugra-app .unified-system .unified-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .yugra-app .unified-system .unified-tabs button:last-child {
+    grid-column: 1 / -1;
+  }
+}
