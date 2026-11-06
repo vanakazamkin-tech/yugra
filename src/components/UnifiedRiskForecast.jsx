@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { isEligibleAnnualForecastSeries } from '../lib/forecastCoverage.js';
-import { assessRiskSignals, backtestAnnualSeries, buildRiskModel, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios, RISK_CHAINS } from '../lib/riskModel.js';
+import { assessRiskSignals, backtestAnnualSeries, buildRiskModel, countConsecutiveAdverseIntervals, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, projectScoreScenarios, RISK_CHAINS } from '../lib/riskModel.js';
 import './UnifiedRiskForecast.css';
 import { PILLARS, classify } from '../lib/indicatorClassification.js';
 
@@ -67,12 +67,7 @@ function buildSeries(rows) {
     const changePercent = previous && previous.numericValue !== 0 ? change / Math.abs(previous.numericValue) * 100 : null;
     const direction = directionFor(latest);
     const adverse = change == null || direction === 'context' ? null : direction === 'lower' ? change > 0 : change < 0;
-    const comparableChanges = points.slice(1).map((point, index) => {
-      const delta = point.numericValue - points[index].numericValue;
-      return direction === 'context' ? null : direction === 'lower' ? delta > 0 : delta < 0;
-    });
-    let adverseStreak = 0;
-    for (let index = comparableChanges.length - 1; index >= 0 && comparableChanges[index] === true; index -= 1) adverseStreak += 1;
+    const adverseStreak = countConsecutiveAdverseIntervals(points, direction);
     result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, adverseStreak });
   });
   return result;
