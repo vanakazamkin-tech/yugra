@@ -178,3 +178,11 @@ test('coefficient sensitivity is transparent and matches one-year score effects'
   assert.ok(Math.abs(costIncrease.projectedScore - 59.1) < 1e-10);
   assert.ok(Math.abs(laborIncrease.projectedScore - 59.1) < 1e-10);
 });
+
+test('finite aggregate helper preserves zero, ignores missing values and rejects overflow', async () => {
+  const { sumFiniteValues } = await import('./forecastModel.js');
+  assert.equal(sumFiniteValues([null, '', '  ', undefined]), null);
+  assert.equal(sumFiniteValues([0, '0', 2]), 2);
+  assert.equal(sumFiniteValues([Number.MAX_VALUE, Number.MAX_VALUE]), null);
+  assert.equal(sumFiniteValues([1, 'bad', 2]), 3);
+});
