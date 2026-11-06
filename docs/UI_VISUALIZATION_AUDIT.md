@@ -145,3 +145,11 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - This avoids revoking the temporary file URL synchronously while the browser is still initiating the download, improving compatibility across browsers.
 - CSV contents, column definitions, scenario metadata, filenames, and calculations are unchanged.
 - This is a source-level compatibility fix; browser download verification remains outstanding.
+
+## Report builder selection feedback (6 November 2026)
+
+- The manual municipality selector now exposes its selection count as a polite live status, so assistive technology announces changes without requiring focus to move.
+- The municipality checkbox collection and report metric checkbox collection now have descriptive group names.
+- Searching the manual municipality list now displays an explicit empty state when no municipality matches, instead of leaving a blank list.
+- Selection rules, report scope, data, export content, and calculations are unchanged.
+- Browser/assistive-technology verification remains outstanding.
