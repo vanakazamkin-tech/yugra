@@ -16,7 +16,24 @@ export const RISK_CHAINS = [
   { id: 'concentration-shock', title: 'Отраслевая концентрация', stages: ['investment', 'production', 'employment', 'budget'], description: 'Зависимость от узкого круга отраслей или работодателей повышает чувствительность территории к внешним шокам.', watch: ['investment', 'production', 'employment', 'budget'] },
 ];
 
-const MODEL_PILLAR_BY_SERIES = Object.fromEntries(MODEL_PILLARS.flatMap((p) => p.series.map((key) => [key, p.key])));
+// Ключи здесь должны совпадать с classify() в UnifiedRiskForecast.jsx.
+// Раньше карта содержала только внутренние названия (например, labour),
+// тогда как реальные ряды приходили с ключами employment/income/budget.
+const MODEL_PILLAR_BY_SERIES = Object.fromEntries([
+  ...MODEL_PILLARS.flatMap((p) => p.series.map((key) => [key, p.key])),
+  ['employment', 'labour'], ['income', 'labour'],
+  ['budget', 'finance'],
+  ['social', 'social'], ['health', 'social'], ['education', 'social'],
+  ['infrastructure', 'infrastructure'],
+]);
+
+function comparablePeriod(row) {
+  const raw = String(row?.reference_period ?? '').trim().toLowerCase();
+  if (/q[1-4]/i.test(raw)) return raw.match(/q([1-4])/i)[0].toUpperCase();
+  if (/h[12]/i.test(raw)) return raw.match(/h([12])/i)[0].toUpperCase();
+  if (!raw || /annual|year|год|^\\d{4}$/.test(raw)) return 'annual';
+  return raw;
+}
 const finite = (v) => Number.isFinite(Number(v)) && v !== null && v !== '';
 const clamp = (v, min = 0, max = 100) => Math.max(min, Math.min(max, v));
 
@@ -36,7 +53,7 @@ export function buildRiskModel(municipalities = [], series = []) {
     const pillarKey = MODEL_PILLAR_BY_SERIES[item.pillar?.key];
     if (!pillarKey) continue;
     const year = Number(item.latest.reference_year) || 0;
-    const key = [item.code, item.unit, item.latest.reference_period || '', year].join('|');
+    const key = [item.code, item.unit, comparablePeriod(item.latest), year].join('|');
     if (!comparable.has(key)) comparable.set(key, []);
     comparable.get(key).push(item);
   }
