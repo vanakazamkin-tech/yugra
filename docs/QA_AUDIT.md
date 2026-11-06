@@ -331,3 +331,83 @@ Run #42283083273 повторно падает именно на этом assert
 5. Провести browser E2E, responsive и accessibility checks; подтвердить production deployment отдельно.
 
 Положительная динамика: PR #8, #10, #12 имеют успешные build verification; PR #13 исправил forecast runtime defect; PR #11 migration integration зелёная. Основные незакрытые CI-предметы сейчас локализованы в тестах PR #9 и PR #11.
+
+
+---
+
+# Дополнение к аудиту — все индивидуальные CI зелёные, интеграционная база устарела (07.11.2026)
+
+## 1. Последние проверенные PR heads
+
+| PR | Head SHA | GitHub Actions run | Результат |
+|---|---|---|---|
+| #8 | `fcfac5c4ff1673f716ecd84db08b708f74437e48` | #42283352151 | success |
+| #9 | `1a60fbd276b95637bb8933b06dd2d7cb590ee109` | #42283397655 | success |
+| #10 | `747bad35f3dd7790d693689355e532af4d5d9b90` | #42283410457 | success |
+| #11 | `41e564e2eb8b356f0bae8d897cee9c38aa39fb00` | #42283141738 | success |
+| #12 | `6b4d2b0d489c4d137f4c4d39be7101d9c8712ee3` | #42283348713 | success |
+| #13 | `474e570205284766f2f9473fd96a64630f4faba9` | #42283430390 | success |
+
+PR #11 run #42283141738 содержит две успешные jobs: `build` и `data-migrations-integration`.
+PR #13 run #42283430390 включает `Run forecast model unit tests`, все QA checks и `Build production bundle`; всё success.
+PR #12 run #42283348713 завершился success: девять контрактных/интеграционных QA checks и production build.
+
+На всех указанных PR GitHub сообщает `mergeable=true`. Это статус отсутствия известного merge conflict на момент проверки, а не заключение о совместимости всех изменений.
+
+## 2. Два предыдущих CI-блокера исправлены
+
+### PR #9
+В `scripts/test-risk-data-gates.mjs` источник проверки изменён с устаревшего React-компонента на `src/lib/riskSeries.js`. Проверки требуют явных:
+- `verification_status === 'verified'` (через fail-closed условие);
+- `geographic_level === 'municipality'`.
+
+В `riskSeries.js` обе проверки выполняются до включения строки в расчётный ряд. Новый Build verification #42283397655 — success.
+
+**Ограничение QA:** текущий тест всё ещё статический (проверяет исходный текст через regex), а не поведение `buildRiskSeries()` на фиктивных данных. Для более сильной защиты рекомендуется добавить runtime regression tests на отсутствующий/непроверенный provenance и неверный geographic level. Это улучшение качества тестирования, а не текущий CI blocker.
+
+### PR #11
+В `scripts/test-duma-budget-parser-structure.mjs` regex теперь корректно содержит `line \\d+ has`, поэтому принимает номер строки в сообщении CSV parser. Негативные тест-кейсы остаются.
+Build verification #42283141738: success.
+Отдельная `data-migrations-integration` job: success.
+
+## 3. PR #13 — forecast fix сохраняется
+На новом head Build verification #42283430390 прошёл, включая `Run forecast model unit tests`. Предыдущая ошибка `investmentRows is not defined` отсутствует в текущем успешном прогоне.
+
+## 4. Критический интеграционный вопрос: четыре PR отстают от main
+
+Текущая ветка `main` на момент проверки:
+`9f99481a3843862a17fd9cf640fee48b4ef901ba`.
+
+Сравнение каждого PR head с этим main commit:
+- PR #8: ahead 94, behind 0; merge base = current main.
+- PR #10: ahead 84, behind 0; merge base = current main.
+- PR #9: ahead 84, behind 5; merge base = `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`.
+- PR #11: ahead 113, behind 5; merge base = `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`.
+- PR #12: ahead 38, behind 5; merge base = `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`.
+- PR #13: ahead 36, behind 5; merge base = `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`.
+
+Сравнение `fa006173...` с текущим main показывает, что main содержит пять дополнительных commits. Поэтому PR #9/#11/#12/#13 необходимо обновить относительно актуального main и повторить CI на новых head SHA. Не полагаться на зелёный CI старого merge base.
+
+## 5. Пересечения файлов, требующие интеграционного разрешения
+
+На текущих PR изменяются общие файлы:
+- PR #8 и #13: `docs/INDEX_METHODOLOGY.md`;
+- PR #9 и #10: `src/components/UnifiedRiskForecast.jsx`;
+- PR #11 и #13: `.github/workflows/ci.yml`, `package.json`;
+- PR #10 и #13: `src/components/Forecasting.jsx`.
+
+Это не обязательно означает конфликт Git, но означает риск перезаписи изменений и расхождения контрактов. Нужно проверить итоговые версии файлов после синхронизации с main, а не принимать обе стороны автоматически.
+
+## 6. Текущий вердикт
+
+**Индивидуальный CI всех шести PR зелёный. Это заметный прогресс. Общая интеграция всё ещё не разрешена.**
+
+До разрешения интеграции:
+1. Обновить PR #9, #11, #12, #13 от актуального main.
+2. Получить новые SHA и повторить Build verification; отдельно проверить unit tests PR #13 и migration integration PR #11.
+3. Разрешить пересечения общих файлов, перечисленных выше, с ручным просмотром итоговых diff.
+4. Запустить общий CI на интеграционном кандидате.
+5. Провести браузерные E2E, responsive и accessibility проверки.
+6. Не применять production migrations без schema preflight и плана отката.
+
+Browser E2E, production Supabase migration и production deployment по-прежнему не выполнены и не подтверждены этим аудитом.
