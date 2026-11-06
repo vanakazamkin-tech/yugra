@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 const checks = [
@@ -18,6 +18,9 @@ const optionalChecks = [
 ];
 
 let failed = 0;
+let passed = 0;
+let skipped = 0;
+
 for (const [name, args] of checks) {
   console.log(`\n▶ ${name}`);
   if (args.length === 1 && !existsSync(args[0])) {
@@ -26,18 +29,18 @@ for (const [name, args] of checks) {
     continue;
   }
   const result = spawnSync(process.execPath, args, { stdio: 'inherit' });
-  if (result.error) {
-    console.error(result.error);
+  if (result.error || result.status !== 0) {
+    console.error(result.error || `✗ ${name} failed (exit ${result.status ?? 'unknown'})`);
     failed += 1;
-  } else if (result.status !== 0) {
-    console.error(`✗ ${name} failed (exit ${result.status ?? 'unknown'})`);
-    failed += 1;
+  } else {
+    passed += 1;
   }
 }
 
 for (const [name, path] of optionalChecks) {
   if (!existsSync(path)) {
     console.log(`↷ ${name}: not present on this branch; skipped`);
+    skipped += 1;
     continue;
   }
   console.log(`\n▶ ${name}`);
@@ -45,12 +48,39 @@ for (const [name, path] of optionalChecks) {
   if (result.error || result.status !== 0) {
     console.error(result.error || `✗ ${name} failed (exit ${result.status ?? 'unknown'})`);
     failed += 1;
+  } else {
+    passed += 1;
   }
 }
 
+// Run Node's built-in unit-test files whenever the corresponding feature PRs
+// have been integrated into this checkout. This keeps QA extensible without
+// importing feature code into the isolated QA branch prematurely.
+const unitTestFiles = existsSync('src/lib')
+  ? readdirSync('src/lib')
+    .filter((file) => file.endsWith('.test.js'))
+    .sort()
+    .map((file) => `src/lib/${file}`)
+  : [];
+
+if (unitTestFiles.length) {
+  console.log(`\n▶ Node.js unit tests (${unitTestFiles.length} file(s))`);
+  const result = spawnSync(process.execPath, ['--test', ...unitTestFiles], { stdio: 'inherit' });
+  if (result.error || result.status !== 0) {
+    console.error(result.error || `✗ Node.js unit tests failed (exit ${result.status ?? 'unknown'})`);
+    failed += 1;
+  } else {
+    passed += 1;
+  }
+} else {
+  console.log('\n↷ Node.js unit tests: no src/lib/*.test.js files on this branch; skipped');
+  skipped += 1;
+}
+
+console.log(`\nQA checks: ${passed} passed, ${failed} failed, ${skipped} skipped.`);
 if (failed) {
-  console.error(`\nQA suite failed: ${failed} check(s).`);
+  console.error('QA suite failed.');
   process.exitCode = 1;
 } else {
-  console.log('\nQA suite passed.');
+  console.log('QA suite passed.');
 }
