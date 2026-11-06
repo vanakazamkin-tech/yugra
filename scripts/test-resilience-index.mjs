@@ -29,6 +29,21 @@ assert.equal(model.results.m1.index, 8.33);
 assert.equal(model.results.m6.index, 91.67);
 assert.equal(model.results.m1.status, 'complete');
 assert.equal(model.results.m1.coveragePercent, 100, 'indicator coverage is based on distinct approved codes');
+assert.equal(model.results.m1.approvedIndicatorCount, 6);
+assert.equal(model.results.m1.coveredIndicatorCount, 6);
+assert.equal(model.results.m1.missingIndicatorCount, 0);
+assert.deepEqual(model.results.m1.coveredPillarKeys, INDEX_PILLARS.map((pillar) => pillar.key));
+assert.deepEqual(model.results.m1.missingPillarKeys, []);
+const reorderedModel = calculateMunicipalIndex(rows.slice().reverse(), municipalities.slice().reverse(), {
+  referenceYear: 2025, referencePeriod: 'annual', indicatorDefinitions: definitions,
+});
+assert.deepEqual(reorderedModel, model, 'row and municipality input order must not change results or diagnostics');
+const duplicateMunicipalityModel = calculateMunicipalIndex(rows, [...municipalities, { id: 'm1', name: 'Duplicate municipality row' }, { id: '', name: 'Invalid row' }], {
+  referenceYear: 2025, referencePeriod: 'annual', indicatorDefinitions: definitions,
+});
+assert.equal(Object.hasOwn(duplicateMunicipalityModel.results, 'm1'), false, 'ambiguous duplicate municipality IDs must not silently overwrite results');
+assert.deepEqual(duplicateMunicipalityModel.diagnostics.duplicateMunicipalityIds, ['m1']);
+assert.equal(duplicateMunicipalityModel.diagnostics.invalidMunicipalityRows, 1);
 
 const wrongNameRows = rows.map((row) => row.indicator_code === 'x_economy'
   ? { ...row, indicator_name: 'Неутверждённое название' }
