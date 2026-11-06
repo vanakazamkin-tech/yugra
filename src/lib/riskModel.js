@@ -114,6 +114,7 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
   const repeatedDeterioration = bad.filter((signal) => Number(signal.adverseStreak) >= 2);
   const common = {
     usable, bad, thresholds: settings,
+    conflictingSignalFamilies: collapsed.conflicts,
     usableCount: usable.length,
     adverseCount: bad.length,
     affectedPillars: affectedPillars.size,
