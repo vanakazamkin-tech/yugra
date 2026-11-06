@@ -291,7 +291,7 @@ export const InvestmentDetails = () => {
   const syncTimeLabel = lastSyncedAt
     ? new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(lastSyncedAt)
     : null;
-  const [activeTab, setActiveTab] = useState('catalog');
+  const [activeTab, setActiveTab] = useState('about');
   const navigateToTab = (tab) => {
     setActiveTab(tab);
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1470,7 +1470,7 @@ export const InvestmentDetails = () => {
             <button aria-current={activeTab === 'reports' ? 'page' : undefined} className={activeTab === 'reports' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('reports')}><Icon name="file"/>Отчёты</button>
             
             <button aria-current={activeTab === 'data' ? 'page' : undefined} className={activeTab === 'data' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('data')}><Icon name="table"/>Данные</button>
-            <button aria-current={activeTab === 'about' ? 'page' : undefined} className={activeTab === 'about' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('about')}><Icon name="info"/>О проекте</button>
+            <button aria-current={activeTab === 'about' ? 'page' : undefined} className={activeTab === 'about' ? 'nav-item active' : 'nav-item'} onClick={() => navigateToTab('about')}><Icon name="info"/>Концепция</button>
           </nav>
           <div className="header-motto"><span className="concept-corner">КОНЦЕПТ</span><span className="motto-mark"/>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</div>
         </header>
