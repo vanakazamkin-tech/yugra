@@ -254,3 +254,92 @@ export function calculateLeaveOneOutSensitivity(indexResult) {
   }
   return { available: true, baseline, indicators: indicatorResults, pillars: pillarResults };
 }
+
+
+// Compare municipal ordering between a baseline and a sensitivity scenario.
+// Inputs are { municipalityId: score } maps; only municipalities present in both
+// maps with finite scores are compared. This is a diagnostic, not a new index.
+function averageRanks(entries) {
+  const sorted = entries.slice().sort((a, b) => a.value - b.value || a.id.localeCompare(b.id));
+  const ranks = new Map();
+  for (let start = 0; start < sorted.length;) {
+    let end = start + 1;
+    while (end < sorted.length && sorted[end].value === sorted[start].value) end += 1;
+    const averageRank = ((start + 1) + end) / 2;
+    for (let i = start; i < end; i += 1) ranks.set(sorted[i].id, averageRank);
+    start = end;
+  }
+  return ranks;
+}
+
+function pearsonCorrelation(left, right) {
+  const leftMean = left.reduce((sum, value) => sum + value, 0) / left.length;
+  const rightMean = right.reduce((sum, value) => sum + value, 0) / right.length;
+  let numerator = 0;
+  let leftSquares = 0;
+  let rightSquares = 0;
+  for (let i = 0; i < left.length; i += 1) {
+    const x = left[i] - leftMean;
+    const y = right[i] - rightMean;
+    numerator += x * y;
+    leftSquares += x * x;
+    rightSquares += y * y;
+  }
+  const denominator = Math.sqrt(leftSquares * rightSquares);
+  return denominator ? numerator / denominator : null;
+}
+
+function quartileSet(entries, side) {
+  const sorted = entries.slice().sort((a, b) => side === 'top'
+    ? b.value - a.value || a.id.localeCompare(b.id)
+    : a.value - b.value || a.id.localeCompare(b.id));
+  const count = Math.ceil(sorted.length / 4);
+  if (count < sorted.length && sorted[count - 1].value === sorted[count].value) return null;
+  return new Set(sorted.slice(0, count).map((item) => item.id));
+}
+
+function setOverlapRatio(left, right) {
+  if (!left || !right) return null;
+  let overlap = 0;
+  for (const id of left) if (right.has(id)) overlap += 1;
+  return Math.round((overlap / left.size) * 10000) / 100;
+}
+
+// Spearman rank correlation and top/bottom-quartile retention quantify how much
+// municipal ordering changes under leave-one-out, weight, or normalization scenarios.
+export function compareMunicipalRankings(baselineScores = {}, scenarioScores = {}, options = {}) {
+  const minimumMunicipalities = Math.max(5, Math.trunc(Number(options.minimumMunicipalities) || 5));
+  const ids = Object.keys(baselineScores).filter((id) =>
+    Object.prototype.hasOwnProperty.call(scenarioScores, id)
+    && isFiniteValue(baselineScores[id])
+    && isFiniteValue(scenarioScores[id])
+  ).sort();
+  if (ids.length < minimumMunicipalities) {
+    return { available: false, reason: 'insufficient_common_municipalities', municipalityCount: ids.length, minimumMunicipalities };
+  }
+  const baseline = ids.map((id) => ({ id, value: Number(baselineScores[id]) }));
+  const scenario = ids.map((id) => ({ id, value: Number(scenarioScores[id]) }));
+  const baselineRanks = averageRanks(baseline);
+  const scenarioRanks = averageRanks(scenario);
+  const leftRanks = ids.map((id) => baselineRanks.get(id));
+  const rightRanks = ids.map((id) => scenarioRanks.get(id));
+  const rankCorrelation = pearsonCorrelation(leftRanks, rightRanks);
+  const meanAbsoluteRankShift = leftRanks.reduce((sum, rank, index) =>
+    sum + Math.abs(rank - rightRanks[index]), 0) / ids.length;
+  const denominator = Math.max(1, ids.length - 1);
+  const baselineTop = quartileSet(baseline, 'top');
+  const scenarioTop = quartileSet(scenario, 'top');
+  const baselineBottom = quartileSet(baseline, 'bottom');
+  const scenarioBottom = quartileSet(scenario, 'bottom');
+  return {
+    available: true,
+    municipalityCount: ids.length,
+    spearmanRankCorrelation: rankCorrelation === null ? null : Math.round(rankCorrelation * 10000) / 10000,
+    meanAbsoluteRankShiftPercentilePoints: Math.round((meanAbsoluteRankShift / denominator) * 10000) / 100,
+    topQuartileRetentionPercent: setOverlapRatio(baselineTop, scenarioTop),
+    bottomQuartileRetentionPercent: setOverlapRatio(baselineBottom, scenarioBottom),
+    quartileOverlapUnavailableReason: [baselineTop, scenarioTop, baselineBottom, scenarioBottom].some((set) => set === null)
+      ? 'ties_at_quartile_boundary'
+      : null,
+  };
+}
