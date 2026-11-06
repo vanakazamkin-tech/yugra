@@ -23,6 +23,24 @@ with conflicting_values as (
   having count(distinct value) > 1
      and count(distinct source_id) > 1
 ),
+unit_mismatches as (
+  select
+    municipality_id,
+    indicator_code,
+    reference_year,
+    reference_period,
+    geographic_level,
+    coalesce(geographic_name, '') as geographic_name,
+    count(*)::bigint as row_count,
+    count(distinct source_id)::bigint as source_count,
+    array_agg(distinct source_id order by source_id) as source_ids,
+    array_agg(distinct unit order by unit) as units
+  from public.municipality_indicators
+  group by municipality_id, indicator_code, reference_year, reference_period,
+    geographic_level, coalesce(geographic_name, '')
+  having count(distinct unit) > 1
+     and count(distinct source_id) > 1
+),
 period_labels as (
   select
     id, municipality_id, indicator_code, reference_year, reference_period,
@@ -56,6 +74,26 @@ select
   source_ids,
   'Источники содержат разные значения для одного муниципалитета, показателя, периода и географического уровня; сохранять обе версии до методической сверки.'::text as details
 from conflicting_values
+
+union all
+
+select
+  'incompatible_source_units',
+  'warning',
+  u.municipality_id,
+  u.indicator_code,
+  u.reference_year,
+  u.reference_period,
+  array_to_string(u.units, ' / '),
+  u.geographic_level,
+  u.geographic_name,
+  u.row_count,
+  u.source_count,
+  null::numeric[],
+  u.source_ids,
+  ('Источники используют разные единицы измерения: ' || array_to_string(u.units, ', ') ||
+   '. Не сравнивать значения до проверки методики и приведения единиц.')
+from unit_mismatches u
 
 union all
 
