@@ -97,6 +97,8 @@
 @media(max-width:760px){.unified-system .unified-hero{min-height:0}.unified-system .unified-hero::before{right:-45px;width:210px;height:210px}.unified-system .unified-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.unified-system .unified-tabs button{min-width:0}}
 @media(max-width:520px){.unified-system .unified-hero{padding:22px 18px}.unified-system .unified-hero h1{font-size:30px}.unified-system .risk-kpi{min-height:112px;padding:13px}.unified-system .risk-kpi strong{font-size:28px}.unified-system .unified-section-head h2{font-size:19px}}
 
+.unified-method-link{margin:8px 0 0;font-size:12px}
+.unified-method-link a{color:var(--accent-color,#557b69);text-decoration:underline;text-underline-offset:3px}
 .unified-model-weight-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .unified-model-weight{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:14px;border:1px solid var(--border-color,rgba(50,70,60,.16));border-radius:11px;background:var(--surface-soft,#f7f6f1)}
 .unified-model-weight strong{font-size:13px;color:var(--text-primary,#27352e)}
