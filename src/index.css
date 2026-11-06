@@ -2129,3 +2129,55 @@ img { max-width:100%; }
  .section-heading h2 { font-size:22px; }
 }
 @media(hover:none){.nav-item:hover,.compare-option:not(.disabled):hover,.compare-value-card:hover{transform:none}}
+
+
+/* Municipality passport — editorial hierarchy, readable evidence and mobile-first details */
+.municipality-modal {
+  width:min(780px,100%);
+  padding:clamp(22px,3vw,36px);
+  border:1px solid #d9c9ad;
+  box-shadow:0 28px 90px rgba(22,35,25,.28),inset 0 0 0 5px rgba(255,255,255,.38);
+}
+.municipality-modal .modal-topline { padding-bottom:13px; border-bottom:1px solid #e8dece; }
+.municipality-modal .modal-topline .eyebrow { color:#8c744c; letter-spacing:.14em; }
+.municipality-modal h2 { margin:19px 0 8px; max-width:90%; color:#244b35; font:600 clamp(29px,4vw,39px)/1.08 'Playfair Display',Georgia,serif; letter-spacing:-.025em; text-wrap:balance; }
+.municipality-modal .modal-intro { max-width:620px; color:#687466; font-size:13px; line-height:1.7; }
+.municipality-modal .modal-group-line { display:flex; align-items:center; flex-wrap:wrap; gap:9px 18px; margin:16px 0; color:#53634f; font-size:12px; }
+.municipality-modal .modal-demo-label { align-items:flex-start; border-left:3px solid #b18c50; background:#f3ecdf; color:#78613e; }
+.municipality-modal .modal-stats { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:16px 0 23px; }
+.municipality-modal .modal-stats > div { position:relative; overflow:hidden; min-height:94px; padding:15px 17px; border-color:#e4d9c7; border-radius:10px 3px 10px 3px; background:rgba(255,255,255,.72); }
+.municipality-modal .modal-stats > div::after { content:''; position:absolute; right:-20px; bottom:-29px; width:74px; height:74px; border:1px solid rgba(173,143,91,.18); transform:rotate(45deg); pointer-events:none; }
+.municipality-modal .modal-stats > div > span { max-width:90%; color:#7b8577; font-size:10px; line-height:1.5; }
+.municipality-modal .modal-stats > div > strong { margin-top:9px; font-size:clamp(21px,3vw,27px); }
+.municipality-modal .modal-official-data { margin-top:22px; padding-top:19px; border-top:1px solid #e4d9c7; }
+.municipality-modal .modal-official-heading { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.municipality-modal .modal-official-heading h3 { color:#294d39; font-size:19px; line-height:1.25; }
+.municipality-modal .modal-official-heading > span { flex:0 0 auto; color:#8a795e; font-size:10px; font-weight:700; letter-spacing:.06em; }
+.municipality-modal .modal-official-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px 16px; align-items:center; padding:14px 15px; border:1px solid #e9dfcf; border-radius:9px 3px 9px 3px; background:rgba(255,255,255,.68); }
+.municipality-modal .modal-official-row > div { min-width:0; }
+.municipality-modal .modal-official-row > div strong { display:block; color:#344d39; font-size:12px; line-height:1.5; }
+.municipality-modal .modal-official-row > div span { display:block; margin-top:4px; color:#7b8577; font-size:10px; line-height:1.55; }
+.municipality-modal .modal-official-row > b { color:#294d39; font:600 18px 'Playfair Display',Georgia,serif; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.municipality-modal .modal-official-row > a { grid-column:1/-1; justify-self:start; color:#8a6d3f; font-size:10px; font-weight:700; text-decoration:none; }
+.municipality-modal .modal-official-row > a:hover { color:#31583e; text-decoration:underline; }
+.municipality-modal .modal-no-official { padding:14px 15px; border:1px dashed #d9c9ad; border-radius:8px; background:#faf6ed; color:#727d70; font-size:11px; line-height:1.7; }
+.municipality-modal .modal-facilities-details { margin-top:9px; border:1px solid #e5dac8; border-radius:9px; background:rgba(255,255,255,.55); }
+.municipality-modal .modal-facilities-details summary { padding:12px 14px; color:#31583e; cursor:pointer; font-size:11px; font-weight:700; }
+.municipality-modal .modal-facilities-details > .modal-official-list { padding:0 9px 9px; }
+.municipality-modal .modal-site-row { grid-template-columns:minmax(0,1fr) auto; }
+.municipality-modal .modal-print { width:100%; justify-content:center; margin-top:23px; }
+.municipality-modal .close-button { flex:0 0 auto; }
+@media(max-width:560px) {
+  .municipality-modal { width:100%; max-height:92dvh; padding:22px 15px 17px; border-radius:16px 4px 16px 4px; }
+  .municipality-modal h2 { max-width:calc(100% - 4px); font-size:29px; }
+  .municipality-modal .modal-stats { gap:7px; }
+  .municipality-modal .modal-stats > div { min-height:84px; padding:12px 11px; }
+  .municipality-modal .modal-stats > div > strong { font-size:21px; }
+  .municipality-modal .modal-official-row { grid-template-columns:minmax(0,1fr); gap:7px; padding:12px; }
+  .municipality-modal .modal-official-row > b { justify-self:start; font-size:17px; }
+  .municipality-modal .modal-official-row > a { grid-column:auto; }
+  .municipality-modal .modal-official-heading { align-items:flex-start; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .municipality-modal * { scroll-behavior:auto!important; transition-duration:.01ms!important; }
+}
