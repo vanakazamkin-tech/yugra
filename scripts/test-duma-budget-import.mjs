@@ -35,7 +35,7 @@ try {
   assert.equal(result.source.source_id, 'duma_hmao_municipal_budget_2023_2024_appendix1');
   assert.equal(result.input_rows, 46);
   assert.equal(result.staged_rows, 45);
-  assert.equal(result.excluded_control_total_rows, 1);
+  assert.equal(result.excluded_control_total_rows.length, 1);
   assert.equal(result.coverage_by_year['2023'].municipality_count, 22);
   assert.equal(result.coverage_by_year['2023'].complete, true);
   assert.equal(result.coverage_by_year['2024'].municipality_count, 22);
