@@ -289,3 +289,7 @@ Source review found that the investment chart could render as an empty region wh
 ## Explicit empty states in risk signal and indicator tables (7 November 2026)
 
 The risk overview previously used one generic empty message both when no confirmed series matched the current territory/search filters and when matching series existed but their direction could not be classified. These states are now distinguished. The indicator registry also renders an accessible empty row when no verified series match the selected filters, rather than leaving a header-only table. No risk classification, indicator selection, or source data logic was changed. Browser and screen-reader verification remain outstanding.
+
+## Accessible announcement for scenario-parameter fallback (7 November 2026)
+
+When the scenario catalogue cannot be loaded from Supabase, the interface falls back to built-in scenario templates and displays the error/fallback explanation. The message now has a polite status live region so assistive technology can announce this non-blocking state change. Scenario calculations and fallback behavior are unchanged. Browser and screen-reader verification remain outstanding.
