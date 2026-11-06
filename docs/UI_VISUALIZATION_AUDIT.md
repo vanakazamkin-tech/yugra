@@ -329,3 +329,7 @@ The scenario-forecast municipality selector previously listed every municipality
 ## Forecast table filter announcements (7 November 2026)
 
 The forecast results count is now a polite, atomic status region, and the no-matching-territories state is exposed as a status message. This makes updates caused by municipality selection and search filters easier to perceive with assistive technology. Filtering, row contents, sorting, and forecast calculations are unchanged.
+
+## Indicator, facility, and source catalog filter feedback (7 November 2026)
+
+The official-indicator empty state is now exposed as a status message. Its empty-state reset action now clears the year filter as well as the search and municipality filters, matching the full reset control. The educational-facility result count is announced as a polite atomic status and its no-results state is exposed to assistive technology. The source-catalog count is also announced as filters change, and its no-results state is exposed as a status. These changes affect only filter feedback and reset consistency; records, source classifications, and calculations are unchanged.
