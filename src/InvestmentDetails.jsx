@@ -1898,8 +1898,8 @@ export const InvestmentDetails = () => {
                       <strong>{item.program_name}</strong>
                     </div>
                     <div className="program-execution-metrics">
-                      <span><small>Уточнённый бюджет</small><strong>{formatNumber(item.revised_budget_thousand / 1000, 2)} млн ₽</strong></span>
-                      <span><small>Исполнено</small><strong>{formatNumber(item.executed_budget_thousand / 1000, 2)} млн ₽</strong></span>
+                      <span><small>Уточнённый бюджет</small><strong>{formatNumber(numericValue(item.revised_budget_thousand) == null ? null : Number(item.revised_budget_thousand) / 1000, 2)} млн ₽</strong></span>
+                      <span><small>Исполнено</small><strong>{formatNumber(numericValue(item.executed_budget_thousand) == null ? null : Number(item.executed_budget_thousand) / 1000, 2)} млн ₽</strong></span>
                       <span><small>Доля исполнения</small><strong>{formatNumber(item.execution_percent, 1)}%</strong></span>
                     </div>
                     {item.source_url ? <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a> : <span>Источник не указан</span>}
