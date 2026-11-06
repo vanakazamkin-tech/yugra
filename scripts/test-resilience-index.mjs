@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { calculateLeaveOneOutSensitivity, calculateMunicipalIndex, INDEX_PILLARS, percentileScore } from '../src/lib/resilienceIndex.js';
+import { calculateLeaveOneOutSensitivity, calculateMunicipalIndex, compareMunicipalRankings, INDEX_PILLARS, percentileScore } from '../src/lib/resilienceIndex.js';
 
 assert.equal(INDEX_PILLARS.reduce((sum, item) => sum + item.weight, 0), 1);
 assert.deepEqual(INDEX_PILLARS.map((item) => item.weight), [0.20, 0.20, 0.15, 0.15, 0.15, 0.15]);
@@ -131,5 +131,38 @@ assert.equal(missingPeriod.results.m1.index, null, 'period must be explicit rath
 const duplicatedDefinition = calculateMunicipalIndex(rows, municipalities, { referenceYear: 2025, referencePeriod: 'annual', indicatorDefinitions: [...definitions, definitions[0]] });
 assert.equal(duplicatedDefinition.results.m1.index, null, 'ambiguous duplicate definitions must not silently re-enable an indicator');
 assert.ok(duplicatedDefinition.diagnostics.definitionErrors.some((item) => item.reason === 'duplicate_definition'));
+
+
+const stableRanking = compareMunicipalRankings(
+  { a: 10, b: 20, c: 30, d: 40, e: 50, f: 60, g: 70, h: 80 },
+  { a: 11, b: 19, c: 31, d: 39, e: 51, f: 59, g: 71, h: 79 },
+);
+assert.equal(stableRanking.available, true);
+assert.equal(stableRanking.spearmanRankCorrelation, 1);
+assert.equal(stableRanking.meanAbsoluteRankShiftPercentilePoints, 0);
+assert.equal(stableRanking.topQuartileRetentionPercent, 100);
+assert.equal(stableRanking.bottomQuartileRetentionPercent, 100);
+
+const reversedRanking = compareMunicipalRankings(
+  { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6 },
+  { a: 6, b: 5, c: 4, d: 3, e: 2, f: 1 },
+);
+assert.equal(reversedRanking.spearmanRankCorrelation, -1);
+assert.equal(reversedRanking.topQuartileRetentionPercent, 0);
+assert.equal(reversedRanking.bottomQuartileRetentionPercent, 0);
+
+const tiedBoundaryRanking = compareMunicipalRankings(
+  { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7, h: 8 },
+  { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 8, h: 8 },
+);
+assert.equal(tiedBoundaryRanking.topQuartileRetentionPercent, null);
+assert.equal(tiedBoundaryRanking.quartileOverlapUnavailableReason, 'ties_at_quartile_boundary');
+
+const insufficientRanking = compareMunicipalRankings(
+  { a: 1, b: 2, c: 3, d: 4 },
+  { a: 1, b: 2, c: 3, d: 4 },
+);
+assert.equal(insufficientRanking.available, false);
+assert.equal(insufficientRanking.reason, 'insufficient_common_municipalities');
 
 console.log('Six-pillar resilience index methodology tests passed.');
