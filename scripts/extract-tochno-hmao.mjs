@@ -200,7 +200,9 @@ for (const [offset, raw] of parsed.slice(1).entries()) {
     notes: 'Извлечено из вторичной выгрузки БД ПМО. Сверить с исходной записью Росстата, ОКТМО, тип МО, определение показателя, единицу, период и методику территориальной реконструкции. Не включать в индекс до проверки.',
     source_row: Object.fromEntries(headers.map((header, index) => [header, raw[index] ?? ''])),
   };
-  const key = [record.municipality_id ?? normalize(municipalityName), record.source_indicator_code, year, normalize(record.reference_period)].join('|');
+  // Preserve all source cross-sections (e.g. sex, age, organization type) in the key.
+  // Only the value column is excluded so conflicting duplicates are still detected.
+  const key = raw.map((value, index) => index === indexes.value ? '' : normalize(value)).join('|');
   if (seen.has(key)) duplicates.push({ key, firstRow: seen.get(key), duplicateRow: sourceRowNumber });
   else seen.set(key, sourceRowNumber);
   staged.push(record);
@@ -217,7 +219,7 @@ const result = {
   matched_municipalities: new Set(staged.filter((row) => row.municipality_id).map((row) => row.municipality_id)).size,
   unmatched_municipality_names: [...unmatchedNames].sort(),
   unique_source_indicators: new Set(staged.map((row) => row.source_indicator_code)).size,
-  year_range: staged.length ? [Math.min(...staged.map((row) => row.reference_year)), Math.max(...staged.map((row) => row.reference_year))] : null,
+  year_range: staged.length ? staged.reduce((range, row) => [Math.min(range[0], row.reference_year), Math.max(range[1], row.reference_year)], [Infinity, -Infinity]) : null,
   duplicate_keys: duplicates,
   skipped,
   records: staged,
