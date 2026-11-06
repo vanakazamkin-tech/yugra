@@ -13,6 +13,8 @@ assert.equal(indicatorDirection({ indicator_code: 'derived_budget_own_revenue_sh
 assert.equal(indicatorDirection({ indicator_code: 'registered_unemployment_rate' }), 'lower');
 assert.equal(indicatorDirection({ indicator_code: 'registered_unemployed_count' }), 'context',
   'absolute unemployment counts must not be treated as comparable rates');
+assert.equal(indicatorDirection({ indicator_code: 'derived_migration_net_per_1000' }), 'context',
+  'derived migration rate remains contextual until municipal source definitions are harmonized');
 assert.equal(indicatorDirection({ indicator_code: 'average_monthly_salary_annual' }), 'higher',
   'full-year municipal nominal salary may be used as a qualified income proxy');
 assert.equal(indicatorDirection({ indicator_code: 'average_monthly_salary_q1' }), 'context',
