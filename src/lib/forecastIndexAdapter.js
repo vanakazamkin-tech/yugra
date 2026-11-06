@@ -137,12 +137,13 @@ export function createForecastIndexOptions({
     },
     indexResults,
     diagnostics: {
-      available: approved,
+      available: approved && completeCount > 0,
       reason: !contractApproved ? 'approved_versioned_peer_coverage_contract_required'
         : !runHasExpectedPeriod ? 'reference_period_mismatch'
           : !scaleMatches ? 'unsupported_index_scale'
             : !runAvailable ? 'calculated_index_results_required'
-              : null,
+              : completeCount === 0 ? 'no_municipality_meets_approved_index_gates'
+                : null,
       referenceYear: Number.isInteger(runYear) ? runYear : null,
       referencePeriod: runPeriod || null,
       methodologyVersion: approved ? indexContract.version.trim() : null,
