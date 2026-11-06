@@ -68,6 +68,33 @@ export const UgraMap = ({ municipalities, hoveredId, onHover, onSelect }) => {
   );
 };
 
+/** Стабильный дочерний компонент: не размонтирует список при наведении и фокусе. */
+const MapListSection = ({ title, items, hoveredId, onHover, onSelect }) => (
+  <section className="map-list-section">
+    <h3>{title}</h3>
+    <ul>
+      {items.map((municipality) => {
+        const hovered = hoveredId === municipality.id;
+        return <li key={municipality.id}>
+          <button
+            type="button"
+            className={`map-list-item${hovered ? ' is-hovered' : ''}`}
+            onMouseEnter={() => onHover?.(municipality.id)}
+            onMouseLeave={() => onHover?.(null)}
+            onFocus={() => onHover?.(municipality.id)}
+            onBlur={() => onHover?.(null)}
+            onClick={() => onSelect?.(municipality)}
+          >
+            <span className="map-list-initial">{municipality.name.charAt(0)}</span>
+            <span className="map-list-name">{municipality.name}</span>
+            <span className="map-list-group">{municipality.group2024}</span>
+          </button>
+        </li>;
+      })}
+    </ul>
+  </section>
+);
+
 /** Список районов и городских округов, синхронизированный с наведением на карту. */
 export const UgraMapList = ({ municipalities, hoveredId, onHover, onSelect }) => {
   const byId = useMemo(() => Object.fromEntries(municipalities.map((m) => [m.id, m])), [municipalities]);
@@ -75,35 +102,9 @@ export const UgraMapList = ({ municipalities, hoveredId, onHover, onSelect }) =>
   const districtItems = districts.map((item) => byId[item.id]).filter(Boolean).sort((a, b) => collator.compare(a.name, b.name));
   const cityItems = cities.map((item) => byId[item.id]).filter(Boolean).sort((a, b) => collator.compare(a.name, b.name));
 
-  const Section = ({ title, items }) => (
-    <section className="map-list-section">
-      <h3>{title}</h3>
-      <ul>
-        {items.map((municipality) => {
-          const hovered = hoveredId === municipality.id;
-          return <li key={municipality.id}>
-            <button
-              type="button"
-              className={`map-list-item${hovered ? ' is-hovered' : ''}`}
-              onMouseEnter={() => onHover?.(municipality.id)}
-              onMouseLeave={() => onHover?.(null)}
-              onFocus={() => onHover?.(municipality.id)}
-              onBlur={() => onHover?.(null)}
-              onClick={() => onSelect?.(municipality)}
-            >
-              <span className="map-list-initial">{municipality.name.charAt(0)}</span>
-              <span className="map-list-name">{municipality.name}</span>
-              <span className="map-list-group">{municipality.group2024}</span>
-            </button>
-          </li>;
-        })}
-      </ul>
-    </section>
-  );
-
   return <>
-    <Section title="Муниципальные районы" items={districtItems} />
-    <Section title="Городские округа" items={cityItems} />
+    <MapListSection title="Муниципальные районы" items={districtItems} hoveredId={hoveredId} onHover={onHover} onSelect={onSelect} />
+    <MapListSection title="Городские округа" items={cityItems} hoveredId={hoveredId} onHover={onHover} onSelect={onSelect} />
   </>;
 };
 
