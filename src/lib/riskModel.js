@@ -42,6 +42,129 @@ export function canonicalIndicatorCode(code) {
     : value;
 }
 
+/**
+ * Reviewed direction rules. Indicators not explicitly listed remain contextual
+ * and are excluded from scoring until their unit, denominator and meaning are checked.
+ */
+export const INDICATOR_METHODS = {
+  sme_per_10k: {
+    direction: 'higher', pillar: 'business',
+    rationale: 'Число субъектов МСП на 10 тыс. жителей: относительная плотность предпринимательской среды.',
+    limitation: 'Не измеряет выживаемость бизнеса, производительность или качество рабочих мест.',
+  },
+  derived_budget_own_revenue_share: {
+    direction: 'higher', pillar: 'budget',
+    rationale: 'Доля доходов бюджета без безвозмездных поступлений: прокси финансовой самостоятельности.',
+    limitation: 'Не заменяет анализ налоговой базы, долговой нагрузки и устойчивости собственных доходов.',
+  },
+  registered_unemployment_rate: {
+    direction: 'lower', pillar: 'employment',
+    rationale: 'Уровень зарегистрированной безработицы: меньшая доля зарегистрированных безработных предпочтительнее.',
+    limitation: 'Не равен безработице по методологии МОТ; период и знаменатель проверяются по источнику.',
+  },
+  registered_unemployment_rate_municipal_report: {
+    direction: 'lower', pillar: 'employment',
+    rationale: 'Уровень зарегистрированной безработицы из муниципального отчёта.',
+    limitation: 'Нельзя смешивать с оценками МОТ или срезами другой даты.',
+  },
+  registered_unemployment_rate_surgutsky: {
+    direction: 'lower', pillar: 'employment',
+    rationale: 'Уровень зарегистрированной безработицы из отчёта Сургутского района.',
+    limitation: 'Пока недостаточно сопоставимых муниципальных наблюдений.',
+  },
+  sovetsky_registered_unemployment_rate: {
+    direction: 'lower', pillar: 'employment',
+    rationale: 'Уровень регистрируемой безработицы Советского района.',
+    limitation: 'Пока недостаточно сопоставимых муниципальных наблюдений.',
+  },
+  beloyarsky_unemployment_rate: {
+    direction: 'lower', pillar: 'employment',
+    rationale: 'Уровень зарегистрированной безработицы Белоярского района.',
+    limitation: 'Точечный срез не сравнивается с годовым показателем без сверки даты.',
+  },
+  pokachi_registered_unemployment_rate: {
+    direction: 'lower', pillar: 'employment',
+    rationale: 'Уровень зарегистрированной безработицы города Покачи.',
+    limitation: 'Пока недостаточно сопоставимых муниципальных наблюдений.',
+  },
+  pokachi_population_below_poverty: {
+    direction: 'lower', pillar: 'income',
+    rationale: 'Доля населения с доходами ниже прожиточного минимума: меньшая доля предпочтительнее.',
+    limitation: 'Требуется проверка методики и единства знаменателя.',
+  },
+  sovetsky_noncompliant_roads_share: {
+    direction: 'lower', pillar: 'infrastructure',
+    rationale: 'Доля местных дорог, не отвечающих нормативам: меньшая доля предпочтительнее.',
+    limitation: 'Пока нет сопоставимого покрытия всех муниципалитетов.',
+  },
+  industrial_production_index: {
+    direction: 'higher', pillar: 'production',
+    rationale: 'Индекс промышленного производства к предыдущему году: более высокий индекс означает более сильную динамику.',
+    limitation: 'Индекс ниже 100 означает снижение; проверить отраслевой состав и базу сравнения.',
+  },
+  industrial_production_index_surgutsky: {
+    direction: 'higher', pillar: 'production',
+    rationale: 'Индекс промышленного производства Сургутского района.',
+    limitation: 'Пока недостаточно сопоставимых муниципальных наблюдений.',
+  },
+  pokachi_industrial_production_index: {
+    direction: 'higher', pillar: 'production',
+    rationale: 'Индекс промышленного производства города Покачи.',
+    limitation: 'Пока недостаточно сопоставимых муниципальных наблюдений.',
+  },
+  beloyarsky_industrial_production_index: {
+    direction: 'higher', pillar: 'production',
+    rationale: 'Индекс промышленного производства Белоярского района.',
+    limitation: 'Пока недостаточно сопоставимых муниципальных наблюдений.',
+  },
+  real_disposable_income_index: {
+    direction: 'higher', pillar: 'income',
+    rationale: 'Индекс реальных располагаемых доходов: учитывает изменение цен.',
+    limitation: 'Нужна проверка базы индекса и единообразия методики.',
+  },
+  pokachi_real_disposable_income_index: {
+    direction: 'higher', pillar: 'income',
+    rationale: 'Индекс реальных располагаемых доходов города Покачи.',
+    limitation: 'Пока недостаточно сопоставимых муниципальных наблюдений.',
+  },
+  real_cash_income_index_surgutsky: {
+    direction: 'higher', pillar: 'income',
+    rationale: 'Индекс реальных денежных доходов Сургутского района.',
+    limitation: 'Не объединять с индексом располагаемых доходов без проверки состава.',
+  },
+  real_per_capita_income_growth_preliminary: {
+    direction: 'higher', pillar: 'income',
+    rationale: 'Предварительное изменение реальных среднедушевых доходов.',
+    limitation: 'Предварительный показатель; требуется подтверждение и единый муниципальный охват.',
+  },
+  fixed_capital_investment_growth_preliminary: {
+    direction: 'higher', pillar: 'investment',
+    rationale: 'Индекс физического объёма инвестиций в основной капитал.',
+    limitation: 'Проверять, что индекс реальный, а не номинальная сумма инвестиций.',
+  },
+  paid_services_index_municipal_report: {
+    direction: 'higher', pillar: 'production',
+    rationale: 'Индекс физического объёма платных услуг населению.',
+    limitation: 'Пока недостаточно сопоставимых муниципальных наблюдений.',
+  },
+  retail_turnover_index_municipal_report: {
+    direction: 'higher', pillar: 'production',
+    rationale: 'Индекс физического объёма розничной торговли.',
+    limitation: 'Пока недостаточно сопоставимых муниципальных наблюдений.',
+  },
+  consumer_market_physical_index: {
+    direction: 'higher', pillar: 'production',
+    rationale: 'Индекс физического объёма потребительского рынка.',
+    limitation: 'Проверить состав агрегата и отсутствие двойного учёта с торговлей и услугами.',
+  },
+};
+export function indicatorMethodFor(row) {
+  return INDICATOR_METHODS[canonicalIndicatorCode(row?.indicator_code)] || null;
+}
+export function indicatorDirection(row) {
+  return indicatorMethodFor(row)?.direction || 'context';
+}
+
 const finite = (v) => Number.isFinite(Number(v)) && v !== null && v !== '';
 const clamp = (v, min = 0, max = 100) => Math.max(min, Math.min(max, v));
 
