@@ -321,3 +321,7 @@ The print/PDF report now handles two incomplete configurations explicitly: when 
 ## Comparison picker search feedback and empty state (7 November 2026)
 
 The municipality comparison picker now announces the number of matching municipalities as the search query changes, exposes the selected-territory counter as a polite live status, and shows a clear message when no municipality matches. This prevents an empty picker from appearing broken and makes search feedback perceivable to assistive technology. Selection limits and comparison calculations are unchanged.
+
+## Forecast selectors reflect eligible annual series (7 November 2026)
+
+The scenario-forecast municipality selector previously listed every municipality, including territories without an eligible annual series. Choosing such a territory could leave the previous series selected, making the control appear not to respond. The selector now lists only municipalities that actually have an eligible forecast series; the municipality and indicator selectors are disabled with explicit placeholder text when no eligible annual series exists. Forecast eligibility rules, calculations, and source data are unchanged.
