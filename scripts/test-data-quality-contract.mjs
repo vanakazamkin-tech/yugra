@@ -57,3 +57,11 @@ assert.match(rosstatCoverageAudit, /missing_municipalities/, 'Rosstat coverage a
 assert.match(rosstatCoverageAudit, /verification_status <> 'verified'/, 'Rosstat coverage audit must distinguish non-verified observations');
 assert.doesNotMatch(rosstatCoverageAudit, /\b(insert\s+into|update\s+public\.|delete\s+from|truncate|alter\s+table|drop\s+table)\b/i, 'Rosstat coverage audit must remain read-only');
 console.log('Rosstat BD PMO coverage audit contract checks passed.');
+
+
+const oktmoCrosswalk = readFileSync('supabase/imports/review/rosstat_municipality_oktmo_crosswalk_template.csv', 'utf8').trim().split(/\\r?\\n/);
+assert.equal(oktmoCrosswalk.length - 1, 22, 'OKTMO crosswalk template must include all 22 current municipalities');
+const oktmoRows = oktmoCrosswalk.slice(1).map(line => line.split(','));
+assert.equal(new Set(oktmoRows.map(row => row[0])).size, 22, 'OKTMO crosswalk municipality IDs must be unique');
+assert.ok(oktmoRows.every(row => row[3] === '' && row[9] === 'pending'), 'OKTMO values must remain blank and all rows pending until verified');
+console.log('Rosstat OKTMO crosswalk template checks passed.');
