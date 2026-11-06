@@ -1541,7 +1541,7 @@ export const InvestmentDetails = () => {
           {syncStatus === 'error' && <button type="button" className="sync-retry" onClick={() => setSyncAttempt((attempt) => attempt + 1)}><Icon name="refresh"/>Повторить</button>}
         </div>
 
-        <main id="main-content">
+        <main id="main-content" tabIndex={-1}>
           {activeTab === 'catalog' && <>
             <section className="intro-panel panel">
               <div className="intro-top">
