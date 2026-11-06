@@ -197,6 +197,8 @@ export function indicatorSeriesGroup(row) {
   const code = canonicalIndicatorCode(row?.indicator_code);
   if (/^(housing_commissioned|housing_construction|pokachi_housing_commissioning|sovetsky_housing_commissioning_plan)/.test(code)) return 'production';
   if (/^(sovetsky_local_road_repair|sovetsky_engineering_network_repair|sovetsky_noncompliant_roads_share|kogalym_no_regular_transport_population_share)/.test(code)) return 'infrastructure';
+  if (code === 'employees_water_supply') return 'infrastructure';
+  if (code === 'employees_hospitality') return 'production';
   if (code === 'pokachi_population_below_poverty' || /^(employees_education|employees_healthcare)$/.test(code)) return 'social';
   return null;
 }
@@ -241,6 +243,22 @@ export function indicatorMethodFor(row) {
       pillar: 'social',
       rationale: 'Среднесписочная численность работников организаций в образовании либо здравоохранении и социальных услугах — контекстный показатель масштаба соответствующей сферы.',
       limitation: 'Абсолютная численность не измеряет обеспеченность услугами, нагрузку на персонал или доступность учреждений и исключает субъекты малого предпринимательства. Наблюдения есть только по Когалыму и Сургуту; у Когалыма представлен только I квартал 2026 года, тогда как сопоставимые годовые значения есть по Сургуту за 2024–2025 годы. Не использовать для межмуниципального ранжирования и интегрального индекса.',
+    };
+  }
+  if (code === 'employees_water_supply') {
+    return {
+      direction: 'context',
+      pillar: 'infrastructure',
+      rationale: 'Среднесписочная численность работников водоснабжения, водоотведения и обращения с отходами характеризует масштаб занятости в коммунальном секторе.',
+      limitation: 'Абсолютная численность не измеряет доступность или качество коммунальных услуг и не показывает обеспеченность персоналом относительно протяжённости сетей и населения. Данные только по Когалыму (2026-Q1) и Сургуту (2024–2026); малые предприятия исключены. Не использовать для межмуниципального ранжирования и индекса.',
+    };
+  }
+  if (code === 'employees_hospitality') {
+    return {
+      direction: 'context',
+      pillar: 'production',
+      rationale: 'Среднесписочная численность работников гостиниц и предприятий общественного питания характеризует масштаб занятости в сфере гостеприимства.',
+      limitation: 'Абсолютная численность не измеряет туристический поток, загрузку гостиниц или вклад отрасли в экономику. Данные только по Когалыму (2026-Q1) и Сургуту (2024–2026); малые предприятия исключены. Не использовать для межмуниципального ранжирования и индекса.',
     };
   }
   if (/^employees_[a-z0-9_]+$/.test(code)) {
