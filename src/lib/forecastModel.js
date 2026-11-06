@@ -109,10 +109,19 @@ export function buildForecasts(municipalities = [], params = {}, horizon = 1, op
     const projectedInvestments = hasInvestment ? growth(investment, investmentRate, years) : null;
     const projectedSmeRaw = hasSme ? growth(sme, smeRate, years) : null;
     const projectedSme = roundCount(projectedSmeRaw);
-    const projectedScoreRaw = hasScore ? growth(score, adjustedScoreRate, years) : null;
+    // Percentile indices are relative cross-sectional positions, not ratio-scale quantities.
+    // When an approved index is supplied, project additive index-point changes rather than
+    // compounding the percentile score as if it were revenue or population.
+    const projectedScoreRaw = hasScore
+      ? (useApprovedIndex ? score + adjustedScoreRate * years : growth(score, adjustedScoreRate, years))
+      : null;
     const projectedScore = projectedScoreRaw == null ? null : clamp(projectedScoreRaw, 0, 100);
-    const scoreLowRaw = hasScore ? growth(score, adjustedScoreRate - uncertainty, years) : null;
-    const scoreHighRaw = hasScore ? growth(score, adjustedScoreRate + uncertainty, years) : null;
+    const scoreLowRaw = hasScore
+      ? (useApprovedIndex ? score + adjustedScoreRate * years - uncertainty : growth(score, adjustedScoreRate - uncertainty, years))
+      : null;
+    const scoreHighRaw = hasScore
+      ? (useApprovedIndex ? score + adjustedScoreRate * years + uncertainty : growth(score, adjustedScoreRate + uncertainty, years))
+      : null;
     const scoreLow = scoreLowRaw == null ? null : clamp(scoreLowRaw, 0, 100);
     const scoreHigh = scoreHighRaw == null ? null : clamp(scoreHighRaw, 0, 100);
 
@@ -123,7 +132,9 @@ export function buildForecasts(municipalities = [], params = {}, horizon = 1, op
 
     const factorImpacts = factors.map((factor) => {
       if (!hasScore || projectedScore == null) return { key: factor.key, label: factor.label, annualEffect: factor.annualEffect, scorePoints: null };
-      const withoutFactorRaw = growth(score, adjustedScoreRate - factor.annualEffect, years);
+      const withoutFactorRaw = useApprovedIndex
+        ? score + (adjustedScoreRate - factor.annualEffect) * years
+        : growth(score, adjustedScoreRate - factor.annualEffect, years);
       const withoutFactor = withoutFactorRaw == null ? null : clamp(withoutFactorRaw, 0, 100);
       return {
         key: factor.key,
@@ -155,6 +166,7 @@ export function buildForecasts(municipalities = [], params = {}, horizon = 1, op
       hasScore,
       scoreSource: useApprovedIndex ? 'approved_resilience_index' : indexModeRequested ? 'unavailable_index_contract' : 'conceptual_score',
       scoreMethodologyVersion: useApprovedIndex ? safeOptions.indexContract.version : null,
+      scoreProjectionMode: useApprovedIndex ? 'additive_index_points' : 'compound_conceptual_score',
       adjustedScoreRate,
     };
   });
