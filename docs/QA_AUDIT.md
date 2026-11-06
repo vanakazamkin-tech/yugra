@@ -4,7 +4,7 @@
 **QA branch:** `feat/qa-testing`  
 **Baseline:** `main` at `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`  
 **QA PR:** [#12](https://github.com/vanakazamkin-tech/yugra/pull/12), draft, not merged  
-**Verified QA head:** `72178a32f972828ebcec9562843a27932c1b3093`
+**Verified QA head:** `d77082b31c37184c6c684d31c1f6103fef6fbad7`
 
 ## Scope and integrity
 
@@ -28,13 +28,13 @@
 
 ## CI verification
 
-Verified on commit `72178a32f972828ebcec9562843a27932c1b3093`:
+Verified on commit `d77082b31c37184c6c684d31c1f6103fef6fbad7`:
 
-- **QA branch verification** — GitHub Actions run [#42268127420](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268127420): completed successfully.
+- **QA branch verification** — GitHub Actions run [#42268580135](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268580135): completed successfully.
   - dependency installation: success;
   - consolidated `npm test` regression suite: success;
   - `npm run build`: success.
-- **Build verification** — GitHub Actions run [#42268172104](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268172104): completed successfully.
+- **Build verification** — GitHub Actions run [#42268589275](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268589275): completed successfully.
   - migration staging syntax and filters: success;
   - forecast coverage classification: success;
   - risk data provenance/geography gates: success;
@@ -56,7 +56,11 @@ Read-only inspection of project `dmbikidqikjupkghywbz`:
   - 12 municipality-level `needs_review`.
 - No duplicate verified municipality logical keys were returned for `municipality_id + indicator_code + reference_year + reference_period`.
 - All inspected public tables have RLS enabled.
-- Security advisor returned four `rls_enabled_no_policy` informational findings listed above; no security-critical finding was returned in this scan.
+- Security advisor returned four `rls_enabled_no_policy` informational findings listed above; no security-critical finding was returned in this scan. Health advisor returned no findings.
+- A fresh privilege audit confirmed that the 10 client-readable public tables grant `anon`/`authenticated` SELECT only; none grants client INSERT, UPDATE, or DELETE. The four fail-closed tables have no client privileges and no policies.
+- The only public view, `municipality_indicator_import_review`, has `security_invoker=true` and no client SELECT grant.
+- The inspected public functions are not `SECURITY DEFINER`; the import function is not executable by client roles. The `set_updated_at` trigger helper has default EXECUTE privileges but is not a `SECURITY DEFINER` function.
+- Data-quality aggregate over `municipality_indicators`: 1,445 rows; zero missing municipality IDs, indicator codes, units, periods, source IDs, or source URLs; zero invalid years; 1,389 verified municipality-level rows.
 - Performance advisor reported 16 unused indexes. This is informational on a database with limited workload; no indexes were removed.
 
 ## Pull-request review notes
