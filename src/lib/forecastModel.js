@@ -67,7 +67,14 @@ export function normalizeScenarioRows(baseRows, factorRows = [], factorColumnsAv
 }
 
 
-export function buildForecasts(municipalities = [], params = {}, horizon = 1) {
+export function buildForecasts(municipalities = [], params = {}, horizon = 1, options = {}) {
+  const safeOptions = options && typeof options === 'object' ? options : {};
+  const useApprovedIndex = safeOptions.scoreSource === 'resilience-index'
+    && safeOptions.indexContract?.status === 'approved'
+    && typeof safeOptions.indexContract?.version === 'string'
+    && safeOptions.indexContract.version.trim() !== '';
+  const indexResults = safeOptions.indexResults && typeof safeOptions.indexResults === 'object'
+    ? safeOptions.indexResults : {};
   const parsedHorizon = numeric(horizon);
   const years = clamp(Math.round(parsedHorizon == null ? 1 : parsedHorizon), 1, 3);
   const safeParams = params && typeof params === 'object' ? params : {};
@@ -85,7 +92,10 @@ export function buildForecasts(municipalities = [], params = {}, horizon = 1) {
   const rows = sourceRows.map((municipality) => {
     const investmentRaw = municipality?.investments?.volumeBillion;
     const smeRaw = municipality?.smeCount;
-    const scoreRaw = municipality?.score;
+    const indexResult = municipality?.id == null ? null : indexResults[String(municipality.id)];
+    const scoreRaw = useApprovedIndex
+      ? (indexResult?.status === 'complete' ? indexResult.index : null)
+      : municipality?.score;
     const hasInvestment = nonNegative(investmentRaw);
     const hasSme = nonNegative(smeRaw);
     const hasScore = validScore(scoreRaw);
@@ -142,6 +152,8 @@ export function buildForecasts(municipalities = [], params = {}, horizon = 1) {
       hasInvestment,
       hasSme,
       hasScore,
+      scoreSource: useApprovedIndex ? 'approved_resilience_index' : 'conceptual_score',
+      scoreMethodologyVersion: useApprovedIndex ? safeOptions.indexContract.version : null,
       adjustedScoreRate,
     };
   });
