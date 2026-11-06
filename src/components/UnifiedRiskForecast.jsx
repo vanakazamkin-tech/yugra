@@ -67,7 +67,13 @@ function buildSeries(rows) {
     const changePercent = previous && previous.numericValue !== 0 ? change / Math.abs(previous.numericValue) * 100 : null;
     const direction = directionFor(latest);
     const adverse = change == null || direction === 'context' ? null : direction === 'lower' ? change > 0 : change < 0;
-    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse });
+    const comparableChanges = points.slice(1).map((point, index) => {
+      const delta = point.numericValue - points[index].numericValue;
+      return direction === 'context' ? null : direction === 'lower' ? delta > 0 : delta < 0;
+    });
+    let adverseStreak = 0;
+    for (let index = comparableChanges.length - 1; index >= 0 && comparableChanges[index] === true; index -= 1) adverseStreak += 1;
+    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, adverseStreak });
   });
   return result;
 }
@@ -304,7 +310,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
       {selected && <>
         <div className="municipality-risk-summary"><div><span>Сигнал системы</span><strong>{RISK[selected.level].label}</strong></div><div><span>Рядов с понятным направлением</span><strong>{selected.usable.length}</strong></div><div><span>Негативных изменений</span><strong>{selected.bad.length}</strong></div><div><span>Всего подтверждённых рядов</span><strong>{selected.coverage}</strong></div></div>
         <div className="unified-model-result"><span>Индекс устойчивости · пилотная оценка</span><strong>{selected.model?.score == null ? 'Недостаточно данных' : fmt(selected.model.score,1) + ' / 100' + (selected.model.assessmentStatus === 'partial' ? ' · частично' : '')}</strong><small>Покрытие весов: {selected.model?.availableWeight ?? 0}% · полнота: {selected.model?.score == null ? 'не оценивается' : selected.model.confidence + '%'}</small></div>
-        <div className="unified-explanation"><h3>Что это означает</h3><p>{selected.level === 'critical' ? 'Одновременно ухудшаются несколько показателей. Это основание для предметной проверки причин и подготовки мер реагирования, но не доказательство кризиса.' : selected.level === 'watch' ? 'Есть отдельные негативные изменения. Нужно проверить источник, устойчивость тенденции и связь с другими показателями.' : selected.level === 'stable' ? 'Среди показателей с однозначным направлением негативных изменений не выявлено. Это не означает отсутствие проблем: часть показателей контекстная, а полнота данных ограничена.' : 'Подтверждённых сопоставимых рядов с однозначным направлением недостаточно. Системе нельзя присваивать территории благополучный статус; приоритет — сбор и проверка данных.'}</p></div>
+        <div className="unified-explanation"><h3>Что это означает</h3><p>{selected.explanation}</p><ul>{selected.reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul>{selected.earlyWarning && <p className="trend-negative"><strong>Раннее предупреждение:</strong> негативная динамика повторяется не менее двух последовательных сопоставимых интервалов. Требуется проверка первоисточников и причин.</p>}</div>
         <h3>Негативные сигналы</h3>
         {selected.bad.length ? <div className="unified-signal-list">{selected.bad.map((s) => <article key={s.key}><div><strong>{s.name}</strong><span>{s.pillar.title}</span></div><b>{pct(s.changePercent)}</b><p>{fmt(s.previous?.numericValue,2)} → {fmt(s.latest.numericValue,2)} {s.unit} · {periodLabel(s.previous)} → {periodLabel(s.latest)}</p><small>Интерпретация: {directionText(s)}. Проверьте методику и первоисточник перед управленческим решением.</small>{sourceUrlsFor(s.latest).map((url, index) => <a key={url} href={url} target="_blank" rel="noreferrer">Открыть источник {index + 1} ↗</a>)}</article>)}</div> : <p className="empty-state">По текущим подтверждённым рядам негативные сигналы не выявлены либо данных недостаточно.</p>}
         <h3>Все направления и ограничения</h3>
