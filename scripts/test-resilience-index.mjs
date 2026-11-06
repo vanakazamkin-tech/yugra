@@ -35,7 +35,7 @@ const wrongNames = calculateMunicipalIndex(wrongNameRows, municipalities, {
 });
 assert.equal(wrongNames.results.m1.index, null, 'unapproved source indicator names must not enter the index');
 assert.equal(wrongNames.diagnostics.rowsRejectedForUnapprovedIndicatorName, 6);
-assert.ok(wrongNames.diagnostics.excludedIndicatorGroups.some((item) => item.code === 'x_economy'));
+assert.ok(wrongNames.diagnostics.indicatorGroups.some((item) => item.code === 'x_economy' && !item.comparable));
 
 const incompleteDefinition = definitions.map(({ acceptedNames, ...definition }) => definition);
 const invalidNameDefinition = calculateMunicipalIndex(rows, municipalities, {
