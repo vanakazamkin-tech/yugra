@@ -193,8 +193,31 @@ export const INDICATOR_METHODS = {
     limitation: 'Проверить состав агрегата и отсутствие двойного учёта с торговлей и услугами.',
   },
 };
+export function indicatorSeriesGroup(row) {
+  const code = canonicalIndicatorCode(row?.indicator_code);
+  if (/^(housing_commissioned|housing_construction|pokachi_housing_commissioning|sovetsky_housing_commissioning_plan)/.test(code)) return 'production';
+  if (/^(sovetsky_local_road_repair|sovetsky_engineering_network_repair|sovetsky_noncompliant_roads_share)/.test(code)) return 'infrastructure';
+  return null;
+}
+
 export function indicatorMethodFor(row) {
   const code = canonicalIndicatorCode(row?.indicator_code);
+  if (/^(housing_commissioned|housing_construction|pokachi_housing_commissioning|sovetsky_housing_commissioning_plan)/.test(code)) {
+    return {
+      direction: 'context',
+      pillar: 'production',
+      rationale: 'Объём ввода или строительства жилья — показатель строительной активности.',
+      limitation: 'Не измеряет обеспеченность жильём, его качество, износ фонда или доступность коммунальной инфраструктуры; плановые и фактические значения нельзя смешивать.',
+    };
+  }
+  if (/^(sovetsky_local_road_repair|sovetsky_engineering_network_repair)/.test(code)) {
+    return {
+      direction: 'context',
+      pillar: 'infrastructure',
+      rationale: 'Объём выполненных работ по ремонту дорог или инженерных сетей.',
+      limitation: 'Объём ремонта не равен состоянию инфраструктуры: без протяжённости сети, доли нормативного состояния и сопоставимого муниципального охвата направление изменения неоднозначно.',
+    };
+  }
   if (/^employees_[a-z0-9_]+$/.test(code)) {
     return {
       direction: 'context',
