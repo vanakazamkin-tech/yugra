@@ -39,6 +39,13 @@ const firstIndicatorGroup = model.diagnostics.indicatorGroups[0];
 assert.equal(firstIndicatorGroup.peerCoveragePercent, 100);
 assert.deepEqual(firstIndicatorGroup.peerMunicipalityIds, municipalities.map((municipality) => municipality.id));
 assert.equal(firstIndicatorGroup.peerMunicipalityCountOutsideRegistry, 0);
+const outsideUniverse = calculateMunicipalIndex([
+  ...rows,
+  { ...rows[0], municipality_id: 'not-in-registry', value: 999999999 },
+], municipalities, { referenceYear: 2025, referencePeriod: 'annual', indicatorDefinitions: definitions });
+assert.equal(outsideUniverse.results.m1.index, model.results.m1.index, 'unregistered municipality rows must not influence peer percentiles');
+assert.equal(outsideUniverse.diagnostics.rowsRejectedForUnknownMunicipality, 1);
+assert.deepEqual(outsideUniverse.diagnostics.unknownMunicipalityIds, ['not-in-registry']);
 assert.deepEqual(model.results.m1.coveredPillarKeys, INDEX_PILLARS.map((pillar) => pillar.key));
 assert.deepEqual(model.results.m1.missingPillarKeys, []);
 const reorderedModel = calculateMunicipalIndex(rows.slice().reverse(), municipalities.slice().reverse(), {
