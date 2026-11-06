@@ -1488,8 +1488,8 @@ export const InvestmentDetails = () => {
         <p>Демонстрационные поля рейтинга · Сформировано: {reportDate()} · В выборке: {reportSummary.count} муниципалитетов</p>
         <p className="print-methodology"><strong>Важно:</strong> сводные оценки, баллы и расчётные показатели основаны на концептуальном наборе проекта и не являются официальной статистикой. Новые официальные статистические ряды пока не загружены. Подтверждённые официальные наблюдения, если они включены, приведены отдельно с источником, периодом и территориальным уровнем.</p>
         {reportIncludeSummary && <><h2>Сводка</h2>{renderReportSummary()}</>}
-        {reportIncludeChart && reportItems.length > 0 && <><h2>Сравнение показателя: {reportChartMetricDef.label}</h2>{renderReportChart()}</>}
-        {reportIncludeTable && <><h2>Детализация показателей</h2>{renderReportTable()}</>}
+        {reportIncludeChart && <><h2>Сравнение показателя: {reportChartMetricDef.label}</h2>{reportItems.some((m) => reportChartMetricDef.get(m) != null) ? renderReportChart() : <p>Нет заполненных значений выбранного показателя в этой выборке; диаграмма не построена.</p>}</>}
+        {reportIncludeTable && <><h2>Детализация показателей</h2>{reportPrintFields.length === 0 ? <p>Показатели для детализации не выбраны.</p> : renderReportTable()}</>}
         {reportIncludeOfficialData && <section className="print-official-data">
           <h2>Проверенные официальные наблюдения ({reportOfficialIndicators.length})</h2>
           <p>Отдельный слой фактических данных: только проверенные наблюдения с явным территориальным уровнем, корректным годом и числовым значением. Муниципальные, поселковые и региональные записи не объединяются в один территориальный итог; единица измерения и период указаны отдельно.</p>
