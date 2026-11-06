@@ -757,6 +757,17 @@ export const InvestmentDetails = () => {
         || String(a.indicator_name || '').localeCompare(String(b.indicator_name || ''), 'ru-RU'));
   }, [officialIndicators, activeModalItem]);
 
+  const modalDataCoverage = useMemo(() => {
+    if (!activeModalItem) return [];
+    const municipalityId = activeModalItem.id;
+    return [
+      { key: 'indicators', label: 'Проверенные показатели', count: modalOfficialIndicators.length },
+      { key: 'sites', label: 'Инвестиционные площадки', count: investmentSites.filter((item) => item.municipality_id === municipalityId).length },
+      { key: 'facilities', label: 'Образовательные объекты', count: facilities.filter((item) => item.municipality_id === municipalityId).length },
+      { key: 'programs', label: 'Отчёты о программах', count: programExecution.filter((item) => item.municipality_id === municipalityId).length },
+    ];
+  }, [activeModalItem, modalOfficialIndicators, investmentSites, facilities, programExecution]);
+
   const surgutPopulationTrend = useMemo(() => {
     const rows = officialIndicators
       .filter((item) => item.indicator_code === 'population_municipality_history' && item.municipality_id === 'surgut')
@@ -2246,6 +2257,13 @@ export const InvestmentDetails = () => {
         <h2 id="modal-title">{activeModalItem.name}</h2><p className="modal-intro" id="modal-intro">Демонстрационные показатели проекта приведены отдельно от проверенной официальной статистики.</p>
         <div className="modal-group-line"><span className={`group-badge ${activeModalItem.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i/>Группа {activeModalItem.group2024}</span><span>Рейтинг № {activeModalItem.rank2024}</span></div>
         <div className="modal-demo-label"><Icon name="info"/> ДЕМО-НАБОР · ЗНАЧЕНИЯ НЕ ПРОВЕРЕНЫ КАК ОФИЦИАЛЬНАЯ СТАТИСТИКА</div>
+        <section className="modal-coverage" aria-labelledby="modal-coverage-heading">
+          <div className="modal-coverage-heading"><h3 id="modal-coverage-heading">Наличие данных по территории</h3><span role="status" aria-live="polite">{modalDataCoverage.filter((item) => item.count > 0).length} из {modalDataCoverage.length} разделов с записями</span></div>
+          <div className="modal-coverage-grid">
+            {modalDataCoverage.map((item) => <div className="modal-coverage-item" key={item.key}><span>{item.label}</span><strong>{item.count}</strong><small>{item.count > 0 ? 'записей в базе' : 'пока нет записей'}</small></div>)}
+          </div>
+          <p className="modal-coverage-note">{officialDataStatus === 'loading' ? 'Каталог официальных данных загружается; состав разделов может обновиться.' : officialDataStatus === 'error' ? 'Не удалось обновить каталог официальных данных. Показано последнее доступное состояние.' : officialDataStatus === 'connected' ? 'Каталог загружен' + (officialDataSyncedAt ? ' · обновлено ' + new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(officialDataSyncedAt) : '') + '. Наличие записей не означает полного статистического покрытия территории.' : 'Каталог официальных данных сейчас не подключён. Нулевое количество записей не означает нулевое значение показателя.'}</p>
+        </section>
         <div className="modal-stats"><div><span>Итоговый балл · демо</span><strong>{formatNumber(activeModalItem.score, 1)}</strong></div><div><span>Инвестиции · демо</span><strong>{formatBillion(activeModalItem.investments?.volumeBillion)}</strong></div><div><span>Динамика инвестиций · демо</span><strong className="growth-value">{numericValue(activeModalItem.investments?.growthPercent) == null ? '—' : `${formatNumber(activeModalItem.investments.growthPercent)}%`}</strong></div><div><span>Субъекты МСП · демо</span><strong>{formatNumber(activeModalItem.smeCount)}</strong></div><div><span>Оценка бизнеса · демо</span><strong>{formatNumber(activeModalItem.assessmentScore, 2)} / 5.0</strong></div></div>
         <section className="modal-official-data" aria-labelledby="modal-official-heading">
           <div className="modal-official-heading"><h3 id="modal-official-heading">Подтверждённые официальные показатели</h3><span>{modalOfficialIndicators.length} знач.</span></div>
