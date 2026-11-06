@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict';
-import { buildRiskModel, deriveMunicipalIndicators } from '../src/lib/riskModel.js';
+import { buildRiskModel, canonicalIndicatorCode, deriveMunicipalIndicators } from '../src/lib/riskModel.js';
 
 const municipalities = [1, 2, 3].map((id) => ({ id, name: 'Муниципалитет ' + id }));
+for (const alias of ['kogalym', 'langepas', 'pyt_yah', 'raduzhny', 'surgut']) {
+  assert.equal(canonicalIndicatorCode(alias + '_sme_per_10k'), 'sme_per_10k',
+    alias + ' SME density must share the canonical comparable indicator code');
+}
+assert.equal(canonicalIndicatorCode('registered_unemployment_rate'), 'registered_unemployment_rate',
+  'unrelated indicator codes must remain unchanged');
+console.log('OK: equivalent municipal SME-density aliases are harmonized without changing unrelated indicators.');
+
 const indicators = [
   ['investment', 'economy'], ['business', 'economy'], ['production', 'economy'],
   ['employment', 'labour'], ['income', 'labour'], ['demography', 'demography'],
