@@ -238,7 +238,7 @@ test('approved index mode never falls back to municipality.score when an index r
   assert.equal(rows[0].score, null);
   assert.equal(rows[0].projectedScore, null);
   assert.equal(rows[0].hasScore, false);
-  assert.equal(rows[0].scoreSource, 'approved_resilience_index');
+  assert.equal(rows[0].scoreSource, 'missing_or_invalid_index_result');
 });
 
 test('summary reports coverage and does not convert missing values to zero', () => {
