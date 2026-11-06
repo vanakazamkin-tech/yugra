@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 
 const csvPath = new URL('../data/rosstat/municipality-oktmo-crosswalk.template.csv', import.meta.url)
 const municipalitiesPath = new URL('../data/municipalities-detailed.json', import.meta.url)
-const csvText = readFileSync(csvPath, 'utf8').replace(/^\\uFEFF/, '').trim()
+const csvText = readFileSync(csvPath, 'utf8').replace(/^\uFEFF/, '').trim()
 const projectData = JSON.parse(readFileSync(municipalitiesPath, 'utf8'))
 const expectedMunicipalities = projectData.municipalities
 
@@ -28,8 +28,8 @@ function parseCsv(text) {
     } else if (char === ',') {
       row.push(field)
       field = ''
-    } else if (char === '\\n') {
-      row.push(field.replace(/\\r$/, ''))
+    } else if (char === '\n') {
+      row.push(field.replace(/\r$/, ''))
       records.push(row)
       row = []
       field = ''
@@ -40,7 +40,7 @@ function parseCsv(text) {
 
   if (quoted) throw new Error('CSV contains an unclosed quoted field')
   if (field.length > 0 || row.length > 0) {
-    row.push(field.replace(/\\r$/, ''))
+    row.push(field.replace(/\r$/, ''))
     records.push(row)
   }
   return records
@@ -101,7 +101,7 @@ for (const row of rows) {
   }
 
   if (row.oktmo_code) {
-    if (!/^\\d{8}$/.test(row.oktmo_code)) {
+    if (!/^\d{8}$/.test(row.oktmo_code)) {
       errors.push('Invalid municipal-level OKTMO format for ' + id + ': ' + row.oktmo_code)
     }
     if (row.match_status !== 'matched') {
@@ -113,13 +113,13 @@ for (const row of rows) {
     if (row.source_file_sha256 && !/^[a-f0-9]{64}$/i.test(row.source_file_sha256)) {
       errors.push('Invalid SHA-256 for ' + id)
     }
-    if (row.verified_at && !/^\\d{4}-\\d{2}-\\d{2}$/.test(row.verified_at)) {
+    if (row.verified_at && !/^\d{4}-\d{2}-\d{2}$/.test(row.verified_at)) {
       errors.push('Invalid verified_at date for ' + id)
     }
-    if (row.valid_from && !/^\\d{4}-\\d{2}-\\d{2}$/.test(row.valid_from)) {
+    if (row.valid_from && !/^\d{4}-\d{2}-\d{2}$/.test(row.valid_from)) {
       errors.push('Invalid valid_from date for ' + id)
     }
-    if (row.valid_to && !/^\\d{4}-\\d{2}-\\d{2}$/.test(row.valid_to)) {
+    if (row.valid_to && !/^\d{4}-\d{2}-\d{2}$/.test(row.valid_to)) {
       errors.push('Invalid valid_to date for ' + id)
     }
   } else if (row.match_status !== 'pending_official_match') {
@@ -135,7 +135,7 @@ const matched = rows.filter((row) => row.match_status === 'matched').length
 console.log('Crosswalk rows: ' + rows.length + '/' + expectedMunicipalities.length)
 console.log('Officially matched municipal OKTMO codes: ' + matched + '/' + expectedMunicipalities.length)
 if (errors.length) {
-  console.error(errors.join('\\n'))
+  console.error(errors.join('\n'))
   process.exitCode = 1
 } else {
   console.log('Crosswalk structure and project municipality coverage checks passed.')
