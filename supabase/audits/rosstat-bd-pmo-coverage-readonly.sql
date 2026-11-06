@@ -10,6 +10,9 @@ with targets(indicator_code,priority,rosstat_db_pmo_number,rosstat_2026_indicato
     ('population_rural_municipality','P1','8112016','2311000010003','annual / 1 January','Rural population by sex and age'),
     ('average_employees_q1','P0','8423005','1121100010003','quarterly, cumulative','Average headcount excluding small businesses'),
     ('average_monthly_salary_q1','P0','8423007','2211110020001','quarterly, cumulative','Average monthly nominal salary excluding small businesses'),
+    ('average_employees_municipal_form','P1','8423015','1121100010003','January–December','Average headcount in municipally owned organizations'),
+    ('payroll_fund_municipal_form','P1','8423016','2152320020022','January–December','Payroll fund in municipally owned organizations'),
+    ('average_monthly_salary_municipal_form','P1','8423017','2211110020001','January–December','Average monthly salary in municipally owned organizations'),
     ('fixed_capital_investment_enterprises_non_sme','P0','8109001','1141100020001','annual','Fixed-capital investment by organizations excluding SMEs'),
     ('fixed_capital_investment_local_budget','P1','8009001','1141100020001','annual','Fixed-capital investment financed by local budgets'),
     ('housing_commissioned_reported','P0','8010001','2231000010002','annual','Commissioned residential buildings')
