@@ -227,9 +227,21 @@ export function deriveMunicipalIndicators(rows = []) {
     if (!bucket.ambiguousCodes.has(code)) {
       const existing = bucket.rows[code];
       if (!existing) bucket.rows[code] = row;
-      else if (Number(existing.value) !== Number(row.value)) {
+      else if (Number(existing.value) !== Number(row.value) || !sameUnit(existing, row)) {
         delete bucket.rows[code];
         bucket.ambiguousCodes.add(code);
+      } else {
+        const sourceIds = [...new Set([
+          ...(Array.isArray(existing.source_ids) ? existing.source_ids : []),
+          ...(existing.source_id ? [existing.source_id] : []),
+          ...(row.source_id ? [row.source_id] : []),
+        ])];
+        const sourceUrls = [...new Set([
+          ...(Array.isArray(existing.source_urls) ? existing.source_urls : []),
+          ...(existing.source_url ? [existing.source_url] : []),
+          ...(row.source_url ? [row.source_url] : []),
+        ])];
+        bucket.rows[code] = { ...existing, source_ids: sourceIds, source_urls: sourceUrls };
       }
     }
     if (row.indicator_code === 'population_municipality') {
@@ -243,8 +255,14 @@ export function deriveMunicipalIndicators(rows = []) {
   const push = (base, code, name, value, unit, directionNote, provenanceRows = [base], referencePeriod = base?.reference_period || null) => {
     if (!base || !Number.isFinite(value)) return;
     const inputs = (Array.isArray(provenanceRows) ? provenanceRows : [base]).filter(Boolean);
-    const sourceIds = [...new Set(inputs.map((row) => String(row.source_id || '').trim()).filter(Boolean))];
-    const sourceUrls = [...new Set(inputs.map((row) => String(row.source_url || '').trim()).filter(Boolean))];
+    const sourceIds = [...new Set(inputs.flatMap((row) => [
+      ...(Array.isArray(row.source_ids) ? row.source_ids : []),
+      ...(row.source_id ? [row.source_id] : []),
+    ]).map((value) => String(value).trim()).filter(Boolean))];
+    const sourceUrls = [...new Set(inputs.flatMap((row) => [
+      ...(Array.isArray(row.source_urls) ? row.source_urls : []),
+      ...(row.source_url ? [row.source_url] : []),
+    ]).map((value) => String(value).trim()).filter(Boolean))];
     const retrievedAt = inputs.map((row) => row.retrieved_at).filter(Boolean).sort((a, b) => new Date(b) - new Date(a))[0] || base.retrieved_at || null;
     const sourceNote = sourceIds.length ? ' Источники исходных наблюдений: ' + sourceIds.join(', ') + '.' : '';
     derived.push({
