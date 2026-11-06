@@ -2028,7 +2028,7 @@ export const InvestmentDetails = () => {
           </section>}
 
           {activeTab === 'map' && <section className="panel full-panel">
-            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="map"/></span><div><h2>Муниципальная карта Югры</h2><p>Выберите территорию на карте или в списке</p></div></div><button type="button" className="outline-button" onClick={() => setIsMapListOpen(!isMapListOpen)}>{isMapListOpen ? 'Скрыть список' : 'Показать список'}</button></div>
+            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="map"/></span><div><h2>Муниципальная карта Югры</h2><p>Выберите территорию на карте или в списке</p></div></div><button type="button" className="outline-button" aria-expanded={isMapListOpen} onClick={() => setIsMapListOpen(!isMapListOpen)}>{isMapListOpen ? 'Скрыть список' : 'Показать список'}</button></div>
             <div className={`map-layout ${isMapListOpen ? '' : 'map-only'}`}><div className="map-stage large-map"><UgraMap municipalities={municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/></div>{isMapListOpen && <div className="map-list"><UgraMapList municipalities={municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/></div>}</div>
           </section>}
 
