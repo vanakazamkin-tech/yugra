@@ -337,3 +337,65 @@
     grid-column: 1 / -1;
   }
 }
+
+.yugra-app .modal-coverage {
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid rgba(92, 112, 82, .2);
+  border-radius: 14px;
+  background: rgba(238, 239, 224, .34);
+}
+.yugra-app .modal-coverage-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 12px;
+}
+.yugra-app .modal-coverage-heading h3 {
+  margin: 0;
+}
+.yugra-app .modal-coverage-heading > span {
+  color: #61735f;
+  font-size: .82rem;
+  font-weight: 650;
+}
+.yugra-app .modal-coverage-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+.yugra-app .modal-coverage-item {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(92, 112, 82, .16);
+  border-radius: 10px;
+  background: rgba(255, 253, 248, .78);
+}
+.yugra-app .modal-coverage-item > span {
+  color: #596653;
+  font-size: .78rem;
+  line-height: 1.35;
+}
+.yugra-app .modal-coverage-item strong {
+  font-size: 1.45rem;
+  font-variant-numeric: tabular-nums;
+}
+.yugra-app .modal-coverage-item small,
+.yugra-app .modal-coverage-note {
+  color: #73796c;
+  font-size: .75rem;
+  line-height: 1.45;
+}
+.yugra-app .modal-coverage-note {
+  margin: 12px 0 0;
+}
+@media (max-width: 760px) {
+  .yugra-app .modal-coverage-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
