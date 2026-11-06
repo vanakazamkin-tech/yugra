@@ -35,7 +35,8 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 
 - Improves responsive navigation behavior on narrower screens without hiding destinations.
 - Makes dense tables horizontally scrollable, keeps their headers visible, and improves row hover feedback.
-- Normalizes focus-visible states for keyboard navigation.
+- Normalizes focus-visible states for keyboard navigation, including visible focus indicators on interactive SVG map regions and city targets.
+- Gives the interactive SVG map a labelled group structure and an explicit description so its keyboard-operable regions are not hidden behind a parent image role.
 - Prevents long labels and large numeric values from breaking KPI cards, filters, modal rows and chart layouts.
 - Improves mobile wrapping for section headings, filters, action groups and municipal passports.
 - Respects reduced-motion preferences.
@@ -55,4 +56,5 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Main overview, filters, KPI cards, map, ranking table, data-centre coverage/trend views, passport, report and concept sections inspected in source.
 - Forecast and risk component structure / existing responsive styles inspected.
 - Calculation and data-access modules intentionally left unchanged.
+- Map keyboard semantics reviewed: the SVG root exposes a labelled group; each existing region/city target retains its button role and Enter/Space handling.
 - Local production build was not run in this environment; GitHub Actions PR checks are the required build gate.
