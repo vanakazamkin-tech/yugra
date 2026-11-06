@@ -1,0 +1,3 @@
+{
+  "buildCommand": "node scripts/apply-preview-overrides.mjs && npm run build"
+}
