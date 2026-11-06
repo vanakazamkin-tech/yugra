@@ -164,7 +164,9 @@ export function buildForecasts(municipalities = [], params = {}, horizon = 1, op
       hasInvestment,
       hasSme,
       hasScore,
-      scoreSource: useApprovedIndex ? 'approved_resilience_index' : indexModeRequested ? 'unavailable_index_contract' : 'conceptual_score',
+      scoreSource: useApprovedIndex
+        ? (hasScore ? 'approved_resilience_index' : 'missing_or_invalid_index_result')
+        : indexModeRequested ? 'unavailable_index_contract' : 'conceptual_score',
       scoreMethodologyVersion: useApprovedIndex ? safeOptions.indexContract.version : null,
       scoreProjectionMode: useApprovedIndex ? 'additive_index_points' : indexModeRequested ? 'unavailable_index_contract' : 'compound_conceptual_score',
       adjustedScoreRate,
