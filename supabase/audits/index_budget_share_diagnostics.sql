@@ -52,6 +52,34 @@ order by reference_year, reference_period;
 
 -- Municipality-level detail. A missing row means one or more components are
 -- unavailable for that municipality/time slice; do not impute missing values.
+with budget_pivot as (
+  select
+    municipality_id,
+    reference_year,
+    reference_period,
+    max(value::numeric) filter (where indicator_code = 'budget_total_revenue') as total_revenue,
+    max(value::numeric) filter (where indicator_code = 'budget_revenue_excluding_grants') as revenue_excluding_grants,
+    max(value::numeric) filter (where indicator_code = 'budget_intergovernmental_transfers') as intergovernmental_transfers
+  from public.municipality_indicators
+  where verification_status = 'verified'
+    and geographic_level = 'municipality'
+    and indicator_code in (
+      'budget_total_revenue',
+      'budget_revenue_excluding_grants',
+      'budget_intergovernmental_transfers'
+    )
+  group by municipality_id, reference_year, reference_period
+),
+ratios as (
+  select *,
+    revenue_excluding_grants / nullif(total_revenue, 0) * 100 as own_revenue_share_pct,
+    intergovernmental_transfers / nullif(total_revenue, 0) * 100 as transfer_share_pct,
+    revenue_excluding_grants + intergovernmental_transfers - total_revenue as decomposition_difference
+  from budget_pivot
+  where total_revenue is not null
+    and revenue_excluding_grants is not null
+    and intergovernmental_transfers is not null
+)
 select
   municipality_id,
   reference_year,
