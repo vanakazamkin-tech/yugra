@@ -16,7 +16,7 @@ test('empty inputs and empty municipality lists return an empty result', () => {
 });
 
 test('blank strings, whitespace, null, booleans and malformed values remain missing', () => {
-  for (const missing of ['', '   ', '\\t', null, undefined, 'not-a-number', true, false, {}, NaN, Infinity]) {
+  for (const missing of ['', '   ', String.fromCharCode(9), null, undefined, 'not-a-number', true, false, {}, NaN, Infinity]) {
     const row = buildForecasts([{
       id: String(missing), name: 'Invalid', score: missing, smeCount: missing,
       investments: { volumeBillion: missing },
