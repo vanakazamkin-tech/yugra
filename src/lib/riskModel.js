@@ -66,6 +66,7 @@ export const DEFAULT_RISK_THRESHOLDS = Object.freeze({
   minimumUsable: 2,
   criticalSignals: 3,
   criticalPillars: 2,
+  sharpChangePercent: 10,
 });
 
 export function collapseRiskSignals(signals = []) {
@@ -100,6 +101,7 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
     minimumUsable: normalize(thresholds?.minimumUsable, DEFAULT_RISK_THRESHOLDS.minimumUsable, 1, 10),
     criticalSignals: normalize(thresholds?.criticalSignals, DEFAULT_RISK_THRESHOLDS.criticalSignals, 1, 20),
     criticalPillars: normalize(thresholds?.criticalPillars, DEFAULT_RISK_THRESHOLDS.criticalPillars, 1, 6),
+    sharpChangePercent: normalize(thresholds?.sharpChangePercent, DEFAULT_RISK_THRESHOLDS.sharpChangePercent, 1, 100),
   };
   // Only explicit true/false values are assessable. Missing/unknown directions
   // must never be counted as healthy observations.
@@ -112,6 +114,7 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
     key, bad.filter((signal) => pillarOf(signal) === key).length,
   ]));
   const repeatedDeterioration = bad.filter((signal) => Number(signal.adverseStreak) >= 2);
+  const sharpChanges = bad.filter((signal) => signal.sharpChange === true);
   const common = {
     usable, bad, thresholds: settings,
     conflictingSignalFamilies: collapsed.conflicts,
@@ -120,6 +123,8 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
     affectedPillars: affectedPillars.size,
     pillarCounts,
     repeatedDeterioration,
+    sharpChanges,
+    sharpChangeCount: sharpChanges.length,
     earlyWarning: repeatedDeterioration.length > 0,
   };
   if (usable.length < settings.minimumUsable) {
