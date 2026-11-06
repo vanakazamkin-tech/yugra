@@ -1,10 +1,10 @@
 # Yugra18 — QA audit checkpoint
 
-**Date:** 2026-11-07  
+**Date:** 2026-11-07 (refreshed after current-head review)  
 **QA branch:** `feat/qa-testing`  
 **QA PR:** [#12](https://github.com/vanakazamkin-tech/yugra/pull/12), Draft, not merged  
-**Main:** `5cedff13fd3ea3521c5aa4befdfd75dc12ae1499`  
-**QA commit reviewed before this report refresh:** `5ab1c5be410d78808db8a437d30f3f7b9776bae5`
+**QA head reviewed:** `5923d1a61b2b4157e3529818a41fed931779b9af`  
+**PR base snapshot:** `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c` (PR #10 reports a newer base snapshot; branch bases are not uniform)
 
 ## Scope and safety
 
@@ -16,22 +16,22 @@
 
 ## Current branch-head verification (7 Nov 2026)
 
-| PR | Current head | Latest observed CI |
+| PR | Current head (7 Nov check) | Latest CI observed for that head |
 |---|---|---|
-| #8 — index | `8a3758018bb3d8959e2f752097fdfb1af82060cd` | Build [#42275603972](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275603972) — passed |
-| #9 — risks | `1d0540c067040c477ea615ab2645a71bc9e4af4e` | Build [#42275806613](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275806613) — passed |
-| #10 — UI | `f12c7b6d5a915194df42722c756e78f4039534b5` | Build [#42275791134](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275791134) — passed |
-| #11 — data quality | `5371fb51f6498d84386106e66672669202c2377d` | Build [#42275673770](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275673770) — passed, but migration integration fixture does not match the live UNIQUE constraint (see blocking finding below) |
-| #12 — QA | `2a0f32e94b0ea8320f2243cc9dee243084839763` | QA [#42275681994](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275681994) and Build [#42275690608](https://github.com/vanakazamkin-tech/yugra/actions/runs/42275690608) — passed |
-| #13 — forecasting | `40abd4f39e719429cded4090cf606470f5d8779e` | Latest observed prior Build [#42268245956](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268245956) — passed; no new head observed |
+| #8 — index | `ed2fc7ddde4bcb2be1508f69b4e730356585a25a` | No PR-triggered workflow run returned for this exact head; previous Build #42275603972 belongs to an older commit |
+| #9 — risks | `0b83d8625566e0d9e411f1dd4c95d2fc409427a9` | Build #42277756610 — in progress at inspection |
+| #10 — UI | `94bff0003f8eafb2455c85b781aff795f62f74a9` | Build #42277658644 — passed |
+| #11 — data quality | `a83bc05262ae70a23234436358ce249f231765d5` | Build #42277695712 — passed, but migration blocker remains |
+| #12 — QA | `5923d1a61b2b4157e3529818a41fed931779b9af` | QA #42276401153 — passed; Build #42276410586 — passed |
+| #13 — forecasting | `40abd4f39e719429cded4090cf606470f5d8779e` | Build #42268245956 — passed on the current unchanged head |
 
 All PRs #8–#13 remain open and unmerged. PR #12 remains Draft. The connected Supabase migration history currently ends at `20261106171350`; the three new PR #11 migrations have not been applied.
 
 ## Confirmed findings requiring owner review
 
-1. **Risk period metadata — medium, PR #9.** In `src/lib/riskModel.js`, `comparablePeriodSequence()` still treats a blank `reference_period` as annual when a year is present. `src/components/UnifiedRiskForecast.jsx` similarly defaults a blank period signature to annual. Unknown frequency can therefore be treated as annual cadence. Require an explicit annual marker or an approved source-specific default.
-2. **Conflicting risk year metadata — medium, PR #9.** Timeline helpers prefer `reference_year` over a year embedded in `reference_period`. A row with `reference_year=2023` and `reference_period='2024-Q1'` can be silently placed in the wrong year. Reject or quarantine contradictory metadata.
-3. **Whitespace numeric coercion — medium, PR #13.** `src/lib/forecastModel.js` defines `finite()` so whitespace-only strings pass `Number.isFinite(Number(value))`; `Number('   ')` is zero. Such values may be treated as observed zeros instead of missing values. Trim strings before conversion and add tests for whitespace-only score, SME count, and investment volume.
+1. **Risk period metadata — medium, PR #9.** In the current PR #9 head `0b83d8625566e0d9e411f1dd4c95d2fc409427a9`, `comparablePeriodSequence()` still treats a blank `reference_period` as annual when a year is present. `UnifiedRiskForecast.jsx` still maps a blank period signature to `annual`. Unknown frequency can therefore be treated as annual cadence; current risk regression tests do not cover this blank-period case. Require an explicit annual marker or an approved source-specific default.
+2. **Conflicting risk year metadata — medium, PR #9.** `comparablePeriodSequence()` and `periodOrder()` prefer `reference_year` over a year embedded in `reference_period`. A row with `reference_year=2023` and `reference_period='2024-Q1'` can be silently assigned to the wrong annual slot. Current regression tests cover missing years and mismatched quarters, but not contradictory year fields. Reject or quarantine contradictory metadata.
+3. **Whitespace numeric coercion — medium, PR #13.** Current PR #13 head `40abd4f39e719429cded4090cf606470f5d8779e` still defines `finite()` using `Number.isFinite(Number(value))` without trimming strings; `Number('   ')` is zero. Whitespace-only `score`, `smeCount`, `volumeBillion`, and numeric scenario parameters can therefore be treated as zero instead of missing/default input. Add trim-aware validation and regression tests.
 
 These findings are static source-review findings. They have not been fixed in the owning PRs by the QA branch.
 
@@ -83,7 +83,7 @@ Previously inspected project `dmbikidqikjupkghywbz` (snapshot, not a fresh live 
 
 ## Next QA actions
 
-1. Confirm the latest QA workflow and build results for the current PR #12 head.
+1. Recheck the in-progress PR #9 build, and obtain a current build result for PR #8 head `ed2fc7d` (no PR-triggered run was returned for that SHA).
 2. Require PR #11 to correct the constraint-backed index migration and make its disposable fixture match the live schema before approval.
 3. Re-run all branch-head checks if any owner pushes new commits.
 4. Add browser E2E coverage for index navigation, municipality comparisons, forecast controls, risk warnings, passport selection, exports, and offline/error states when a runnable browser environment is available.
