@@ -136,9 +136,10 @@
 
 ## Запуск аудита и тестов
 
-- SQL-проверки: `supabase/audits/data-quality-audit.sql`
+- Базовый read-only SQL-аудит для текущей production-схемы: `supabase/audits/data-quality-audit.sql`
+- Расширенный аудит provenance и новых полей каталога: `supabase/audits/data-quality-post-migration-audit.sql` — запускать только после применения всех трёх миграций направления №4
 - Контракт provenance-миграции: `node scripts/test-data-quality-migration.mjs`
 - Контракт каталога: `node scripts/test-source-catalog-migration.mjs`
 - Контракт диагностического представления: `node scripts/test-data-quality-contract.mjs`
 
-Миграции намеренно не применяются к production Supabase автоматически. Сначала их следует проверить на копии/preview-базе, затем применить в согласованное окно и повторно выполнить аудит.
+Миграции намеренно не применяются к production Supabase автоматически. Базовый аудит совместим с текущей production-схемой. Расширенный post-migration аудит обращается к приватной provenance-таблице, диагностическому представлению и новым nullable-полям; до применения миграций он не запускается. Сначала миграции следует проверить на одноразовом PostgreSQL в CI/копии, затем применить в согласованное окно и выполнить оба аудита.
