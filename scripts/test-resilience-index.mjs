@@ -29,6 +29,16 @@ assert.equal(model.results.m1.coveragePercent, 100, 'indicator coverage is based
 assert.equal(model.results.m1.pillars.length, 6);
 const sensitivity = calculateLeaveOneOutSensitivity(model.results.m1);
 assert.equal(sensitivity.available, true);
+
+const outlierRows = rows.map((row) => row.indicator_code === 'x_economy' && row.municipality_id === 'm6'
+  ? { ...row, value: 100000 }
+  : row);
+const outlierModel = calculateMunicipalIndex(outlierRows, municipalities, {
+  referenceYear: 2025, referencePeriod: 'annual', indicatorDefinitions: definitions,
+});
+const economyDiagnostics = outlierModel.diagnostics.indicatorGroups.find((item) => item.code === 'x_economy');
+assert.equal(economyDiagnostics.outliers[0].municipalityId, 'm6', 'outlier diagnostics must identify the affected municipality');
+assert.equal(outlierModel.results.m6.pillars.find((item) => item.key === 'economy').indicators[0].rawValue, 100000, 'outliers are reported but not silently removed');
 assert.equal(sensitivity.indicators.length, 6);
 assert.ok(sensitivity.indicators.every((item) => item.reason === 'pillar_becomes_unavailable'), 'removing the only indicator in a pillar must be reported as a coverage failure');
 
