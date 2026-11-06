@@ -81,3 +81,31 @@ select reference_year,reference_period,count(*) observations,
  count(*) filter(where verification_status='needs_review') review_rows
 from public.municipality_indicators
 group by reference_year,reference_period order by reference_year,reference_period;
+
+-- Indicator coverage matrix: distinguish full, partial, and single-municipality series.
+-- This is a raw presence audit, not a judgement that every indicator should cover all 22 municipalities.
+with per_indicator as (
+  select indicator_code,
+    count(distinct municipality_id) municipalities_covered,
+    count(*) observations,
+    count(*) filter(where geographic_level <> 'municipality') other_geography_rows
+  from public.municipality_indicators
+  group by indicator_code
+)
+select count(*) total_indicator_codes,
+  count(*) filter(where municipalities_covered = 22) full_municipality_coverage,
+  count(*) filter(where municipalities_covered between 2 and 21) partial_multi_municipality,
+  count(*) filter(where municipalities_covered = 1) single_municipality_only,
+  count(*) filter(where other_geography_rows > 0) indicators_with_nonmunicipal_geography
+from per_indicator;
+
+-- Highest-coverage indicators, useful for defining a comparable municipal panel.
+select indicator_code,max(indicator_name) indicator_name,
+  count(distinct municipality_id) municipalities_covered,count(*) observations,
+  min(reference_year) first_year,max(reference_year) last_year,
+  count(distinct source_id) sources
+from public.municipality_indicators
+group by indicator_code
+having count(distinct municipality_id) > 1
+order by municipalities_covered desc,observations desc,indicator_code
+limit 50;
