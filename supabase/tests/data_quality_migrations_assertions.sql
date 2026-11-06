@@ -25,3 +25,57 @@ begin
  end;
 end $$;
 select 'integration assertions passed' as result;
+
+-- Security contract: private provenance stays private to API roles, while
+-- service_role retains the intended operational access.
+do $$
+declare
+  private_rls_enabled boolean;
+  view_security_invoker boolean;
+begin
+  if has_schema_privilege('anon', 'private', 'USAGE')
+     or has_schema_privilege('authenticated', 'private', 'USAGE') then
+    raise exception 'anon/authenticated unexpectedly have USAGE on private schema';
+  end if;
+  if not has_schema_privilege('service_role', 'private', 'USAGE') then
+    raise exception 'service_role is missing USAGE on private schema';
+  end if;
+
+  if has_table_privilege('anon', 'private.municipality_indicator_source_links', 'SELECT')
+     or has_table_privilege('authenticated', 'private.municipality_indicator_source_links', 'SELECT') then
+    raise exception 'anon/authenticated unexpectedly can read private provenance';
+  end if;
+  if not has_table_privilege('service_role', 'private.municipality_indicator_source_links', 'SELECT')
+     or not has_table_privilege('service_role', 'private.municipality_indicator_source_links', 'INSERT')
+     or not has_table_privilege('service_role', 'private.municipality_indicator_source_links', 'UPDATE')
+     or not has_table_privilege('service_role', 'private.municipality_indicator_source_links', 'DELETE') then
+    raise exception 'service_role is missing expected provenance table privileges';
+  end if;
+
+  if has_table_privilege('anon', 'public.municipality_indicator_quality_issues', 'SELECT')
+     or has_table_privilege('authenticated', 'public.municipality_indicator_quality_issues', 'SELECT') then
+    raise exception 'anon/authenticated unexpectedly can read quality diagnostics view';
+  end if;
+  if not has_table_privilege('service_role', 'public.municipality_indicator_quality_issues', 'SELECT') then
+    raise exception 'service_role is missing SELECT on quality diagnostics view';
+  end if;
+
+  select c.relrowsecurity into private_rls_enabled
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'private' and c.relname = 'municipality_indicator_source_links';
+  if private_rls_enabled is distinct from true then
+    raise exception 'RLS is not enabled on private provenance table';
+  end if;
+
+  select coalesce(c.reloptions @> array['security_invoker=true'], false)
+    into view_security_invoker
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public' and c.relname = 'municipality_indicator_quality_issues';
+  if view_security_invoker is distinct from true then
+    raise exception 'quality diagnostics view is not security_invoker';
+  end if;
+end $$;
+
+select 'security and idempotency assertions passed' as result;
