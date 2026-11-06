@@ -293,3 +293,7 @@ The risk overview previously used one generic empty message both when no confirm
 ## Accessible announcement for scenario-parameter fallback (7 November 2026)
 
 When the scenario catalogue cannot be loaded from Supabase, the interface falls back to built-in scenario templates and displays the error/fallback explanation. The message now has a polite status live region so assistive technology can announce this non-blocking state change. Scenario calculations and fallback behavior are unchanged. Browser and screen-reader verification remain outstanding.
+
+## Correct municipality coverage count in the sustainability comparison (7 November 2026)
+
+The comparison heading counted municipalities using an optional-chained score check against null. When a model result was absent (undefined), that check incorrectly treated it as available. The condition now excludes both null and undefined, so the displayed “with sufficient coverage” count includes only municipalities with an actual calculated score. No scoring formula, threshold, or underlying data was changed.
