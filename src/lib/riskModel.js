@@ -123,9 +123,9 @@ export const INDICATOR_METHODS = {
     limitation: 'Пока недостаточно сопоставимых муниципальных наблюдений.',
   },
   real_disposable_income_index: {
-    direction: 'higher', pillar: 'income',
-    rationale: 'Индекс реальных располагаемых доходов: учитывает изменение цен.',
-    limitation: 'Нужна проверка базы индекса и единообразия методики.',
+    direction: 'context', pillar: 'income',
+    rationale: 'Реальные денежные доходы населения: потенциально важный показатель покупательной способности.',
+    limitation: 'Текущие муниципальные значения смешивают индекс реальных располагаемых доходов и индекс реальных денежных доходов; до унификации определений не включать в межмуниципальное сравнение.',
   },
   pokachi_real_disposable_income_index: {
     direction: 'higher', pillar: 'income',
@@ -143,9 +143,9 @@ export const INDICATOR_METHODS = {
     limitation: 'Предварительный показатель; требуется подтверждение и единый муниципальный охват.',
   },
   fixed_capital_investment_growth_preliminary: {
-    direction: 'higher', pillar: 'investment',
-    rationale: 'Индекс физического объёма инвестиций в основной капитал.',
-    limitation: 'Проверять, что индекс реальный, а не номинальная сумма инвестиций.',
+    direction: 'context', pillar: 'investment',
+    rationale: 'Предварительный индекс изменения инвестиций в основной капитал.',
+    limitation: 'В текущих муниципальных рядах смешаны общий объём инвестиций и инвестиции крупных и средних организаций; определения не унифицированы, поэтому межмуниципальное ранжирование запрещено.',
   },
   paid_services_index_municipal_report: {
     direction: 'higher', pillar: 'production',
