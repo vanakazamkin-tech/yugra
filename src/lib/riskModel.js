@@ -52,9 +52,9 @@ export function buildRiskModel(municipalities = [], series = [], weightOverrides
     return { ...pillar, requestedWeight: Number.isFinite(value) && value >= 0 ? value : pillar.weight * 100 };
   });
   const requestedTotal = requestedWeights.reduce((sum, pillar) => sum + pillar.requestedWeight, 0);
-  const configuredPillars = requestedWeights.map((pillar) => ({
+  const configuredPillars = requestedWeights.map(({ requestedWeight, ...pillar }) => ({
     ...pillar,
-    weight: requestedTotal > 0 ? pillar.requestedWeight / requestedTotal : MODEL_PILLARS.find((item) => item.key === pillar.key).weight,
+    weight: requestedTotal > 0 ? requestedWeight / requestedTotal : MODEL_PILLARS.find((item) => item.key === pillar.key).weight,
   }));
   const comparable = new Map();
   for (const item of series) {
