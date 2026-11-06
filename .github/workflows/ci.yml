@@ -3,6 +3,7 @@ name: Build verification
 on:
   push:
     branches: [main, feature/municipal-data-coverage-matrix, 'fix/**']
+  # Keep incremental fix branches covered by the same regression and build checks.
   pull_request:
     branches: [main]
   workflow_dispatch:
