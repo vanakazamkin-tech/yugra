@@ -1,23 +1,23 @@
-municipality_id,municipality_name,official_name,oktmo,municipality_type,valid_from,valid_to,source_url,checked_at,review_status
-beloyarsky-raion,"Белоярский район",,,,,,,,pending
-berezovsky-raion,"Берёзовский район",,,,,,,,pending
-kogalym,"Когалым",,,,,,,,pending
-kondinsky-raion,"Кондинский район",,,,,,,,pending
-langepas,"Лангепас",,,,,,,,pending
-megion,"Мегион",,,,,,,,pending
-nefteyugansk,"Нефтеюганск",,,,,,,,pending
-nefteyugansky-raion,"Нефтеюганский район",,,,,,,,pending
-nizhnevartovsk,"Нижневартовск",,,,,,,,pending
-nizhnevartovsky-raion,"Нижневартовский район",,,,,,,,pending
-nyagan-city,"Нягань",,,,,,,,pending
-october-raion,"Октябрьский район",,,,,,,,pending
-pokachi,"Покачи",,,,,,,,pending
-pyt-yah,"Пыть-Ях",,,,,,,,pending
-raduzhny,"Радужный",,,,,,,,pending
-sovetsky-raion,"Советский район",,,,,,,,pending
-surgut,"Сургут",,,,,,,,pending
-surgutsky,"Сургутский район",,,,,,,,pending
-uray,"Урай",,,,,,,,pending
-khanty-mansiysk,"Ханты-Мансийск",,,,,,,,pending
-khanty-mansiysky-raion,"Ханты-Мансийский район",,,,,,,,pending
-ugorsk,"Югорск",,,,,,,,pending
+municipality_id,municipality_name,official_name,oktmo,municipality_type,valid_from,valid_to,source_url,checked_at,review_status,classification_version,classification_change,official_document_url,verified_by,review_notes
+beloyarsky-raion,"Белоярский район",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+berezovsky-raion,"Берёзовский район",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+kogalym,"Когалым",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+kondinsky-raion,"Кондинский район",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+langepas,"Лангепас",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+megion,"Мегион",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+nefteyugansk,"Нефтеюганск",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+nefteyugansky-raion,"Нефтеюганский район",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+nizhnevartovsk,"Нижневартовск",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+nizhnevartovsky-raion,"Нижневартовский район",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+nyagan-city,"Нягань",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+october-raion,"Октябрьский район",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+pokachi,"Покачи",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+pyt-yah,"Пыть-Ях",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+raduzhny,"Радужный",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+sovetsky-raion,"Советский район",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+surgut,"Сургут",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+surgutsky,"Сургутский район",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+uray,"Урай",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+khanty-mansiysk,"Ханты-Мансийск",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+khanty-mansiysky-raion,"Ханты-Мансийский район",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
+ugorsk,"Югорск",,,,,,,,pending,2026-10-01,951/2026,https://rosstat.gov.ru/classification,,
