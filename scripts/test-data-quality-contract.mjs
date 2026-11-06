@@ -78,3 +78,10 @@ assert.match(rosstatCoveragePlan, /2005–2025/, 'secondary BD PMO dataset cover
 assert.doesNotMatch(rosstatCoveragePlan, /2005–2026/, 'secondary BD PMO dataset must not claim an unsupported 2026 data period');
 assert.match(rosstatCoveragePlan, /603 показателя и 33 раздела/, 'secondary dataset scope must remain explicit');
 console.log('Rosstat source-period documentation checks passed.');
+
+
+const monitoringReleasePlan = readFileSync('docs/ROSTAT_BDPMO_COVERAGE_PLAN_2026-11-07.md', 'utf8');
+assert.match(monitoringReleasePlan, /21\.10\.2026/, 'municipal monitoring release date must remain explicit');
+assert.match(monitoringReleasePlan, /сам файл и таблицы ещё не извлечены/, 'documentation must not claim unreviewed monitoring values were extracted');
+assert.match(monitoringReleasePlan, /rosstat_hmao_municipal_monitoring_2023_2025/, 'monitoring source catalogue ID must remain traceable');
+console.log('Rosstat municipal monitoring release checks passed.');
