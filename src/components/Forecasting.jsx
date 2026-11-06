@@ -8,11 +8,14 @@ const FALLBACK_SCENARIOS = [
   { id: null, key: 'ambitious', title: 'Оптимистичный', summary: 'Улучшение инвестиционной активности, расширение занятости и реализация мер поддержки при доступности ресурсов.', investment_growth_rate: 8, sme_growth_rate: 6, score_growth_rate: 3, uncertainty_rate: 12, export_shock_pct: 4, cost_pressure_pct: -2, labor_shortage_pct: -2, display_order: 3 },
 ];
 
-const hasNumericValue = (value) => value != null && value !== '' && Number.isFinite(Number(value));
-const n = (value) => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
+const numericValue = (value) => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  const parsed = Number(value.trim());
+  return Number.isFinite(parsed) ? parsed : null;
 };
+const hasNumericValue = (value) => numericValue(value) != null;
+const n = (value) => numericValue(value) ?? 0;
 const fmt = (value, digits) => value == null || value === '' ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: digits == null ? 1 : digits, minimumFractionDigits: 0 }).format(value);
 const pct = (value) => (value > 0 ? '+' : '') + fmt(value, 1) + '%';
 
@@ -46,10 +49,10 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
         if (Array.isArray(result.data) && result.data.length) {
           const normalized = result.data.map((s) => ({
             id: s.id, key: s.key, title: s.title, summary: s.summary,
-            investment_growth_rate: n(s.investment_growth_rate),
-            sme_growth_rate: n(s.sme_growth_rate),
-            score_growth_rate: n(s.score_growth_rate),
-            uncertainty_rate: n(s.uncertainty_rate),
+            investment_growth_rate: hasNumericValue(s.investment_growth_rate) ? n(s.investment_growth_rate) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.investment_growth_rate ?? 0),
+            sme_growth_rate: hasNumericValue(s.sme_growth_rate) ? n(s.sme_growth_rate) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.sme_growth_rate ?? 0),
+            score_growth_rate: hasNumericValue(s.score_growth_rate) ? n(s.score_growth_rate) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.score_growth_rate ?? 0),
+            uncertainty_rate: hasNumericValue(s.uncertainty_rate) ? n(s.uncertainty_rate) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.uncertainty_rate ?? 0),
             export_shock_pct: hasNumericValue(s.export_shock_pct) ? n(s.export_shock_pct) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.export_shock_pct ?? 0),
             cost_pressure_pct: hasNumericValue(s.cost_pressure_pct) ? n(s.cost_pressure_pct) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.cost_pressure_pct ?? 0),
             labor_shortage_pct: hasNumericValue(s.labor_shortage_pct) ? n(s.labor_shortage_pct) : (FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.labor_shortage_pct ?? 0),
