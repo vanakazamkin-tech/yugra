@@ -1,0 +1,90 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const migrationPath = 'supabase/migrations/20261106230000_add_municipality_indicator_quality_view.sql';
+const migration = readFileSync(migrationPath, 'utf8');
+const assertions = readFileSync('supabase/tests/data_quality_audit.sql', 'utf8');
+
+assert.match(migration, /security_invoker\s*=\s*true/i, 'quality view must respect caller privileges');
+assert.match(migration, /conflicting_source_values/, 'must identify source disagreements');
+assert.match(migration, /noncanonical_period_label/, 'must identify period-label inconsistencies');
+assert.match(migration, /verification_backlog/, 'must expose unverified observations for review');
+assert.match(migration, /\[0-9\]\{4\}/, 'bare years must be accepted as annual period labels');
+assert.match(migration, /group by[\s\S]*geographic_level[\s\S]*geographic_name/i, 'conflict keys must retain geographic scope');
+assert.match(migration, /and count\(distinct source_id\) > 1/i, 'cross-source conflict view must require multiple sources');
+assert.match(migration, /revoke all .*anon, authenticated/is, 'quality view must not be exposed to API roles');
+assert.match(migration, /grant select on table public\.municipality_indicator_quality_issues to service_role/i, 'service role must be able to read the private diagnostic view');
+assert.doesNotMatch(migration, /\b(insert\s+into|update\s+public\.|delete\s+from|truncate)\b/i, 'diagnostics migration must not mutate observations');
+assert.match(assertions, /known multi-source disagreement/i, 'SQL regression assertions must cover known conflict');
+assert.match(assertions, /legitimate negative growth value/i, 'SQL regression assertions must protect valid negative values');
+console.log('Data-quality contract checks passed.');
+
+const provenanceMigration = readFileSync('supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql', 'utf8');
+const metadataMigration = readFileSync('supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql', 'utf8');
+const auditSql = readFileSync('supabase/audits/data-quality-audit.sql', 'utf8');
+const postMigrationAuditSql = readFileSync('supabase/audits/data-quality-post-migration-audit.sql', 'utf8');
+
+assert.match(provenanceMigration, /create table if not exists private\.municipality_indicator_source_links/i, 'provenance relation must be private and additive');
+assert.match(provenanceMigration, /on conflict \(indicator_id, source_id, source_role\) do nothing/i, 'provenance backfill must be idempotent');
+assert.match(provenanceMigration, /revoke all privileges on table private\.municipality_indicator_source_links[\s\S]*from public, anon, authenticated/i, 'private provenance must not be exposed to API roles');
+assert.match(provenanceMigration, /grant select, insert, update, delete on table private\.municipality_indicator_source_links[\s\S]*to service_role/i, 'service role must retain provenance maintenance access');
+assert.match(metadataMigration, /add column if not exists data_owner text/i, 'source owner metadata must be available');
+assert.match(metadataMigration, /add column if not exists temporal_coverage text/i, 'temporal coverage metadata must be available');
+assert.match(metadataMigration, /add column if not exists access_restrictions text/i, 'access restrictions metadata must be available');
+assert.match(postMigrationAuditSql, /observations_without_provenance_link/i, 'post-migration audit must identify observations without provenance');
+assert.match(postMigrationAuditSql, /municipality_indicator_quality_issues/i, 'post-migration audit must summarize diagnostic flags');
+assert.match(postMigrationAuditSql, /unchecked_access_restrictions/i, 'post-migration audit must expose unchecked source restrictions');
+assert.match(postMigrationAuditSql, /reference_period !~ '[^']*\[0-9\]\{4\}/i, 'post-migration period audit must preserve explicit canonical vocabulary');
+console.log('Extended provenance and source-quality audit contract checks passed.');
+assert.match(auditSql, /count\(distinct municipality_id\) filter\(where geographic_level = 'municipality'\)/i, 'municipal coverage must exclude settlement-level observations');
+assert.match(auditSql, /where geographic_level = 'municipality'[\s\S]*group by indicator_code/i, 'highest-coverage municipal panel must use municipality-level rows only');
+assert.match(auditSql, /where geographic_level <> 'municipality'[\s\S]*group by geographic_level/i, 'non-municipal observations must be reported separately');
+assert.match(auditSql, /union select source_id from public\.municipality_indicator_import_review/i, 'catalog usage audit must include import-review records');
+assert.match(auditSql, /orphan_source_references/i, 'audit must report orphan source references by relation');
+assert.match(auditSql, /municipality_indicator_import_review[\s\S]*municipality_indicator_import_staging/i, 'source reference inventory must include review and staging relations');
+
+assert.match(postMigrationAuditSql, /Run only after applying migrations/i, 'migration-dependent audit must state its prerequisite');
+assert.doesNotMatch(auditSql, /private\.municipality_indicator_source_links|municipality_indicator_quality_issues|data_owner/i, 'baseline audit must run before additive migrations');
+
+
+const rosstatCoverageAudit = readFileSync('supabase/audits/rosstat-bd-pmo-coverage-readonly.sql', 'utf8');
+assert.match(rosstatCoverageAudit, /8112027/, 'Rosstat coverage audit must include population candidate');
+assert.match(rosstatCoverageAudit, /8423005/, 'Rosstat coverage audit must include employment candidate');
+assert.match(rosstatCoverageAudit, /8423007/, 'Rosstat coverage audit must include salary candidate');
+assert.match(rosstatCoverageAudit, /8423015/, 'Rosstat coverage audit must include municipal-owned employment candidate');
+assert.match(rosstatCoverageAudit, /8423016/, 'Rosstat coverage audit must include municipal-owned payroll fund candidate');
+assert.match(rosstatCoverageAudit, /8423017/, 'Rosstat coverage audit must include municipal-owned salary candidate');
+assert.match(rosstatCoverageAudit, /8109001/, 'Rosstat coverage audit must include enterprise investment candidate');
+assert.match(rosstatCoverageAudit, /8010001/, 'Rosstat coverage audit must include housing commissioning candidate');
+assert.match(rosstatCoverageAudit, /missing_municipalities/, 'Rosstat coverage audit must expose municipality gaps');
+assert.match(rosstatCoverageAudit, /rosstat_hmao_municipal_monitoring_2023_2025/, 'Rosstat coverage audit must expose municipal monitoring source readiness');
+assert.match(rosstatCoverageAudit, /rosstat_oktmo_open_data_2026_10/, 'Rosstat coverage audit must expose official OKTMO source readiness');
+assert.equal([...rosstatCoverageAudit.matchAll(/verification_status IS DISTINCT FROM 'verified'/g)].length, 2, 'Rosstat coverage audit must count both unverified and NULL statuses as non-verified');
+assert.doesNotMatch(rosstatCoverageAudit, /verification_status\\s*<>\\s*'verified'/i, 'Rosstat coverage audit must not silently omit NULL verification statuses');
+assert.doesNotMatch(rosstatCoverageAudit, /\b(insert\s+into|update\s+public\.|delete\s+from|truncate|alter\s+table|drop\s+table)\b/i, 'Rosstat coverage audit must remain read-only');
+console.log('Rosstat BD PMO coverage audit contract checks passed.');
+
+
+const oktmoCrosswalk = readFileSync('supabase/imports/review/rosstat_municipality_oktmo_crosswalk_template.csv', 'utf8').trim().split(/\r?\n/);
+assert.equal(oktmoCrosswalk.length - 1, 22, 'OKTMO crosswalk template must include all 22 current municipalities');
+const oktmoRows = oktmoCrosswalk.slice(1).map(line => line.split(','));
+assert.equal(new Set(oktmoRows.map(row => row[0])).size, 22, 'OKTMO crosswalk municipality IDs must be unique');
+assert.ok(oktmoRows.every(row => row[3] === '' && row[9] === 'pending'), 'OKTMO values must remain blank and all rows pending until verified');
+assert.ok(oktmoRows.every(row => row[10] === '2026-10-01' && row[11] === '951/2026'), 'OKTMO crosswalk must pin the verified October 2026 classification edition');
+assert.ok(oktmoRows.every(row => row[12] === 'https://rosstat.gov.ru/classification'), 'OKTMO crosswalk must reference the official Rosstat classification page');
+assert.ok(oktmoRows.every(row => row.length === 15), 'OKTMO crosswalk must retain all provenance and manual-review columns');
+console.log('Rosstat OKTMO crosswalk template checks passed.');
+
+
+const rosstatCoveragePlan = readFileSync('docs/ROSTAT_BDPMO_COVERAGE_PLAN_2026-11-07.md', 'utf8');
+assert.match(rosstatCoveragePlan, /2005–2025/, 'secondary BD PMO dataset coverage must match the live dataset page');
+assert.doesNotMatch(rosstatCoveragePlan, /2005–2026/, 'secondary BD PMO dataset must not claim an unsupported 2026 data period');
+assert.match(rosstatCoveragePlan, /603 показателя и 33 раздела/, 'secondary dataset scope must remain explicit');
+console.log('Rosstat source-period documentation checks passed.');
+
+
+const monitoringReleasePlan = readFileSync('docs/ROSTAT_BDPMO_COVERAGE_PLAN_2026-11-07.md', 'utf8');
+assert.match(monitoringReleasePlan, /21\.10\.2026/, 'municipal monitoring release date must remain explicit');
+assert.match(monitoringReleasePlan, /сам файл и таблицы ещё не извлечены/, 'documentation must not claim unreviewed monitoring values were extracted');
+assert.match(monitoringReleasePlan, /rosstat_hmao_municipal_monitoring_2023_2025/, 'monitoring source catalogue ID must remain traceable');
+console.log('Rosstat municipal monitoring release checks passed.');

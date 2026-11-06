@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "validate:rosstat-crosswalk": "node scripts/validate-rosstat-crosswalk.mjs",
+    "test:data-quality": "node scripts/test-data-quality-migration.mjs && node scripts/test-source-catalog-migration.mjs && node scripts/test-data-quality-contract.mjs && node scripts/test-duma-budget-import.mjs && node scripts/test-duma-budget-page1-transcription.mjs && node scripts/test-duma-budget-unmapped-tax-columns.mjs && node scripts/test-duma-budget-parser-structure.mjs",
+    "check:map-coverage": "node scripts/check-map-coverage.mjs",
+    "check:risk-pilot-csv": "node scripts/check-risk-pilot-csv.mjs",
+    "test": "node scripts/test-all.mjs"
   },
   "dependencies": {
     "react": "^18.2.0",

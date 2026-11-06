@@ -21,11 +21,14 @@ export const UgraMap = ({ municipalities, hoveredId, onHover, onSelect }) => {
     },
     tabIndex: 0,
     role: 'button',
-    'aria-label': byId[id]?.name || id,
+    'aria-label': byId[id] ? `${byId[id].name}. Открыть паспорт территории` : id,
+    'aria-haspopup': 'dialog',
   });
 
   return (
-    <svg viewBox={MAP_VIEWBOX} className="ugra-map-svg" role="img" aria-label="Интерактивная карта муниципальных образований Ханты-Мансийского автономного округа — Югры">
+    <svg viewBox={MAP_VIEWBOX} className="ugra-map-svg" role="group" aria-labelledby="ugra-map-title ugra-map-description">
+      <title id="ugra-map-title">Карта муниципальных образований Югры</title>
+      <desc id="ugra-map-description">Интерактивная карта. Районы и городские округа доступны для выбора мышью, касанием и клавиатурой. Выбор открывает паспорт территории; список муниципалитетов расположен рядом с картой или под ней на узких экранах.</desc>
       <defs>
         <filter id="ugra-map-shadow" x="-8%" y="-8%" width="116%" height="120%">
           <feDropShadow dx="0" dy="3" stdDeviation="3" floodColor="#213d2e" floodOpacity=".12" />
@@ -66,6 +69,34 @@ export const UgraMap = ({ municipalities, hoveredId, onHover, onSelect }) => {
   );
 };
 
+/** Стабильный дочерний компонент: не размонтирует список при наведении и фокусе. */
+const MapListSection = ({ title, items, hoveredId, onHover, onSelect }) => (
+  <section className="map-list-section">
+    <h3>{title}</h3>
+    <ul>
+      {items.map((municipality) => {
+        const hovered = hoveredId === municipality.id;
+        return <li key={municipality.id}>
+          <button
+            type="button"
+            className={`map-list-item${hovered ? ' is-hovered' : ''}`}
+            aria-haspopup="dialog"
+            onMouseEnter={() => onHover?.(municipality.id)}
+            onMouseLeave={() => onHover?.(null)}
+            onFocus={() => onHover?.(municipality.id)}
+            onBlur={() => onHover?.(null)}
+            onClick={() => onSelect?.(municipality)}
+          >
+            <span className="map-list-initial">{municipality.name.charAt(0)}</span>
+            <span className="map-list-name">{municipality.name}</span>
+            <span className="map-list-group">{municipality.group2024}</span>
+          </button>
+        </li>;
+      })}
+    </ul>
+  </section>
+);
+
 /** Список районов и городских округов, синхронизированный с наведением на карту. */
 export const UgraMapList = ({ municipalities, hoveredId, onHover, onSelect }) => {
   const byId = useMemo(() => Object.fromEntries(municipalities.map((m) => [m.id, m])), [municipalities]);
@@ -73,35 +104,9 @@ export const UgraMapList = ({ municipalities, hoveredId, onHover, onSelect }) =>
   const districtItems = districts.map((item) => byId[item.id]).filter(Boolean).sort((a, b) => collator.compare(a.name, b.name));
   const cityItems = cities.map((item) => byId[item.id]).filter(Boolean).sort((a, b) => collator.compare(a.name, b.name));
 
-  const Section = ({ title, items }) => (
-    <section className="map-list-section">
-      <h3>{title}</h3>
-      <ul>
-        {items.map((municipality) => {
-          const hovered = hoveredId === municipality.id;
-          return <li key={municipality.id}>
-            <button
-              type="button"
-              className={`map-list-item${hovered ? ' is-hovered' : ''}`}
-              onMouseEnter={() => onHover?.(municipality.id)}
-              onMouseLeave={() => onHover?.(null)}
-              onFocus={() => onHover?.(municipality.id)}
-              onBlur={() => onHover?.(null)}
-              onClick={() => onSelect?.(municipality)}
-            >
-              <span className="map-list-initial">{municipality.name.charAt(0)}</span>
-              <span className="map-list-name">{municipality.name}</span>
-              <span className="map-list-group">{municipality.group2024}</span>
-            </button>
-          </li>;
-        })}
-      </ul>
-    </section>
-  );
-
   return <>
-    <Section title="Муниципальные районы" items={districtItems} />
-    <Section title="Городские округа" items={cityItems} />
+    <MapListSection title="Муниципальные районы" items={districtItems} hoveredId={hoveredId} onHover={onHover} onSelect={onSelect} />
+    <MapListSection title="Городские округа" items={cityItems} hoveredId={hoveredId} onHover={onHover} onSelect={onSelect} />
   </>;
 };
 
