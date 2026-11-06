@@ -79,9 +79,10 @@ Read-only inspection of project `dmbikidqikjupkghywbz`:
 - **#12 — QA:** consolidated regression runner, isolated QA workflow, and this audit record. Draft only; no merge.
 
 Latest branch-head CI rechecks (6 Nov 2026):
-- PR #8 current head `c6e071df47f86264647c3f80a5aec09e8172ab9f`: Build verification run [#42271210379](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271210379) — success.
-- PR #9 current head `c3081572d13e417fcece7fb72c5216e86d015624`: Build verification run [#42271206695](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271206695) — success.
-- PR #10 current head `cf50b17c050e5fd3fa4ac42fc026d3e580922e06`: Build verification run [#42271257735](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271257735) — success.
+Latest branch-head CI rechecks (6 Nov 2026; these heads supersede the earlier successful checks above):
+- PR #8 head `0a13e705d315dd1f7046553c7ce6eeb269007f17`: Build verification run [#42271778744](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271778744) — in progress at last check.
+- PR #9 head `b93a3f8b9dd04ea0f4683bbb0ace6a8c516aefa8`: Build verification run [#42271733941](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271733941) — in progress at last check. The two timeline edge cases above remain present at this exact head.
+- PR #10 head `49478e6bbd3e87cf73763c83cf49e61c766362d0`: Build verification run [#42271783308](https://github.com/vanakazamkin-tech/yugra/actions/runs/42271783308) — in progress at last check.
 
 ## Verification limitations
 
