@@ -176,6 +176,7 @@ test('forecast can use only complete results from an explicitly approved index c
   });
   assert.equal(unapproved.find((row) => row.id === 'complete').projectedScore, null);
   assert.equal(unapproved.find((row) => row.id === 'complete').scoreSource, 'unavailable_index_contract');
+  assert.equal(unapproved.find((row) => row.id === 'complete').scoreProjectionMode, 'unavailable_index_contract');
 
   const approved = buildForecasts(municipalities, { score_growth_rate: 0 }, 1, {
     scoreSource: 'resilience-index',
