@@ -216,7 +216,7 @@ export function deriveMunicipalIndicators(rows = []) {
   const annualInvestment = uniqueByMunicipalityYear('fixed_capital_investment_non_mining',
     (row) => comparablePeriod(row) === 'annual');
   const januaryPopulation = uniqueByMunicipalityYear('population_municipality',
-    (row) => /^\\d{4}-01-01$/.test(String(row.reference_period || '')));
+    (row) => /^\d{4}-01-01$/.test(String(row.reference_period || '')));
   for (const [key, investment] of annualInvestment) {
     const population = januaryPopulation.get(key);
     if (!population || Number(population.value) <= 0) continue;
@@ -231,7 +231,7 @@ export function deriveMunicipalIndicators(rows = []) {
   // не должны превращаться в фиктивный годовой темп.
   const populationByMunicipality = new Map();
   for (const row of verified.filter((item) => item.indicator_code === 'population_municipality'
-    && /^\\d{4}-01-01$/.test(String(item.reference_period || '')))) {
+    && /^\d{4}-01-01$/.test(String(item.reference_period || '')))) {
     if (!populationByMunicipality.has(row.municipality_id)) populationByMunicipality.set(row.municipality_id, new Map());
     const byYear = populationByMunicipality.get(row.municipality_id);
     const year = Number(row.reference_year);
