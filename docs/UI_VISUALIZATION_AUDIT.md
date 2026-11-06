@@ -281,3 +281,7 @@ A further source-level review of `src/components/UgraMap.jsx` and the applicatio
 - Global visible focus styles cover buttons, links, inputs, selects, and textareas; map regions and city targets have dedicated focus treatment.
 
 This review is based on source inspection, not live assistive-technology or touch testing. The PR's recent CI runs pass, but deployment preview is separately constrained by Vercel's free-plan daily deployment limit noted in the PR checks.
+
+## Explicit empty state for the forecast investment chart (7 November 2026)
+
+Source review found that the investment chart could render as an empty region when a selected municipality or filtered result set had no usable investment baseline. The table already explained missing results, but the chart did not. The chart now shows an explicit message that modelled investment values are unavailable for the current selection and clarifies that missing source data does not mean zero investment. No calculation, filtering, source, or dataset behavior was changed. CI validates the production build; visual browser verification remains outstanding.
