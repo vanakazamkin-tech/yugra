@@ -217,6 +217,31 @@ assert.equal(lowBaseModel.byMunicipality[1].score, null,
   'user weight tuning must not bypass the fixed minimum data coverage');
 console.log('OK: configurable weights normalize while fixed data coverage and score eligibility remain stable.');
 
+const makeRankFixture = (topValue, change = null) => ['investment', 'employment'].flatMap((code) =>
+  [10, 20, topValue].map((value, index) => ({
+    municipalityId: index + 1, code, unit: '%', direction: 'higher', adverse: change === null ? null : false,
+    change: change === null ? null : change,
+    changePercent: change === null ? null : change,
+    pillar: { key: code }, points: [{}],
+    latest: { numericValue: value, reference_year: 2025, reference_period: 'annual' },
+  }))
+);
+const ordinaryRanks = buildRiskModel(partialMunicipalities.slice(0, 3), makeRankFixture(30));
+const extremeRanks = buildRiskModel(partialMunicipalities.slice(0, 3), makeRankFixture(1e12));
+assert.deepEqual(
+  partialMunicipalities.slice(0, 3).map((m) => ordinaryRanks.byMunicipality[m.id].score),
+  partialMunicipalities.slice(0, 3).map((m) => extremeRanks.byMunicipality[m.id].score),
+  'rank-based normalization must not let an extreme magnitude dominate when relative ordering is unchanged'
+);
+const stableTrendModel = buildRiskModel(partialMunicipalities.slice(0, 3), makeRankFixture(30, 0));
+const positiveTrendModel = buildRiskModel(partialMunicipalities.slice(0, 3), makeRankFixture(30, 1));
+assert.equal(stableTrendModel.byMunicipality[2].score, 50,
+  'unchanged source indicators must receive a neutral trend score');
+assert.equal(positiveTrendModel.byMunicipality[2].score, 56,
+  'a non-deteriorating trend outside the stability band should receive the positive trend score');
+console.log('OK: rank normalization resists extreme magnitudes; unchanged trends are neutral.');
+
+
 
 
 
