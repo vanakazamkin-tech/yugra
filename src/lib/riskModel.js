@@ -177,3 +177,36 @@ export function deriveMunicipalIndicators(rows = []) {
   }
   return derived;
 }
+
+
+export function backtestAnnualSeries(series) {
+  const points = Array.isArray(series?.points) ? series.points : [];
+  const tests = [];
+  for (let index = 2; index < points.length; index += 1) {
+    const training = points.slice(0, index);
+    const rates = [];
+    for (let i = 1; i < training.length; i += 1) {
+      const previous = Number(training[i - 1].numericValue);
+      const current = Number(training[i].numericValue);
+      const gap = Number(training[i].reference_year) - Number(training[i - 1].reference_year);
+      if (previous > 0 && current > 0 && gap > 0) rates.push(Math.pow(current / previous, 1 / gap) - 1);
+    }
+    if (!rates.length) continue;
+    const rate = rates.reduce((sum, value) => sum + value, 0) / rates.length;
+    const last = training[training.length - 1];
+    const actual = Number(points[index].numericValue);
+    const gap = Number(points[index].reference_year) - Number(last.reference_year);
+    if (!(actual > 0) || !(gap > 0)) continue;
+    const predicted = Number(last.numericValue) * Math.pow(1 + rate, gap);
+    tests.push({ year: points[index].reference_year, predicted, actual, absoluteError: Math.abs(predicted - actual), absolutePercentError: Math.abs((predicted - actual) / actual) * 100, signedPercentError: (predicted - actual) / actual * 100 });
+  }
+  if (!tests.length) return { tests, count: 0, mape: null, mae: null, bias: null, status: 'insufficient' };
+  return {
+    tests,
+    count: tests.length,
+    mape: tests.reduce((sum, item) => sum + item.absolutePercentError, 0) / tests.length,
+    mae: tests.reduce((sum, item) => sum + item.absoluteError, 0) / tests.length,
+    bias: tests.reduce((sum, item) => sum + item.signedPercentError, 0) / tests.length,
+    status: tests.length >= 2 ? 'pilot' : 'very_small_sample',
+  };
+}
