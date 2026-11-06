@@ -16,12 +16,12 @@ end $$;
 insert into public.municipality_indicators(municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,verification_status,geographic_level,geographic_name) values
  ('test-municipality','test_indicator','Test indicator',2025,'annual',11,'thousand persons','src-primary','https://example.test/primary','verified','municipality',null),
  ('test-municipality','test_indicator','Test indicator',2025,'annual',12,'persons','src-primary','https://example.test/primary','verified','settlement','Test settlement'),
- ('test-municipality','test_indicator','Test indicator',2025,'annual',13,'persons','src-secondary','https://example.test/secondary','needs_review','municipality',null);
+ ('test-municipality','test_indicator','Test indicator',2025,'annual',13,'thousand persons','src-secondary','https://example.test/secondary','needs_review','municipality',null);
 do $$
 begin
  begin
   insert into public.municipality_indicators(municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,verification_status,geographic_level,geographic_name)
-  values('test-municipality','test_indicator','Test indicator',2025,'annual',99,'persons','src-primary','https://example.test/primary','verified','municipality',null);
+  values('test-municipality','test_indicator','Test indicator',2025,'annual',99,'thousand persons','src-primary','https://example.test/primary','verified','municipality',null);
   raise exception 'duplicate full identity unexpectedly accepted';
  exception when unique_violation then null;
  end;
