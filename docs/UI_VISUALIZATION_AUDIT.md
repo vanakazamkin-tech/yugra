@@ -106,3 +106,12 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - Disabled controls are excluded using the native `:disabled` state, including controls disabled by a parent fieldset.
 - Elements inside any `aria-hidden="true"`, `hidden`, or `inert` ancestor are excluded, not only elements carrying the attribute themselves.
 - Escape handling, focus containment, scroll locking, and restoration to the opener remain unchanged.
+
+
+## Risk and scenario control groups (6 November 2026)
+
+- Risk-light threshold sliders are grouped under a descriptive accessible name.
+- The municipality, indicator, horizon, and shock controls in scenario forecasting are exposed as a named parameter group.
+- Index sensitivity sliders are grouped as conditional impacts on the six index components.
+- The scenario trajectory horizon control is separately named. Individual controls retain their existing visible labels and values.
+- No thresholds, calculations, forecast behavior, or styling were changed.
