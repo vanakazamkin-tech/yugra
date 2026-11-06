@@ -202,6 +202,12 @@ const complementaryBudgetSignals = assessRiskSignals([
 ]);
 assert.equal(complementaryBudgetSignals.usableCount, 2, 'complementary own-revenue and transfer shares count as one independent signal family');
 assert.equal(complementaryBudgetSignals.level, 'watch', 'a complementary budget pair plus one labour signal must not falsely satisfy the three-signal critical threshold');
+const sharpBudgetFamily = assessRiskSignals([
+  { code: 'derived_budget_own_revenue_share', signalFamily: 'budget_revenue_structure', adverse: true, sharpChange: true, pillar: { key: 'budget' } },
+  { code: 'derived_budget_transfer_dependency', signalFamily: 'budget_revenue_structure', adverse: true, sharpChange: false, pillar: { key: 'budget' } },
+  { code: 'employment_rate', adverse: false, pillar: { key: 'employment' } },
+]);
+assert.equal(sharpBudgetFamily.sharpChangeCount, 1, 'sharp-change evidence from any member must be retained after family deduplication');
 const conflictingBudgetSignals = assessRiskSignals([
   { code: 'derived_budget_own_revenue_share', signalFamily: 'budget_revenue_structure', adverse: true, pillar: { key: 'budget' } },
   { code: 'derived_budget_transfer_dependency', signalFamily: 'budget_revenue_structure', adverse: false, pillar: { key: 'budget' } },
