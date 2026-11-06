@@ -1,6 +1,6 @@
 import { parseRiskPeriod, countConsecutiveAdverseIntervals } from './riskModel.js';
 import { classify } from './indicatorClassification.js';
-import { directionForRiskIndicator } from './riskDirection.js';
+import { directionForRiskIndicator, riskSignalFamilyFor } from './riskDirection.js';
 
 const number = (value) => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
 const safeText = (value) => String(value ?? '').trim();
@@ -97,7 +97,7 @@ export function buildRiskSeries(rows) {
       confidenceLabel = 'Средняя';
       confidenceReason = 'Источник указан; последнее изменение сопоставимо, но история короткая.';
     }
-    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, adverseStreak, excludedConflictingPeriods, confidenceLevel, confidenceLabel, confidenceReason });
+    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, signalFamily: riskSignalFamilyFor(latest.indicator_code), name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, adverseStreak, excludedConflictingPeriods, confidenceLevel, confidenceLabel, confidenceReason });
   });
   return result;
 }
