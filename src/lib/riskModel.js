@@ -26,16 +26,16 @@ export function parseRiskPeriod(point = {}) {
   const period = String(point?.reference_period ?? '').trim();
   if (!period) return null;
   const declaredYear = Number(point?.reference_year);
-  const yearFromLabel = Number(period.match(/^(\\d{4})(?=$|[-_\\s])/i)?.[1]);
+  const yearFromLabel = Number(period.match(/^(\d{4})(?=$|[-_\s])/i)?.[1]);
   const year = Number.isInteger(declaredYear) && declaredYear >= 1900 && declaredYear <= 2200
     ? declaredYear : yearFromLabel;
   if (!Number.isInteger(year) || year < 1900 || year > 2200) return null;
   if (yearFromLabel && yearFromLabel !== year) return null;
-  const quarter = period.match(/^(?:\\d{4}[-_\\s]?)?Q([1-4])$/i);
+  const quarter = period.match(/^(?:\d{4}[-_\s]?)?Q([1-4])$/i);
   if (quarter) return { year, frequency: 'quarter', slot: Number(quarter[1]) };
-  const half = period.match(/^(?:\\d{4}[-_\\s]?)?H([12])$/i);
+  const half = period.match(/^(?:\d{4}[-_\s]?)?H([12])$/i);
   if (half) return { year, frequency: 'half', slot: Number(half[1]) };
-  if (/^(?:annual|year|год|годовой|\\d{4})$/i.test(period)) return { year, frequency: 'annual', slot: 0 };
+  if (/^(?:annual|year|год|годовой|\d{4})$/i.test(period)) return { year, frequency: 'annual', slot: 0 };
   return null;
 }
 
