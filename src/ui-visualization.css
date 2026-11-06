@@ -399,3 +399,117 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* Mobile chart rows: keep territory labels readable instead of truncating them. */
+.yugra-app .table-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-color: rgba(139, 119, 82, .58) rgba(226, 218, 201, .35);
+  scrollbar-width: thin;
+  border-radius: 8px;
+}
+.yugra-app .table-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.yugra-app .table-scroll::-webkit-scrollbar-track {
+  border-radius: 8px;
+  background: rgba(226, 218, 201, .35);
+}
+.yugra-app .table-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: rgba(139, 119, 82, .58);
+  background-clip: padding-box;
+}
+.yugra-app .report-chart-list {
+  overscroll-behavior-x: contain;
+}
+@media (max-width: 640px) {
+  .yugra-app .comparison-bar-row,
+  .yugra-app .forecast-bar-row,
+  .yugra-app .report-chart-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "label value"
+      "track track";
+    align-items: center;
+    gap: 7px 10px;
+    margin-block: 14px;
+  }
+  .yugra-app .comparison-bar-label,
+  .yugra-app .forecast-bar-row > span,
+  .yugra-app .report-chart-name {
+    grid-area: label;
+    min-width: 0;
+    overflow: visible;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    line-height: 1.4;
+  }
+  .yugra-app .comparison-bar-label strong {
+    overflow: visible;
+    white-space: normal;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+    line-height: 1.4;
+  }
+  .yugra-app .comparison-bar-track,
+  .yugra-app .forecast-bar-track,
+  .yugra-app .report-chart-track {
+    grid-area: track;
+    width: 100%;
+    min-width: 0;
+  }
+  .yugra-app .comparison-bar-value,
+  .yugra-app .forecast-bar-row > strong,
+  .yugra-app .report-chart-row > strong {
+    grid-area: value;
+    white-space: nowrap;
+    font-size: 10px;
+  }
+  .yugra-app .forecast-table-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .yugra-app .forecast-table-filters {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+  .yugra-app .forecast-chart-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .yugra-app .unified-scenario-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .yugra-app .comparison-data-table,
+  .yugra-app .forecast-table,
+  .yugra-app .risk-table {
+    font-size: 10px;
+  }
+}
+@media (max-width: 420px) {
+  .yugra-app .comparison-chart-card,
+  .yugra-app .forecast-table-panel {
+    padding: 11px 9px;
+  }
+  .yugra-app .chart-card-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 14px;
+  }
+  .yugra-app .compare-value-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .yugra-app .compare-value-card {
+    padding: 8px;
+  }
+  .yugra-app .compare-value-name {
+    overflow-wrap: anywhere;
+  }
+}
