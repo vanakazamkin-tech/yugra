@@ -32,7 +32,22 @@ for (const id of [1, 2, 3]) {
 }
 assert.equal(result.byMunicipality[1].pillars.find((p) => p.key === 'labour').indicators, 2);
 assert.equal(result.byMunicipality[1].pillars.find((p) => p.key === 'finance').indicators, 1);
+
 console.log('OK: index calculated; six pillars mapped; annual periods compared consistently.');
+
+const mixedEstimateFixture = [1, 2, 3].map((municipalityId) => ({
+  municipalityId, code: 'employment', unit: '%', direction: 'lower', adverse: null,
+  pillar: { key: 'employment' }, points: [{}],
+  latest: { numericValue: municipalityId, reference_year: 2025,
+    reference_period: municipalityId === 3 ? 'year_end_estimate' : 'annual' },
+}));
+const mixedEstimateModel = buildRiskModel(municipalities, mixedEstimateFixture);
+assert.equal(mixedEstimateModel.byMunicipality[1].pillars.find((p) => p.key === 'labour').indicators, 0,
+  'year_end_estimate must not be grouped with annual observations');
+assert.equal(mixedEstimateModel.byMunicipality[3].pillars.find((p) => p.key === 'labour').indicators, 0,
+  'a non-annual estimate must remain a separate incomparable period');
+console.log('OK: year-end estimates remain separate from annual observations.');
+
 
 const budgetFixture = [];
 for (const [year, period, total, own, transfers, expenditure] of [
