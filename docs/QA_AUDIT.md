@@ -468,3 +468,35 @@ PR #13 в последнем PR metadata ответе GitHub показывал 
 ## Вердикт
 
 На момент этого снимка пять из шести последних heads имеют успешный GitHub Actions; PR #13 обновился после своего успешного CI и нуждается в новом прогоне. Четыре PR (#9/#11/#12/#13) по-прежнему требуют синхронизации с main. Общая интеграция не подтверждена. Browser E2E, responsive/accessibility проверки, production Supabase migration и production deployment не выполнены.
+
+
+---
+
+# Дополнение к аудиту — новый ретест после исправлений тестов (07.11.2026)
+
+## Последние heads и CI
+
+| PR | Head SHA | Run | Состояние |
+|---|---|---|---|
+| #9 | `228ba5114a29a91674b38b979922eaa7e0ea7361` | #42284450098 | in progress на момент снимка |
+| #11 | `3be0b99eec0f1efa1e23a29b973622d3bed57cb1` | #42284450469 | in progress: build + migration integration |
+| #12 | `136016043d01b007fbe8df027c2269244adfb6e0` | #42284255575 | success |
+| #13 | `47b7bcb8acbe80cad00f2a6522c352c8ae06bd3b` | #42284363328 | success |
+
+PR #13 получил новый успешный прогон на SHA `47b7bcb...`; это снимает предыдущую неопределённость CI на его новом head. PR #11 новый run включает обе jobs — `build` и `data-migrations-integration`; до завершения обеих не считать PR проверенным. PR #9 также получил новый head и отдельный прогон; статус ожидается.
+
+## Повторная ошибка PR #9 и исправление, которое ожидается
+
+На предыдущем head `3ede9be...` Build verification #42284357193 упал в `scripts/test-risk-model-pillars.mjs`:
+`ReferenceError: Cannot access 'riskSignal' before initialization` на строке 60.
+Новая sharp-change проверка вызывала helper `riskSignal` до объявления `const riskSignal = ...`. Перед этим была исправлена несовместимость expected object с новым полем `sharpChangePercent: 10`.
+
+Замечание с точным местом и предложением переместить helper выше первого использования оставлено в PR #9. Новый head `228ba511...` запущен в CI; его результат должен подтвердить, что исправление корректно.
+
+## Интеграционная база
+
+Текущий main остаётся `9f99481a3843862a17fd9cf640fee48b4ef901ba`. Последняя подтверждённая проверка compare показала, что PR #9/#11/#12/#13 всё ещё отстают от main на 5 commits и имеют merge base `fa006173aa096188a2f4eef0d2cb4bcfe135ae1c`. Перед интеграцией нужно повторить сравнение после новых commits; зелёный CI на прежней базе не заменяет синхронизацию.
+
+## Текущий вердикт
+
+QA PR #12 CI зелёный; PR #13 CI зелёный на новом head; PR #9 и PR #11 находятся в новых CI-прогонах. Общая интеграция по-прежнему не подтверждена. Browser E2E, responsive/accessibility, production Supabase migration и production deployment не выполнялись.
