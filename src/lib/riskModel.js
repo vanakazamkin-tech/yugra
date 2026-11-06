@@ -46,7 +46,16 @@ function percentile(value, values, higherIsBetter) {
   return higherIsBetter ? rank : 100 - rank;
 }
 
-export function buildRiskModel(municipalities = [], series = []) {
+export function buildRiskModel(municipalities = [], series = [], weightOverrides = {}) {
+  const requestedWeights = MODEL_PILLARS.map((pillar) => {
+    const value = Number(weightOverrides?.[pillar.key]);
+    return { ...pillar, requestedWeight: Number.isFinite(value) && value >= 0 ? value : pillar.weight * 100 };
+  });
+  const requestedTotal = requestedWeights.reduce((sum, pillar) => sum + pillar.requestedWeight, 0);
+  const configuredPillars = requestedWeights.map((pillar) => ({
+    ...pillar,
+    weight: requestedTotal > 0 ? pillar.requestedWeight / requestedTotal : MODEL_PILLARS.find((item) => item.key === pillar.key).weight,
+  }));
   const comparable = new Map();
   for (const item of series) {
     if (!item || item.direction === 'context' || !finite(item.latest?.numericValue)) continue;
@@ -76,7 +85,7 @@ export function buildRiskModel(municipalities = [], series = []) {
   const byMunicipality = {};
   for (const municipality of municipalities) {
     const own = scored.get(String(municipality.id)) || [];
-    const pillars = MODEL_PILLARS.map((pillar) => {
+    const pillars = configuredPillars.map((pillar) => {
       const items = own.filter((item) => item.modelPillar === pillar.key);
       return {
         ...pillar,
@@ -126,7 +135,7 @@ export function buildRiskModel(municipalities = [], series = []) {
       scoredIndicators: own.length,
     };
   }
-  return { byMunicipality, pillars: MODEL_PILLARS, chains: RISK_CHAINS };
+  return { byMunicipality, pillars: configuredPillars, chains: RISK_CHAINS };
 }
 
 
