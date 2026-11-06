@@ -135,6 +135,14 @@ const parsed = parseCsv(rawText);
 if (parsed.length < 2) throw new Error('CSV must contain a header and at least one data row');
 
 const headers = parsed[0].map((value) => value.trim());
+if (new Set(headers).size !== headers.length) {
+  throw new Error('CSV contains duplicate column names');
+}
+for (const [index, cells] of parsed.slice(1).entries()) {
+  if (cells.length !== headers.length) {
+    throw new Error(`CSV line ${index + 2} has ${cells.length} columns; expected ${headers.length}`);
+  }
+}
 const requiredHeaders = [
   'municipality', 'indicator_code', 'indicator_name', 'measure_type',
   'year', 'value_raw', 'unit', 'page', 'table_title',
