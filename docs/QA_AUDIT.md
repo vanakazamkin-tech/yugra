@@ -100,6 +100,16 @@ Latest branch-head CI rechecks (6 Nov 2026):
 - PR #12 head `5de83ed4d5910f0b439df409752b5eec61005b27`: QA branch verification [#42273826571](https://github.com/vanakazamkin-tech/yugra/actions/runs/42273826571) and Build verification [#42273835621](https://github.com/vanakazamkin-tech/yugra/actions/runs/42273835621) passed.
 - PR #13 head `40abd4f39e719429cded4090cf606470f5d8779e`: previous Build verification [#42268245956](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268245956) passed; whitespace-only numeric coercion finding remains in source.
 
+## Latest recheck (6 Nov 2026, current PR heads)
+
+- **PR #8 — index:** current head `106a6b59a292685febcc9ac3495812d204690abf`; Build verification [#42274561080](https://github.com/vanakazamkin-tech/yugra/actions/runs/42274561080) passed. The earlier tie-boundary test failure is corrected: the new fixture places equal values across the quartile cutoff, so `null` is the expected diagnostic. No remaining CI failure on this head.
+- **PR #9 — risks:** current head `bbf338b24f148f3e49eb788622475abb82017d53`; Build verification [#42274368191](https://github.com/vanakazamkin-tech/yugra/actions/runs/42274368191) passed. Static review confirms the blank-period-as-annual and contradictory-year issues remain in `riskModel.js`; `UnifiedRiskForecast.jsx` also maps an empty period to annual.
+- **PR #10 — UI:** current head `7e3a61699214086abb7d9e66042a59d1d3e82a87`; Build verification [#42274419676](https://github.com/vanakazamkin-tech/yugra/actions/runs/42274419676) passed.
+- **PR #11 — data quality:** current head `9368b66c7f12242137f5c0ea4d593c46d1bce78c`; Build verification [#42274693883](https://github.com/vanakazamkin-tech/yugra/actions/runs/42274693883) passed.
+- **PR #12 — QA:** current head `31ce8ea830b4f1da0599e54bec63e22c1c533862`; QA verification [#42274561595](https://github.com/vanakazamkin-tech/yugra/actions/runs/42274561595) and production build [#42274571118](https://github.com/vanakazamkin-tech/yugra/actions/runs/42274571118) passed. PR remains Draft and unmerged.
+- **PR #13 — forecasting:** current head remains `40abd4f39e719429cded4090cf606470f5d8779e`; previous Build verification [#42268245956](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268245956) passed. The `finite()` helper still accepts whitespace-only strings as zero; tests do not yet cover that input.
+- Repository `main` remains at `5cedff13fd3ea3521c5aa4befdfd75dc12ae1499`; none of PRs #8–#13 is merged.
+
 ## Verification limitations
 
 - Local repository clone was unavailable in this environment because outbound DNS/network access to GitHub was unavailable. Tests and build were executed by GitHub Actions on the QA branch.
