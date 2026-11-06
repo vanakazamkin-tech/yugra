@@ -13,7 +13,7 @@ for (const [code, pillarKey] of indicators) {
   for (const municipalityId of [1, 2, 3]) {
     series.push({
       municipalityId, code, unit: 'ед.', direction: 'higher', adverse: false,
-      pillar: { key: pillarKey }, points: [{}, {}, {}, {}],
+      pillar: { key: code }, points: [{}, {}, {}, {}],
       latest: { numericValue: municipalityId * 10, reference_year: 2024,
         reference_period: municipalityId === 2 ? '2024' : 'annual' },
     });
