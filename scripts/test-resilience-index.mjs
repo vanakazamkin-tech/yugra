@@ -7,6 +7,9 @@ assert.equal(percentileScore(3, [1, 2, 3, 3, 5], 'higher'), 60);
 assert.equal(percentileScore(3, [1, 2, 3, 3, 5], 'lower'), 40);
 assert.equal(percentileScore(5, [1, 2, 3, 4], 'higher'), null, 'fewer than five peers must be insufficient');
 assert.equal(percentileScore(3, [1, 2, 3, 4, 5], 'sideways'), null);
+assert.equal(percentileScore(0, [-2, -1, 0, 1, 2], 'higher'), 50, 'zero and negative observations are valid numeric inputs');
+assert.equal(percentileScore(-1, [-2, -1, 0, 1, 2], 'lower'), 70, 'lower-is-better normalization must handle negative values');
+assert.equal(percentileScore(0, [0, 0, 0, 0, 0], 'higher'), 50, 'an all-tied peer group must not divide by zero');
 
 const municipalities = Array.from({ length: 6 }, (_, i) => ({ id: 'm' + (i + 1), name: 'MO ' + (i + 1) }));
 const definitions = INDEX_PILLARS.map((pillar) => ({ code: 'x_' + pillar.key, name: pillar.title, pillar: pillar.key, direction: 'higher' }));
@@ -78,6 +81,9 @@ assert.equal(wrongPeriod.results.m1.index, null, 'a different reference year mus
 const unapproved = calculateMunicipalIndex(rows, municipalities, { referenceYear: 2025, indicatorDefinitions: [] });
 assert.equal(unapproved.results.m1.index, null);
 assert.equal(unapproved.diagnostics.eligibleRows, 0);
+const missingYear = calculateMunicipalIndex(rows, municipalities, { referenceYear: null, referencePeriod: 'annual', indicatorDefinitions: definitions });
+assert.equal(missingYear.results.m1.index, null, 'null must not be coerced into reference year zero');
+assert.equal(missingYear.diagnostics.eligibleRows, 0);
 const missingPeriod = calculateMunicipalIndex(rows, municipalities, { referenceYear: 2025, indicatorDefinitions: definitions });
 assert.equal(missingPeriod.results.m1.index, null, 'period must be explicit rather than silently defaulting to annual');
 const duplicatedDefinition = calculateMunicipalIndex(rows, municipalities, { referenceYear: 2025, referencePeriod: 'annual', indicatorDefinitions: [...definitions, definitions[0]] });
