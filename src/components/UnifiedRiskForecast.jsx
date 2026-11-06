@@ -29,8 +29,11 @@ const classify = (row) => {
 const directionFor = (row) => {
   const code = safeText(row.indicator_code).toLowerCase();
   const s = (code + ' ' + safeText(row.indicator_name)).toLowerCase();
-  // Направление задаётся только для показателей, где знак изменения можно объяснить без скрытых допущений.
-  if (/(unemploy|registered_unemployed|poverty|below_poverty|death_rate|mortality|noncompliant_roads|arrears|deficit|debt|budget_transfer_dependency|derived_budget_transfer_dependency|аварийн|износ|смертн|бедност|безработ|не отвечающ.*норматив)/i.test(s)) return 'lower';
+  // Эти показатели структурно неоднозначны: их рост/снижение сам по себе
+  // не означает улучшение или ухудшение устойчивости без дополнительного контекста.
+  if (/(sme_employment_share|доля.*работников.*малых и средних|budget_transfer_dependency|derived_budget_transfer_dependency|budget_balance_ratio|population_growth_rate|derived_population_growth_rate|investment_per_capita|derived_investment_per_capita|death_rate|mortality|смертн)/i.test(s)) return 'context';
+  // Направление задаётся только для показателей с интерпретируемым нормативным знаком.
+  if (/(unemploy|registered_unemployed|poverty|below_poverty|noncompliant_roads|arrears|deficit|debt|аварийн|износ|бедност|безработ|не отвечающ.*норматив)/i.test(s)) return 'lower';
   if (/(employment_share|sme_per_10k|real_disposable_income|real_income|industrial_production_index|physical_index|productivity|budget_own_revenue_share|budget_balance_ratio|population_growth_rate|investment_per_capita|derived_population_growth_rate|положительн.*миграц|уровень занятости|доля занятых|индекс физического объём|индекс физического объем|реальн.*доход)/i.test(s)) return 'higher';
   // Абсолютные номинальные суммы, зарплаты без дефлятора, численность, миграция и обороты требуют контекста.
   return 'context';
