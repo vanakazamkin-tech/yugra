@@ -109,3 +109,42 @@ group by indicator_code
 having count(distinct municipality_id) > 1
 order by municipalities_covered desc,observations desc,indicator_code
 limit 50;
+
+-- Source catalogue metadata completeness and publication/refresh tracking.
+select count(*) total_sources,
+  count(*) filter(where name is null or btrim(name)='') missing_name,
+  count(*) filter(where url is null or btrim(url)='') missing_url,
+  count(*) filter(where category is null or btrim(category)='') missing_category,
+  count(*) filter(where description is null or btrim(description)='') missing_description,
+  count(*) filter(where format is null or btrim(format)='') missing_format,
+  count(*) filter(where coverage is null or btrim(coverage)='') missing_coverage,
+  count(*) filter(where update_frequency is null or btrim(update_frequency)='') missing_update_frequency,
+  count(*) filter(where last_checked_at is null) missing_last_checked_at
+from public.data_sources;
+
+-- A repeated landing-page URL does not prove duplicate datasets.
+select lower(trim(trailing '/' from url)) normalized_url,count(*) source_records,
+  array_agg(id order by id) source_ids
+from public.data_sources
+group by lower(trim(trailing '/' from url))
+having count(*)>1
+order by source_records desc,normalized_url;
+
+-- Verify catalog entries are referenced by any dataset, not only municipality_indicators.
+with used_sources as (
+  select source_id from public.municipality_indicators
+  union select source_id from public.investment_sites
+  union select source_id from public.municipal_program_execution
+  union select source_id from public.fuel_price_observations
+  union select source_id from public.municipal_facilities
+  union select source_id from public.municipality_legacy_snapshots
+  union select source_id from public.external_rating_catalog where source_id is not null
+  union select source_id from public.municipality_indicator_import_staging
+)
+select ds.import_status,count(*) total_sources,
+  count(*) filter(where u.source_id is not null) referenced_anywhere,
+  count(*) filter(where u.source_id is null) unreferenced_anywhere
+from public.data_sources ds
+left join used_sources u on u.source_id=ds.id
+group by ds.import_status
+order by ds.import_status;
