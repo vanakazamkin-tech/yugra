@@ -156,7 +156,7 @@ for (const [index, cells] of parsed.slice(1).entries()) {
   const line = index + 2;
   const row = Object.fromEntries(headers.map((header, column) => [header, String(cells[column] ?? '').trim()]));
   const municipalityLabel = row.municipality;
-  const normalizedMunicipality = normalize(municipalityLabel).replace(/^г\\s+/, '');
+  const normalizedMunicipality = normalize(municipalityLabel).replace(/^г\s+/, '');
 
   if (normalizedMunicipality === 'всего' || normalizedMunicipality === 'итого') {
     excludedTotals.push({ csv_line: line, municipality: municipalityLabel, raw_row: row });
