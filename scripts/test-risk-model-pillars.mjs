@@ -27,6 +27,13 @@ const riskRow = (year, period, value, overrides = {}) => ({
   reference_year: year, reference_period: period, value, unit: '%',
   verification_status: 'verified', geographic_level: 'municipality', ...overrides,
 });
+const periodYearFromLabelSeries = buildRiskSeries([
+  { ...riskRow(null, '2022-Q1', 70), reference_year: null },
+  { ...riskRow(null, '2023-Q1', 60), reference_year: null },
+]);
+assert.equal(periodYearFromLabelSeries.length, 1, 'period year labels must preserve distinct observations when reference_year is absent');
+assert.equal(periodYearFromLabelSeries[0].adverse, true, 'validated year labels may support same-quarter year-over-year comparison');
+
 const missingPeriodSeries = buildRiskSeries([
   riskRow(2022, '', 70), riskRow(2023, '', 60),
 ]);
