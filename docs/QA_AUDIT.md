@@ -20,6 +20,12 @@
 
 | Priority | Finding | Evidence / impact | Owner |
 |---|---|---|---|
+| Medium — review required | Risk streak helper treats a missing period as annual | In `src/lib/riskModel.js`, `comparablePeriodSequence()` returns an annual sequence when `reference_period` is empty, provided a year exists. This can count two adjacent year-stamped observations with no explicit frequency as consecutive annual intervals. The risk PR documentation says unknown periods break streaks, so the behavior and contract are inconsistent. Recommend requiring an explicit annual marker (or an approved source-specific annual default) and adding tests for blank/null period. | Risks (#9) |
+| Medium — review required | Risk streak helper does not reject year mismatch between `reference_year` and a year embedded in `reference_period` | The helper prefers `reference_year` and only parses the period year as fallback. A malformed row such as `reference_year=2023`, `reference_period='2024-Q1'` is therefore silently assigned to 2023. If the adjacent point has a matching sequence, an invalid pair may be counted. Recommend rejecting contradictory year metadata and adding a regression test. | Risks (#9) |
+
+
+| Priority | Finding | Evidence / impact | Owner |
+|---|---|---|---|
 | High | Unknown risk direction can count as usable coverage in the current main branch | `assessRiskSignals` filters only `adverse !== null`; an undefined value passes. PR #9 contains the targeted fix requiring explicit `true/false`. Until merged, unknown-direction rows can distort traffic-light coverage. | Risks (#9) |
 | Medium | No standard `npm test` entry point | QA branch adds a consolidated runner for the existing deterministic regression scripts. | QA |
 | Medium | No dedicated QA branch verification | QA branch adds an isolated push-triggered workflow; latest run passed. | QA |
@@ -73,8 +79,8 @@ Read-only inspection of project `dmbikidqikjupkghywbz`:
 - **#12 — QA:** consolidated regression runner, isolated QA workflow, and this audit record. Draft only; no merge.
 
 Latest branch-head CI rechecks (6 Nov 2026):
-- PR #8 head `c76beb43fc1bc084790ffd861187307c0becfe56`: Build verification run [#42270352992](https://github.com/vanakazamkin-tech/yugra/actions/runs/42270352992) — success.
-- PR #9 head `d737807c175c9c2a08d80dca64294a226898ed44`: Build verification run [#42270207426](https://github.com/vanakazamkin-tech/yugra/actions/runs/42270207426) — success.
+- PR #8 current head `1b1d2632ef967b27dd6178306c897a42c592621c`: Build verification run [#42270478519](https://github.com/vanakazamkin-tech/yugra/actions/runs/42270478519) — success.
+- PR #9 current head `4fd6dd42201e67b08c1f8a35c981261308517501`: Build verification run [#42270732133](https://github.com/vanakazamkin-tech/yugra/actions/runs/42270732133) — success.
 - PR #10 head `11cb8e973db097dc53e27bf14a53864f00b38ab4`: Build verification run [#42270399826](https://github.com/vanakazamkin-tech/yugra/actions/runs/42270399826) — success (confirmed after initial in-progress observation).
 
 ## Verification limitations
