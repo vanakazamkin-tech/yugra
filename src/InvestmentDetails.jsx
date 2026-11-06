@@ -1491,8 +1491,8 @@ export const InvestmentDetails = () => {
               <div className="intro-top">
                 <div className="intro-copy">
                   <div className="eyebrow"><span className="eyebrow-diamond"/> ХАНТЫ · МАНСИ · ЮГРА</div>
-                  <h1>Каталог муниципальных <em>образований</em></h1>
-                  <p>Изучайте территории, сравнивайте социально-экономические показатели и собирайте собственные аналитические срезы.</p>
+                  <h1>Югра — территория <em>живого Севера</em></h1>
+                  <p>Культура Ханты и манси, сила северной природы и развитие муниципалитетов — единое пространство традиций, людей и будущего.</p>
                 </div>
                 <div className="intro-art" aria-label="Гравюра с традиционными жителями Севера и оленями">
                   <div className="intro-art-image"><img src="/images/khanty-mansi-engraving.jpg" alt="Гравюра: жители Севера в традиционной одежде и северные олени" /></div>
