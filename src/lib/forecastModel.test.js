@@ -157,6 +157,54 @@ test('scenario calculation is deterministic and does not mutate historical input
   assert.deepEqual(sample, before);
 });
 
+
+test('forecast can use only complete results from an explicitly approved index contract', () => {
+  const municipalities = [
+    { id: 'complete', name: 'Полное покрытие', score: 75 },
+    { id: 'partial', name: 'Неполное покрытие', score: 65 },
+    { id: 'invalid', name: 'Некорректный индекс', score: 55 },
+  ];
+  const indexResults = {
+    complete: { status: 'complete', index: 82.5 },
+    partial: { status: 'insufficient_coverage', index: null },
+    invalid: { status: 'complete', index: 101 },
+  };
+  const unapproved = buildForecasts(municipalities, {}, 1, {
+    scoreSource: 'resilience-index',
+    indexContract: { status: 'candidate', version: '1.0-candidate' },
+    indexResults,
+  });
+  assert.equal(unapproved.find((row) => row.id === 'complete').projectedScore, null);
+  assert.equal(unapproved.find((row) => row.id === 'complete').scoreSource, 'conceptual_score');
+
+  const approved = buildForecasts(municipalities, { score_growth_rate: 0 }, 1, {
+    scoreSource: 'resilience-index',
+    indexContract: { status: 'approved', version: '1.0' },
+    indexResults,
+  });
+  const complete = approved.find((row) => row.id === 'complete');
+  assert.equal(complete.score, 82.5);
+  assert.equal(complete.projectedScore, 82.5);
+  assert.equal(complete.scoreSource, 'approved_resilience_index');
+  assert.equal(complete.scoreMethodologyVersion, '1.0');
+  assert.equal(approved.find((row) => row.id === 'partial').projectedScore, null);
+  assert.equal(approved.find((row) => row.id === 'invalid').projectedScore, null);
+});
+
+test('approved index mode never falls back to municipality.score when an index result is absent', () => {
+  const rows = buildForecasts([
+    { id: 'missing-index', name: 'Нет индекса', score: 88 },
+  ], {}, 1, {
+    scoreSource: 'resilience-index',
+    indexContract: { status: 'approved', version: '1.0' },
+    indexResults: {},
+  });
+  assert.equal(rows[0].score, null);
+  assert.equal(rows[0].projectedScore, null);
+  assert.equal(rows[0].hasScore, false);
+  assert.equal(rows[0].scoreSource, 'approved_resilience_index');
+});
+
 test('summary reports coverage and does not convert missing values to zero', () => {
   const summary = summarizeForecast(buildForecasts(sample, { score_growth_rate: 0 }, 1));
   assert.equal(summary.municipalityCount, 3);
