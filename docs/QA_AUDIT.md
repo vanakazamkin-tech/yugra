@@ -91,12 +91,27 @@ Latest branch-head CI rechecks (6 Nov 2026):
 - PR #11 head `d551c0464c2acc9969ca6a2f27a7ebc6135ca049`: Build verification run [#42273208965](https://github.com/vanakazamkin-tech/yugra/actions/runs/42273208965) — failed in the Duma budget import test; migration integration passed.
 - PR #13 head `40abd4f39e719429cded4090cf606470f5d8779e`: Build verification run [#42268245956](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268245956) — success.
 
+## Latest branch-head recheck (6 Nov 2026)
+
+- PR #8 head `9371f2023ae533b68ea400fee15e38709dd483c8`: Build verification [#42274314513](https://github.com/vanakazamkin-tech/yugra/actions/runs/42274314513) failed at `scripts/test-resilience-index.mjs:158`. The test expects `topQuartileRetentionPercent === null` for values `[1,2,3,4,5,6,8,8]`; implementation returns 100 because both tied values occupy the complete top quartile and no tie crosses the quartile cutoff. This is likely an incorrect test expectation, not an implementation defect. Later checks and production build were skipped. Revise test data to create a tie across the cutoff (e.g. tied values at positions 2 and 3 in the descending order), or assert the current deterministic result.
+- PR #9 head `bbf338b24f148f3e49eb788622475abb82017d53`: Build verification [#42274368191](https://github.com/vanakazamkin-tech/yugra/actions/runs/42274368191) passed. Timeline findings remain: blank period is coerced to annual; UI `signature()` also defaults blank period to annual; conflicting `reference_year` and year embedded in `reference_period` are not rejected.
+- PR #10 latest head `4a0fd2b1a73ebffbdb98f314278bb8171503133b`: Build verification is associated with prior commit `1480abcda2eb95d9a946fa96a00ffb8539aee5ef` and passed; latest-head check is not yet confirmed.
+- PR #11 head `09d004c00dccb64447444d3d58eab568b240d957`: Build verification [#42274366016](https://github.com/vanakazamkin-tech/yugra/actions/runs/42274366016) passed.
+- PR #12 head `5de83ed4d5910f0b439df409752b5eec61005b27`: QA branch verification [#42273826571](https://github.com/vanakazamkin-tech/yugra/actions/runs/42273826571) and Build verification [#42273835621](https://github.com/vanakazamkin-tech/yugra/actions/runs/42273835621) passed.
+- PR #13 head `40abd4f39e719429cded4090cf606470f5d8779e`: previous Build verification [#42268245956](https://github.com/vanakazamkin-tech/yugra/actions/runs/42268245956) passed; whitespace-only numeric coercion finding remains in source.
+
 ## Verification limitations
 
 - Local repository clone was unavailable in this environment because outbound DNS/network access to GitHub was unavailable. Tests and build were executed by GitHub Actions on the QA branch.
 - No browser interaction test, accessibility audit, or live website visual test is claimed as passed.
 - Vercel deployment is blocked by the provider's build-rate limit.
 - The public website could not be fetched by the web inspection service during the initial audit.
+
+## Current confirmed findings
+
+1. **Risk period metadata (PR #9, medium):** require explicit period/frequency; reject blank values instead of assuming annual. Reject or quarantine a row when the explicit year conflicts with the year parsed from the period string. Add null/blank and conflicting-year regression tests in the owning branch.
+2. **Forecast numeric coercion (PR #13, medium):** `finite()` still accepts whitespace-only strings as numeric zero because `Number('   ') === 0`. Trim strings before numeric coercion and test whitespace-only score, SME count, and investment volume.
+3. **Index test fixture (PR #8, test issue):** latest failing assertion uses a tie fully inside the top quartile, not across its boundary. Adjust fixture so equal values straddle the cutoff; don't change production ranking behavior just to satisfy a mistaken fixture.
 
 ## Next QA actions
 
