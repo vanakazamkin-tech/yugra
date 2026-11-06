@@ -26,7 +26,6 @@ const periodLabel = (row) => safeText(row?.reference_period) || String(row?.refe
 const directionText = (s) => s.direction === 'higher' ? 'снижение — негативный сигнал' : s.direction === 'lower' ? 'рост — негативный сигнал' : 'изменение требует контекста';
 const sourceUrlsFor = (row) => [...new Set((Array.isArray(row?.source_urls) ? row.source_urls : row?.source_url ? [row.source_url] : []).filter((url) => typeof url === 'string' && url.trim()))];
 const sourceIdsFor = (row) => [...new Set((Array.isArray(row?.source_ids) ? row.source_ids : row?.source_id ? [row.source_id] : []).filter((id) => typeof id === 'string' && id.trim()))];
-const scenarioTone = (key) => key === 'cautious' ? 'pessimistic' : key === 'ambitious' ? 'optimistic' : 'base';
 
 export default function UnifiedRiskForecast({ municipalities = [], officialIndicators = [], programExecution = [], supabase, isSupabaseConfigured, officialDataStatus = 'offline', officialDataSyncedAt = null }) {
   const [tab, setTab] = useState('overview');
