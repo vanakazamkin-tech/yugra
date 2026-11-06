@@ -30,6 +30,12 @@ assert.equal(indicatorSeriesGroup({ indicator_code: 'sovetsky_noncompliant_roads
   'road condition belongs to infrastructure');
 assert.equal(indicatorSeriesGroup({ indicator_code: 'kogalym_no_regular_transport_population_share' }), 'infrastructure',
   'regular transport accessibility belongs to infrastructure');
+assert.equal(indicatorSeriesGroup({ indicator_code: 'pokachi_population_below_poverty' }), 'social',
+  'monetary poverty belongs to social context');
+assert.equal(indicatorDirection({ indicator_code: 'pokachi_population_below_poverty' }), 'context',
+  'single-municipality poverty series must not enter the composite score');
+assert.match(indicatorMethodFor({ indicator_code: 'pokachi_population_below_poverty' }).limitation, /2024 год обозначен администрацией как оценка/,
+  'estimated poverty value must be disclosed');
 assert.equal(indicatorDirection({ indicator_code: 'kogalym_no_regular_transport_population_share' }), 'lower',
   'a lower share of residents without regular transport is preferable');
 assert.match(indicatorMethodFor({ indicator_code: 'kogalym_no_regular_transport_population_share' }).limitation, /только по одному муниципалитету/,
