@@ -11,10 +11,15 @@ export const INDEX_PILLARS = Object.freeze([
 ]);
 
 const PILLAR_KEYS = new Set(INDEX_PILLARS.map((item) => item.key));
+const DECIMAL_VALUE_PATTERN = /^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$/;
+
 const isFiniteValue = (value) => {
   if (typeof value === 'number') return Number.isFinite(value);
-  if (typeof value !== 'string' || value.trim() === '') return false;
-  return Number.isFinite(Number(value));
+  if (typeof value !== 'string') return false;
+  const normalized = value.trim();
+  return normalized !== ''
+    && DECIMAL_VALUE_PATTERN.test(normalized)
+    && Number.isFinite(Number(normalized));
 };
 
 const quantile = (sorted, p) => {
@@ -137,6 +142,14 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
     groups.get(key).push(row);
   }
 
+  const municipalityRows = Array.isArray(municipalities) ? municipalities : [];
+  const municipalityIdOf = (municipality) => {
+    const value = municipality?.id ?? municipality?.municipality_id;
+    return value == null ? '' : String(value).trim();
+  };
+  const declaredMunicipalityIds = [...new Set(municipalityRows.map(municipalityIdOf).filter(Boolean))].sort();
+  const declaredMunicipalityIdSet = new Set(declaredMunicipalityIds);
+
   const scoredByMunicipality = new Map();
   const indicatorDiagnostics = [];
   for (const [groupKey, group] of groups) {
@@ -151,6 +164,11 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
       pillar: definition.pillar,
       unit: group[0].unit,
       municipalityCount: distinctMunicipalities.size,
+      peerMunicipalityIds: [...distinctMunicipalities].sort(),
+      peerCoveragePercent: declaredMunicipalityIds.length
+        ? Math.round((distinctMunicipalities.size / declaredMunicipalityIds.length) * 10000) / 100
+        : null,
+      peerMunicipalityCountOutsideRegistry: [...distinctMunicipalities].filter((id) => !declaredMunicipalityIdSet.has(id)).length,
       comparable: usable,
       distribution,
       outliers: distribution
@@ -184,11 +202,6 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
   }
 
   const results = {};
-  const municipalityRows = Array.isArray(municipalities) ? municipalities : [];
-  const municipalityIdOf = (municipality) => {
-    const value = municipality?.id ?? municipality?.municipality_id;
-    return value == null ? '' : String(value).trim();
-  };
   const municipalityIdCounts = new Map();
   for (const municipality of municipalityRows) {
     const id = municipalityIdOf(municipality);
