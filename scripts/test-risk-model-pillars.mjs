@@ -55,6 +55,12 @@ const missingPeriodSeries = buildRiskSeries([
 assert.equal(missingPeriodSeries[0].adverse, null, 'empty periods must not produce an annual comparison');
 assert.equal(missingPeriodSeries[0].adverseStreak, 0, 'empty periods must break early-warning streaks');
 
+const mixedFrequencySeries = buildRiskSeries([
+  riskRow(2023, 'annual', 70), riskRow(2024, '2024-Q1', 60),
+]);
+assert.equal(mixedFrequencySeries.length, 2, 'annual and quarterly observations must remain separate series');
+assert.ok(mixedFrequencySeries.every((item) => item.adverse === null), 'annual and quarterly observations must not create a cross-frequency signal');
+
 const gapSeries = buildRiskSeries([
   riskRow(2022, 'annual', 70), riskRow(2024, 'annual', 60),
 ]);
