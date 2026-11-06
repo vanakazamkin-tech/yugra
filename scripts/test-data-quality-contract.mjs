@@ -64,6 +64,9 @@ assert.equal(oktmoCrosswalk.length - 1, 22, 'OKTMO crosswalk template must inclu
 const oktmoRows = oktmoCrosswalk.slice(1).map(line => line.split(','));
 assert.equal(new Set(oktmoRows.map(row => row[0])).size, 22, 'OKTMO crosswalk municipality IDs must be unique');
 assert.ok(oktmoRows.every(row => row[3] === '' && row[9] === 'pending'), 'OKTMO values must remain blank and all rows pending until verified');
+assert.ok(oktmoRows.every(row => row[10] === '2026-10-01' && row[11] === '951/2026'), 'OKTMO crosswalk must pin the verified October 2026 classification edition');
+assert.ok(oktmoRows.every(row => row[12] === 'https://rosstat.gov.ru/classification'), 'OKTMO crosswalk must reference the official Rosstat classification page');
+assert.ok(oktmoRows.every(row => row.length === 15), 'OKTMO crosswalk must retain all provenance and manual-review columns');
 console.log('Rosstat OKTMO crosswalk template checks passed.');
 
 
