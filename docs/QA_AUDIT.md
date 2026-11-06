@@ -61,9 +61,9 @@ Read-only inspection of project `dmbikidqikjupkghywbz`:
 
 ## Pull-request review notes
 
-- **#8 — index methodology:** adds a separate strict six-pillar module and deterministic tests. It is not wired into the user-facing rating. This is the correct safety boundary until indicator definitions and methodology are approved. Test it after integration; do not call it a production index.
-- **#9 — risks:** addresses the unknown-direction coverage defect and adds repeated-deterioration explanations. This change should be tested against missing/undefined/null directions and streak boundaries before merge.
-- **#10 — UI:** additive CSS-only visualization layer; source review reports no calculation or data-access changes. The Vercel check currently prevents treating its deployment status as green.
+- **#8 — index methodology:** adds a separate strict six-pillar module and deterministic tests. It is not wired into the user-facing rating. This is the correct safety boundary until indicator definitions and methodology are approved. Its GitHub Build verification run completed successfully; this confirms the branch build/tests, not methodological approval or production integration. Do not call it a production index.
+- **#9 — risks:** addresses the unknown-direction coverage defect and adds repeated-deterioration explanations. Its GitHub Build verification run completed successfully. Review of behavior at missing/undefined/null directions and streak boundaries remains required before merge.
+- **#10 — UI:** additive CSS-only visualization layer; source review reports no calculation or data-access changes. Its GitHub Build verification run completed successfully. Browser-level visual and interaction testing remains outstanding; Vercel deployment is still rate-limited.
 
 ## Verification limitations
 
