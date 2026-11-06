@@ -2060,7 +2060,7 @@ export const InvestmentDetails = () => {
               <aside className="compare-picker">
                 <div className="picker-title"><div><strong>Территории для сравнения</strong><span>Выбрано {selectedCompareIds.length} из 4</span></div><span className="picker-counter" role="status" aria-live="polite" aria-atomic="true">{selectedCompareIds.length}/4</span></div>
                 <label className="search-box picker-search"><Icon name="search"/><input aria-label="Поиск территории для сравнения" value={comparisonSearch} onChange={(e) => setComparisonSearch(e.target.value)} placeholder="Найти муниципалитет…"/></label>
-                <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">Найдено муниципалитетов: {comparisonCandidates.length}</p>
+                <p className="picker-note" role="status" aria-live="polite" aria-atomic="true">Найдено муниципалитетов: {comparisonCandidates.length}</p>
                 <div className="compare-options">{comparisonCandidates.map((m) => {
                   const checked = selectedCompareIds.includes(m.id);
                   const disabled = !checked && selectedCompareIds.length >= 4;
