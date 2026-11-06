@@ -202,3 +202,10 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - The heading is programmatically focusable without adding it to the normal Tab sequence.
 - The focus trap now correctly routes Tab from the heading to the first control and Shift+Tab to the last control, while preserving normal movement between controls, Escape closing, scroll locking, and focus restoration.
 - The dialog content, selected municipality, and data remain unchanged.
+
+## Data provenance in overview and CSV exports (7 November 2026)
+
+- The overview notice now explicitly states that new cards are calculated from the project's existing dataset and that no new official statistical series have been uploaded.
+- CSV exports generated from the shared demonstration-metric exporter now include a `Статус данных` column on every row, identifying the exported values as demonstration values rather than official statistics.
+- The change does not alter values, formulas, selected municipalities, filters, or official-observation exports.
+- Browser download verification and a CI build for the resulting branch head remain outstanding.
