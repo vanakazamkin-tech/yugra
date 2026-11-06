@@ -255,3 +255,79 @@ PR #8, #10, #11 и #12 имеют успешные Build verification на ук�
 - PR #9: красный CI из-за устаревшего теста.
 - PR #13: красный CI из-за реального runtime дефекта.
 - Browser E2E, production Supabase, local build и Vercel deployment в этом раунде не выполнены.
+
+
+---
+
+# Дополнение к аудиту — ретест после следующих исправлений (07.11.2026)
+
+## 1. Текущие head и CI
+
+| PR | Проверенный head SHA | Build verification | Дополнительные результаты |
+|---|---|---|---|
+| #8 | `15484db921a045ae74d620eb1c597035855addb2` | #42283042241 success | mergeable=true |
+| #9 | `2105e6a26252dae6198f5f4e352c8800e02e50d3` | #42283083273 failure | mergeable=true |
+| #10 | `5da1254a0cf3c0adb8c12a51fb5009d81d4ae4f6` | #42283006776 success | mergeable=true |
+| #11 | `225d88aaa8821a3b272705b3ede7faef58f99523` | #42283046565 failure | data-migrations-integration success |
+| #12 | `f09a40a926a63fc508fa29e1f1217d679313b31f` | #42282998117 success | все QA checks + production build |
+| #13 | `1bfe67dd22e05d0fae04765e1638d68737e0c4f0` | #42282998466 success | forecast model unit tests + build |
+
+Vercel status для этих SHA остаётся failure из-за build-rate-limit. Это не интерпретируется как кодовая ошибка или успешный deployment.
+
+## 2. PR #9 — тест по-прежнему не обновлён
+
+На head `2105e6a...` файл `scripts/test-risk-data-gates.mjs` всё ещё читает `UnifiedRiskForecast.jsx` и ищет в нём две проверки provenance/geography. Реализация уже импортирует `buildRiskSeries`, а fail-closed условия находятся в `src/lib/riskSeries.js`.
+
+Run #42283083273 повторно падает именно на этом assertion. Следовательно, предыдущее замечание не было исправлено в этом head.
+
+**Требуемое действие:** тестировать поведение `buildRiskSeries()` на непроверенном/отсутствующем статусе и неверном уровне географии. Оставить fail-closed фильтры в модели данных. После изменения получить зелёный CI.
+
+## 3. PR #11 — миграционная интеграция успешна, parser contract test имеет дефект
+
+На head `225d88a...`:
+- job `data-migrations-integration` завершился success;
+- build job падает на последнем тесте `scripts/test-duma-budget-parser-structure.mjs`.
+
+Тестовый кейс `extra column` получает ожидаемую parser error: `CSV line 2 has 10 columns; expected 9`. Но регулярное выражение assertion написано с избыточным экранированием: оно ищет буквальную последовательность `\\d`, а не цифровой номер строки. Поэтому корректное сообщение парсера не совпадает.
+
+**Оценка:** это дефект теста, а не подтверждённый дефект CSV parser. Нужно исправить regex и оставить негативные тесты на лишнюю/недостающую колонку, повторные заголовки и некорректные кавычки. Не изменять parser validation для обхода теста.
+
+## 4. PR #13 — DEF-FORECAST-001 закрыт
+
+На новом head `1bfe67d...`:
+- `investmentRows is not defined` устранено;
+- `investmentCoverage` рассчитывается фильтрацией `safeRows` через `numeric(projectedInvestments) != null`;
+- явный ноль остаётся валидным наблюдением;
+- тест `summary reports coverage and does not convert missing values to zero` присутствует;
+- run #42282998466 прошёл forecast unit tests и build.
+
+**Вердикт:** предыдущий HIGH дефект закрыт на уровне кода и зелёного CI. Не заявлять browser E2E.
+
+## 5. QA PR #12 — новый run успешен
+
+На head `f09a40a...` run #42282998117 завершился success:
+- migration staging syntax;
+- migration staging filters;
+- forecast coverage;
+- risk provenance/geography gate;
+- indicator classification / resilience pillars;
+- official comparison comparability;
+- analytical report official-data gates;
+- municipality passport integrity;
+- operational registry integrity;
+- production build.
+
+Это Build verification со списком конкретных QA checks; он не является доказательством запуска полного `npm test` или браузерного E2E.
+
+## 6. Текущий verdict
+
+**Все шесть направлений пока не объединять.**
+
+Блокеры:
+1. PR #9 — заменить устаревший тест проверкой реального поведения `buildRiskSeries()`, получить зелёный CI.
+2. PR #11 — исправить regex в `test-duma-budget-parser-structure.mjs`, повторить весь `test:data-quality` и build; migration integration отдельно уже зелёный.
+3. Свести все PR на единый актуальный base. В предыдущих проверках фиксировались разные base SHA; не предполагать совместимость только по `mergeable=true`.
+4. Провести совместную сборку на итоговом merge candidate и закрыть пересечения файлов.
+5. Провести browser E2E, responsive и accessibility checks; подтвердить production deployment отдельно.
+
+Положительная динамика: PR #8, #10, #12 имеют успешные build verification; PR #13 исправил forecast runtime defect; PR #11 migration integration зелёная. Основные незакрытые CI-предметы сейчас локализованы в тестах PR #9 и PR #11.
