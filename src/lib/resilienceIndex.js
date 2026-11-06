@@ -398,7 +398,8 @@ export function analyzeIndicatorDominance(indexResult, options = {}) {
         code,
         municipalityCount: scores.size,
         pillarCoverageCount: pillarCount,
-        nominalWeightWithinPillar: pillarCount ? Math.round((1 / Math.max(1, indicatorsCount(pillarByMunicipality, code))) * 10000) / 10000 : null,
+        nominalWeightWithinPillar: byCode.size ? Math.round((1 / byCode.size) * 10000) / 10000 : null,
+        effectiveIndexWeight: byCode.size ? Math.round((pillar.weight / byCode.size) * 10000) / 10000 : null,
         meanAbsoluteIndexShift: absolute.length ? Math.round((absolute.reduce((sum, value) => sum + value, 0) / absolute.length) * 100) / 100 : null,
         maximumAbsoluteIndexShift: absolute.length ? Math.round(Math.max(...absolute) * 100) / 100 : null,
         evaluatedMunicipalities: influence.length,
@@ -454,10 +455,3 @@ export function analyzeIndicatorDominance(indexResult, options = {}) {
   };
 }
 
-function indicatorsCount(pillarByMunicipality, code) {
-  const counts = [];
-  for (const { pillarResult } of pillarByMunicipality.values()) {
-    if (pillarResult.indicators?.some((item) => String(item.code) === code)) counts.push(1);
-  }
-  return counts.length;
-}
