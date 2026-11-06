@@ -195,3 +195,10 @@ A dedicated `src/ui-visualization.css` presentation layer is imported after the 
 - The map description now explains mouse, touch, and keyboard selection and the passport-opening result, including the list position on narrow screens.
 - Municipality list buttons also announce the dialog action to assistive technology.
 - Selection callbacks and the existing municipality passport dialog remain unchanged; this is an accessibility clarification, not a change to data or navigation logic.
+
+## Municipality passport opening focus (7 November 2026)
+
+- When a municipality passport opens, keyboard/screen-reader focus now moves to the municipality heading rather than the close button, so the opened territory is announced immediately.
+- The heading is programmatically focusable without adding it to the normal Tab sequence.
+- The focus trap now correctly routes Tab from the heading to the first control and Shift+Tab to the last control, while preserving normal movement between controls, Escape closing, scroll locking, and focus restoration.
+- The dialog content, selected municipality, and data remain unchanged.
