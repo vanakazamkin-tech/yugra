@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { buildForecastCoverage } from '../lib/forecastCoverage';
+import { buildForecasts, summarizeForecast } from '../lib/forecastModel';
 
 const FALLBACK_SCENARIOS = [
-  { id: null, key: 'cautious', title: 'Пессимистичный', summary: 'Неблагоприятный сценарий: снижение экспортной выручки, усиление санкционных ограничений, рост издержек предприятий и дефицит кадров.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18, display_order: 1 },
-  { id: null, key: 'base', title: 'Базовый', summary: 'Продолжение наблюдаемых тенденций при сохранении текущих внешних и внутренних условий.', investment_growth_rate: 4, sme_growth_rate: 3, score_growth_rate: 1.5, uncertainty_rate: 7, display_order: 2 },
-  { id: null, key: 'ambitious', title: 'Оптимистичный', summary: 'Улучшение инвестиционной активности, расширение занятости и реализация мер поддержки при доступности ресурсов.', investment_growth_rate: 8, sme_growth_rate: 6, score_growth_rate: 3, uncertainty_rate: 12, display_order: 3 },
+  { id: null, key: 'cautious', title: 'Пессимистичный', summary: 'Неблагоприятный сценарий: снижение экспортной выручки, усиление санкционных ограничений, рост издержек предприятий и дефицит кадров.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18, export_shock_pct: -10, cost_pressure_pct: 8, labor_shortage_pct: 6, display_order: 1 },
+  { id: null, key: 'base', title: 'Базовый', summary: 'Продолжение наблюдаемых тенденций при сохранении текущих внешних и внутренних условий.', investment_growth_rate: 4, sme_growth_rate: 3, score_growth_rate: 1.5, uncertainty_rate: 7, export_shock_pct: 0, cost_pressure_pct: 0, labor_shortage_pct: 0, display_order: 2 },
+  { id: null, key: 'ambitious', title: 'Оптимистичный', summary: 'Улучшение инвестиционной активности, расширение занятости и реализация мер поддержки при доступности ресурсов.', investment_growth_rate: 8, sme_growth_rate: 6, score_growth_rate: 3, uncertainty_rate: 12, export_shock_pct: 4, cost_pressure_pct: -2, labor_shortage_pct: -2, display_order: 3 },
 ];
 
 const hasNumericValue = (value) => value != null && value !== '' && Number.isFinite(Number(value));
@@ -15,52 +16,6 @@ const n = (value) => {
 const fmt = (value, digits) => value == null || value === '' ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: digits == null ? 1 : digits, minimumFractionDigits: 0 }).format(value);
 const pct = (value) => (value > 0 ? '+' : '') + fmt(value, 1) + '%';
 
-function buildForecasts(municipalities, params, horizon) {
-  const uncertainty = Math.max(0, n(params.uncertainty_rate)) * Math.sqrt(horizon);
-  const rows = municipalities.map((m) => {
-    const investmentRaw = m.investments && m.investments.volumeBillion;
-    const hasInvestment = hasNumericValue(investmentRaw);
-    const hasSme = hasNumericValue(m.smeCount);
-    const hasScore = hasNumericValue(m.score);
-    const investment = hasInvestment ? n(investmentRaw) : null;
-    const sme = hasSme ? n(m.smeCount) : null;
-    const score = hasScore ? n(m.score) : null;
-    const investRate = n(params.investment_growth_rate) / 100;
-    const smeRate = n(params.sme_growth_rate) / 100;
-    const scoreRate = n(params.score_growth_rate) / 100;
-    const projectedInvestments = hasInvestment ? investment * Math.pow(1 + investRate, horizon) : null;
-    const projectedSme = hasSme ? Math.round(sme * Math.pow(1 + smeRate, horizon)) : null;
-    const projectedScore = hasScore ? Math.max(0, score * Math.pow(1 + scoreRate, horizon)) : null;
-    return {
-      id: m.id,
-      name: m.name,
-      group: m.group2024,
-      investment,
-      projectedInvestments,
-      investmentsLow: projectedInvestments == null ? null : projectedInvestments * Math.max(0, 1 - uncertainty / 100),
-      investmentsHigh: projectedInvestments == null ? null : projectedInvestments * (1 + uncertainty / 100),
-      sme,
-      projectedSme,
-      smeLow: hasSme ? Math.round(sme * Math.pow(Math.max(0, 1 + smeRate - uncertainty / 100), horizon)) : null,
-      smeHigh: hasSme ? Math.round(sme * Math.pow(Math.max(0, 1 + smeRate + uncertainty / 100), horizon)) : null,
-      score,
-      projectedScore,
-      hasInvestment,
-      hasSme,
-      hasScore,
-    };
-  });
-  const ordered = rows.filter((row) => row.projectedScore != null).slice().sort((a, b) => b.projectedScore - a.projectedScore);
-  const rank = new Map(ordered.map((row, index) => [row.id, index + 1]));
-  return rows.map((row) => Object.assign({}, row, { projectedRank: rank.get(row.id) || null }))
-    .sort((a, b) => {
-      if (a.projectedInvestments == null && b.projectedInvestments == null) return a.name.localeCompare(b.name, 'ru-RU');
-      if (a.projectedInvestments == null) return 1;
-      if (b.projectedInvestments == null) return -1;
-      return b.projectedInvestments - a.projectedInvestments;
-    });
-}
-
 export default function Forecasting({ municipalities, supabase, isSupabaseConfigured, officialIndicators = [], programExecution = [], officialDataStatus = 'offline', officialDataSyncedAt = null }) {
   const [scenarios, setScenarios] = useState(FALLBACK_SCENARIOS);
   const [scenarioKey, setScenarioKey] = useState('base');
@@ -70,6 +25,9 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
     sme_growth_rate: 3,
     score_growth_rate: 1.5,
     uncertainty_rate: 7,
+    export_shock_pct: 0,
+    cost_pressure_pct: 0,
+    labor_shortage_pct: 0,
   });
   const [scenarioStatus, setScenarioStatus] = useState('fallback');
   const [selectedId, setSelectedId] = useState('ALL');
@@ -92,6 +50,9 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
             sme_growth_rate: n(s.sme_growth_rate),
             score_growth_rate: n(s.score_growth_rate),
             uncertainty_rate: n(s.uncertainty_rate),
+            export_shock_pct: FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.export_shock_pct ?? 0,
+            cost_pressure_pct: FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.cost_pressure_pct ?? 0,
+            labor_shortage_pct: FALLBACK_SCENARIOS.find((item) => item.key === s.key)?.labor_shortage_pct ?? 0,
             display_order: s.display_order,
           }));
           setScenarios(normalized);
@@ -103,6 +64,9 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
             sme_growth_rate: initial.sme_growth_rate,
             score_growth_rate: initial.score_growth_rate,
             uncertainty_rate: initial.uncertainty_rate,
+            export_shock_pct: initial.export_shock_pct,
+            cost_pressure_pct: initial.cost_pressure_pct,
+            labor_shortage_pct: initial.labor_shortage_pct,
           });
         }
       } catch {
@@ -115,6 +79,25 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
 
   const activeScenario = scenarios.find((item) => item.key === scenarioKey) || scenarios[0];
   const forecasts = useMemo(() => buildForecasts(municipalities || [], params, horizon), [municipalities, params, horizon]);
+  const scenarioComparisons = useMemo(() => scenarios.map((scenario) => {
+    const scenarioParams = {
+      investment_growth_rate: scenario.investment_growth_rate,
+      sme_growth_rate: scenario.sme_growth_rate,
+      score_growth_rate: scenario.score_growth_rate,
+      uncertainty_rate: scenario.uncertainty_rate,
+      export_shock_pct: scenario.export_shock_pct ?? 0,
+      cost_pressure_pct: scenario.cost_pressure_pct ?? 0,
+      labor_shortage_pct: scenario.labor_shortage_pct ?? 0,
+    };
+    return { ...scenario, summary: summarizeForecast(buildForecasts(municipalities || [], scenarioParams, horizon)) };
+  }), [scenarios, municipalities, horizon]);
+  const factorSummary = useMemo(() => {
+    const rows = forecasts.filter((row) => row.projectedScore != null);
+    return ['exportShock', 'costPressure', 'laborShortage'].map((key) => {
+      const items = rows.map((row) => row.factorImpacts.find((factor) => factor.key === key)?.scorePoints).filter(Number.isFinite);
+      return { key, label: rows[0]?.factorImpacts.find((factor) => factor.key === key)?.label || key, average: items.length ? items.reduce((sum, value) => sum + value, 0) / items.length : null };
+    });
+  }, [forecasts]);
   const officialCoverage = useMemo(() => buildForecastCoverage(officialIndicators, programExecution, (municipalities || []).length || 22), [officialIndicators, programExecution, municipalities]);
   const officialCoverageLoaded = officialDataStatus === 'connected' || Boolean(officialDataSyncedAt);
   const officialCoverageStale = officialDataStatus === 'error' && Boolean(officialDataSyncedAt);
@@ -161,6 +144,9 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       sme_growth_rate: selected.sme_growth_rate,
       score_growth_rate: selected.score_growth_rate,
       uncertainty_rate: selected.uncertainty_rate,
+      export_shock_pct: selected.export_shock_pct ?? 0,
+      cost_pressure_pct: selected.cost_pressure_pct ?? 0,
+      labor_shortage_pct: selected.labor_shortage_pct ?? 0,
     });
   };
   const setParam = (key, value) => {
@@ -189,6 +175,9 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
       ['Годовой темп МСП, %', params.sme_growth_rate],
       ['Годовое изменение балла, %', params.score_growth_rate],
       ['Условная неопределённость, %/год', params.uncertainty_rate],
+      ['Шок экспортной выручки, % (допущение)', params.export_shock_pct],
+      ['Рост издержек, % (допущение)', params.cost_pressure_pct],
+      ['Кадровый дефицит, % (допущение)', params.labor_shortage_pct],
       ['Покрытие инвестиций', investmentCoverage + ' из ' + forecasts.length + ' территорий'],
       ['Покрытие МСП', smeCoverage + ' из ' + forecasts.length + ' территорий'],
       ['Покрытие модельного балла', scoreCoverage + ' из ' + forecasts.length + ' территорий'],
@@ -251,6 +240,9 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
             <label><span>Годовой рост субъектов МСП, %</span><strong>{fmt(n(params.sme_growth_rate), 1)}%</strong><input aria-label="Годовой рост субъектов МСП" type="range" min="-10" max="20" step="0.5" value={params.sme_growth_rate} onChange={(e) => setParam('sme_growth_rate', Number(e.target.value))}/></label>
             <label><span>Годовое изменение балла, %</span><strong>{fmt(n(params.score_growth_rate), 1)}%</strong><input aria-label="Годовое изменение балла" type="range" min="-10" max="10" step="0.5" value={params.score_growth_rate} onChange={(e) => setParam('score_growth_rate', Number(e.target.value))}/></label>
             <label><span>Условная неопределённость, %/год</span><strong>±{fmt(n(params.uncertainty_rate), 1)}%</strong><input aria-label="Допущение неопределённости" type="range" min="0" max="25" step="0.5" value={params.uncertainty_rate} onChange={(e) => setParam('uncertainty_rate', Number(e.target.value))}/></label>
+            <label><span>Шок экспортной выручки, %</span><strong>{fmt(n(params.export_shock_pct), 1)}%</strong><input aria-label="Шок экспортной выручки" type="range" min="-20" max="10" step="1" value={params.export_shock_pct} onChange={(e) => setParam('export_shock_pct', Number(e.target.value))}/></label>
+            <label><span>Изменение издержек, %</span><strong>{fmt(n(params.cost_pressure_pct), 1)}%</strong><input aria-label="Изменение издержек" type="range" min="-10" max="20" step="1" value={params.cost_pressure_pct} onChange={(e) => setParam('cost_pressure_pct', Number(e.target.value))}/></label>
+            <label><span>Кадровый дефицит, %</span><strong>{fmt(n(params.labor_shortage_pct), 1)}%</strong><input aria-label="Кадровый дефицит" type="range" min="-10" max="20" step="1" value={params.labor_shortage_pct} onChange={(e) => setParam('labor_shortage_pct', Number(e.target.value))}/></label>
           </div>
           <div className="forecast-control-actions">
             <button className="primary-button" onClick={exportCsv}><span className="forecast-action-symbol" aria-hidden="true">↓</span>Экспортировать результат CSV</button>
@@ -260,6 +252,9 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
                 sme_growth_rate: activeScenario.sme_growth_rate,
                 score_growth_rate: activeScenario.score_growth_rate,
                 uncertainty_rate: activeScenario.uncertainty_rate,
+                export_shock_pct: activeScenario.export_shock_pct ?? 0,
+                cost_pressure_pct: activeScenario.cost_pressure_pct ?? 0,
+                labor_shortage_pct: activeScenario.labor_shortage_pct ?? 0,
               });
             }}><span className="forecast-action-symbol" aria-hidden="true">↻</span>Вернуть настройки сценария</button>
           </div>
@@ -277,16 +272,30 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
         </div>
       </div>
 
+      <section className="forecast-analysis-grid">
+        <div className="forecast-control-card">
+          <div className="forecast-results-heading"><div><span className="micro-label">SCENARIO COMPARISON</span><h3>Сравнение сценариев</h3></div></div>
+          <div className="forecast-scenario-compare">{scenarioComparisons.map((scenario) => <article key={scenario.key} className={scenario.key === scenarioKey ? 'is-active' : ''}><strong>{scenario.title}</strong><span>Средний индекс: {fmt(scenario.summary.averageScore, 1)}</span><small>Диапазон: {fmt(scenario.summary.averageScoreLow, 1)}–{fmt(scenario.summary.averageScoreHigh, 1)}</small><small>Покрытие: {scenario.summary.scoreCoverage}/{scenario.summary.municipalityCount}</small></article>)}</div>
+          <p className="forecast-footnote">Сценарии рассчитаны на одном наборе исходных значений и выбранном горизонте. Сравнение не означает вероятность реализации.</p>
+        </div>
+        <div className="forecast-control-card">
+          <div className="forecast-results-heading"><div><span className="micro-label">FACTOR CONTRIBUTION</span><h3>Влияние факторов на индекс</h3></div></div>
+          <p className="forecast-scenario-description">Среднее изменение прогнозного балла относительно того же расчёта без отдельного фактора, балла на муниципалитет.</p>
+          <div className="forecast-factor-list">{factorSummary.map((factor) => <div key={factor.key}><span>{factor.label}</span><strong className={factor.average < 0 ? 'is-negative' : factor.average > 0 ? 'is-positive' : ''}>{factor.average == null ? '—' : pct(factor.average)}</strong></div>)}</div>
+          <p className="forecast-footnote">Коэффициенты влияния — открытые экспертные допущения прототипа (экспорт × 0,20; издержки и кадровый дефицит × −0,15), а не оценки из статистической регрессии. Их нужно согласовать и калибровать.</p>
+        </div>
+      </section>
+
       <div className="forecast-table-panel">
         <div className="forecast-table-toolbar"><div><h3>Результаты по муниципалитетам</h3><p>Рейтинг рассчитан заново по модельному баллу; он не является официальным рейтингом.</p></div><div className="forecast-table-filters"><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск территории…" aria-label="Поиск территории в прогнозе"/><select aria-label="Выбрать муниципалитет" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}><option value="ALL">Все территории</option>{municipalities.map((m) => <option value={m.id} key={m.id}>{m.name}</option>)}</select></div></div>
-        <div className="table-scroll"><table className="ranking-table forecast-table"><thead><tr><th>Территория</th><th>Инвестиции: база</th><th>Прогноз, млрд ₽</th><th>Модельный диапазон, млрд ₽</th><th>МСП: база → прогноз (диапазон)</th><th>Прогнозный балл</th><th>Модельное место</th></tr></thead>
-          <tbody>{filtered.map((row) => <tr key={row.id}><td>{row.name}</td><td>{fmt(row.investment, 1)}</td><td className="score-cell">{fmt(row.projectedInvestments, 1)}</td><td>{row.projectedInvestments == null ? '—' : `${fmt(row.investmentsLow, 1)}–${fmt(row.investmentsHigh, 1)}`}</td><td>{row.sme == null ? '—' : `${fmt(row.sme, 0)} → ${fmt(row.projectedSme, 0)} (${fmt(row.smeLow, 0)}–${fmt(row.smeHigh, 0)})`}</td><td>{fmt(row.projectedScore, 1)}</td><td>{row.projectedRank == null ? '—' : `№ ${row.projectedRank}`}</td></tr>)}</tbody>
+        <div className="table-scroll"><table className="ranking-table forecast-table"><thead><tr><th>Территория</th><th>Инвестиции: база</th><th>Прогноз, млрд ₽</th><th>Модельный диапазон, млрд ₽</th><th>МСП: база → прогноз (диапазон)</th><th>Прогнозный балл</th><th>Диапазон балла</th><th>Модельное место</th></tr></thead>
+          <tbody>{filtered.map((row) => <tr key={row.id}><td>{row.name}</td><td>{fmt(row.investment, 1)}</td><td className="score-cell">{fmt(row.projectedInvestments, 1)}</td><td>{row.projectedInvestments == null ? '—' : `${fmt(row.investmentsLow, 1)}–${fmt(row.investmentsHigh, 1)}`}</td><td>{row.sme == null ? '—' : `${fmt(row.sme, 0)} → ${fmt(row.projectedSme, 0)} (${fmt(row.smeLow, 0)}–${fmt(row.smeHigh, 0)})`}</td><td>{fmt(row.projectedScore, 1)}</td><td>{row.projectedScore == null ? '—' : `${fmt(row.scoreLow, 1)}–${fmt(row.scoreHigh, 1)}`}</td><td>{row.projectedRank == null ? '—' : `№ ${row.projectedRank}`}</td></tr>)}</tbody>
         </table>{filtered.length === 0 && <div className="empty-state"><span>Территории не найдены</span><p>Измените поиск или фильтр.</p></div>}</div>
       </div>
 
       <div className="forecast-methodology">
         <h3>Как считается прогноз</h3>
-        <div className="forecast-method-grid"><p><strong>1. Базовый срез.</strong> Для каждой территории берётся доступное значение инвестиций, МСП и балла. Если исходного значения нет, показатель не рассчитывается и отображается прочерком; агрегаты учитывают только территории с доступными значениями.</p><p><strong>2. Сценарная траектория.</strong> Показатель через N лет = базовое значение × (1 + заданный годовой темп)<sup>N</sup>. Темпы задаются ползунками, а не оцениваются по официальной истории.</p><p><strong>3. Диапазон чувствительности.</strong> Для инвестиций границы равны модельному итогу ± заданная неопределённость × √N. Для МСП границы рассчитываются отдельно сложным годовым темпом (темп роста ± неопределённость × √N); значения округляются до целых. Это стресс-диапазоны допущений, не доверительные интервалы и не измеренные вероятности.</p><p><strong>4. Ранжирование.</strong> Модельное место сортируется по прогнозному баллу. Такая перестановка демонстрирует сценарий, но не прогнозирует официальные рейтинговые баллы без воспроизводимой методики рейтинга.</p></div>
+        <div className="forecast-method-grid"><p><strong>1. Базовый срез.</strong> Для каждой территории берётся доступное значение инвестиций, МСП и балла. Если исходного значения нет, показатель не рассчитывается и отображается прочерком; агрегаты учитывают только территории с доступными значениями.</p><p><strong>2. Сценарная траектория.</strong> Показатель через N лет = базовое значение × (1 + заданный годовой темп)<sup>N</sup>. Темпы задаются ползунками, а не оцениваются по официальной истории.</p><p><strong>3. Диапазон чувствительности.</strong> Для инвестиций и МСП границы рассчитываются отдельно при темпе роста ± заданная неопределённость × √N; для индекса границы дополнительно ограничиваются шкалой 0–100. Это стресс-диапазоны допущений, не доверительные интервалы и не измеренные вероятности.</p><p><strong>4. Факторы индекса.</strong> Базовое изменение балла корректируется тремя явно заданными допущениями: экспортная выручка, издержки и кадровый дефицит. Коэффициенты показаны рядом с результатом и не обучались на данных.</p><p><strong>5. Ранжирование.</strong> Модельное место сортируется по прогнозному баллу. Такая перестановка демонстрирует сценарий, но не прогнозирует официальные рейтинговые баллы без воспроизводимой методики рейтинга.</p></div>
         <p className="forecast-footnote">Все параметры демонстрационные и редактируемые. До принятия решений их следует заменить экспертно согласованными допущениями, проверить исходные данные и сравнить модель с фактическими наблюдениями. Название сценария само по себе не означает вероятность его реализации.</p>
       </div>
     </section>
