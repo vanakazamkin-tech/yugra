@@ -36,6 +36,28 @@ begin
     raise exception 'legitimate negative growth value was incorrectly classified as a conflict';
   end if;
 
+
+  if not exists (
+    select 1 from public.municipality_indicators
+    where municipality_id = 'surgut'
+      and indicator_code = 'retail_turnover_large_medium_growth_comparable'
+      and reference_year = 2025
+      and value = -0.5
+      and verification_status = 'verified'
+  ) then
+    raise exception 'legitimate negative growth value was changed or removed';
+  end if;
+
+  if exists (
+    select 1 from public.municipality_indicator_quality_issues
+    where issue_code = 'conflicting_source_values'
+      and municipality_id = 'surgut'
+      and indicator_code = 'retail_turnover_large_medium_growth_comparable'
+      and reference_year = 2025
+  ) then
+    raise exception 'single-source negative growth value was incorrectly classified as a source conflict';
+  end if;
+
   if has_table_privilege('anon', 'public.municipality_indicator_quality_issues', 'SELECT')
      or has_table_privilege('authenticated', 'public.municipality_indicator_quality_issues', 'SELECT') then
     raise exception 'quality diagnostics view is exposed to API roles';
