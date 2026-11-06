@@ -105,12 +105,14 @@ export function buildRiskModel(municipalities = [], series = [], weightOverrides
     });
     const available = pillars.filter((p) => p.score !== null);
     const availableWeight = available.reduce((sum, p) => sum + p.weight, 0);
-    // A pilot score is useful with two independently covered dimensions and >=35% of base weights.
-    // The UI must always show coverage so a partial score cannot be mistaken for a complete assessment.
-    const resilience = available.length >= 2 && availableWeight >= 0.35
+    const baseAvailableWeight = available.reduce((sum, p) =>
+      sum + (MODEL_PILLARS.find((base) => base.key === p.key)?.weight || 0), 0);
+    // Score eligibility and data coverage use fixed base weights: user tuning must not
+    // make sparse data look complete by assigning zero weight to missing dimensions.
+    const resilience = available.length >= 2 && baseAvailableWeight >= 0.35
       ? available.reduce((sum, p) => sum + p.score * p.weight, 0) / availableWeight
       : null;
-    const coverage = availableWeight * 100;
+    const baseCoverage = baseAvailableWeight * 100;
     // Историческая глубина показывается отдельно: это характеристика доступности
     // временной истории, а не статистическая вероятность правильности индекса.
     const historyDepth = own.length ? own.reduce((sum, item) => sum + Math.min(1, item.points.length / 4), 0) / own.length : 0;
@@ -132,9 +134,10 @@ export function buildRiskModel(municipalities = [], series = [], weightOverrides
       score: resilience === null ? null : Math.round(resilience * 10) / 10,
       historyCoverage: Math.round(historyDepth * 100),
       latestPeriods,
-      assessmentStatus: resilience === null ? 'insufficient' : available.length < 4 || coverage < 70 ? 'partial' : 'expanded',
+      assessmentStatus: resilience === null ? 'insufficient' : available.length < 4 || baseCoverage < 70 ? 'partial' : 'expanded',
       availablePillars: available.length,
       availableWeight: Math.round(availableWeight * 100),
+      baseCoverage: Math.round(baseCoverage),
       pillars,
       adverseCount: adverse.length,
       affectedPillars: affectedPillars.size,
