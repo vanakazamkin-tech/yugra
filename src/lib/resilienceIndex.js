@@ -112,9 +112,19 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
   // Ambiguous duplicate observations are excluded as a whole; never "last row wins".
   const counts = new Map();
   for (const row of targetRows) counts.set(keyOf(row), (counts.get(keyOf(row)) || 0) + 1);
-  const duplicates = [...counts.entries()].filter(([, count]) => count > 1).map(([key]) => key);
+  const duplicates = [...counts.entries()].filter(([, count]) => count > 1).map(([key]) => key).sort();
   const duplicateSet = new Set(duplicates);
-  const uniqueRows = targetRows.filter((row) => !duplicateSet.has(keyOf(row)));
+  const uniqueRows = targetRows
+    .filter((row) => !duplicateSet.has(keyOf(row)))
+    .sort((left, right) => {
+      const leftKey = [left.indicator_code, left.municipality_id, left.reference_year, left.reference_period ?? '', left.unit];
+      const rightKey = [right.indicator_code, right.municipality_id, right.reference_year, right.reference_period ?? '', right.unit];
+      for (let index = 0; index < leftKey.length; index += 1) {
+        const comparison = String(leftKey[index]).localeCompare(String(rightKey[index]));
+        if (comparison !== 0) return comparison;
+      }
+      return 0;
+    });
 
   const groups = new Map();
   const unitsByIndicator = new Map();
@@ -174,8 +184,27 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
   }
 
   const results = {};
-  for (const municipality of municipalities) {
-    const id = String(municipality.id ?? municipality.municipality_id ?? '');
+  const municipalityRows = Array.isArray(municipalities) ? municipalities : [];
+  const municipalityIdOf = (municipality) => {
+    const value = municipality?.id ?? municipality?.municipality_id;
+    return value == null ? '' : String(value).trim();
+  };
+  const municipalityIdCounts = new Map();
+  for (const municipality of municipalityRows) {
+    const id = municipalityIdOf(municipality);
+    if (id) municipalityIdCounts.set(id, (municipalityIdCounts.get(id) || 0) + 1);
+  }
+  const duplicateMunicipalityIds = [...municipalityIdCounts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([id]) => id)
+    .sort();
+  const duplicateMunicipalityIdSet = new Set(duplicateMunicipalityIds);
+  const sortedMunicipalityRows = municipalityRows
+    .filter((municipality) => municipalityIdOf(municipality) && !duplicateMunicipalityIdSet.has(municipalityIdOf(municipality)))
+    .slice()
+    .sort((left, right) => municipalityIdOf(left).localeCompare(municipalityIdOf(right)));
+  for (const municipality of sortedMunicipalityRows) {
+    const id = municipalityIdOf(municipality);
     const indicatorScores = scoredByMunicipality.get(id) || [];
     const pillars = INDEX_PILLARS.map((pillar) => {
       const items = indicatorScores.filter((item) => item.pillar === pillar.key);
@@ -202,7 +231,12 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
       status: complete ? 'complete' : 'insufficient_coverage',
       availablePillars: available.length,
       availableWeightPercent: Math.round(availableWeight * 10000) / 100,
+      approvedIndicatorCount: definitionByCode.size,
+      coveredIndicatorCount: coveredIndicatorCodes,
+      missingIndicatorCount: Math.max(0, definitionByCode.size - coveredIndicatorCodes),
       coveragePercent: definitionByCode.size ? Math.round((coveredIndicatorCodes / definitionByCode.size) * 10000) / 100 : 0,
+      coveredPillarKeys: available.map((pillar) => pillar.key),
+      missingPillarKeys: pillars.filter((pillar) => pillar.score === null).map((pillar) => pillar.key),
       pillars,
       indicatorCount: indicatorScores.length,
       explanation: complete
@@ -229,6 +263,9 @@ export function calculateMunicipalIndex(rows = [], municipalities = [], options 
       indicatorGroups: indicatorDiagnostics,
       definitionErrors,
       minimumPeers: minPeers,
+      municipalityRows: municipalityRows.length,
+      invalidMunicipalityRows: municipalityRows.filter((municipality) => !municipalityIdOf(municipality)).length,
+      duplicateMunicipalityIds,
     },
   };
 }
