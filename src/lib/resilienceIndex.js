@@ -11,7 +11,7 @@ export const INDEX_PILLARS = Object.freeze([
 ]);
 
 const PILLAR_KEYS = new Set(INDEX_PILLARS.map((item) => item.key));
-const isFiniteValue = (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+const isFiniteValue = (value) => value !== null && value !== undefined && !(typeof value === 'string' && value.trim() === '') && Number.isFinite(Number(value));
 
 const quantile = (sorted, p) => {
   if (!sorted.length) return null;
@@ -54,29 +54,34 @@ function summarize(values) {
 
 export function calculateMunicipalIndex(rows = [], municipalities = [], options = {}) {
   const year = Number(options.referenceYear);
-  const period = String(options.referencePeriod || 'annual');
+  const period = String(options.referencePeriod ?? '');
   const definitions = Array.isArray(options.indicatorDefinitions) ? options.indicatorDefinitions : [];
   const minPeers = Math.max(5, Math.trunc(Number(options.minimumPeers) || 5));
   const definitionByCode = new Map();
 
   const definitionErrors = [];
+  const duplicateDefinitions = new Set();
   for (const definition of definitions) {
     if (!definition?.code || !PILLAR_KEYS.has(definition.pillar) || !['higher', 'lower'].includes(definition.direction)) {
       definitionErrors.push({ code: definition?.code || null, reason: 'invalid_or_unapproved_definition' });
       continue;
     }
-    if (definitionByCode.has(String(definition.code))) {
-      definitionErrors.push({ code: String(definition.code), reason: 'duplicate_definition' });
-      definitionByCode.delete(String(definition.code));
+    const code = String(definition.code);
+    if (definitionByCode.has(code) || duplicateDefinitions.has(code)) {
+      definitionErrors.push({ code, reason: 'duplicate_definition' });
+      definitionByCode.delete(code);
+      duplicateDefinitions.add(code);
       continue;
     }
-    definitionByCode.set(String(definition.code), definition);
+    definitionByCode.set(code, definition);
   }
 
   const targetRows = (Array.isArray(rows) ? rows : []).filter((row) =>
     row
     && row.verification_status === 'verified'
     && row.geographic_level === 'municipality'
+    && Number.isInteger(year)
+    && period.trim() !== ''
     && Number(row.reference_year) === year
     && String(row.reference_period || 'annual') === period
     && isFiniteValue(row.value)
@@ -206,10 +211,13 @@ export function calculateLeaveOneOutSensitivity(indexResult) {
   for (const pillar of all) {
     for (const item of pillar.indicators) {
       const remaining = pillar.indicators.filter((candidate) => candidate.code !== item.code);
-      if (!remaining.length) continue;
+      if (!remaining.length) {
+        indicatorResults.push({ code: item.code, pillar: pillar.key, indexWithoutIndicator: null, delta: null, reason: 'pillar_becomes_unavailable' });
+        continue;
+      }
       const replacement = remaining.reduce((sum, candidate) => sum + candidate.score, 0) / remaining.length;
       const adjustedPillar = all.reduce((sum, candidate) => sum + (candidate.key === pillar.key ? replacement : candidate.score) * candidate.weight, 0);
-      indicatorResults.push({ code: item.code, pillar: pillar.key, indexWithoutIndicator: Math.round(adjustedPillar * 100) / 100, delta: Math.round((adjustedPillar - baseline) * 100) / 100 });
+      indicatorResults.push({ code: item.code, pillar: pillar.key, indexWithoutIndicator: Math.round(adjustedPillar * 100) / 100, delta: Math.round((adjustedPillar - baseline) * 100) / 100, reason: null });
     }
   }
   for (const pillar of all) {
