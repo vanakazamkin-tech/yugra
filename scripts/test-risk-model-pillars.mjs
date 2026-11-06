@@ -250,6 +250,21 @@ const conflictingDerivedRows = deriveMunicipalIndicators([
 ]);
 assert.equal(conflictingDerivedRows.some((row) => row.indicator_code === 'derived_budget_own_revenue_share'), false, 'conflicting source values must not be used to derive a budget ratio');
 
+const unitConflictRows = deriveMunicipalIndicators([
+  sourceRow('budget_total_revenue', 100, '2024-Q3', 'тыс. руб.'),
+  sourceRow('budget_total_revenue', 100, '2024-Q3', 'руб.'),
+  sourceRow('budget_revenue_excluding_grants', 40, '2024-Q3', 'тыс. руб.'),
+]);
+assert.equal(unitConflictRows.some((row) => row.indicator_code === 'derived_budget_own_revenue_share'), false, 'same numeric values in conflicting units must not be treated as duplicates');
+
+const duplicateSourceRows = deriveMunicipalIndicators([
+  sourceRow('budget_total_revenue', 100, '2024-Q3', 'тыс. руб.', { source_id: 'budget-source-a' }),
+  sourceRow('budget_total_revenue', 100, '2024-Q3', 'тыс. руб.', { source_id: 'budget-source-b' }),
+  sourceRow('budget_revenue_excluding_grants', 40, '2024-Q3', 'тыс. руб.', { source_id: 'own-source' }),
+]);
+const duplicateDerivedShare = duplicateSourceRows.find((row) => row.indicator_code === 'derived_budget_own_revenue_share');
+assert.deepEqual(duplicateDerivedShare.source_ids, ['budget-source-a', 'budget-source-b', 'own-source'], 'derived rows must retain all identical source observations');
+
 const derivedRows = deriveMunicipalIndicators([
   sourceRow('budget_total_revenue', 100, '2024-Q2'),
   sourceRow('budget_revenue_excluding_grants', 40, '2024-Q2'),
