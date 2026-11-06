@@ -52,6 +52,9 @@ try {
     }
   }
   assert.ok(result.records.every((r) => r.verification_status === 'needs_review'));
+  assert.ok(result.records.every((r) => r.source_id === 'duma_hmao_municipal_budget_2023_2024_appendix1'));
+  assert.ok(result.records.every((r) => r.source_url === 'https://www.dumahmao.ru/povest/0745_4/03/50.pdf'));
+  assert.ok(result.records.every((r) => r.geographic_level === 'municipality'));
   assert.ok(result.records.every((r) => r.source_page === 1));
 } finally {
   await fs.rm(temp, { recursive: true, force: true });
