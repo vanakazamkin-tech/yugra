@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { buildForecastCoverage } from '../lib/forecastCoverage';
-import { buildForecasts, summarizeForecast, sumFiniteValues } from '../lib/forecastModel';
+import { buildForecasts, normalizeScenarioRows, summarizeForecast, sumFiniteValues } from '../lib/forecastModel';
 
 const FALLBACK_SCENARIOS = [
   { id: null, key: 'cautious', title: 'Стрессовый', summary: 'Неблагоприятный сценарий: снижение экспортной выручки, усиление санкционных ограничений, рост издержек предприятий и дефицит кадров.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18, export_shock_pct: -10, cost_pressure_pct: 8, labor_shortage_pct: 6, display_order: 1 },
@@ -64,21 +64,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
         }
         if (cancelled) return;
 
-        const normalized = result.data.map((s) => {
-          const fallback = FALLBACK_SCENARIOS.find((item) => item.key === s.key) || FALLBACK_SCENARIOS[1];
-          const factor = factorRows.find((item) => item.id === s.id || item.key === s.key) || {};
-          return {
-            id: s.id, key: s.key, title: s.title, summary: s.summary,
-            investment_growth_rate: hasNumericValue(s.investment_growth_rate) ? n(s.investment_growth_rate) : fallback.investment_growth_rate,
-            sme_growth_rate: hasNumericValue(s.sme_growth_rate) ? n(s.sme_growth_rate) : fallback.sme_growth_rate,
-            score_growth_rate: hasNumericValue(s.score_growth_rate) ? n(s.score_growth_rate) : fallback.score_growth_rate,
-            uncertainty_rate: hasNumericValue(s.uncertainty_rate) ? n(s.uncertainty_rate) : fallback.uncertainty_rate,
-            export_shock_pct: hasFactorColumns && hasNumericValue(factor.export_shock_pct) ? n(factor.export_shock_pct) : fallback.export_shock_pct,
-            cost_pressure_pct: hasFactorColumns && hasNumericValue(factor.cost_pressure_pct) ? n(factor.cost_pressure_pct) : fallback.cost_pressure_pct,
-            labor_shortage_pct: hasFactorColumns && hasNumericValue(factor.labor_shortage_pct) ? n(factor.labor_shortage_pct) : fallback.labor_shortage_pct,
-            display_order: s.display_order,
-          };
-        });
+        const normalized = normalizeScenarioRows(result.data, factorRows, hasFactorColumns, FALLBACK_SCENARIOS);
         setScenarios(normalized);
         setScenarioStatus(hasFactorColumns ? 'database' : 'database-legacy');
         const initial = normalized.find((s) => s.key === 'base') || normalized[0];
