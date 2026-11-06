@@ -50,6 +50,29 @@ assert.equal(m1.availableWeight, 55, 'economy + labour + social base weights sho
 const chain = m1.chains.find((item) => item.id === 'investment-employment');
 assert.ok(chain?.active, 'adverse investment and employment signals should activate their risk chain');
 
+const serviceSeries = [];
+for (const definition of [
+  { code: 'budget_services_test', key: 'budget', adverseIndex: 0 },
+  { code: 'health_services_test', key: 'health', adverseIndex: 0 },
+  { code: 'education_services_test', key: 'education', adverseIndex: 0 },
+]) {
+  [10, 20, 30].forEach((value, index) => {
+    serviceSeries.push({
+      municipalityId: municipalities[index].id,
+      code: definition.code,
+      unit: 'индекс',
+      direction: 'higher',
+      adverse: index === definition.adverseIndex,
+      pillar: { key: definition.key },
+      latest: { numericValue: value, reference_year: 2025, reference_period: 'annual' },
+      points: [2022, 2023, 2024, 2025].map((year) => ({ reference_year: year, numericValue: value })),
+    });
+  });
+}
+const serviceRisk = buildRiskModel(municipalities, serviceSeries).byMunicipality.m1.chains.find((item) => item.id === 'budget-services');
+assert.ok(serviceRisk?.active, 'health and education signals must activate the social stage in the budget-services chain');
+assert.deepEqual(serviceRisk.hits, ['budget', 'social'], 'health and education must count as one social-stage hit, not duplicate hits');
+
 const insufficient = buildRiskModel(municipalities, series.filter((item) => item.pillar.key === 'investment'));
 assert.equal(insufficient.byMunicipality.m1.score, null, 'one 20% pillar must not produce a resilience score');
 assert.equal(MODEL_PILLARS.find((pillar) => pillar.key === 'social').weight, 0.15, 'the existing social weight must remain unchanged');
