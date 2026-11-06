@@ -716,3 +716,25 @@ PR #10 обновил head до 312a140...; текущий CI #42285817027 succe
 ### Обновлённый вердикт
 
 Все шесть индивидуальных GitHub Actions runs зелёные на перечисленных SHA. Однако PR #11 содержит подтверждённый SQL NULL-semantics defect, поэтому его semantic QA gate не пройден. Нет общей интеграционной сборки, browser E2E, проверки responsive/accessibility, production Supabase validation или production deployment. Vercel build-rate-limit остаётся внешним ограничением и не засчитывается как успешный deployment.
+
+
+## QA-цикл: повторная проверка после новых commits (07.11.2026, дополнительный раунд)
+
+### Новые изменения и точные SHA
+
+- PR #8: head `5bb3ebc42272744fee1f849f0c156936af47f3fa`, CI #42286687973 — build success. В промежуточном запросе GitHub metadata временно вернулось mergeable=false, но последующий свежий запрос показал mergeable=true. Ориентироваться на последний snapshot.
+- PR #11: head `dbde2624436dfd7125f6665bc50ec559309a9906`, CI #42286729091 — на момент проверки queued / in progress. Mergeable=true.
+- PR #13: head `2486e4c4a683f0f820c0f468ee172332e08d69d6`, CI #42286502824 — build success; fail-closed ветка forecast model сохранена.
+- PR #10: head `21d74ab0b9029729d755fa0006fb774cf5cfdae1`, CI #42286462543 — build success.
+- PR #12: head `35c4a0b43316a674a3304ae20031d7def253e46e`, CI #42286444475 — build success.
+- PR #9: head `8b4e7b1f65d98c36f05cc69a79d81c6a10661820`, CI #42286208062 — build success.
+
+### PR #11 — SQL NULL blocker повторно подтверждён
+
+На новом head `dbde262...` SQL расширен новыми кандидатами показателей, но проверки `nonverified_rows` всё ещё используют `verification_status <> 'verified'` (строки 27 и 60). Контрактный тест на строке 60 по-прежнему проверяет regex, не поведение для NULL. В PostgreSQL NULL не будет включён в результат такого сравнения.
+
+Оставлен новый комментарий в PR #11 (id 6694480751): использовать `IS DISTINCT FROM 'verified'` в обоих местах и добавить тест с verified / unverified / NULL. CI #42286729091 на момент снимка ещё выполнялся. Даже успешный CI не закрывает semantic blocker без изменения SQL.
+
+### Ограничения
+
+PR #11 остаётся единственным подтверждённым semantic blocker в текущем наборе QA. При этом межветочные конфликты/семантические пересечения и необходимость общего интеграционного CI остаются. Production Supabase и production deployment не затрагивались.
