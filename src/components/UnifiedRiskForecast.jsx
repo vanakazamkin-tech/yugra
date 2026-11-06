@@ -232,7 +232,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
     </>}
 
     {tab === 'municipality' && <section className="unified-section">
-      <div className="unified-section-head"><div><h2>Паспорт рисков территории</h2><p>Конкретные изменения, контекст показателей и ограничения данных.</p></div><select value={selected?.id || ''} onChange={(e) => setSelectedMunicipality(e.target.value)}>{municipalities.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></div>
+      <div className="unified-section-head"><div><h2>Паспорт рисков территории</h2><p>Конкретные изменения, контекст показателей и ограничения данных.</p></div><select aria-label="Выбрать муниципалитет для паспорта рисков" value={selected?.id || ''} onChange={(e) => setSelectedMunicipality(e.target.value)}>{municipalities.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></div>
       {selected && <>
         <div className="municipality-risk-summary"><div><span>Сигнал системы</span><strong>{RISK[selected.level].label}</strong></div><div><span>Рядов с понятным направлением</span><strong>{selected.usable.length}</strong></div><div><span>Негативных изменений</span><strong>{selected.bad.length}</strong></div><div><span>Резких ухудшений</span><strong>{selected.sharpChangeCount}</strong></div><div><span>Всего подтверждённых рядов</span><strong>{selected.coverage}</strong></div></div>
         <div className="unified-model-result"><span>Покрытие риск-мониторинга</span><strong>{selected.model?.availablePillars ?? 0} / 6 направлений</strong><small>{selected.model?.usableIndicators ?? 0} рядов с однозначным направлением и сопоставимой динамикой · всего рядов: {selected.model?.totalSeries ?? selected.coverage}</small></div>
