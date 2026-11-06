@@ -81,7 +81,11 @@ export function buildRiskSeries(rows, thresholds = DEFAULT_RISK_THRESHOLDS) {
     const sharpChangeThreshold = Number.isFinite(Number(thresholds?.sharpChangePercent)) ? Math.max(1, Math.min(100, Number(thresholds.sharpChangePercent))) : DEFAULT_RISK_THRESHOLDS.sharpChangePercent;
     const sharpChange = adverse === true && changePercent != null && Math.abs(changePercent) >= sharpChangeThreshold;
     const adverseStreak = conflictAfterLatest ? 0 : countConsecutiveAdverseIntervals(points, direction);
-    const sourcePresent = Boolean(latest.source_id || latest.source_url || (Array.isArray(latest.source_ids) && latest.source_ids.length) || (Array.isArray(latest.source_urls) && latest.source_urls.length));
+    const sourcePresent = points.every((point) =>
+      Boolean(point.source_id || point.source_url
+        || (Array.isArray(point.source_ids) && point.source_ids.length)
+        || (Array.isArray(point.source_urls) && point.source_urls.length))
+    );
     const historyConsistent = points.length >= 3 && points.slice(1).every((point, index) => {
       const current = parseRiskPeriod(point), prior = parseRiskPeriod(points[index]);
       return current && prior && current.frequency === prior.frequency && current.slot === prior.slot && current.year - prior.year === 1;
