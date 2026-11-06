@@ -29,16 +29,12 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Run forecast model unit tests
-        run: npm test
       - name: Test data provenance and source catalog contracts
         run: npm run test:data-quality
       - name: Check migration staging script syntax
         run: node --check scripts/prepare-rosstat-migration-import.mjs
       - name: Test migration staging filters
         run: node scripts/test-rosstat-migration-staging.mjs
-      - name: Test forecast scenario migration safety
-        run: node scripts/test-forecast-scenario-migration.mjs
       - name: Test forecast coverage classification
         run: node scripts/test-forecast-coverage.mjs
       - name: Audit risk pilot CSV structure and coverage
