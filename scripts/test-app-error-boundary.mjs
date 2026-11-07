@@ -42,7 +42,7 @@ try {
   assert.equal(alert.props['aria-live'], 'assertive');
   assert.match(renderer.root.findByType('h1').children.join(''), /Не удалось открыть раздел/);
   assert.match(
-    renderer.root.findByType('p').children.join(''),
+    renderer.root.findAllByType('p')[1].children.join(''),
     /непредвиденная ошибка интерфейса/i,
   );
   assert.equal(renderer.root.findAllByType(ThrowingChild).length, 0);
