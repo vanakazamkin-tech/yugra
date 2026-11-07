@@ -609,3 +609,12 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Vercel Preview для исправляющего commit создан и READY: dpl_DQ6m4gGSVgV5Sz28gVGCQGxaL3q7; alias yugra18-git-fix-module-0-app-error-boundary-2026-11-07-napishtu.vercel.app. Preview проверен через состояние deployment, но интерактивный браузерный smoke test не выполнен.
 - Важное ограничение: тест подтверждает render-error fallback и обработчик reload в React Test Renderer; он не покрывает ошибки event handlers/async callbacks и не заменяет реальную проверку UI переходов «Риски» и «Сценарный прогноз».
 - Production deployment, Supabase, данные, схема и миграции не изменялись. PR #16 остаётся Draft; merge не выполнялся.
+
+
+### 2026-11-07 — повторная матрица пересечений PR #16/#17/#18
+- Повторно вычислены пересечения по актуальным `list_pr_changed_filenames` всех трёх Draft PR.
+- PR #16 ∩ PR #17: `.github/workflows/ci.yml`, `PROJECT_WORKLOG.md`.
+- PR #16 ∩ PR #18: `package.json`, `PROJECT_WORKLOG.md`.
+- PR #17 ∩ PR #18: `PROJECT_WORKLOG.md`.
+- Общий файл всех трёх веток: `PROJECT_WORKLOG.md`. Следовательно, интеграция требует ручного трёхстороннего объединения журнала. `package.json` PR #16 добавляет `react-test-renderer@18.3.1`, а PR #18 расширяет `test:data-quality`; оба изменения нужно сохранить. CI workflow PR #16 добавляет runtime test, PR #17 добавляет `audit/**` и обновляет migration paths; после интеграции Module 0 оба набора должны быть объединены.
+- Новых конфликтов содержимого GitHub mergeability не показывает, но это не снимает необходимость проверить результирующие файлы после синхронизации веток. Ни один PR не объединён; автоматическое принятие одной версии общего файла запрещено.
