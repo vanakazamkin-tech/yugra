@@ -600,3 +600,12 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - На момент записи итоговый PR HEAD — 3cbc49dc8c5ccd2eca2d7b24ad4f7c77e34311d7. CI runtime result ещё не подтверждён: combined status показывает только ожидающий Vercel check; доступный workflow-run lookup не вернул Actions run для этого SHA. Не считать runtime-тест пройденным до фактического результата GitHub Actions.
 - Ограничение остаётся: React Test Renderer проверяет поведение React Error Boundary, но не заменяет браузерный smoke test реального приложения и переходов «Риски» / «Сценарный прогноз». Vercel Preview и интерактивный browser QA остаются отдельными воротами.
 - Supabase, production deployment, production данные, схема и миграции не изменялись. PR остаётся Draft. Следующий шаг — получить фактический CI result; при успешном runtime-тесте выполнить доступный preview/browser smoke test после восстановления Vercel quota.
+
+
+### 2026-11-07 — Module 0: исправление загрузки JSX в runtime-тесте и успешная проверка
+- Первый runtime-тест был корректно запущен CI, но Node.js 20 завершил его с ERR_UNKNOWN_FILE_EXTENSION для .jsx: Node не преобразует JSX самостоятельно. Это была проблема тестового загрузчика, а не ошибка Error Boundary.
+- Исправлено: тест использует transformWithEsbuild из уже установленного Vite, временно преобразует AppErrorBoundary.jsx в ESM, импортирует преобразованный модуль, затем удаляет временный файл. Добавлять новый JSX runtime/тестовый framework не потребовалось; react-test-renderer остаётся devDependency.
+- Исправляющий commit: 9ff7f7214db2bb276aa02c01edb3b7282d6ea303. GitHub Actions Build verification run 42366054669 (run #1944) завершился SUCCESS: runtime Error Boundary test — success; production bundle build — success; data-migrations-integration — success. Предыдущий run 42365929609 падал только на прямом импорте .jsx в Node.
+- Vercel Preview для исправляющего commit создан и READY: dpl_DQ6m4gGSVgV5Sz28gVGCQGxaL3q7; alias yugra18-git-fix-module-0-app-error-boundary-2026-11-07-napishtu.vercel.app. Preview проверен через состояние deployment, но интерактивный браузерный smoke test не выполнен.
+- Важное ограничение: тест подтверждает render-error fallback и обработчик reload в React Test Renderer; он не покрывает ошибки event handlers/async callbacks и не заменяет реальную проверку UI переходов «Риски» и «Сценарный прогноз».
+- Production deployment, Supabase, данные, схема и миграции не изменялись. PR #16 остаётся Draft; merge не выполнялся.
