@@ -37,6 +37,44 @@ const expected = {
   2023: 211708172.0,
   2024: 231108858.7,
 };
+const csvPath = new URL('../supabase/imports/review/duma_budget_page3_expenditure_manual_transcription.csv', import.meta.url);
+const csvText = await readFile(csvPath, 'utf8');
+const [csvHeader, ...csvLines] = csvText.trim().split(/\r?\n/);
+const csvColumns = csvHeader.split(';');
+const csvRows = csvLines.map((line) => {
+  const values = line.split(';');
+  assert.equal(values.length, csvColumns.length, 'CSV delimiter/column count mismatch');
+  return Object.fromEntries(csvColumns.map((key, index) => [key, values[index]]));
+});
+
+assert.equal(csvRows.length, 44, 'Expected 22 municipalities × 2 CSV rows');
+assert.equal(
+  new Set(csvRows.map((row) => `${row.municipality}:${row.year}`)).size,
+  44,
+  'CSV municipality/year rows must be unique',
+);
+assert.ok(csvRows.every((row) =>
+  row.indicator_code === 'budget_total_expenditure'
+  && row.indicator_name === 'Расходы бюджета — всего'
+  && row.measure_type === 'amount'
+  && row.unit === 'тыс. руб.'
+  && row.page === '3'
+  && row.source_id === 'duma_hmao_municipal_budget_2023_2024_appendix1'
+  && row.review_status === 'needs_visual_review'
+), 'CSV must retain the expected source, measure, page and review-only status');
+
+for (const [name, value2023, value2024] of rows) {
+  for (const [year, expectedValue] of [['2023', value2023], ['2024', value2024]]) {
+    const csvRow = csvRows.find((row) => row.municipality === name && row.year === year);
+    assert.ok(csvRow, `Missing CSV row for ${name} ${year}`);
+    assert.equal(
+      Number(csvRow.value_raw.replace(',', '.')),
+      expectedValue,
+      `CSV value mismatch against independent Appendix 2 controls for ${name} ${year}`,
+    );
+  }
+}
+
 
 assert.equal(rows.length, 22, 'Expected exactly 22 municipal rows');
 assert.equal(new Set(rows.map(([name]) => name)).size, 22, 'Municipality labels must be unique');
