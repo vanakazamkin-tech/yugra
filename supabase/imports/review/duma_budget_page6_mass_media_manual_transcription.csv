@@ -19,12 +19,12 @@ municipality;municipality_id;indicator_code;indicator_name;measure_type;year;val
 г.Лангепас;langepas;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2024;13600,2;тыс. руб.;6;817;411;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
 г.Нягань;nyagan-city;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2023;57749,2;тыс. руб.;6;817;412;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
 г.Нягань;nyagan-city;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2024;68374,6;тыс. руб.;6;817;412;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
-г.Пыть-Ях;pyt-yakh;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2023;33813,7;тыс. руб.;6;817;413;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
-г.Пыть-Ях;pyt-yakh;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2024;39909,9;тыс. руб.;6;817;413;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
+г.Пыть-Ях;pyt-yah;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2023;33813,7;тыс. руб.;6;817;413;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
+г.Пыть-Ях;pyt-yah;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2024;39909,9;тыс. руб.;6;817;413;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
 г.Покачи;pokachi;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2023;12241,1;тыс. руб.;6;817;414;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
 г.Покачи;pokachi;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2024;16815,6;тыс. руб.;6;817;414;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
-г.Югорск;yugorsk;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2023;26606,7;тыс. руб.;6;817;415;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
-г.Югорск;yugorsk;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2024;27185,1;тыс. руб.;6;817;415;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
+г.Югорск;ugorsk;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2023;26606,7;тыс. руб.;6;817;415;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
+г.Югорск;ugorsk;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2024;27185,1;тыс. руб.;6;817;415;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
 Белоярский муниципальный район;beloyarsky-raion;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2023;25492,4;тыс. руб.;6;817;416;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
 Белоярский муниципальный район;beloyarsky-raion;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2024;25273,4;тыс. руб.;6;817;416;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
 Берёзовский муниципальный район;berezovsky-raion;candidate_budget_mass_media_expenditure;Средства массовой информации;amount;2023;22211,8;тыс. руб.;6;817;417;duma_hmao_municipal_budget_2023_2024_appendix1;needs_visual_review
