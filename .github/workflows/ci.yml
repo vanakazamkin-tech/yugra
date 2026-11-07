@@ -2,7 +2,7 @@ name: Build verification
 
 on:
   push:
-    branches: [main, feature/municipal-data-coverage-matrix, 'fix/**', 'feat/**', 'integration/yugra18-six-directions-2026-11-07']
+    branches: [main, feature/municipal-data-coverage-matrix, 'fix/**', 'feat/**', 'audit/**', 'integration/yugra18-six-directions-2026-11-07']
   # Keep incremental fix branches covered by the same regression and build checks.
   # Classification tests protect geography, sector semantics, and the six-pillar mapping.
   # The same workflow is used for data-classification and risk-chain regression updates.
