@@ -744,3 +744,6 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Неоднозначные значения не заменялись нулями: в наборе СМИ оставлена одна пустая ячейка (Сургутский МР, 2023); в наборе обслуживания долга — пять муниципалитетов с пустыми значениями в обоих годах. Пустые ячейки требуют визуальной проверки, не следует автоматически интерпретировать их как нули.
 - Добавлен тест `scripts/test-duma-budget-page6-media-debt-transcription.mjs`, включён в `npm run test:data-quality`.
 - Все данные review-only / `needs_visual_review`; словарь не менялся, Supabase не изменялся, импорт не выполнялся.
+
+
+- CI для итогового коммита `8f4cbc9db9cb25f8c7b2c437ba82160190fc3021`: `build` и `data-migrations-integration` завершились успешно (workflow run `42348744513`). PR #18 остаётся Draft, mergeable=true; слияние не выполнялось.
