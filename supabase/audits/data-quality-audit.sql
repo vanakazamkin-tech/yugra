@@ -87,17 +87,19 @@ group by reference_year,reference_period order by reference_year,reference_perio
 -- This is a raw presence audit, not a judgement that every indicator should cover all 22 municipalities.
 with per_indicator as (
   select indicator_code,
-    count(distinct municipality_id) filter(where geographic_level = 'municipality') as municipalities_covered,
+    count(distinct municipality_id) filter(where geographic_level = 'municipality') as municipalities_any_status,
+    count(distinct municipality_id) filter(where geographic_level = 'municipality' and verification_status = 'verified') as municipalities_verified,
     count(*) filter(where geographic_level = 'municipality') as municipality_observations,
     count(*) filter(where geographic_level <> 'municipality') as other_geography_rows
   from public.municipality_indicators
   group by indicator_code
 )
 select count(*) total_indicator_codes,
-  count(*) filter(where municipalities_covered = 22) full_municipality_coverage,
-  count(*) filter(where municipalities_covered between 2 and 21) partial_multi_municipality,
-  count(*) filter(where municipalities_covered = 1) single_municipality_only,
-  count(*) filter(where municipalities_covered = 0) no_municipality_level_rows,
+  count(*) filter(where municipalities_any_status = 22) full_municipality_coverage_any_status,
+  count(*) filter(where municipalities_verified = 22) full_verified_municipality_coverage,
+  count(*) filter(where municipalities_verified between 2 and 21) partial_verified_multi_municipality,
+  count(*) filter(where municipalities_verified = 1) single_verified_municipality_only,
+  count(*) filter(where municipalities_verified = 0) no_verified_municipality_level_rows,
   count(*) filter(where other_geography_rows > 0) indicators_with_nonmunicipal_geography,
   coalesce(sum(other_geography_rows),0) nonmunicipal_observations
 from per_indicator;
