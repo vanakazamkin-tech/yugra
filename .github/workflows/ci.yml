@@ -63,6 +63,8 @@ jobs:
         run: |
           node --check scripts/check-map-coverage.mjs
           npm run check:map-coverage
+      - name: Test global application error boundary
+        run: node scripts/test-app-error-boundary.mjs
       - name: Build production bundle
         run: npm run build
 
