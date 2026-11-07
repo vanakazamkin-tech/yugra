@@ -35,4 +35,6 @@ assert.doesNotMatch(migration, /\b(update|delete from|truncate)\s+public\.munici
 assert.doesNotMatch(migration, /\bgrant\s+[^;]*\bto\s+(public|anon|authenticated)\b/i);
 assert.doesNotMatch(migration, /\balter table\s+public\.municipality_indicators\s+disable row level security/i);
 
+await import('./test-external-rating-review-default.mjs');
+
 console.log('Data-quality migration contract tests passed.');
