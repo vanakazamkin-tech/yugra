@@ -797,3 +797,8 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Выявлен pre-existing defect: `package.json` вызывал отсутствующий `scripts/test-duma-budget-page3-review-transcription.mjs`, из-за чего полный `npm run test:data-quality` завершался `MODULE_NOT_FOUND`. Реализован недостающий regression test: реальный 44-строчный CSV проходит через `prepare-duma-budget-import.mjs`; 22 МО × 2 года, 44 staged rows, 0 duplicate keys, 0 warnings, суммы сверены, `verification_status=needs_review`, `review_status=needs_visual_review`, source/page/unit сохранены, safety note подтверждает отсутствие Supabase writes.
 - В `package.json` оба новых теста включены в `test:data-quality`. На актуальной PR18 ветке в чистом shallow clone: `npm run test:data-quality` SUCCESS; `npm test` SUCCESS (11 QA checks + 34 unit tests); `npm run build` SUCCESS. CI GitHub на последнем commit ожидается.
 - Все транскрипции остаются review-only; в Supabase ничего не импортировалось, production не менялся. Получение растровой страницы из web screenshot backend всё ещё даёт cache miss; поэтому не повышать `needs_visual_review` до визуальной проверки.
+
+
+### 2026-11-07 — согласование PR18 с текущим main
+- После обновления теста в PR18 до побайтно идентичной версии `main` повторная проверка `git merge-tree` подтвердила отсутствие конфликтов; GitHub PR metadata также вернул `mergeable=true`.
+- Текущий HEAD `6f04b2ae2cfe39290cde3f6905c0874a12a32e16`: CI #1971 SUCCESS; Vercel Preview READY. PR остаётся Draft до финальной визуальной проверки исходного PDF и других review-only транскрипций.
