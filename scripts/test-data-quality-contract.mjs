@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const migrationPath = 'supabase/migrations/20261106230000_add_municipality_indicator_quality_view.sql';
+const migrationPath = 'supabase/migrations/20261107055917_add_municipality_indicator_quality_view.sql';
 const migration = readFileSync(migrationPath, 'utf8');
 const assertions = readFileSync('supabase/tests/data_quality_audit.sql', 'utf8');
 
@@ -19,8 +19,8 @@ assert.match(assertions, /known multi-source disagreement/i, 'SQL regression ass
 assert.match(assertions, /legitimate negative growth value/i, 'SQL regression assertions must protect valid negative values');
 console.log('Data-quality contract checks passed.');
 
-const provenanceMigration = readFileSync('supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql', 'utf8');
-const metadataMigration = readFileSync('supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql', 'utf8');
+const provenanceMigration = readFileSync('supabase/migrations/20261107055915_data_quality_provenance_guardrails.sql', 'utf8');
+const metadataMigration = readFileSync('supabase/migrations/20261107055919_extend_data_source_provenance_metadata.sql', 'utf8');
 const auditSql = readFileSync('supabase/audits/data-quality-audit.sql', 'utf8');
 const postMigrationAuditSql = readFileSync('supabase/audits/data-quality-post-migration-audit.sql', 'utf8');
 
