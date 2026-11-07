@@ -590,3 +590,13 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Дизайн не менялся; production и настройки доступа Supabase не менялись.
 
 - При первом прогоне нового теста обнаружена ошибка в экранировании регулярного выражения ISO-даты (тест корректно поймал дефект). Исправлена проверка календарной даты; коммит `f2ef88e`. Новый CI-запуск `42133749169` ожидает результата.
+
+
+### 2026-11-07 — Module 0: поведенческая проверка глобальной Error Boundary
+- Повторно проверен PR #16: fix/module-0-app-error-boundary-2026-11-07; исходный HEAD до доработки 02227bb7e47f4b35ac8a1ee29f9753eace889b3d. Error Boundary подключена вокруг корневого App, fallback использует существующие переменные палитры Yugra и локальный SVG-ресурс; основной экран и навигация не изменялись.
+- Выявлено, что первоначальный scripts/test-app-error-boundary.mjs проверял только текст исходников и CSS. Это не доказывало реальную обработку render exception.
+- Source-only проверка заменена runtime-тестом через react-test-renderer 18.3.1: дочерний компонент намеренно выбрасывает ошибку; тест проверяет показ fallback (role=alert, aria-live=assertive), текст восстановления и вызов кнопки перезагрузки. В package.json добавлена только dev-зависимость; runtime-зависимости приложения не менялись.
+- Последовательные коммиты ветки: 0d386a867677b056b73546d53abeb2bfa2aae1f3 (test renderer dependency), c155e6c02f085d6edd8bf09a9b5bb5f207bf0586 (runtime test), 33cea08845306a91b0f355ad275cd764d541d83e (assertion correction), 3cbc49dc8c5ccd2eca2d7b24ad4f7c77e34311d7 (align renderer version).
+- На момент записи итоговый PR HEAD — 3cbc49dc8c5ccd2eca2d7b24ad4f7c77e34311d7. CI runtime result ещё не подтверждён: combined status показывает только ожидающий Vercel check; доступный workflow-run lookup не вернул Actions run для этого SHA. Не считать runtime-тест пройденным до фактического результата GitHub Actions.
+- Ограничение остаётся: React Test Renderer проверяет поведение React Error Boundary, но не заменяет браузерный smoke test реального приложения и переходов «Риски» / «Сценарный прогноз». Vercel Preview и интерактивный browser QA остаются отдельными воротами.
+- Supabase, production deployment, production данные, схема и миграции не изменялись. PR остаётся Draft. Следующий шаг — получить фактический CI result; при успешном runtime-тесте выполнить доступный preview/browser smoke test после восстановления Vercel quota.
