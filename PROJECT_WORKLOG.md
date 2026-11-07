@@ -695,3 +695,13 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Добавлен тест `scripts/test-duma-budget-page3-payroll-transcription.mjs`, включён в `npm run test:data-quality`.
 - Код `candidate_budget_payroll_and_contributions` временный, не утверждён в словаре. Независимое муниципальное подтверждение из отдельного приложения №2 пока не установлено.
 - Все записи остаются `needs_visual_review`; Supabase не изменялся, импорт не выполнялся.
+
+
+## 07.11.2026 — review-транскрипция капитальных вложений
+
+- По странице 3 официального приложения №1 подготовлена транскрипция капитальных вложений в объекты государственной (муниципальной) собственности с учётом бюджетных и автономных учреждений.
+- Файл: `supabase/imports/review/duma_budget_page3_capital_investment_manual_transcription.csv`; 44 строки (22 муниципалитета × 2023/2024).
+- Суммы по муниципалитетам совпали со строкой «ВСЕГО»: 45 686 385,9 тыс. руб. за 2023 год и 35 363 779,2 тыс. руб. за 2024 год.
+- Добавлен тест `scripts/test-duma-budget-page3-capital-investment-transcription.mjs`, включён в `npm run test:data-quality`.
+- Код `candidate_budget_capital_investment_expenditure` временный, не утверждён в словаре. Независимая муниципальная cross-source сверка не установлена.
+- Все записи остаются `needs_visual_review`; Supabase не изменялся, импорт не выполнялся.
