@@ -613,3 +613,11 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 
 
 - Read-only сверка production-кода `budget_total_expenditure`: «Расходы бюджета — всего», тыс. руб., municipality, verified, 22 МО для `2024-Q3` и `2025-Q3`, источник — отдельный отчёт за 9 месяцев. Это подтверждает семантического кандидата для годовой статьи «Итого расходов», но не годовые наблюдения; периоды и source_id должны оставаться раздельными.
+
+
+## 07.11.2026 — review-транскрипция расходов страницы 3
+
+- Создан `supabase/imports/review/duma_budget_page3_expenditure_manual_transcription.csv`: 44 строки, 22 муниципалитета × 2023/2024, код-кандидат `budget_total_expenditure`, единица тыс. руб., source_id годового приложения 1, страница 3, `review_status=needs_visual_review`.
+- Все 22 названия муниципалитетов сопоставлены с фактическими `municipalities.id` из read-only запроса Supabase. Сопоставление не меняет production.
+- Добавлен тест `scripts/test-duma-budget-page3-review-transcription.mjs` и включён в `npm run test:data-quality`. Проверяется 44 строки, 22 МО в каждом году, отсутствие дублей/предупреждений, годовой source_id, page=3, статус `needs_review` и совпадение сумм с «ВСЕГО».
+- Тестовая транскрипция остаётся review-only. Скриншот PDF не получен (cache miss), поэтому визуальная проверка необходима до любой загрузки. Supabase observations/staging не изменялись.
