@@ -31,6 +31,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Run forecast model unit tests
         run: npm test
+      - name: Test global application error boundary
+        run: node scripts/test-app-error-boundary.mjs
       - name: Test data provenance and source catalog contracts
         run: npm run test:data-quality
       - name: Check migration staging script syntax
@@ -102,6 +104,11 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055917_add_municipality_indicator_quality_view.sql
       - name: Apply source catalog metadata migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055919_extend_data_source_provenance_metadata.sql
+      - name: Test review-first external rating default migration
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/external_rating_review_default_setup.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107114255_harden_external_rating_review_default.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/external_rating_review_default_assertions.sql
       - name: Reapply migrations to verify idempotency
         run: |
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055915_data_quality_provenance_guardrails.sql
