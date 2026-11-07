@@ -779,3 +779,6 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Read-only запрос к Supabase `public.municipalities` выявил канонические ID Пыть-Яха `pyt-yah` и Югорска `ugorsk`. Девять review CSV исправлены с ошибочных вариантов `pyt-yakh` / `yugorsk`; production database не менялась.
 - Добавлен `scripts/test-duma-budget-municipality-id-registry.mjs`, включён в `npm run test:data-quality`; проверяет все 10 бюджетных CSV с municipality_id на соответствие 22 ID Supabase.
 - В ходе независимой локальной сверки 44 муниципальных пар payroll/capex/other against total: missing=0, mismatches=0; агрегаты other expenses также сошлись.
+
+
+- CI initially выявил, что два существовавших тестовых fixture (payroll/capex/housing) всё ещё ожидали прежние ошибочные ID. Исправлены expected IDs в трёх тестах; итоговый run `42349590511` для коммита `b531af0a11922d7d55ee846f8b9f81b22838ff5f`: `build` и `data-migrations-integration` — success. PR #18 остаётся Draft, mergeable=true.
