@@ -1,10 +1,12 @@
 -- Yugra18 post-migration read-only audit.
--- Run only after applying migrations:
--- 20261106210000_data_quality_provenance_guardrails.sql
--- 20261106230000_add_municipality_indicator_quality_view.sql
--- 20261106233000_extend_data_source_provenance_metadata.sql
--- This file is intentionally separate because production may not yet have
--- these additive relations/columns. Each SELECT can be run independently.
+-- Run only after applying migrations listed below to the target database:
+-- 20261107055913_forecast_scenario_alignment.sql
+-- 20261107055915_data_quality_provenance_guardrails.sql
+-- 20261107055917_add_municipality_indicator_quality_view.sql
+-- 20261107055919_extend_data_source_provenance_metadata.sql
+-- Production has these versions registered as of 2026-11-07. Verify the
+-- migration history before running this read-only audit on another project.
+-- Each SELECT can be run independently.
 --
 -- Provenance coverage after the provenance migration.
 -- A missing link is a review item; do not synthesize links from guessed URLs.

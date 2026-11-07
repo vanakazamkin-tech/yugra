@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const migrationPath = 'supabase/migrations/20261106230000_add_municipality_indicator_quality_view.sql';
+const migrationPath = 'supabase/migrations/20261107055917_add_municipality_indicator_quality_view.sql';
 const migration = readFileSync(migrationPath, 'utf8');
 const assertions = readFileSync('supabase/tests/data_quality_audit.sql', 'utf8');
 
@@ -19,8 +19,8 @@ assert.match(assertions, /known multi-source disagreement/i, 'SQL regression ass
 assert.match(assertions, /legitimate negative growth value/i, 'SQL regression assertions must protect valid negative values');
 console.log('Data-quality contract checks passed.');
 
-const provenanceMigration = readFileSync('supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql', 'utf8');
-const metadataMigration = readFileSync('supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql', 'utf8');
+const provenanceMigration = readFileSync('supabase/migrations/20261107055915_data_quality_provenance_guardrails.sql', 'utf8');
+const metadataMigration = readFileSync('supabase/migrations/20261107055919_extend_data_source_provenance_metadata.sql', 'utf8');
 const auditSql = readFileSync('supabase/audits/data-quality-audit.sql', 'utf8');
 const postMigrationAuditSql = readFileSync('supabase/audits/data-quality-post-migration-audit.sql', 'utf8');
 
@@ -37,6 +37,8 @@ assert.match(postMigrationAuditSql, /unchecked_access_restrictions/i, 'post-migr
 assert.match(postMigrationAuditSql, /reference_period !~ '[^']*\[0-9\]\{4\}/i, 'post-migration period audit must preserve explicit canonical vocabulary');
 console.log('Extended provenance and source-quality audit contract checks passed.');
 assert.match(auditSql, /count\(distinct municipality_id\) filter\(where geographic_level = 'municipality'\)/i, 'municipal coverage must exclude settlement-level observations');
+assert.match(auditSql, /verification_status = 'verified'/i, 'verified coverage must exclude needs_review observations');
+assert.match(auditSql, /full_verified_municipality_coverage/i, 'audit must report confirmed full-coverage codes separately from raw presence');
 assert.match(auditSql, /where geographic_level = 'municipality'[\s\S]*group by indicator_code/i, 'highest-coverage municipal panel must use municipality-level rows only');
 assert.match(auditSql, /where geographic_level <> 'municipality'[\s\S]*group by geographic_level/i, 'non-municipal observations must be reported separately');
 assert.match(auditSql, /union select source_id from public\.municipality_indicator_import_review/i, 'catalog usage audit must include import-review records');

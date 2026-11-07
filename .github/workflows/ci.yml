@@ -2,7 +2,7 @@ name: Build verification
 
 on:
   push:
-    branches: [main, feature/municipal-data-coverage-matrix, 'fix/**', 'feat/**', 'integration/yugra18-six-directions-2026-11-07']
+    branches: [main, feature/municipal-data-coverage-matrix, 'fix/**', 'feat/**', 'audit/**', 'integration/yugra18-six-directions-2026-11-07']
   # Keep incremental fix branches covered by the same regression and build checks.
   # Classification tests protect geography, sector semantics, and the six-pillar mapping.
   # The same workflow is used for data-classification and risk-chain regression updates.
@@ -98,27 +98,43 @@ jobs:
           persist-credentials: false
       - name: Bootstrap disposable Supabase-like schema
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_bootstrap.sql
+      - name: Apply staging import pipeline migrations
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261105234251_create_municipal_indicator_import_staging.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261105234254_secure_municipal_indicator_import_staging.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261105234402_add_import_staging_validation_view.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261105234455_add_controlled_staging_import_rpc.sql
       - name: Apply provenance and uniqueness migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055915_data_quality_provenance_guardrails.sql
       - name: Apply quality diagnostics view migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106230000_add_municipality_indicator_quality_view.sql
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055917_add_municipality_indicator_quality_view.sql
       - name: Apply source catalog metadata migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055919_extend_data_source_provenance_metadata.sql
+      - name: Align staging import with full source identity
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107122134_allow_cross_source_staging_import.sql
+      - name: Test review-first external rating default migration
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/external_rating_review_default_setup.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107114255_harden_external_rating_review_default.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/external_rating_review_default_assertions.sql
       - name: Reapply migrations to verify idempotency
         run: |
-          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql
-          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106230000_add_municipality_indicator_quality_view.sql
-          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055915_data_quality_provenance_guardrails.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055917_add_municipality_indicator_quality_view.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055919_extend_data_source_provenance_metadata.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107122134_allow_cross_source_staging_import.sql
       - name: Verify migration effects, security grants, and uniqueness behavior
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_assertions.sql
+      - name: Test controlled staging import preserves cross-source observations
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/controlled_staging_import_cross_source.sql
       - name: Execute read-only post-migration audit against integration schema
         run: psql -v ON_ERROR_STOP=1 -f supabase/audits/data-quality-post-migration-audit.sql
       - name: Verify standalone legacy-index compatibility
         run: |
           createdb yugra_migration_test_legacy_index
           PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_bootstrap_legacy_index.sql
-          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql
-          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106230000_add_municipality_indicator_quality_view.sql
-          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql
+          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055915_data_quality_provenance_guardrails.sql
+          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055917_add_municipality_indicator_quality_view.sql
+          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055919_extend_data_source_provenance_metadata.sql
           PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_assertions.sql
 
