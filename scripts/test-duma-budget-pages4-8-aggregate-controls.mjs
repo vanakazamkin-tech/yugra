@@ -21,8 +21,8 @@ const rows = lines.slice(1).map((line) => {
 
 assert.equal(new Set(rows.map((r) => `${r.metric_code}:${r.year}`)).size, 54);
 const expected = {
-  'other_expenses_non_additive_subtotal:2023': 62688872.0,
-  'other_expenses_non_additive_subtotal:2024': 78916387.3,
+  'other_expenses_by_expense_group:2023': 62688872.0,
+  'other_expenses_by_expense_group:2024': 78916387.3,
   'education:2023': 100886482.2,
   'education:2024': 114891654.7,
   'budget_surplus_deficit:2023': 4302909.4,
@@ -83,13 +83,28 @@ for (const year of [2023, 2024]) {
   const detailSum = rows
     .filter((r) => r.year === String(year)
       && r.page >= 4 && r.page <= 6
-      && r.metric_code !== 'other_expenses_non_additive_subtotal'
+      && r.metric_code !== 'other_expenses_by_expense_group'
       && r.metric_code !== 'budget_surplus_deficit')
     .reduce((sum, r) => sum + r.value, 0);
   assert.equal(Math.round(detailSum * 10) / 10, expenditureTotals[year],
     `Page 4–6 detailed expenditure sections must reconcile to page 3 total for ${year}`);
-  const nonAdditive = rows.find((r) => r.metric_code === 'other_expenses_non_additive_subtotal' && r.year === String(year));
-  assert.ok(nonAdditive, `Missing non-additive “Иные расходы” control for ${year}`);
+  const otherExpensesGroup = rows.find((r) => r.metric_code === 'other_expenses_by_expense_group' && r.year === String(year));
+  assert.ok(otherExpensesGroup, `Missing “Иные расходы” expense-group control for ${year}`);
+
+  // Separate economic grouping in the official 2024 analysis report:
+  // payroll + municipal capital investment + other expenses = total expenses.
+  // https://www.dumahmao.ru/povest/0745_4/03/49.pdf
+  const expenseGroups = {
+    2023: { payroll: 103332914.1, capital: 45686385.9, other: 62688872.0 },
+    2024: { payroll: 116828692.2, capital: 35363779.2, other: 78916387.3 },
+  };
+  const groups = expenseGroups[year];
+  assert.equal(
+    Math.round((groups.payroll + groups.capital + groups.other) * 10) / 10,
+    expenditureTotals[year],
+    `Payroll, capital investment and other-expense groups must reconcile to total expenses for ${year}`,
+  );
+
 }
 
 console.log('Duma annual budget pages 4–8 aggregate control fixture passed');
