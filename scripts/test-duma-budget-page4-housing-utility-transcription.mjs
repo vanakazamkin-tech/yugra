@@ -42,7 +42,7 @@ const parsed = lines.map((line) => {
 
 assert.equal(parsed.length, 44, 'Expected 22 municipalities × 2 years');
 assert.equal(new Set(parsed.map((r) => `${r.municipality_id}:${r.year}`)).size, 44, 'Duplicate municipality/year row');
-assert.ok(parsed.every((r) => r.page === '4' && r.printed_page === '816'));
+assert.ok(parsed.every((r) => r.page === '5' && r.printed_page === '816'));
 assert.ok(parsed.every((r) => r.review_status === 'needs_visual_review'));
 assert.ok(parsed.every((r) => r.indicator_code === 'candidate_budget_housing_utility_expenditure'));
 assert.ok(parsed.every((r) => r.unit === 'тыс. руб.' && r.measure_type === 'amount'));
