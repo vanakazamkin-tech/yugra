@@ -668,3 +668,9 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Ветка CI self-contained: попытка добавить в неё Error Boundary job из PR16 привела к ожидаемому отсутствию PR16 файла в независимой ветке; шаг убран. Runtime Error Boundary test остаётся в PR16. Для последовательной интеграции CI шаги нужно сохранить оба.
 - Чтобы не создавать конфликт `package.json` с PR18, новый review-default test подключён импортом из существующего `test-data-quality-migration.mjs`; package.json в PR17 возвращён к исходному скрипту. Read-only `git merge-tree` PR17↔PR18 теперь показывает только конфликт `PROJECT_WORKLOG.md`; PR17↔main чистый, PR17↔PR16 также требует ручной консолидации worklog.
 - Текущий HEAD `c228266499cdc0adbccaa6b3e6f37be76cc94595`: CI #1992 SUCCESS (build + disposable PostgreSQL integration). Локально в sandbox: `npm run test:data-quality`, `npm test` (11 QA + 34 unit), `npm run build` — SUCCESS. Vercel status остаётся `build-rate-limit`; текущего Preview для HEAD нет. Production/Supabase не изменялись.
+
+
+### 2026-11-07 — финальная проверка документационного HEAD
+- После финального worklog-коммита текущий HEAD `b09e45e62a2b2d7dbb325382641e9f87c416cf74`; GitHub Actions run #1994 SUCCESS: build и PostgreSQL integration jobs.
+- `git merge-tree` PR17 против `main` без конфликтов; PR17 против PR18 — только `PROJECT_WORKLOG.md`; PR17 против PR16 — только `PROJECT_WORKLOG.md` (package.json/workflow автоматом объединяются при правильной последовательности).
+- Vercel Preview для точного HEAD не создан из-за `build-rate-limit`; последняя READY Preview старее и не является проверкой этого HEAD.
