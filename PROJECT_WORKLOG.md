@@ -705,3 +705,13 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Добавлен тест `scripts/test-duma-budget-page3-capital-investment-transcription.mjs`, включён в `npm run test:data-quality`.
 - Код `candidate_budget_capital_investment_expenditure` временный, не утверждён в словаре. Независимая муниципальная cross-source сверка не установлена.
 - Все записи остаются `needs_visual_review`; Supabase не изменялся, импорт не выполнялся.
+
+
+## 07.11.2026 — review-транскрипция расходов на ЖКХ
+
+- По странице 4 (печатная страница 816) официального приложения №1 подготовлена муниципальная транскрипция расходов по функциональному разделу «Жилищно-коммунальное хозяйство».
+- Файл: `supabase/imports/review/duma_budget_page4_housing_utility_manual_transcription.csv`; 44 строки (22 муниципалитета × 2023/2024).
+- Контрольные суммы совпали со строкой «ВСЕГО»: 42 017 420,4 тыс. руб. за 2023 год и 37 527 500,2 тыс. руб. за 2024 год.
+- Добавлен тест `scripts/test-duma-budget-page4-housing-utility-transcription.mjs`, включён в `npm run test:data-quality`.
+- Код `candidate_budget_housing_utility_expenditure` временный, не утверждён в словаре. Независимая муниципальная cross-source сверка не установлена.
+- Все записи остаются `needs_visual_review`; Supabase не изменялся, импорт не выполнялся.
