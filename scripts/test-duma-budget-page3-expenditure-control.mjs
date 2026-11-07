@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 // Manual transcription of the two annual "Итого расходов" columns on page 3
 // (PDF page index P2) of the official Duma Yugra annual appendix:
