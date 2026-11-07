@@ -40,6 +40,31 @@ const expected = {
 assert.equal(rows.length, 22, 'Expected exactly 22 municipal rows');
 assert.equal(new Set(rows.map(([name]) => name)).size, 22, 'Municipality labels must be unique');
 
+const appendix2Expected2023 = new Map([
+  ['г.Нефтеюганск', 16840037.2],
+  ['г.Сургут', 40273903.8],
+  ['г.Ханты-Мансийск', 15300639.1],
+  ['г.Нижневартовск', 27149965.7],
+  ['г.Мегион', 7403290.8],
+  ['г.Урай', 4917599.6],
+  ['г.Когалым', 7327858.5],
+  ['г.Радужный', 3424071.5],
+  ['г.Лангепас', 3939203.6],
+  ['г.Нягань', 6943079.4],
+  ['г.Пыть-Ях', 4618083.8],
+  ['г.Покачи', 1918787.5],
+  ['г.Югорск', 4867159.2],
+  ['Белоярский муниципальный район', 5099914.4],
+  ['Берёзовский муниципальный район', 5565446.9],
+  ['Кондинский муниципальный район', 5734583.2],
+  ['Октябрьский муниципальный район', 6106126.8],
+  ['Сургутский муниципальный район', 18747259.2],
+  ['Советский муниципальный район', 6276770.2],
+  ['Ханты-Мансийский муниципальный район', 5389919.6],
+  ['Нижневартовский муниципальный район', 6074761.6],
+  ['Нефтеюганский муниципальный район', 7789710.4],
+]);
+
 const appendix2Expected2024 = new Map([
   ['г.Нефтеюганск', 12608996.9],
   ['г.Сургут', 43102449.6],
@@ -65,10 +90,14 @@ const appendix2Expected2024 = new Map([
   ['Нефтеюганский муниципальный район', 9169371.7],
 ]);
 
-// Independent cross-check against Appendix 2, 2024 execution report:
-// https://www.dumahmao.ru/povest/0745_4/03/51.pdf
-assert.equal(appendix2Expected2024.size, 22, 'Appendix 2 must cover 22 municipalities');
-for (const [name, , value2024] of rows) {
+// Independent cross-check against the official annual Appendix 2 reports:
+// 2023: https://www.dumahmao.ru/povest/0734_2/05/62.pdf
+// 2024: https://www.dumahmao.ru/povest/0745_4/03/51.pdf
+assert.equal(appendix2Expected2023.size, 22, '2023 Appendix 2 must cover 22 municipalities');
+assert.equal(appendix2Expected2024.size, 22, '2024 Appendix 2 must cover 22 municipalities');
+for (const [name, value2023, value2024] of rows) {
+  assert.equal(appendix2Expected2023.get(name), value2023,
+    `2023 expenditure mismatch against Appendix 2 for ${name}`);
   assert.equal(appendix2Expected2024.get(name), value2024,
     `2024 expenditure mismatch against Appendix 2 for ${name}`);
 }
