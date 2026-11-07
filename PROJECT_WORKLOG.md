@@ -650,3 +650,10 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Playwright recorded 0 `pageerror`, 0 browser-console errors, 0 failed network requests, no `role=alert` crash fallback and no error-boundary fallback during these transitions.
 - Preview commit `436795b7...` is 4 commits behind current PR16 HEAD `c8eba4c57f1915f1cc3bd5eba5428122f9775939`; GitHub compare confirms the only differences are `.github/workflows/ci.yml` and `PROJECT_WORKLOG.md`, with no application/runtime source changes. Therefore the tested application code matches current PR16 source, although exact-HEAD Preview is still unavailable.
 - This is a browser smoke test, not a full interaction/visual regression suite; detailed control paths and viewport-specific visual review remain outstanding.
+
+
+### 2026-11-07 — deterministic dependency installation for PR #16
+- Created `package-lock.json` v3 from the PR #16 branch manifest in an isolated Vercel sandbox (Node 24); 193 package entries, 95,438 bytes.
+- Verified `npm ci --ignore-scripts --no-audit --no-fund` completes successfully against the generated lockfile.
+- Added the exact lockfile to the PR #16 branch through GitHub Git objects and changed `.github/workflows/ci.yml` from `npm install` to `npm ci --no-audit --no-fund`. No application source or design files changed in this dependency reproducibility step.
+- CI run #2014 is queued on the resulting branch head; wait for its exact-head result before treating the change as verified in GitHub Actions.
