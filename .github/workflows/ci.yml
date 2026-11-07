@@ -96,12 +96,20 @@ jobs:
           persist-credentials: false
       - name: Bootstrap disposable Supabase-like schema
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_bootstrap.sql
+      - name: Apply staging import pipeline migrations
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261105234251_create_municipal_indicator_import_staging.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261105234254_secure_municipal_indicator_import_staging.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261105234402_add_import_staging_validation_view.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261105234455_add_controlled_staging_import_rpc.sql
       - name: Apply provenance and uniqueness migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055915_data_quality_provenance_guardrails.sql
       - name: Apply quality diagnostics view migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055917_add_municipality_indicator_quality_view.sql
       - name: Apply source catalog metadata migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055919_extend_data_source_provenance_metadata.sql
+      - name: Align staging import with full source identity
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107122134_allow_cross_source_staging_import.sql
       - name: Test review-first external rating default migration
         run: |
           psql -v ON_ERROR_STOP=1 -f supabase/tests/external_rating_review_default_setup.sql
@@ -112,8 +120,11 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055915_data_quality_provenance_guardrails.sql
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055917_add_municipality_indicator_quality_view.sql
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055919_extend_data_source_provenance_metadata.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107122134_allow_cross_source_staging_import.sql
       - name: Verify migration effects, security grants, and uniqueness behavior
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_assertions.sql
+      - name: Test controlled staging import preserves cross-source observations
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/controlled_staging_import_cross_source.sql
       - name: Execute read-only post-migration audit against integration schema
         run: psql -v ON_ERROR_STOP=1 -f supabase/audits/data-quality-post-migration-audit.sql
       - name: Verify standalone legacy-index compatibility
