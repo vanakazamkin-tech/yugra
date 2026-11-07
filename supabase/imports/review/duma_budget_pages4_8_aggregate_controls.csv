@@ -1,6 +1,6 @@
 source_id;page;metric_code;metric_name;year;value_raw;unit;record_level;review_status
-duma_hmao_municipal_budget_2023_2024_appendix1;4;other_expenses;Иные расходы;2023;62688872,0;тыс. руб.;regional_aggregate;needs_visual_review
-duma_hmao_municipal_budget_2023_2024_appendix1;4;other_expenses;Иные расходы;2024;78916387,3;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;4;other_expenses_non_additive_subtotal;Иные расходы — отдельный итог, не складывать с детализацией;2023;62688872,0;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;4;other_expenses_non_additive_subtotal;Иные расходы — отдельный итог, не складывать с детализацией;2024;78916387,3;тыс. руб.;regional_aggregate;needs_visual_review
 duma_hmao_municipal_budget_2023_2024_appendix1;4;general_government;Общегосударственные вопросы;2023;19728122,5;тыс. руб.;regional_aggregate;needs_visual_review
 duma_hmao_municipal_budget_2023_2024_appendix1;4;general_government;Общегосударственные вопросы;2024;21964121,3;тыс. руб.;regional_aggregate;needs_visual_review
 duma_hmao_municipal_budget_2023_2024_appendix1;4;national_defense;Национальная оборона;2023;80621,8;тыс. руб.;regional_aggregate;needs_visual_review
