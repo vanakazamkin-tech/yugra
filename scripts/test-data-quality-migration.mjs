@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const migration = readFileSync(
-  'supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql',
+  'supabase/migrations/20261107055915_data_quality_provenance_guardrails.sql',
   'utf8',
 );
 
@@ -34,5 +34,7 @@ assert.ok(
 assert.doesNotMatch(migration, /\b(update|delete from|truncate)\s+public\.municipality_indicators\b/i);
 assert.doesNotMatch(migration, /\bgrant\s+[^;]*\bto\s+(public|anon|authenticated)\b/i);
 assert.doesNotMatch(migration, /\balter table\s+public\.municipality_indicators\s+disable row level security/i);
+
+await import('./test-external-rating-review-default.mjs');
 
 console.log('Data-quality migration contract tests passed.');

@@ -1,0 +1,55 @@
+source_id;page;metric_code;metric_name;year;value_raw;unit;record_level;review_status
+duma_hmao_municipal_budget_2023_2024_appendix1;4;other_expenses_by_expense_group;Иные расходы — группа расходов (не складывать с функциональными статьями страниц 4–6);2023;62688872,0;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;4;other_expenses_by_expense_group;Иные расходы — группа расходов (не складывать с функциональными статьями страниц 4–6);2024;78916387,3;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;4;general_government;Общегосударственные вопросы;2023;19728122,5;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;4;general_government;Общегосударственные вопросы;2024;21964121,3;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;4;national_defense;Национальная оборона;2023;80621,8;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;4;national_defense;Национальная оборона;2024;86646,2;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;4;national_security;Национальная безопасность и правоохранительная деятельность;2023;1948989,5;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;4;national_security;Национальная безопасность и правоохранительная деятельность;2024;2074296,5;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;4;national_economy;Национальная экономика;2023;20643219,0;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;4;national_economy;Национальная экономика;2024;25410302,5;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;5;housing_utilities;Жилищно-коммунальное хозяйство;2023;42017420,4;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;5;housing_utilities;Жилищно-коммунальное хозяйство;2024;37527500,2;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;5;environmental_protection;Охрана окружающей среды;2023;2361475,0;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;5;environmental_protection;Охрана окружающей среды;2024;1455772,0;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;5;education;Образование;2023;100886482,2;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;5;education;Образование;2024;114891654,7;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;5;culture_cinematography;Культура, кинематография;2023;9157143,5;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;5;culture_cinematography;Культура, кинематография;2024;9995712,4;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;5;healthcare;Здравоохранение;2023;37324,4;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;5;healthcare;Здравоохранение;2024;42526,2;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;6;social_policy;Социальная политика;2023;3491881,1;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;6;social_policy;Социальная политика;2024;5100351,3;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;6;physical_culture_sports;Физическая культура и спорт;2023;10654142,3;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;6;physical_culture_sports;Физическая культура и спорт;2024;11836796,3;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;6;mass_media;Средства массовой информации;2023;574231,8;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;6;mass_media;Средства массовой информации;2024;679104,4;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;6;municipal_debt_service;Обслуживание муниципального долга;2023;127118,5;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;6;municipal_debt_service;Обслуживание муниципального долга;2024;44074,7;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;6;budget_surplus_deficit;Профицит (+) / дефицит (-);2023;4302909,4;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;6;budget_surplus_deficit;Профицит (+) / дефицит (-);2024;10480393,0;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;7;deficit_financing_total;Источники финансирования дефицита — всего;2023;-4302909,4;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;7;deficit_financing_total;Источники финансирования дефицита — всего;2024;-10480393,0;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;7;bank_loans_net;Кредиты кредитных организаций — нетто;2023;-710413,3;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;7;bank_loans_net;Кредиты кредитных организаций — нетто;2024;-1159920,8;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;7;bank_loans_attracted;Кредиты кредитных организаций — привлечение;2023;2304091,0;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;7;bank_loans_attracted;Кредиты кредитных организаций — привлечение;2024;824536,0;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;7;bank_loans_repaid;Кредиты кредитных организаций — погашение;2023;-3014504,3;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;7;bank_loans_repaid;Кредиты кредитных организаций — погашение;2024;-1984456,8;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;7;budget_loans_net;Бюджетные кредиты (без досрочного завоза) — нетто;2023;987287,8;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;7;budget_loans_net;Бюджетные кредиты (без досрочного завоза) — нетто;2024;-415873,1;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;7;budget_loans_attracted;Бюджетные кредиты — привлечение;2023;2622062,0;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;7;budget_loans_attracted;Бюджетные кредиты — привлечение;2024;1364724,8;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;7;budget_loans_repaid;Бюджетные кредиты — погашение;2023;-1634774,2;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;7;budget_loans_repaid;Бюджетные кредиты — погашение;2024;-1780597,9;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;8;early_delivery_budget_loans_net;Бюджетные кредиты на досрочный завоз — нетто;2023;31845,2;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;8;early_delivery_budget_loans_net;Бюджетные кредиты на досрочный завоз — нетто;2024;-48419,9;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;8;early_delivery_loans_attracted;Досрочный завоз — привлечение;2023;879708,6;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;8;early_delivery_loans_attracted;Досрочный завоз — привлечение;2024;926856,2;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;8;early_delivery_loans_repaid;Досрочный завоз — погашение;2023;-847863,4;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;8;early_delivery_loans_repaid;Досрочный завоз — погашение;2024;-975276,1;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;8;other_internal_deficit_sources;Иные источники внутреннего финансирования дефицитов;2023;-4611629,1;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;8;other_internal_deficit_sources;Иные источники внутреннего финансирования дефицитов;2024;-8856179,2;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;8;municipal_debt_stock;Объём муниципального долга;2023;5521635,6;тыс. руб.;regional_aggregate;needs_visual_review
+duma_hmao_municipal_budget_2023_2024_appendix1;8;municipal_debt_stock;Объём муниципального долга;2024;3909985,7;тыс. руб.;regional_aggregate;needs_visual_review

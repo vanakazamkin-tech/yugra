@@ -86,7 +86,7 @@ begin
   else
     drop index if exists public.municipality_indicators_observation_unique;
   end if;
-end;
+end
 $drop_legacy$;
 
 comment on index public.uq_municipality_indicators_source_observation is
