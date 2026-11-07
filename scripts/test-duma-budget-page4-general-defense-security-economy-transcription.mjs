@@ -177,7 +177,7 @@ const expectedByMunicipality = {
       666915.5
     ]
   },
-  "pyt-yakh": {
+  "pyt-yah": {
     "general": [
       537391,
       597777.6
@@ -213,7 +213,7 @@ const expectedByMunicipality = {
       157245.6
     ]
   },
-  "yugorsk": {
+  "ugorsk": {
     "general": [
       440360,
       500261
