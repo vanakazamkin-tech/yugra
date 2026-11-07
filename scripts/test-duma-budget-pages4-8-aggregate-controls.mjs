@@ -21,8 +21,8 @@ const rows = lines.slice(1).map((line) => {
 
 assert.equal(new Set(rows.map((r) => `${r.metric_code}:${r.year}`)).size, 54);
 const expected = {
-  'other_expenses:2023': 62688872.0,
-  'other_expenses:2024': 78916387.3,
+  'other_expenses_non_additive_subtotal:2023': 62688872.0,
+  'other_expenses_non_additive_subtotal:2024': 78916387.3,
   'education:2023': 100886482.2,
   'education:2024': 114891654.7,
   'budget_surplus_deficit:2023': 4302909.4,
@@ -39,4 +39,18 @@ for (const [key, value] of Object.entries(expected)) {
   assert.equal(row.value, value, `Wrong control value for ${key}`);
 }
 assert.ok(rows.every((r) => r.page >= 4 && r.page <= 8));
+
+const expenditureTotals = { 2023: 211708172.0, 2024: 231108858.7 };
+for (const year of [2023, 2024]) {
+  const detailSum = rows
+    .filter((r) => r.year === String(year)
+      && r.page >= 4 && r.page <= 6
+      && r.metric_code !== 'other_expenses_non_additive_subtotal')
+    .reduce((sum, r) => sum + r.value, 0);
+  assert.equal(Math.round(detailSum * 10) / 10, expenditureTotals[year],
+    `Page 4–6 detailed expenditure sections must reconcile to page 3 total for ${year}`);
+  const nonAdditive = rows.find((r) => r.metric_code === 'other_expenses_non_additive_subtotal' && r.year === String(year));
+  assert.ok(nonAdditive, `Missing non-additive “Иные расходы” control for ${year}`);
+}
+
 console.log('Duma annual budget pages 4–8 aggregate control fixture passed');
