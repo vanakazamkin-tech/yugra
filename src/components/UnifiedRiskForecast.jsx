@@ -22,6 +22,17 @@ const DEFAULT_SCENARIOS = [
   { key: 'base', title: 'Базовый', summary: 'Продолжение наблюдаемых тенденций при текущих условиях.', investment_growth_rate: 4, sme_growth_rate: 3, uncertainty_rate: 7 },
   { key: 'ambitious', title: 'Благоприятный', summary: 'Улучшение инвестиционной активности и деловой среды.', investment_growth_rate: 8, sme_growth_rate: 6, uncertainty_rate: 12 },
 ];
+
+// Map scenario identifiers to the visual variants defined in UnifiedRiskForecast.css.
+// Database-provided scenarios may use arbitrary keys, so always return a safe variant.
+const scenarioTone = (key) => ({
+  cautious: 'pessimistic',
+  stress: 'pessimistic',
+  pessimistic: 'pessimistic',
+  base: 'base',
+  ambitious: 'optimistic',
+  optimistic: 'optimistic',
+}[String(key ?? '').toLowerCase()] || 'base');
 const periodLabel = (row) => safeText(row?.reference_period) || String(row?.reference_year || '—');
 const directionText = (s) => s.direction === 'higher' ? 'снижение — негативный сигнал' : s.direction === 'lower' ? 'рост — негативный сигнал' : 'изменение требует контекста';
 const sourceUrlsFor = (row) => [...new Set((Array.isArray(row?.source_urls) ? row.source_urls : row?.source_url ? [row.source_url] : []).filter((url) => typeof url === 'string' && url.trim()))];
