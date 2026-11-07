@@ -45,7 +45,8 @@ for (const year of [2023, 2024]) {
   const detailSum = rows
     .filter((r) => r.year === String(year)
       && r.page >= 4 && r.page <= 6
-      && r.metric_code !== 'other_expenses_non_additive_subtotal')
+      && r.metric_code !== 'other_expenses_non_additive_subtotal'
+      && r.metric_code !== 'budget_surplus_deficit')
     .reduce((sum, r) => sum + r.value, 0);
   assert.equal(Math.round(detailSum * 10) / 10, expenditureTotals[year],
     `Page 4–6 detailed expenditure sections must reconcile to page 3 total for ${year}`);
