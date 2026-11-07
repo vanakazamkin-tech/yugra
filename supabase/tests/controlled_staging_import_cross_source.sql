@@ -18,25 +18,25 @@ insert into public.municipality_indicator_import_staging (
   source_id, source_record_key, raw_record, raw_municipality_name,
   raw_indicator_name, raw_year, raw_period, raw_value, raw_unit,
   mapped_municipality_id, mapped_indicator_code, normalized_value,
-  normalized_unit, geographic_level, review_status, reviewed_by, reviewed_at
+  normalized_unit, geographic_level, review_status, reviewed_by, reviewed_at, created_at
 ) values
   (
     'src-secondary', 'cross-source-accepted', '{}'::jsonb, null,
     'Cross-source import test', 2025, null, '12', 'persons',
     'test-municipality', 'cross_source_import_test', 12, 'persons',
-    'municipality', 'accepted', 'qa-test', now()
+    'municipality', 'accepted', 'qa-test', now(), now() - interval '3 seconds'
   ),
   (
     'src-primary', 'same-source-duplicate', '{}'::jsonb, null,
     'Cross-source import test', 2025, '', '11', 'persons',
     'test-municipality', 'cross_source_import_test', 11, 'persons',
-    'municipality', 'accepted', 'qa-test', now()
+    'municipality', 'accepted', 'qa-test', now(), now() - interval '2 seconds'
   ),
   (
     'src-secondary', 'same-batch-duplicate', '{}'::jsonb, null,
     'Cross-source import test', 2025, 'annual', '13', 'persons',
     'test-municipality', 'cross_source_import_test', 13, 'persons',
-    'municipality', 'accepted', 'qa-test', now()
+    'municipality', 'accepted', 'qa-test', now(), now() - interval '1 second'
   );
 
 set role service_role;
