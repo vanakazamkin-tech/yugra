@@ -1,5 +1,5 @@
 -- Yugra18 post-migration read-only audit.
--- Run only after the following migrations are present in the target database:
+-- Run only after applying migrations listed below to the target database:
 -- 20261107055913_forecast_scenario_alignment.sql
 -- 20261107055915_data_quality_provenance_guardrails.sql
 -- 20261107055917_add_municipality_indicator_quality_view.sql
