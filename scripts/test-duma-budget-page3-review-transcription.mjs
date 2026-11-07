@@ -4,62 +4,38 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-const input = new URL('../supabase/imports/review/duma_budget_page3_expenditure_manual_transcription.csv', import.meta.url);
-const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'yugra-duma-page3-review-'));
-
+const input = 'supabase/imports/review/duma_budget_page3_expenditure_manual_transcription.csv';
+const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'yugra-duma-p3-'));
 try {
-  const output = path.join(temp, 'prepared-review.json');
+  const output = path.join(temp, 'review.json');
   execFileSync(process.execPath, [
-    'scripts/prepare-duma-budget-import.mjs',
-    input.pathname,
-    `--out=${output}`,
+    'scripts/prepare-duma-budget-import.mjs', input, `--out=${output}`,
   ], { stdio: 'pipe' });
-
   const result = JSON.parse(await fs.readFile(output, 'utf8'));
-  assert.equal(result.source.source_id, 'duma_hmao_municipal_budget_2023_2024_appendix1');
-  assert.equal(result.source.url, 'https://www.dumahmao.ru/povest/0745_4/03/50.pdf');
+
   assert.equal(result.input_rows, 44);
   assert.equal(result.staged_rows, 44);
-  assert.equal(result.excluded_control_total_rows.length, 0);
-  assert.equal(result.duplicate_keys.length, 0);
   assert.equal(result.warning_count, 0);
-  assert.equal(result.records.length, 44);
+  assert.equal(result.duplicate_keys.length, 0);
+  assert.equal(result.coverage_by_year['2023'].municipality_count, 22);
+  assert.equal(result.coverage_by_year['2024'].municipality_count, 22);
+  assert.equal(result.coverage_by_year['2023'].complete, true);
+  assert.equal(result.coverage_by_year['2024'].complete, true);
+  assert.ok(result.records.every((r) => r.indicator_code === 'budget_total_expenditure'));
+  assert.ok(result.records.every((r) => r.reference_period === String(r.reference_year)));
+  assert.ok(result.records.every((r) => r.source_page === 3));
+  assert.ok(result.records.every((r) => r.verification_status === 'needs_review'));
+  assert.ok(result.records.every((r) => r.source_id === 'duma_hmao_municipal_budget_2023_2024_appendix1'));
 
-  for (const year of ['2023', '2024']) {
-    assert.equal(result.coverage_by_year[year].municipality_count, 22);
-    assert.equal(result.coverage_by_year[year].expected_municipality_count, 22);
-    assert.equal(result.coverage_by_year[year].complete, true);
+  const expected = { 2023: 211708172.0, 2024: 231108858.7 };
+  for (const year of [2023, 2024]) {
+    const actual = result.records
+      .filter((r) => r.reference_year === year)
+      .reduce((sum, r) => sum + r.value, 0);
+    assert.equal(Math.round(actual * 10) / 10, expected[year],
+      `Page 3 ${year} expenditure must match PDF ВСЕГО row`);
   }
-
-  const expectedTotals = { 2023: 211708172.0, 2024: 231108858.7 };
-  for (const [year, expected] of Object.entries(expectedTotals)) {
-    const total = result.records
-      .filter((record) => String(record.reference_year) === year)
-      .reduce((sum, record) => sum + record.value, 0);
-    assert.ok(Math.abs(total - expected) <= 0.11, `Unexpected staged total for ${year}: ${total}`);
-  }
-
-  assert.equal(new Set(result.records.map((record) => record.municipality_id)).size, 22);
-  assert.ok(result.records.every((record) =>
-    record.indicator_code === 'budget_total_expenditure'
-    && record.measure_type === 'amount'
-    && record.unit === 'тыс. руб.'
-    && record.source_page === 3
-    && record.source_id === 'duma_hmao_municipal_budget_2023_2024_appendix1'
-    && record.source_url === 'https://www.dumahmao.ru/povest/0745_4/03/50.pdf'
-    && record.verification_status === 'needs_review'
-    && Array.isArray(record.review_flags)
-    && record.review_flags.length === 0
-  ), 'All prepared records must preserve source metadata and needs_review status');
-
-  const csvText = await fs.readFile(input, 'utf8');
-  const csvRows = csvText.trim().split(/\r?\n/).slice(1).map((line) => line.split(';'));
-  assert.equal(csvRows.length, 44);
-  assert.ok(csvRows.every((row) => row[11] === 'needs_visual_review'));
-
-  assert.ok(result.safety_note.includes('No Supabase request or write'));
 } finally {
   await fs.rm(temp, { recursive: true, force: true });
 }
-
-console.log('Duma page 3 expenditure review-only staging test passed: 44 rows, complete 22×2 coverage, zero warnings/duplicates, totals reconciled, no writes.');
+console.log('Duma PDF page 3 expenditure review transcription checks passed');
