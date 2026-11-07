@@ -590,3 +590,70 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Дизайн не менялся; production и настройки доступа Supabase не менялись.
 
 - При первом прогоне нового теста обнаружена ошибка в экранировании регулярного выражения ISO-даты (тест корректно поймал дефект). Исправлена проверка календарной даты; коммит `f2ef88e`. Новый CI-запуск `42133749169` ожидает результата.
+
+
+### 2026-11-07 — Module 0: поведенческая проверка глобальной Error Boundary
+- Повторно проверен PR #16: fix/module-0-app-error-boundary-2026-11-07; исходный HEAD до доработки 02227bb7e47f4b35ac8a1ee29f9753eace889b3d. Error Boundary подключена вокруг корневого App, fallback использует существующие переменные палитры Yugra и локальный SVG-ресурс; основной экран и навигация не изменялись.
+- Выявлено, что первоначальный scripts/test-app-error-boundary.mjs проверял только текст исходников и CSS. Это не доказывало реальную обработку render exception.
+- Source-only проверка заменена runtime-тестом через react-test-renderer 18.3.1: дочерний компонент намеренно выбрасывает ошибку; тест проверяет показ fallback (role=alert, aria-live=assertive), текст восстановления и вызов кнопки перезагрузки. В package.json добавлена только dev-зависимость; runtime-зависимости приложения не менялись.
+- Последовательные коммиты ветки: 0d386a867677b056b73546d53abeb2bfa2aae1f3 (test renderer dependency), c155e6c02f085d6edd8bf09a9b5bb5f207bf0586 (runtime test), 33cea08845306a91b0f355ad275cd764d541d83e (assertion correction), 3cbc49dc8c5ccd2eca2d7b24ad4f7c77e34311d7 (align renderer version).
+- На момент записи итоговый PR HEAD — 3cbc49dc8c5ccd2eca2d7b24ad4f7c77e34311d7. CI runtime result ещё не подтверждён: combined status показывает только ожидающий Vercel check; доступный workflow-run lookup не вернул Actions run для этого SHA. Не считать runtime-тест пройденным до фактического результата GitHub Actions.
+- Ограничение остаётся: React Test Renderer проверяет поведение React Error Boundary, но не заменяет браузерный smoke test реального приложения и переходов «Риски» / «Сценарный прогноз». Vercel Preview и интерактивный browser QA остаются отдельными воротами.
+- Supabase, production deployment, production данные, схема и миграции не изменялись. PR остаётся Draft. Следующий шаг — получить фактический CI result; при успешном runtime-тесте выполнить доступный preview/browser smoke test после восстановления Vercel quota.
+
+
+### 2026-11-07 — Module 0: исправление загрузки JSX в runtime-тесте и успешная проверка
+- Первый runtime-тест был корректно запущен CI, но Node.js 20 завершил его с ERR_UNKNOWN_FILE_EXTENSION для .jsx: Node не преобразует JSX самостоятельно. Это была проблема тестового загрузчика, а не ошибка Error Boundary.
+- Исправлено: тест использует transformWithEsbuild из уже установленного Vite, временно преобразует AppErrorBoundary.jsx в ESM, импортирует преобразованный модуль, затем удаляет временный файл. Добавлять новый JSX runtime/тестовый framework не потребовалось; react-test-renderer остаётся devDependency.
+- Исправляющий commit: 9ff7f7214db2bb276aa02c01edb3b7282d6ea303. GitHub Actions Build verification run 42366054669 (run #1944) завершился SUCCESS: runtime Error Boundary test — success; production bundle build — success; data-migrations-integration — success. Предыдущий run 42365929609 падал только на прямом импорте .jsx в Node.
+- Vercel Preview для исправляющего commit создан и READY: dpl_DQ6m4gGSVgV5Sz28gVGCQGxaL3q7; alias yugra18-git-fix-module-0-app-error-boundary-2026-11-07-napishtu.vercel.app. Preview проверен через состояние deployment, но интерактивный браузерный smoke test не выполнен.
+- Важное ограничение: тест подтверждает render-error fallback и обработчик reload в React Test Renderer; он не покрывает ошибки event handlers/async callbacks и не заменяет реальную проверку UI переходов «Риски» и «Сценарный прогноз».
+- Production deployment, Supabase, данные, схема и миграции не изменялись. PR #16 остаётся Draft; merge не выполнялся.
+
+
+### 2026-11-07 — повторная матрица пересечений PR #16/#17/#18
+- Повторно вычислены пересечения по актуальным `list_pr_changed_filenames` всех трёх Draft PR.
+- PR #16 ∩ PR #17: `.github/workflows/ci.yml`, `PROJECT_WORKLOG.md`.
+- PR #16 ∩ PR #18: `package.json`, `PROJECT_WORKLOG.md`.
+- PR #17 ∩ PR #18: `PROJECT_WORKLOG.md`.
+- Общий файл всех трёх веток: `PROJECT_WORKLOG.md`. Следовательно, интеграция требует ручного трёхстороннего объединения журнала. `package.json` PR #16 добавляет `react-test-renderer@18.3.1`, а PR #18 расширяет `test:data-quality`; оба изменения нужно сохранить. CI workflow PR #16 добавляет runtime test, PR #17 добавляет `audit/**` и обновляет migration paths; после интеграции Module 0 оба набора должны быть объединены.
+- Новых конфликтов содержимого GitHub mergeability не показывает, но это не снимает необходимость проверить результирующие файлы после синхронизации веток. Ни один PR не объединён; автоматическое принятие одной версии общего файла запрещено.
+
+
+### 2026-11-07 — браузерный QA Module 0 и проверка сценарного прогноза
+- Создана изолированная Vercel Sandbox из ветки Module 0 (не production deployment). Chromium/Playwright smoke test прошёл на desktop 1440×1000 и mobile 390×844.
+- Проверены главная страница (HTTP 200), переход в «Риски», все 7 внутренних вкладок риск-модуля, переход в отдельное «Прогнозирование», переключение обратно между вкладками. Error Boundary не отображался; pageerror и HTTP 5xx не обнаружены.
+- Первый offline-прогон без VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY ожидаемо показывал пустой список рядов: `fetchOfficialData(null)` возвращает `indicators: []`. Это не дефект production-конфигурации.
+- Повторный прогон с Vercel preview-target Supabase URL и publishable key (значение не записывалось в журнал) загрузил данные из реальной БД: 191 подходящий годовой ряд для 22 муниципалитетов. Выбран Сургут и годовой ряд `employees_information_communication`; панель отрисовала базовое значение, сценарные траектории и историю 2024–2025. Backtest корректно показывает «Недостаточно истории» при двух точках; ошибок JS и HTTP 5xx нет.
+- Mobile 390 px: главная, «Риски» и «Сценарный прогноз» видимы; `documentElement.scrollWidth=390` на всех трёх состояниях, горизонтального overflow страницы нет.
+- В Sandbox сгенерирован npm lockfile v3 (95 438 bytes). `npm ci`, полный `npm test` (11 QA checks + 34 unit tests) и `npm run build` завершились с exit 0. npm 11 показал предупреждение о неподтверждённом install-script `esbuild@0.21.5`, но сборка успешно прошла. Lockfile пока не добавлен в ветку; CI оставлен на `npm install`, чтобы не ломать PR. Детерминированный lockfile остаётся merge blocker.
+- Проверка выполнена на локальном dev server в sandbox, а не на защищённом Vercel Preview. Production и Supabase schema/data не изменялись. Browser QA существенно закрывает ранее отсутствовавшую проверку, но не заменяет финальный smoke test непосредственно на Preview после снятия SSO-блокировки.
+
+
+### 2026-11-07 — прямой production smoke test раздела «Риски» и «Сценарный прогноз»
+- Production domain `https://yugra18.vercel.app` доступен по HTTP 200. Через Vercel deployment history подтверждено, что текущая production-версия — READY deployment `dpl_4wV9kqgApP3xpD9d87DSiLoQg3jK`, target `production`, commit `eaaa27627c2b298f3913a5ede8fead121e0dbcf5` (`Fix scenario forecast tab crash`).
+- Chromium/Playwright прогон выполнен непосредственно по production domain (read-only): главная открылась; «Риски» и «Сценарный прогноз» отрисовались; в сценарном блоке 191 ряд; после выбора Сургута и его годового ряда появились базовая карточка, backtest-блок и таблица истории; все 7 внутренних вкладок переключаются; отдельная страница «Прогнозирование» открывается.
+- Все 12 наблюдавшихся ответов Supabase — HTTP 200; pageerror=[], HTTP 5xx=[], Error Boundary fallback не отображался. Следовательно, показанная ранее проблема на текущем production commit не воспроизводится. Вероятно, она была устранена в production fix `eaaa276...`; это не подтверждает отсутствие иных ошибок во всех данных/сценариях.
+- Проверка не меняла production и не выполняла записей в Supabase. Текущий PR #16 Preview по-прежнему заблокирован Vercel build-rate-limit; production smoke test не подменяет Preview test текущего PR.
+
+
+### 2026-11-07 — парная и трёхсторонняя интеграционная проверка веток
+- Read-only `git merge-tree` на текущих heads PR #16/#17/#18 дал одинаковую картину: #16+#17 — `ci.yml` auto-merge, единственный content conflict `PROJECT_WORKLOG.md`; #16+#18 — `package.json` auto-merge, единственный content conflict `PROJECT_WORKLOG.md`; #17+#18 — единственный content conflict `PROJECT_WORKLOG.md`.
+- В изолированной временной локальной ветке выполнено последовательное слияние PR16 → PR17 → PR18; `ci.yml` и `package.json` объединились автоматически, `PROJECT_WORKLOG.md` разрешён union-объединением append-only записей. Временная ветка не отправлялась в GitHub.
+- Полный combined `npm install` / test / build не завершён: Vercel Sandbox остановилась с HTTP 410 `sandbox_stopped` в начале `npm install`, логи команды после остановки недоступны. Не считать общий тест успешным; отдельные ветки имеют собственные зелёные CI и sandbox результаты.
+- Ни один Draft PR не объединён; production и Supabase не менялись. Перед реальной интеграцией нужно ещё раз разрешить worklog conflict, затем выполнить единый CI после появления стабильной Sandbox/runner.
+
+
+### 2026-11-07 — browser smoke test for risk/scenario navigation
+- Installed Playwright Chromium in an isolated disposable browser environment and tested the READY Preview `dpl_B1EUjGP8yW7ZJ39zFESW3LKKnzfE` (`436795b7dc2d24feeaaa21fcb8e50a223cf06c9e`).
+- Browser navigated through `Риски` → `Сценарный прогноз` (inside the risk module) → top-level `Прогнозирование`. The risk overview rendered its model summary, thresholds, coverage and review signals; the scenario tab rendered `Сценарное прогнозирование` and `Как читать прогноз`; the forecasting section rendered official-data coverage, scenario outcome, scenario comparison, factor impacts and municipality results.
+- Playwright recorded 0 `pageerror`, 0 browser-console errors, 0 failed network requests, no `role=alert` crash fallback and no error-boundary fallback during these transitions.
+- Preview commit `436795b7...` is 4 commits behind current PR16 HEAD `c8eba4c57f1915f1cc3bd5eba5428122f9775939`; GitHub compare confirms the only differences are `.github/workflows/ci.yml` and `PROJECT_WORKLOG.md`, with no application/runtime source changes. Therefore the tested application code matches current PR16 source, although exact-HEAD Preview is still unavailable.
+- This is a browser smoke test, not a full interaction/visual regression suite; detailed control paths and viewport-specific visual review remain outstanding.
+
+
+### 2026-11-07 — deterministic dependency installation for PR #16
+- Created `package-lock.json` v3 from the PR #16 branch manifest in an isolated Vercel sandbox (Node 24); 193 package entries, 95,438 bytes.
+- Verified `npm ci --ignore-scripts --no-audit --no-fund` completes successfully against the generated lockfile.
+- Added the exact lockfile to the PR #16 branch through GitHub Git objects and changed `.github/workflows/ci.yml` from `npm install` to `npm ci --no-audit --no-fund`. No application source or design files changed in this dependency reproducibility step.
+- CI run #2014 is queued on the resulting branch head; wait for its exact-head result before treating the change as verified in GitHub Actions.
