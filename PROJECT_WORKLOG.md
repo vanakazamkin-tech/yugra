@@ -645,3 +645,10 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - CI run #1950 (`42366257000`) выявил, что `scripts/test-data-quality-contract.mjs` ожидает буквальную формулировку `Run only after applying migrations`. Изменение заголовка SQL-аудита было корректным по смыслу, но нарушило существующий текстовый контракт.
 - Формулировка восстановлена с сохранением точных актуальных версий миграций и дополнительного требования сверять историю целевой БД. Исправляющий commit: `0c24f36efbd0b90a69a6a5cdb9ab51675a2858c4`.
 - PostgreSQL integration job в run #1950 завершился SUCCESS; build job остановился на контрактном тесте до остальных проверок. Ожидается новый CI на исправляющем commit; до его завершения PR #17 не считать зелёным.
+
+
+### 2026-11-07 — повторный sandbox regression и merge-tree контроль Module 1
+- В чистом shallow clone PR17 выполнены `npm install`, `npm run test:data-quality`, `npm test`, `npm run build`: все успешно; 11 QA checks, 34 unit tests, production bundle.
+- Read-only `git merge-tree` против текущего `main` (`ef11ebb9543720be52bed0e164366f0a05f2ba1c`) завершился без конфликтов. GitHub PR metadata ранее показывала `mergeable=true`.
+- Пересечение CI с PR16 сохраняется как семантическая интеграционная задача: при последовательном merge #16 → #17 сохранить оба набора workflow шагов (Error Boundary runtime test и migration/audit coverage). Самостоятельно PR17 пока не объединять.
+- Production Supabase не менялся; четыре миграции остаются только зарегистрированными и повторно не применялись.
