@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: 20
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Run forecast model unit tests
         run: npm test
       - name: Test data provenance and source catalog contracts
