@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const migrationPath = path.join(root, 'supabase/migrations/20261106175000_forecast_scenario_alignment.sql');
+const migrationPath = path.join(root, 'supabase/migrations/20261107055913_forecast_scenario_alignment.sql');
 const sql = await readFile(migrationPath, 'utf8');
 const normalized = sql.toLowerCase().replace(/\s+/g, ' ');
 
