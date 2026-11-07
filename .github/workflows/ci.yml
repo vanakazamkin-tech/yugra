@@ -97,16 +97,16 @@ jobs:
       - name: Bootstrap disposable Supabase-like schema
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_bootstrap.sql
       - name: Apply provenance and uniqueness migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055915_data_quality_provenance_guardrails.sql
       - name: Apply quality diagnostics view migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106230000_add_municipality_indicator_quality_view.sql
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055917_add_municipality_indicator_quality_view.sql
       - name: Apply source catalog metadata migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055919_extend_data_source_provenance_metadata.sql
       - name: Reapply migrations to verify idempotency
         run: |
-          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql
-          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106230000_add_municipality_indicator_quality_view.sql
-          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055915_data_quality_provenance_guardrails.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055917_add_municipality_indicator_quality_view.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055919_extend_data_source_provenance_metadata.sql
       - name: Verify migration effects, security grants, and uniqueness behavior
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_assertions.sql
       - name: Execute read-only post-migration audit against integration schema
@@ -115,8 +115,8 @@ jobs:
         run: |
           createdb yugra_migration_test_legacy_index
           PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_bootstrap_legacy_index.sql
-          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql
-          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106230000_add_municipality_indicator_quality_view.sql
-          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql
+          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055915_data_quality_provenance_guardrails.sql
+          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055917_add_municipality_indicator_quality_view.sql
+          PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055919_extend_data_source_provenance_metadata.sql
           PGDATABASE=yugra_migration_test_legacy_index psql -v ON_ERROR_STOP=1 -f supabase/tests/data_quality_migrations_assertions.sql
 
