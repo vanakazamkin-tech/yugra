@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const migration = readFileSync(
-  'supabase/migrations/20261106233000_extend_data_source_provenance_metadata.sql',
+  'supabase/migrations/20261107055919_extend_data_source_provenance_metadata.sql',
   'utf8',
 );
 
