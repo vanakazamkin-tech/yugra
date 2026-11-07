@@ -674,3 +674,11 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - После финального worklog-коммита текущий HEAD `b09e45e62a2b2d7dbb325382641e9f87c416cf74`; GitHub Actions run #1994 SUCCESS: build и PostgreSQL integration jobs.
 - `git merge-tree` PR17 против `main` без конфликтов; PR17 против PR18 — только `PROJECT_WORKLOG.md`; PR17 против PR16 — только `PROJECT_WORKLOG.md` (package.json/workflow автоматом объединяются при правильной последовательности).
 - Vercel Preview для точного HEAD не создан из-за `build-rate-limit`; последняя READY Preview старее и не является проверкой этого HEAD.
+
+
+### 2026-11-07 — исправление controlled staging import
+- Read-only audit of production confirmed the latest four data-quality migrations are already recorded in migration history. No migration was applied to production during this audit.
+- Production review found `import_accepted_municipality_indicators` treated any verified observation from any source as a duplicate, despite the new observation identity explicitly including `source_id` and the data-quality model allowing cross-source differences. It also compared blank periods inconsistently with the insert normalization.
+- Added follow-up migration `20261107122134_allow_cross_source_staging_import.sql`: duplicate detection now matches the complete source observation identity (including source, unit, geography name/level and normalized period); same-batch unique collisions are safely ignored and marked `duplicate`; execution remains restricted to `service_role` and `SECURITY INVOKER`.
+- Added disposable PostgreSQL regression coverage for: importing a second source beside an existing verified value; blocking same-source duplicates; and marking a same-batch duplicate. The first test run exposed nondeterministic fixture order; the fixture now uses explicit `created_at` ordering. Awaiting CI verification on the updated PR head.
+- Production data counts remain unchanged: 1,445 observations (1,433 verified, 12 needs_review), 1,445 provenance links, 0 unlinked observations, 0 missing source links, 0 staging rows, 0 forecast runs. Six cross-source conflict groups and four noncanonical period labels remain visible in the quality view.
