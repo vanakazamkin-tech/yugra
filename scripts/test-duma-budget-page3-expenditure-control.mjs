@@ -40,6 +40,40 @@ const expected = {
 assert.equal(rows.length, 22, 'Expected exactly 22 municipal rows');
 assert.equal(new Set(rows.map(([name]) => name)).size, 22, 'Municipality labels must be unique');
 
+const appendix2Expected2024 = new Map([
+  ['г.Нефтеюганск', 12608996.9],
+  ['г.Сургут', 43102449.6],
+  ['г.Ханты-Мансийск', 17133734.9],
+  ['г.Нижневартовск', 29379191.9],
+  ['г.Мегион', 6793946.7],
+  ['г.Урай', 6322476.2],
+  ['г.Когалым', 7466942.5],
+  ['г.Радужный', 3948707.5],
+  ['г.Лангепас', 4671396.3],
+  ['г.Нягань', 8336363.1],
+  ['г.Пыть-Ях', 5465220.5],
+  ['г.Покачи', 2324635.7],
+  ['г.Югорск', 5941621.4],
+  ['Белоярский муниципальный район', 6563581.8],
+  ['Берёзовский муниципальный район', 5866706.1],
+  ['Кондинский муниципальный район', 6178410.7],
+  ['Октябрьский муниципальный район', 6512505.1],
+  ['Сургутский муниципальный район', 24287065.5],
+  ['Советский муниципальный район', 6557925.8],
+  ['Ханты-Мансийский муниципальный район', 5979323.8],
+  ['Нижневартовский муниципальный район', 6498285.0],
+  ['Нефтеюганский муниципальный район', 9169371.7],
+]);
+
+// Independent cross-check against Appendix 2, 2024 execution report:
+// https://www.dumahmao.ru/povest/0745_4/03/51.pdf
+assert.equal(appendix2Expected2024.size, 22, 'Appendix 2 must cover 22 municipalities');
+for (const [name, , value2024] of rows) {
+  assert.equal(appendix2Expected2024.get(name), value2024,
+    `2024 expenditure mismatch against Appendix 2 for ${name}`);
+}
+
+
 const totals = {
   2023: rows.reduce((sum, [, value]) => sum + value, 0),
   2024: rows.reduce((sum, [, , value]) => sum + value, 0),
