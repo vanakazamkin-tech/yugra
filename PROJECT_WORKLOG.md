@@ -652,3 +652,9 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Read-only `git merge-tree` против текущего `main` (`ef11ebb9543720be52bed0e164366f0a05f2ba1c`) завершился без конфликтов. GitHub PR metadata ранее показывала `mergeable=true`.
 - Пересечение CI с PR16 сохраняется как семантическая интеграционная задача: при последовательном merge #16 → #17 сохранить оба набора workflow шагов (Error Boundary runtime test и migration/audit coverage). Самостоятельно PR17 пока не объединять.
 - Production Supabase не менялся; четыре миграции остаются только зарегистрированными и повторно не применялись.
+
+
+### 2026-11-07 — review-first default for external ratings
+- Read-only production inspection found `external_rating_results.verification_status` had a `verified` default, unlike other published observation tables. All 99 existing rows are verified and have source URLs; `anon`/`authenticated` have SELECT only, no write grants. A future service-role insert omitting the field could nevertheless become public immediately.
+- Added migration `20261107114255_harden_external_rating_review_default.sql` to change only the default to `needs_review` and document it. It does not update existing rows or change grants/RLS.
+- Added contract test and wired it into `test:data-quality`. In isolated sandbox: `npm run test:data-quality` PASS; `npm test` PASS (11 QA checks + 34 unit tests); `npm run build` PASS. No migration was applied to production.
