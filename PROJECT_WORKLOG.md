@@ -618,3 +618,13 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - PR #17 ∩ PR #18: `PROJECT_WORKLOG.md`.
 - Общий файл всех трёх веток: `PROJECT_WORKLOG.md`. Следовательно, интеграция требует ручного трёхстороннего объединения журнала. `package.json` PR #16 добавляет `react-test-renderer@18.3.1`, а PR #18 расширяет `test:data-quality`; оба изменения нужно сохранить. CI workflow PR #16 добавляет runtime test, PR #17 добавляет `audit/**` и обновляет migration paths; после интеграции Module 0 оба набора должны быть объединены.
 - Новых конфликтов содержимого GitHub mergeability не показывает, но это не снимает необходимость проверить результирующие файлы после синхронизации веток. Ни один PR не объединён; автоматическое принятие одной версии общего файла запрещено.
+
+
+### 2026-11-07 — браузерный QA Module 0 и проверка сценарного прогноза
+- Создана изолированная Vercel Sandbox из ветки Module 0 (не production deployment). Chromium/Playwright smoke test прошёл на desktop 1440×1000 и mobile 390×844.
+- Проверены главная страница (HTTP 200), переход в «Риски», все 7 внутренних вкладок риск-модуля, переход в отдельное «Прогнозирование», переключение обратно между вкладками. Error Boundary не отображался; pageerror и HTTP 5xx не обнаружены.
+- Первый offline-прогон без VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY ожидаемо показывал пустой список рядов: `fetchOfficialData(null)` возвращает `indicators: []`. Это не дефект production-конфигурации.
+- Повторный прогон с Vercel preview-target Supabase URL и publishable key (значение не записывалось в журнал) загрузил данные из реальной БД: 191 подходящий годовой ряд для 22 муниципалитетов. Выбран Сургут и годовой ряд `employees_information_communication`; панель отрисовала базовое значение, сценарные траектории и историю 2024–2025. Backtest корректно показывает «Недостаточно истории» при двух точках; ошибок JS и HTTP 5xx нет.
+- Mobile 390 px: главная, «Риски» и «Сценарный прогноз» видимы; `documentElement.scrollWidth=390` на всех трёх состояниях, горизонтального overflow страницы нет.
+- В Sandbox сгенерирован npm lockfile v3 (95 438 bytes). `npm ci`, полный `npm test` (11 QA checks + 34 unit tests) и `npm run build` завершились с exit 0. npm 11 показал предупреждение о неподтверждённом install-script `esbuild@0.21.5`, но сборка успешно прошла. Lockfile пока не добавлен в ветку; CI оставлен на `npm install`, чтобы не ломать PR. Детерминированный lockfile остаётся merge blocker.
+- Проверка выполнена на локальном dev server в sandbox, а не на защищённом Vercel Preview. Production и Supabase schema/data не изменялись. Browser QA существенно закрывает ранее отсутствовавшую проверку, но не заменяет финальный smoke test непосредственно на Preview после снятия SSO-блокировки.
