@@ -10,6 +10,10 @@ create table public.data_sources (
  format text,coverage text,update_frequency text,import_status text not null default 'identified',
  last_checked_at timestamptz,notes text,created_at timestamptz not null default now(),updated_at timestamptz not null default now()
 );
+create table public.municipalities (
+ id text primary key, name text not null
+);
+insert into public.municipalities(id,name) values ('test-municipality','Test municipality');
 create table public.municipality_indicators (
  id uuid primary key default gen_random_uuid(),municipality_id text not null,indicator_code text not null,
  indicator_name text not null,reference_year integer not null,value numeric not null,unit text not null,
