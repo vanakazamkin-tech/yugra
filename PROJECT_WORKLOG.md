@@ -635,3 +635,10 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Chromium/Playwright прогон выполнен непосредственно по production domain (read-only): главная открылась; «Риски» и «Сценарный прогноз» отрисовались; в сценарном блоке 191 ряд; после выбора Сургута и его годового ряда появились базовая карточка, backtest-блок и таблица истории; все 7 внутренних вкладок переключаются; отдельная страница «Прогнозирование» открывается.
 - Все 12 наблюдавшихся ответов Supabase — HTTP 200; pageerror=[], HTTP 5xx=[], Error Boundary fallback не отображался. Следовательно, показанная ранее проблема на текущем production commit не воспроизводится. Вероятно, она была устранена в production fix `eaaa276...`; это не подтверждает отсутствие иных ошибок во всех данных/сценариях.
 - Проверка не меняла production и не выполняла записей в Supabase. Текущий PR #16 Preview по-прежнему заблокирован Vercel build-rate-limit; production smoke test не подменяет Preview test текущего PR.
+
+
+### 2026-11-07 — парная и трёхсторонняя интеграционная проверка веток
+- Read-only `git merge-tree` на текущих heads PR #16/#17/#18 дал одинаковую картину: #16+#17 — `ci.yml` auto-merge, единственный content conflict `PROJECT_WORKLOG.md`; #16+#18 — `package.json` auto-merge, единственный content conflict `PROJECT_WORKLOG.md`; #17+#18 — единственный content conflict `PROJECT_WORKLOG.md`.
+- В изолированной временной локальной ветке выполнено последовательное слияние PR16 → PR17 → PR18; `ci.yml` и `package.json` объединились автоматически, `PROJECT_WORKLOG.md` разрешён union-объединением append-only записей. Временная ветка не отправлялась в GitHub.
+- Полный combined `npm install` / test / build не завершён: Vercel Sandbox остановилась с HTTP 410 `sandbox_stopped` в начале `npm install`, логи команды после остановки недоступны. Не считать общий тест успешным; отдельные ветки имеют собственные зелёные CI и sandbox результаты.
+- Ни один Draft PR не объединён; production и Supabase не менялись. Перед реальной интеграцией нужно ещё раз разрешить worklog conflict, затем выполнить единый CI после появления стабильной Sandbox/runner.
