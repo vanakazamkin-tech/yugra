@@ -40,6 +40,44 @@ for (const [key, value] of Object.entries(expected)) {
 }
 assert.ok(rows.every((r) => r.page >= 4 && r.page <= 8));
 
+const valueOf = (metric_code, year) => {
+  const row = rows.find((r) => r.metric_code === metric_code && r.year === String(year));
+  assert.ok(row, `Missing ${metric_code} for ${year}`);
+  return row.value;
+};
+for (const year of [2023, 2024]) {
+  assert.equal(
+    Math.round((valueOf('bank_loans_attracted', year) + valueOf('bank_loans_repaid', year)) * 10) / 10,
+    valueOf('bank_loans_net', year),
+    `Bank loan net flow must equal attraction plus signed repayment for ${year}`,
+  );
+  assert.equal(
+    Math.round((valueOf('budget_loans_attracted', year) + valueOf('budget_loans_repaid', year)) * 10) / 10,
+    valueOf('budget_loans_net', year),
+    `Budget loan net flow must equal attraction plus signed repayment for ${year}`,
+  );
+  assert.equal(
+    Math.round((valueOf('early_delivery_loans_attracted', year) + valueOf('early_delivery_loans_repaid', year)) * 10) / 10,
+    valueOf('early_delivery_budget_loans_net', year),
+    `Early-delivery loan net flow must equal attraction plus signed repayment for ${year}`,
+  );
+  const financingComponents = valueOf('bank_loans_net', year)
+    + valueOf('budget_loans_net', year)
+    + valueOf('early_delivery_budget_loans_net', year)
+    + valueOf('other_internal_deficit_sources', year);
+  assert.equal(
+    Math.round(financingComponents * 10) / 10,
+    valueOf('deficit_financing_total', year),
+    `Deficit financing total must reconcile to net components for ${year}`,
+  );
+  assert.equal(
+    valueOf('budget_surplus_deficit', year) + valueOf('deficit_financing_total', year),
+    0,
+    `Budget surplus/deficit must offset deficit financing total for ${year}`,
+  );
+}
+
+
 const expenditureTotals = { 2023: 211708172.0, 2024: 231108858.7 };
 for (const year of [2023, 2024]) {
   const detailSum = rows
