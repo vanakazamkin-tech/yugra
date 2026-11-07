@@ -1,7 +1,18 @@
 import assert from 'node:assert/strict';
+import { readFile, writeFile, unlink } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
-import AppErrorBoundary from '../src/components/AppErrorBoundary.jsx';
+import { transformWithEsbuild } from 'vite';
+
+const componentPath = new URL('../src/components/AppErrorBoundary.jsx', import.meta.url);
+const temporaryModulePath = new URL('../.app-error-boundary-runtime-test.mjs', import.meta.url);
+const source = await readFile(componentPath, 'utf8');
+const transformed = await transformWithEsbuild(source, componentPath.pathname, {
+  loader: 'jsx',
+  format: 'esm',
+});
+await writeFile(temporaryModulePath, transformed.code, 'utf8');
 
 class ThrowingChild extends React.Component {
   render() {
@@ -12,21 +23,24 @@ class ThrowingChild extends React.Component {
 let reloadCount = 0;
 const previousWindow = globalThis.window;
 const previousConsoleError = console.error;
-
-globalThis.window = {
-  location: {
-    reload() {
-      reloadCount += 1;
-    },
-  },
-};
-
-// React correctly reports the intentionally thrown child error to the console.
-// Silence that expected diagnostic so the test output remains actionable.
-console.error = () => {};
-
 let renderer;
+
 try {
+  const { default: AppErrorBoundary } = await import(
+    `${pathToFileURL(temporaryModulePath.pathname).href}?test=${Date.now()}`
+  );
+
+  globalThis.window = {
+    location: {
+      reload() {
+        reloadCount += 1;
+      },
+    },
+  };
+
+  // React reports the intentionally thrown child error to the console.
+  console.error = () => {};
+
   act(() => {
     renderer = TestRenderer.create(
       React.createElement(
@@ -63,4 +77,5 @@ try {
   } else {
     globalThis.window = previousWindow;
   }
+  await unlink(temporaryModulePath).catch(() => {});
 }
