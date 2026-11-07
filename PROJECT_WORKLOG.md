@@ -715,3 +715,12 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Добавлен тест `scripts/test-duma-budget-page4-housing-utility-transcription.mjs`, включён в `npm run test:data-quality`.
 - Код `candidate_budget_housing_utility_expenditure` временный, не утверждён в словаре. Независимая муниципальная cross-source сверка не установлена.
 - Все записи остаются `needs_visual_review`; Supabase не изменялся, импорт не выполнялся.
+
+
+## 07.11.2026 — функциональные расходы, печатная страница 816
+
+- По текстовому слою официального PDF подтверждена нумерация: печатная страница 816 — PDF page index P4 / пятая страница файла; поле `page` в CSV ЖКХ исправлено с 4 на 5, `printed_page=816`.
+- Подготовлен `supabase/imports/review/duma_budget_page5_environment_education_culture_health_manual_transcription.csv`: 176 строк по четырём разделам (охрана окружающей среды, образование, культура и кинематография, здравоохранение), 22 муниципалитета × 2 года.
+- Восемь сумм по 2023/2024 годам сверены с муниципальной суммой строки «ВСЕГО» в PDF: экологическая охрана 2 361 475,0 / 1 455 772,0; образование 100 886 482,2 / 114 891 654,7; культура 9 157 143,5 / 9 995 712,4; здравоохранение 37 324,4 / 42 526,2 тыс. руб.
+- Добавлен тест `scripts/test-duma-budget-page5-functional-expenditure-transcription.mjs`, включён в `npm run test:data-quality`.
+- Временные коды не согласованы со словарём; все записи `needs_visual_review`. Supabase не изменялся, импорт не выполнялся.
