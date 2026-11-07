@@ -642,3 +642,11 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - В изолированной временной локальной ветке выполнено последовательное слияние PR16 → PR17 → PR18; `ci.yml` и `package.json` объединились автоматически, `PROJECT_WORKLOG.md` разрешён union-объединением append-only записей. Временная ветка не отправлялась в GitHub.
 - Полный combined `npm install` / test / build не завершён: Vercel Sandbox остановилась с HTTP 410 `sandbox_stopped` в начале `npm install`, логи команды после остановки недоступны. Не считать общий тест успешным; отдельные ветки имеют собственные зелёные CI и sandbox результаты.
 - Ни один Draft PR не объединён; production и Supabase не менялись. Перед реальной интеграцией нужно ещё раз разрешить worklog conflict, затем выполнить единый CI после появления стабильной Sandbox/runner.
+
+
+### 2026-11-07 — browser smoke test for risk/scenario navigation
+- Installed Playwright Chromium in an isolated disposable browser environment and tested the READY Preview `dpl_B1EUjGP8yW7ZJ39zFESW3LKKnzfE` (`436795b7dc2d24feeaaa21fcb8e50a223cf06c9e`).
+- Browser navigated through `Риски` → `Сценарный прогноз` (inside the risk module) → top-level `Прогнозирование`. The risk overview rendered its model summary, thresholds, coverage and review signals; the scenario tab rendered `Сценарное прогнозирование` and `Как читать прогноз`; the forecasting section rendered official-data coverage, scenario outcome, scenario comparison, factor impacts and municipality results.
+- Playwright recorded 0 `pageerror`, 0 browser-console errors, 0 failed network requests, no `role=alert` crash fallback and no error-boundary fallback during these transitions.
+- Preview commit `436795b7...` is 4 commits behind current PR16 HEAD `c8eba4c57f1915f1cc3bd5eba5428122f9775939`; GitHub compare confirms the only differences are `.github/workflows/ci.yml` and `PROJECT_WORKLOG.md`, with no application/runtime source changes. Therefore the tested application code matches current PR16 source, although exact-HEAD Preview is still unavailable.
+- This is a browser smoke test, not a full interaction/visual regression suite; detailed control paths and viewport-specific visual review remain outstanding.
