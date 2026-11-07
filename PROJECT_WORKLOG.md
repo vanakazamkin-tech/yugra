@@ -770,3 +770,12 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 
 
 - Уточнение к предыдущей записи о блокировке: блокировка муниципальной транскрипции снята после обнаружения структурированного представления таблицы. CSV и контрольный тест добавлены; остаётся только обязательная визуальная проверка первичного PDF.
+
+
+## 07.11.2026 — группа «Иные расходы», трёхчастная сверка и муниципальные ID
+
+- Создан `supabase/imports/review/duma_budget_page4_other_expenses_group_manual_transcription.csv`: 44 строки по 22 муниципалитетам за 2023/2024; агрегаты 62 688 872,0 / 78 916 387,3 тыс. руб. совпали с официальным источником.
+- Добавлен тест `scripts/test-duma-budget-page4-other-expenses-group-transcription.mjs`: проверяет агрегаты и на уровне каждой территории/года равенство `оплата труда + капитальные вложения + иные расходы = итого расходов`. Группировка альтернативная и не должна суммироваться с 13 функциональными разделами.
+- Read-only запрос к Supabase `public.municipalities` выявил канонические ID Пыть-Яха `pyt-yah` и Югорска `ugorsk`. Девять review CSV исправлены с ошибочных вариантов `pyt-yakh` / `yugorsk`; production database не менялась.
+- Добавлен `scripts/test-duma-budget-municipality-id-registry.mjs`, включён в `npm run test:data-quality`; проверяет все 10 бюджетных CSV с municipality_id на соответствие 22 ID Supabase.
+- В ходе независимой локальной сверки 44 муниципальных пар payroll/capex/other against total: missing=0, mismatches=0; агрегаты other expenses также сошлись.
