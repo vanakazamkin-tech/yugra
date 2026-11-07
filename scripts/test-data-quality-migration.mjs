@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const migration = readFileSync(
-  'supabase/migrations/20261106210000_data_quality_provenance_guardrails.sql',
+  'supabase/migrations/20261107055915_data_quality_provenance_guardrails.sql',
   'utf8',
 );
 
