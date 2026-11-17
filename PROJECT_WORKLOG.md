@@ -1041,3 +1041,11 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Corrected the sme_per_10k coverage description: two exact-name cohorts of 3 municipalities each are not one n=6 peer group.
 - Added scripts/test-index-candidate-registry.mjs to enforce the six weights, no accidental approval, no enabled calculations, unique IDs and SME cohort separation.
 - Updated candidate/methodology/status docs; no index outputs or numeric observations changed.
+
+
+## 18.11.2026 — source provenance metadata completion and candidate registry CI
+- Filled owner, coverage period, data type, access restrictions and actual retrieved_at for three existing partially_imported sources: Duma Yugra 9m budget appendix (176 rows / 22 МО), appendix 2 (44 / 22), and InvestUgra municipal investment climate report 2023 (88 / 22). Source retrieved_at was derived from the max actual observation retrieval timestamp, not invented. import_status remained partially_imported.
+- Catalog metadata gaps dropped to 118 missing owner / temporal coverage / type; 149 access restrictions; 157 retrieved_at out of 161 sources.
+- Added 22-entry JSON candidate registry v1.1 with all rows hard-disabled for calculation and all expert approvals empty. Fixed SME-per-10k definition cohort split and added a CI safety test.
+- Updated docs/FINALIZATION_STATUS.md and the proposed registry review. No observations, Supabase schemas, RLS policies, index weights or production deployment changed.
+- Current PR #20 CI run 44198274091 on ec304e28 completed success for both Build verification and data-migrations-integration, including the new registry test and hardened staging migration.

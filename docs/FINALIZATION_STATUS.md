@@ -12,7 +12,8 @@
 - GitHub: vanakazamkin-tech/yugra, default branch main, права чтения/записи подтверждены.
 - main и production Vercel указывают на один SHA b3baa2e5162222b3c770fc17a532133492b08e72 от 07.11.2026.
 - Последний production deployment Vercel: READY, target production, проект yugra18; повторный деплой не запускался.
-- Последний найденный GitHub Actions run для этого SHA: Build verification, run 42377323738, завершён success; оба job — build и data-migrations-integration — завершились успешно.
+- Последний production CI run для SHA `b3baa2e`: Build verification, run `42377323738`, завершён success; оба job — build и data-migrations-integration — завершились успешно.
+- Для рабочего PR №20 актуальный CI run `44198274091` на SHA `ec304e28d5296f2c0d933cd2d402db71b7502e72` завершён success: Node 22 regression/build и PostgreSQL migration integration.
 - Supabase project dmbikidqikjupkghywbz — ACTIVE_HEALTHY, PostgreSQL 17.11.0.003. Последние подтверждённые миграции — до 20261107055919.
 - До внесения изменений созданы резервная и рабочая ветки от проверенного main SHA. main и production не изменялись.
 
@@ -59,7 +60,7 @@
 
 ### Источники
 
-В каталоге data_sources 161 запись: 9 imported, 58 partially_imported, 92 identified, 2 access_issue. Метаданные источников неполны: owner / temporal coverage / data type отсутствуют у 121 записи; ограничения доступа — у 152; фактическое время получения — у 160. Заполнять эти поля без первоисточника и даты получения нельзя.
+В каталоге data_sources 161 запись: 9 imported, 58 partially_imported, 92 identified, 2 access_issue. Метаданные источников неполны: owner / temporal coverage / data type отсутствуют у 118 записей; ограничения доступа — у 149; фактическое время получения — у 157. 18.11.2026 уточнены метаданные ещё трёх уже использованных PDF-источников; retrieved_at заполнен по максимальной фактической дате получения связанных наблюдений. Заполнять эти поля без первоисточника и даты получения нельзя.
 
 Инвестиционные площадки (17), исполнение программ (2), топливо (9), муниципальные объекты (24) представлены данными только по Мегиону.
 
@@ -111,7 +112,7 @@ Advisor rls_enabled_no_policy сообщает 5 таблиц без полит�
 
 Для всех пяти read-only проверка показала RLS=true и отсутствие SELECT/INSERT для anon и authenticated. Это ожидаемая закрытая конфигурация для служебных/приватных данных. Не добавлять публичные политики ради устранения INFO-предупреждения.
 
-Изменений схемы и таблицы municipality_indicators не проводилось. Выполнены точечные неразрушающие UPDATE только для семи уже существующих карточек public.data_sources: уточнены data_owner, temporal_coverage, data_type, access_restrictions, last_checked_at и диагностические notes. import_status остался identified; retrieved_at не проставлялся; публичные значения/наблюдения и staging не менялись. RLS и права не изменялись.
+Изменений схемы и таблицы municipality_indicators не проводилось. Выполнены точечные неразрушающие UPDATE только для десяти уже существующих карточек public.data_sources: уточнены data_owner, temporal_coverage, data_type, access_restrictions, last_checked_at и диагностические notes. import_status остался identified; retrieved_at не проставлялся; публичные значения/наблюдения и staging не менялись. RLS и права не изменялись.
 
 ## 4.2. Каноническое сопоставление географического имени в staging-import
 
@@ -195,7 +196,8 @@ Forward migration обновлена: review-view и RPC сравнивают/з
 - Первый запуск `npm test` остановился на устаревшем ожидании в тесте производных инвестиций: после уточнения происхождения населения тест ожидал `population_source`, но фактическая годовая запись корректно ссылалась на `population_source_2024`. Сам расчёт и обе ссылки были корректны; ожидание теста исправлено.
 - Все предшествующие узлы `npm test`, включая staging import static contract, прошли; forecast coverage, risk provenance/geography, resilience-index методология и 34 forecast unit tests прошли. Повторный прогон после исправления ожидается.
 - CI был настроен на Node 20, тогда как установленный `@supabase/supabase-js@2.119.0` и связанные пакеты требуют Node >=22. Оба workflow (`ci.yml`, `qa.yml`) переведены на Node 22.
-- Локальный checkout Node.js в контейнере недоступен из-за DNS; дальнейшие сборочные и unit проверки выполняются GitHub Actions на PR.
+- Локальный checkout Node.js в контейнере недоступен из-за DNS; рабочие сборочные и unit проверки выполняются GitHub Actions на PR.
+- Последний актуальный PR CI run `44198274091` (SHA `ec304e28`) — `success` для обоих job. Build job прошёл `npm ci`, `npm test` (включая candidate registry safety contract и forecast/risk unit tests) и `vite build`. Migration job прошёл применение hardening migration, повторное применение для idempotency, security grants/uniqueness assertions, controlled cross-source import, post-migration audit и legacy-index compatibility.
 - Новая миграция 20261118033000 проверена непосредственно на live PostgreSQL внутри одной транзакции с ROLLBACK: DDL установился, RPC импортировала два независимых источника, один same-source duplicate помечен duplicate, пустой период остался needs_period_mapping, provenance links и URL/publication/retrieval dates перенесены; все fixture и DDL откатились. После отката повторно подтверждено: 1 445 observations, 1 445 provenance links, 0 staging rows, 0 test fixture rows, четыре новые staging-колонки отсутствуют. Это SQL-интеграционный тест схемы, а не запуск Node test script и не применение миграции.
 
 ## 8. Журнал изменений финализации
@@ -217,7 +219,16 @@ Forward migration обновлена: review-view и RPC сравнивают/з
 - Для резервной выгрузки «Если быть точным» проверена страница 603 показателей/33 раздела/2005–2025 и получены прямые ссылки на ZIP по разделам 31/32/41/42; скачивание заблокировано DNS в текущей среде.
 - Уточнены метаданные семи существующих карточек sources; новые статистические наблюдения в municipality_indicators не загружались.
 
-## 9. Остаточные блокеры опытного пилота
+## 9. Последние изменения каталога источников (18.11.2026)
+
+Уточнены три существующие карточки `data_sources`, без создания дублей и без изменения `import_status`:
+- `duma_hmao_municipal_budget_9m_2025`: 176 наблюдений / 22 МО; реальный `retrieved_at` источника взят из последней связанной записи `2026-10-30 16:22:34.497974+00`; документ содержит январь–сентябрь 2024 и 2025 (накопительно).
+- `duma_hmao_municipal_budget_appendix2_9m_2025`: 44 наблюдения / 22 МО; `retrieved_at=2026-10-30 16:30:12.228240+00`; трансферты и фонд оплаты труда с социальными взносами за январь–сентябрь 2025.
+- `investugra_municipal_rating_report_2023`: 88 наблюдений / 22 МО; `retrieved_at=2026-10-30 12:52:06.326281+00`; источник обозначен как региональный аналитический PDF (не первичная публикация Росстата), данные за 2022–2023.
+
+После уточнения у 161 источника: отсутствуют owner/period/type у 118, access restrictions у 149, retrieved_at у 157. Статусы источников не менялись (9 imported, 58 partially_imported, 92 identified, 2 access_issue). В таблице `municipality_indicators` осталось 1 445 строк, 1 389 verified муниципального уровня; private provenance links — 1 445; staging — 0.
+
+## 10. Остаточные блокеры опытного пилота
 
 - Нет достаточного сопоставимого покрытия социальной сферы и инфраструктуры.
 - Не разрешены шесть межисточниковых конфликтов доли занятости в МСП; остаются 12 строк needs_review.
