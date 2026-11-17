@@ -1014,3 +1014,10 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Extended staging SQL transaction caught an unassigned PL/pgSQL record reference in the canonical-name duplicate query; fixed it to use the joined `m.name` alias. The failed transaction rolled back fully (1,445 analytical rows and 1,445 provenance links unchanged; staging empty; no schema columns persisted).
 
 - Replaced PostgreSQL `to_date()` calendar validation after live rollback test showed it raises on 2026-02-31. The staging migration now validates a calendar date by constructing the first day of the month and checking that adding day-1 remains in the same year/month; impossible dates are a review result, not an exception.
+
+
+### 18.11.2026 — CI first-run repair
+- Draft PR #20 triggered GitHub Actions against the actual PR merge commit. The first build job ran npm ci and npm test; staging import static contract, risk data gates, forecast coverage, resilience methodology and 34 forecast unit tests passed.
+- The suite stopped on one stale test expectation: the same-year per-capita investment derivation correctly cited `population_source_2024`, while the test still expected the prior single-row fixture name `population_source`. Updated the assertion to the exact same-year source.
+- GitHub warned that the resolved Supabase JS packages require Node >=22 while workflows used Node 20. Updated both ci.yml and qa.yml to Node 22.
+- Waiting for the next PR synchronization run; no production deployment or database migration applied.

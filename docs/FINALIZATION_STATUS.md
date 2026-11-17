@@ -157,8 +157,11 @@ Forward migration обновлена: review-view и RPC сравнивают/з
 - Оба CI job (build и data-migrations-integration) завершены успешно.
 - В workflow есть npm test, проверки data quality, индекса, рисков, прогнозного покрытия, паспортов, отчётов, операционных реестров, карты и PostgreSQL migration integration tests.
 
-Не выполнено в этой сессии:
-- Локальный npm test и сборка на текущем рабочем checkout не запускались: git clone из контейнера блокируется DNS, а GitHub-коннектор не предоставляет локальный checkout Node.js. Успех workflow от 07.11 относится только к старому main SHA.
+Проверка PR №20 (draft) на GitHub Actions:
+- Первый запуск `npm test` остановился на устаревшем ожидании в тесте производных инвестиций: после уточнения происхождения населения тест ожидал `population_source`, но фактическая годовая запись корректно ссылалась на `population_source_2024`. Сам расчёт и обе ссылки были корректны; ожидание теста исправлено.
+- Все предшествующие узлы `npm test`, включая staging import static contract, прошли; forecast coverage, risk provenance/geography, resilience-index методология и 34 forecast unit tests прошли. Повторный прогон после исправления ожидается.
+- CI был настроен на Node 20, тогда как установленный `@supabase/supabase-js@2.119.0` и связанные пакеты требуют Node >=22. Оба workflow (`ci.yml`, `qa.yml`) переведены на Node 22.
+- Локальный checkout Node.js в контейнере недоступен из-за DNS; дальнейшие сборочные и unit проверки выполняются GitHub Actions на PR.
 - Новая миграция 20261118033000 проверена непосредственно на live PostgreSQL внутри одной транзакции с ROLLBACK: DDL установился, RPC импортировала два независимых источника, один same-source duplicate помечен duplicate, пустой период остался needs_period_mapping, provenance links и URL/publication/retrieval dates перенесены; все fixture и DDL откатились. После отката повторно подтверждено: 1 445 observations, 1 445 provenance links, 0 staging rows, 0 test fixture rows, четыре новые staging-колонки отсутствуют. Это SQL-интеграционный тест схемы, а не запуск Node test script и не применение миграции.
 
 ## 8. Журнал изменений финализации

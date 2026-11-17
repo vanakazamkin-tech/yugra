@@ -366,7 +366,7 @@ assert.deepEqual(transferDerived.source_urls, ['https://example.com/budget-main.
 assert.equal(transferDerived.source_url, null, 'legacy single-source URL must be empty when provenance has multiple sources');
 assert.ok(transferDerived.notes.includes('budget_main, budget_appendix'), 'derivation notes must expose contributing source IDs');
 const investmentDerived = derivedRows.find((row) => row.indicator_code === 'derived_investment_per_capita');
-assert.deepEqual(investmentDerived.source_ids, ['investment_source', 'population_source'], 'per-capita investment must cite both investment and population inputs');
+assert.deepEqual(investmentDerived.source_ids, ['investment_source', 'population_source_2024'], 'per-capita investment must cite the exact same-year population snapshot');
 assert.equal(investmentDerived.source_url, null, 'per-capita investment must not imply that one source supports both inputs');
 
 
