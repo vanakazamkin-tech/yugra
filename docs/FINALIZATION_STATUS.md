@@ -126,6 +126,8 @@ Forward migration обновлена: review-view и RPC сравнивают/з
 - На `municipality_indicators` нет триггера, который автоматически создаёт provenance-link. Исторические 1 445 private links были сформированы миграционным backfill; старый staging importer не вставляет ссылку для новых строк.
 - На момент проверки staging пуст (`0` строк), а в private provenance table находится `1 445` links. Поэтому обнаруженные дефекты не повредили существующие наблюдения.
 
+Проверка прав Supabase 18.11.2026 подтвердила: `service_role` имеет UPDATE на `public.data_sources`, а `anon` и `authenticated` его не имеют. В disposable CI bootstrap права для `service_role` были неполными, поэтому тест контролируемого импорта падал при записи `retrieved_at`. Forward migration теперь явно закрепляет `SELECT, UPDATE` только за `service_role`; публичные роли не получают права записи. Тестовая фикстура синхронизирована.
+
 В рабочую ветку добавлена forward migration `20261118033000_harden_staging_import_integrity.sql` (пока НЕ применена к production). Она:
 1. Добавляет в staging нормализованный период, точный URL снимка, дату публикации и фактическое время получения.
 2. Запрещает статус `accepted` без ручного рецензента, валидного normalized period, очищенного списка validation errors, municipality mapping и фактической даты получения.

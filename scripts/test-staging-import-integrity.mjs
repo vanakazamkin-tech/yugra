@@ -48,6 +48,7 @@ assert.ok(compact.includes('source_retrieved_at'), 'retrieval timestamp must flo
 assert.ok(compact.includes('grant execute on function public.import_accepted_municipality_indicators(text)'),
   'the controlled import RPC must be explicitly granted');
 assert.ok(compact.includes('to service_role;'), 'only service_role may execute the controlled import RPC');
+assert.ok(compact.includes('grant select, update on public.data_sources to service_role'), 'service_role must be allowed to store the actual source retrieval timestamp');
 assert.ok(compact.includes('with (security_invoker = true)'), 'review view must respect invoker permissions');
 assert.ok(!/\bgrant\s+[^;]*\bto\s+(public|anon|authenticated)\b/i.test(migration),
   'migration must not open staging or private provenance to public API roles');

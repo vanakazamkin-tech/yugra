@@ -13,7 +13,8 @@ insert into public.municipality_indicators (
   'https://example.test/primary', 'verified', 'municipality', 'Test municipality'
 );
 
-grant select on public.municipalities, public.data_sources to service_role;
+grant select on public.municipalities to service_role;
+grant select, update on public.data_sources to service_role;
 grant select, insert, update on public.municipality_indicators to service_role;
 grant select, insert, update on public.municipality_indicator_import_staging to service_role;
 

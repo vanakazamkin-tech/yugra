@@ -1021,3 +1021,5 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - The suite stopped on one stale test expectation: the same-year per-capita investment derivation correctly cited `population_source_2024`, while the test still expected the prior single-row fixture name `population_source`. Updated the assertion to the exact same-year source.
 - GitHub warned that the resolved Supabase JS packages require Node >=22 while workflows used Node 20. Updated both ci.yml and qa.yml to Node 22.
 - Waiting for the next PR synchronization run; no production deployment or database migration applied.
+
+- The first disposable PostgreSQL integration attempt reached the new controlled-import test, but the minimal bootstrap had granted service_role SELECT (not UPDATE) on data_sources; the RPC correctly failed when recording retrieved_at. Live Supabase grants UPDATE to service_role and denies it to anon/authenticated. The forward migration now explicitly grants SELECT, UPDATE to service_role only, and the SQL fixture mirrors that contract.

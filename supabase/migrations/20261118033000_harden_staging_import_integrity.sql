@@ -352,6 +352,8 @@ begin
 end;
 $$;
 
+grant select, update on public.data_sources to service_role;
+
 revoke all on function public.import_accepted_municipality_indicators(text)
   from public, anon, authenticated;
 grant execute on function public.import_accepted_municipality_indicators(text)
