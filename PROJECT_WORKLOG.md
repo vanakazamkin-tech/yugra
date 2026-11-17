@@ -1033,3 +1033,11 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Added regression tests and a diagnostic panel in Forecasting.jsx. It is display-only and does not change scenario coefficients or index scores.
 
 - First PR Actions run for commit 63ab328e passed both build and PostgreSQL migration integration. A post-review refinement fixed MAPE display (no spurious plus sign) and made eligible-series counts include exact indicator name and unit. Added regression coverage for code aliases/units staying separate.
+
+
+## 18.11.2026 — machine-readable candidate resilience registry
+- Added docs/INDEX_CANDIDATE_REGISTRY_V1_1.json: 22 candidate/context/hold entries, exact source-name contracts, coverage snapshots, proposed formulas, periods, sources and blockers.
+- Kept the catalogue disconnected from runtime scoring. Every entry is not approved and calculation-disabled; approvedIndicatorIds stays empty; six pillar weights remain 20/20/15/15/15/15.
+- Corrected the sme_per_10k coverage description: two exact-name cohorts of 3 municipalities each are not one n=6 peer group.
+- Added scripts/test-index-candidate-registry.mjs to enforce the six weights, no accidental approval, no enabled calculations, unique IDs and SME cohort separation.
+- Updated candidate/methodology/status docs; no index outputs or numeric observations changed.
