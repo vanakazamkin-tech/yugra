@@ -139,7 +139,7 @@ select
         and mi.reference_period = s.normalized_period
         and mi.unit = s.normalized_unit
         and mi.geographic_level = 'municipality'
-        and coalesce(mi.geographic_name, '') = coalesce(s.raw_municipality_name, '')
+        and mi.geographic_name = m.name
         and mi.source_id = s.source_id
     ) then 'possible_same_source_duplicate'
     else 'ready_for_manual_review'
@@ -167,7 +167,7 @@ declare
   v_id uuid;
 begin
   for v_row in
-    select s.*
+    select s.*, m.name as canonical_municipality_name
     from public.municipality_indicator_import_staging s
     join public.municipalities m
       on m.id = s.mapped_municipality_id
@@ -200,7 +200,7 @@ begin
           and mi.reference_period = s.normalized_period
           and mi.unit = s.normalized_unit
           and mi.geographic_level = 'municipality'
-          and coalesce(mi.geographic_name, '') = coalesce(s.raw_municipality_name, '')
+          and mi.geographic_name = v_row.canonical_municipality_name
           and mi.source_id = s.source_id
         )
     order by s.created_at, s.id
@@ -238,10 +238,12 @@ begin
       concat_ws(E'\n',
         'Импортировано из staging после ручного подтверждения.',
         'Исходная запись: ' || v_row.source_record_key,
-        'Период нормализован вручную в staging: ' || v_row.normalized_period
+        'Период нормализован вручную в staging: ' || v_row.normalized_period,
+        'Исходное название МО в источнике: ' || v_row.raw_municipality_name,
+        'Каноническое название МО в справочнике: ' || v_row.canonical_municipality_name
       ),
       'municipality',
-      v_row.raw_municipality_name,
+      v_row.canonical_municipality_name,
       v_row.normalized_period
     from public.data_sources ds
     where ds.id = v_row.source_id

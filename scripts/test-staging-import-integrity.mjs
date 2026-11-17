@@ -29,8 +29,11 @@ for (const token of [
 }
 
 assert.ok(compact.includes("mi.source_id = s.source_id"), 'duplicate gate must allow independent source observations');
-assert.ok(compact.includes("coalesce(mi.geographic_name, '') = coalesce(s.raw_municipality_name, '')"),
-  'duplicate gate must include geographic name');
+assert.ok(compact.includes('mi.geographic_name = m.name'), 'review duplicate gate must use the canonical municipality name');
+assert.ok(compact.includes('mi.geographic_name = v_row.canonical_municipality_name'), 'RPC duplicate gate must use the mapped municipality name');
+assert.ok(compact.includes('m.name as canonical_municipality_name'), 'import cursor must carry canonical municipality name');
+assert.ok(compact.includes('v_row.canonical_municipality_name'), 'analytical geography must use canonical name, not source alias');
+assert.ok(compact.includes('исходное название мо в источнике:'), 'raw source municipality name must remain traceable in notes');
 assert.ok(compact.includes('mi.reference_period = s.normalized_period'), 'duplicate gate must use normalized period');
 assert.ok(compact.includes('mi.unit = s.normalized_unit'), 'duplicate gate must use normalized unit');
 assert.ok(!compact.includes("mi.verification_status = 'verified'"), 'identity duplicate detection must match the unique index across all statuses');

@@ -994,3 +994,10 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Unknown pillar keys no longer count toward coverage or cross-pillar thresholds.
 - Updated UnifiedRiskForecast overview text, risk table coverage column and CSV export to show available pillars out of six.
 - Added regression tests for same-pillar, two-pillar, five-of-six and full six-pillar cases. Full npm test is still pending a runner/checkout.
+
+
+### 18.11.2026 — canonical municipality mapping and CI migration integration
+- Corrected staging duplicate detection to resolve the source label through mapped_municipality_id and compare the canonical municipalities.name. The canonical name is written to municipality_indicators.geographic_name; the exact raw label remains in staging and observation notes.
+- Added a regression fixture where source aliases cannot bypass the same-source unique key, updated controlled cross-source SQL test for the hardened accepted-row contract, URL snapshots, period normalization and retrieval timestamps.
+- Added the 20261118033000 migration to CI disposable PostgreSQL migration apply + idempotency reapply. No production migration was permanently applied.
+- Existing Soviet district alias rows were left unchanged pending a separate source-level review.

@@ -83,12 +83,20 @@
 
 Пороговые правила красной/жёлтой зоны и математические веса индекса не менялись. Добавлены тесты: 2 ряда в двух сферах — insufficient; 2 ряда в одной сфере — insufficient; 5 из 6 направлений — insufficient; все 6 направлений без негативной динамики — stable; негативные сигналы могут вызвать critical при неполном покрытии.
 
+## 5. Безопасность Supabase
+
 
 Advisor rls_enabled_no_policy сообщает 5 таблиц без политик: private.municipality_indicator_source_links, public.forecast_runs, public.municipality_indicator_import_staging, public.municipality_legacy_snapshots, public.project_work_log.
 
 Для всех пяти read-only проверка показала RLS=true и отсутствие SELECT/INSERT для anon и authenticated. Это ожидаемая закрытая конфигурация для служебных/приватных данных. Не добавлять публичные политики ради устранения INFO-предупреждения.
 
-Изменений схемы и таблицы municipality_indicators не проводилось. Выполнены точечные неразрушающие UPDATE только для пяти уже существующих карточек public.data_sources: уточнены data_owner, temporal_coverage, data_type, access_restrictions, last_checked_at и диагностические notes. import_status остался identified; retrieved_at не проставлялся; публичные значения/наблюдения и staging не менялись. RLS и права не изменялись.
+Изменений схемы и таблицы municipality_indicators не проводилось. Выполнены точечные неразрушающие UPDATE только для семи уже существующих карточек public.data_sources: уточнены data_owner, temporal_coverage, data_type, access_restrictions, last_checked_at и диагностические notes. import_status остался identified; retrieved_at не проставлялся; публичные значения/наблюдения и staging не менялись. RLS и права не изменялись.
+
+## 4.2. Каноническое сопоставление географического имени в staging-import
+
+Проверка live-данных показала, что все текущие 1 401 записи `geographic_level='municipality'` содержат `geographic_name`, который соответствует каноническому названию МО, кроме трёх исторических строк Советского района со значением «Советский муниципальный район». В staging исходное имя может содержать другой вариант, сокращение или старое название. Сопоставление duplicate identity по `raw_municipality_name` ошибочно пропустило бы такую запись как новую и создало бы второй факт.
+
+Forward migration обновлена: review-view и RPC сравнивают/записывают `municipalities.name` по `mapped_municipality_id`; исходное имя сохраняется в staging и в `notes` аналитической записи. Существующие старые три строки не изменялись автоматически — их требуется отдельно сверить по исходному документу и ОКТМО.
 
 ## 5.1. Дополнительная проверка migration drift и staging import
 
