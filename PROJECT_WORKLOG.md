@@ -1056,3 +1056,10 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Found that the substring “малого предпринимательства” was interpreted as SME/business even when it only excluded SMEs from the statistical universe. This misclassified non-SME wage, employee-count, investment and shipment observations.
 - Changed classify() priority so income, employment counts, investment and production/shipment semantics are resolved before generic SME/business substrings; SME density remains business, SME employment share remains labour.
 - Added regression assertions using exact indicator names from the current database. Direction rules were not broadened; nominal/context indicators remain context.
+
+
+### 18.11.2026 — risk exact-definition identity and SME-density direction gate
+- Kept `sme_per_10k` as contextual in operational risk direction rules. The two exact-name cohorts each cover only three municipalities and the relationship to resilience is not proven monotonic; the candidate index hypothesis does not automatically approve a risk direction.
+- Added exact `indicator_name` to buildRiskSeries grouping identity so same-code/period/unit definitions cannot be mixed chronologically.
+- Retained the common same-code signal family to prevent double counting: concordant definition variants contribute one signal, contradictory variants are excluded as a family and reported.
+- Added tests for SME density contextual status and conflicting same-code source definitions.

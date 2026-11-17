@@ -20,7 +20,7 @@ export function buildRiskSeries(rows, thresholds = DEFAULT_RISK_THRESHOLDS) {
     if (!row || row.verification_status !== 'verified' || row.geographic_level !== 'municipality') return;
     const value = number(row.value);
     if (value == null || !safeText(row.municipality_id) || !safeText(row.indicator_code)) return;
-    const key = [row.municipality_id, row.indicator_code, row.unit || '', signature(row)].join('|');
+    const key = [row.municipality_id, row.indicator_code, safeText(row.indicator_name), row.unit || '', signature(row)].join('|');
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push({ ...row, numericValue: value, order: periodOrder(row) });
   });

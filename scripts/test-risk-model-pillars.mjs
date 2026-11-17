@@ -8,6 +8,7 @@ assert.equal(directionForRiskIndicator({ indicator_code: 'derived_investment_per
 assert.equal(directionForRiskIndicator({ indicator_code: 'fixed_capital_investment_growth_preliminary', indicator_name: 'Индекс физического объёма инвестиций в основной капитал' }), 'higher', 'physical-volume investment index can be evaluated directionally');
 assert.equal(directionForRiskIndicator({ indicator_code: 'average_monthly_salary_annual', indicator_name: 'Среднемесячная номинальная заработная плата' }), 'context', 'nominal salary without inflation adjustment must remain contextual');
 assert.equal(directionForRiskIndicator({ indicator_code: 'sme_employment_share', indicator_name: 'Доля среднесписочной численности работников МСП в численности работников всех предприятий и организаций' }), 'context', 'SME employment share is not an automatically positive diversification signal');
+assert.equal(directionForRiskIndicator({ indicator_code: 'sme_per_10k', indicator_name: 'Число субъектов МСП на 10 тыс. человек населения' }), 'context', 'SME density with unverified definitions and non-monotonic resilience relationship remains contextual');
 assert.equal(directionForRiskIndicator({ indicator_code: 'derived_budget_transfer_dependency', indicator_name: 'Доля безвозмездных поступлений в общих доходах бюджета' }), 'lower', 'transfer dependency remains a lower-is-better signal');
 assert.equal(directionForRiskIndicator({ indicator_code: 'migration_balance', indicator_name: 'Миграционное сальдо' }), 'higher', 'positive migration balance is a higher-is-better signal');
 assert.equal(directionForRiskIndicator({ indicator_code: 'network_needs_replacement_share', indicator_name: 'Доля сетей, нуждающихся в замене' }), 'lower', 'a higher share of networks needing replacement is adverse');
@@ -376,5 +377,27 @@ assert.deepEqual(investmentDerived.source_ids, ['investment_source', 'population
 assert.equal(investmentDerived.source_url, null, 'per-capita investment must not imply that one source supports both inputs');
 
 
+
+
+
+const definitionVariantRows = [
+  riskRow(2022, 'annual', 100, { indicator_name: 'Employment rate — source definition A' }),
+  riskRow(2023, 'annual', 90, { indicator_name: 'Employment rate — source definition A' }),
+  riskRow(2022, 'annual', 50, { indicator_name: 'Employment rate — source definition B', source_id: 'source-b' }),
+  riskRow(2023, 'annual', 60, { indicator_name: 'Employment rate — source definition B', source_id: 'source-b' }),
+];
+const separateDefinitionSeries = buildRiskSeries(definitionVariantRows);
+assert.equal(separateDefinitionSeries.length, 2, 'different source indicator definitions must not be merged into one time series');
+assert.deepEqual(
+  separateDefinitionSeries.map((item) => item.points.length),
+  [2, 2],
+  'each exact definition must retain its own chronological history',
+);
+assert.equal(new Set(separateDefinitionSeries.map((item) => item.name)).size, 2, 'the two indicator names must remain visible');
+assert.ok(separateDefinitionSeries.every((item) => item.signalFamily === 'employment_rate'), 'same-code variants remain one risk family to prevent double counting');
+const contradictoryDefinitions = assessRiskSignals(separateDefinitionSeries);
+assert.equal(contradictoryDefinitions.level, 'insufficient', 'contradictory definitions of one code must not produce a positive or negative aggregate risk');
+assert.ok(contradictoryDefinitions.conflictingSignalFamilies.includes('employment_rate'), 'the conflicting source-definition family must be reported');
+assert.equal(contradictoryDefinitions.usableCount, 0, 'conflicting definition variants must be excluded rather than averaged or selected');
 
 console.log('Indicator classification and resilience model pillar tests passed.');
