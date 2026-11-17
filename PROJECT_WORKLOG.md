@@ -1001,3 +1001,12 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Added a regression fixture where source aliases cannot bypass the same-source unique key, updated controlled cross-source SQL test for the hardened accepted-row contract, URL snapshots, period normalization and retrieval timestamps.
 - Added the 20261118033000 migration to CI disposable PostgreSQL migration apply + idempotency reapply. No production migration was permanently applied.
 - Existing Soviet district alias rows were left unchanged pending a separate source-level review.
+
+
+### 18.11.2026 — point-in-time demographic trend support
+- Extended parseRiskPeriod() for strict YYYY-MM and YYYY-MM-DD periods. Point-in-time observations compare only with the same month/day in consecutive calendar years; invalid dates are rejected.
+- Replaced the single end-to-end population CAGR with annual year-over-year population changes based only on adjacent 1 January snapshots. Missing years are not interpolated.
+- Population snapshots used for derived ratios are taken after duplicate/conflict resolution; each derived YoY point retains both underlying source IDs and URLs.
+- Added regression tests for monthly/date parsing, leap days, invalid dates, YoY derived history, risk-series adverse streaks, and gap exclusion.
+- Reordered the CI migration chain so 20261118033000 runs after 20261107122134 (the hardening RPC is not overwritten by the earlier cross-source migration).
+- Live Supabase contains 22 population observations per each January 1 year 2022–2025 and 22 consecutive municipality comparisons for each 2023/2024/2025 growth transition. Mean YoY changes: +0.3825%, +1.0808%, +0.5986% respectively; these are descriptive derived values, not an official demographic resilience score.

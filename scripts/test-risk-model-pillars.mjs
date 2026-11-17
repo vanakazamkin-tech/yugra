@@ -24,6 +24,11 @@ assert.equal(parseRiskPeriod({ reference_year: 2023, reference_period: '2024-Q1'
 assert.equal(parseRiskPeriod({ reference_year: 1800, reference_period: 'annual' }), null, 'out-of-range years must be rejected');
 assert.equal(parseRiskPeriod({ reference_year: 1800, reference_period: '2024-Q1' }), null, 'an invalid declared year must not be replaced by a year inferred from the period label');
 assert.equal(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-M13' }), null, 'unknown frequency must not be inferred as annual');
+assert.deepEqual(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-03' }), { year: 2024, frequency: 'month', slot: 3 }, 'month periods must remain monthly rather than becoming annual');
+assert.deepEqual(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-01-01' }), { year: 2024, frequency: 'point_in_time', slot: 101 }, 'point-in-time snapshots must be identified by their exact calendar date');
+assert.equal(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-02-29' })?.frequency, 'point_in_time', 'valid leap-day snapshots must be accepted');
+assert.equal(parseRiskPeriod({ reference_year: 2023, reference_period: '2023-02-29' }), null, 'impossible calendar dates must be rejected');
+assert.equal(parseRiskPeriod({ reference_year: 2024, reference_period: '2024-13-01' }), null, 'invalid snapshot months must be rejected');
 
 const riskRow = (year, period, value, overrides = {}) => ({
   municipality_id: 'm-risk', indicator_code: 'employment_rate', indicator_name: 'Уровень занятости',
@@ -314,8 +319,10 @@ const derivedRows = deriveMunicipalIndicators([
   sourceRow('budget_intergovernmental_transfers', 50, '2024-Q3', 'тыс. руб.', { source_id: 'budget_appendix', source_url: 'https://example.com/budget-appendix.pdf' }),
   sourceRow('budget_total_expenditure', 180, '2024-Q3'),
   sourceRow('fixed_capital_investment_non_mining', 1000, 'annual', 'руб.', { source_id: 'investment_source', source_url: 'https://example.com/investment.pdf' }),
-  sourceRow('population_municipality', 10, '2024-01-01', 'человек', { source_id: 'population_source', source_url: 'https://example.com/population.xlsx' }),
-  sourceRow('population_municipality', 9, '2022-01-01', 'человек', { reference_year: 2022 }),
+  sourceRow('population_municipality', 9, '2022-01-01', 'человек', { reference_year: 2022, source_id: 'population_source_2022', source_url: 'https://example.com/population-2022.xlsx' }),
+  sourceRow('population_municipality', 9.5, '2023-01-01', 'человек', { reference_year: 2023, source_id: 'population_source_2023', source_url: 'https://example.com/population-2023.xlsx' }),
+  sourceRow('population_municipality', 10, '2024-01-01', 'человек', { source_id: 'population_source_2024', source_url: 'https://example.com/population-2024.xlsx' }),
+  sourceRow('population_municipality', 10.2, '2025-01-01', 'человек', { reference_year: 2025, source_id: 'population_source_2025', source_url: 'https://example.com/population-2025.xlsx' }),
   sourceRow('budget_total_revenue', 100, '2024-Q3', 'руб.', { municipality_id: 'm2' }),
   sourceRow('budget_revenue_excluding_grants', 40, '2024-Q3', 'тыс. руб.', { municipality_id: 'm2' }),
   sourceRow('budget_total_revenue', 999, '2024-Q3', 'тыс. руб.', { verification_status: 'needs_review' }),
@@ -326,7 +333,31 @@ assert.deepEqual(ownRevenueShares.map((row) => [row.reference_period, row.value]
 assert.equal(derivedRows.find((row) => row.indicator_code === 'derived_budget_transfer_dependency')?.reference_period, '2024-Q3', 'transfer dependency must retain its source quarter');
 assert.deepEqual(derivedRows.filter((row) => row.indicator_code === 'derived_budget_balance_ratio').map((row) => [row.reference_period, Number(row.value.toFixed(4))]), [['2024-Q2', 25], ['2024-Q3', 11.1111]], 'budget balance must use values from the same quarter');
 assert.equal(derivedRows.find((row) => row.indicator_code === 'derived_investment_per_capita')?.value, 100, 'annual investment must join to the unique population snapshot for the same year');
-assert.equal(derivedRows.find((row) => row.indicator_code === 'derived_population_growth_rate')?.reference_period, 'annual', 'population growth is explicitly annualized');
+const annualPopulationGrowth = derivedRows
+  .filter((row) => row.indicator_code === 'derived_population_growth_rate')
+  .sort((a, b) => a.reference_year - b.reference_year);
+assert.deepEqual(
+  annualPopulationGrowth.map((row) => [row.reference_year, Number(row.value.toFixed(4))]),
+  [[2023, 5.5556], [2024, 5.2632], [2025, 2]],
+  'population change must be derived as separate year-over-year observations from consecutive 1 January snapshots',
+);
+assert.ok(annualPopulationGrowth.every((row) => row.reference_period === 'annual'), 'each annual growth observation must have an explicit annual period');
+assert.deepEqual(annualPopulationGrowth[1].source_ids, ['population_source_2023', 'population_source_2024'], 'each growth point must preserve both source observations');
+const populationRisk = buildRiskSeries(annualPopulationGrowth.map((row) => ({
+  ...row,
+  municipality_id: 'm-pop',
+  source_id: row.source_ids[0],
+  source_url: row.source_urls[0],
+})));
+assert.equal(populationRisk.length, 1, 'the derived population growth series must be eligible for risk monitoring');
+assert.equal(populationRisk[0].direction, 'higher');
+assert.equal(populationRisk[0].adverse, true, 'a falling year-over-year population growth rate is an adverse signal');
+assert.equal(populationRisk[0].adverseStreak, 2, 'two consecutive annual deteriorations must be detected');
+const populationGap = deriveMunicipalIndicators([
+  sourceRow('population_municipality', 9, '2022-01-01', 'человек', { reference_year: 2022 }),
+  sourceRow('population_municipality', 10, '2024-01-01', 'человек', { reference_year: 2024 }),
+]);
+assert.equal(populationGap.some((row) => row.indicator_code === 'derived_population_growth_rate'), false, 'missing calendar years must not be bridged or annualized');
 assert.equal(derivedRows.some((row) => row.municipality_id === 'm2' && row.indicator_code === 'derived_budget_own_revenue_share'), false, 'ratios with incompatible units must not be calculated');
 assert.equal(derivedRows.some((row) => row.value === 999), false, 'unverified and settlement-level rows must not enter derived municipal indicators');
 const transferDerived = derivedRows.find((row) => row.indicator_code === 'derived_budget_transfer_dependency');

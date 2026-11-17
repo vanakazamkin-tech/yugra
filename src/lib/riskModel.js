@@ -42,6 +42,18 @@ export function parseRiskPeriod(point = {}) {
   if (quarter) return { year, frequency: 'quarter', slot: Number(quarter[1]) };
   const half = period.match(/^(?:\d{4}[-_\s]?)?H([12])$/i);
   if (half) return { year, frequency: 'half', slot: Number(half[1]) };
+  const month = period.match(/^\d{4}-(0[1-9]|1[0-2])$/);
+  if (month) return { year, frequency: 'month', slot: Number(month[1]) };
+  const pointInTime = period.match(/^(\d{4})-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/);
+  if (pointInTime) {
+    const monthNumber = Number(pointInTime[2]);
+    const dayNumber = Number(pointInTime[3]);
+    const calendarDate = new Date(Date.UTC(year, monthNumber - 1, dayNumber));
+    if (calendarDate.getUTCFullYear() !== year
+      || calendarDate.getUTCMonth() + 1 !== monthNumber
+      || calendarDate.getUTCDate() !== dayNumber) return null;
+    return { year, frequency: 'point_in_time', slot: monthNumber * 100 + dayNumber };
+  }
   if (/^(?:annual|year|год|годовой|\d{4})$/i.test(period)) return { year, frequency: 'annual', slot: 0 };
   return null;
 }
@@ -254,7 +266,6 @@ export function deriveMunicipalIndicators(rows = []) {
     && Number.isInteger(Number(row.reference_year))
   );
   const grouped = new Map();
-  const populationByMunicipalityYear = new Map();
   for (const row of verified) {
     const key = rowKey(row);
     if (!grouped.has(key)) grouped.set(key, { rows: {}, ambiguousCodes: new Set() });
@@ -280,10 +291,24 @@ export function deriveMunicipalIndicators(rows = []) {
         bucket.rows[code] = { ...existing, source_ids: sourceIds, source_urls: sourceUrls };
       }
     }
-    if (row.indicator_code === 'population_municipality') {
-      const populationKey = String(row.municipality_id) + '|' + String(row.reference_year);
-      if (!populationByMunicipalityYear.has(populationKey)) populationByMunicipalityYear.set(populationKey, []);
-      populationByMunicipalityYear.get(populationKey).push(row);
+  }
+
+  const populationByMunicipalityYear = new Map();
+  const populationByMunicipalityDateSeries = new Map();
+  for (const bucket of grouped.values()) {
+    const population = bucket.rows.population_municipality;
+    if (!population || Number(population.value) <= 0) continue;
+    const municipalityYearKey = String(population.municipality_id) + '|' + String(population.reference_year);
+    if (!populationByMunicipalityYear.has(municipalityYearKey)) populationByMunicipalityYear.set(municipalityYearKey, []);
+    populationByMunicipalityYear.get(municipalityYearKey).push(population);
+
+    const parsedPeriod = parseRiskPeriod(population);
+    // The source currently supplies 1 January snapshots. Keep a same-date
+    // comparison key so future point-in-time releases cannot be mixed silently.
+    if (parsedPeriod?.frequency === 'point_in_time' && parsedPeriod.slot === 101) {
+      const seriesKey = String(population.municipality_id) + '|0101|' + String(population.unit || '');
+      if (!populationByMunicipalityDateSeries.has(seriesKey)) populationByMunicipalityDateSeries.set(seriesKey, []);
+      populationByMunicipalityDateSeries.get(seriesKey).push(population);
     }
   }
 
@@ -356,22 +381,31 @@ export function deriveMunicipalIndicators(rows = []) {
     }
   }
 
-  const populationByMunicipality = new Map();
-  for (const history of populationByMunicipalityYear.values()) {
-    if (history.length !== 1) continue;
-    const row = history[0];
-    const municipalityId = String(row.municipality_id);
-    if (!populationByMunicipality.has(municipalityId)) populationByMunicipality.set(municipalityId, []);
-    populationByMunicipality.get(municipalityId).push(row);
-  }
-  for (const history of populationByMunicipality.values()) {
-    const points = history.sort((a, b) => Number(a.reference_year) - Number(b.reference_year));
-    const first = points[0], last = points[points.length - 1];
-    if (points.length < 2 || Number(first.value) <= 0) continue;
-    const span = Number(last.reference_year) - Number(first.reference_year);
-    if (span <= 0) continue;
-    const annualized = (Math.pow(Number(last.value) / Number(first.value), 1 / span) - 1) * 100;
-    push(last, 'derived_population_growth_rate', 'Среднегодовое изменение численности населения за доступный период', annualized, '% в год', 'Расчёт по крайним доступным годам; не заменяет полный демографический баланс рождаемости, смертности и миграции.', history, 'annual');
+  // A unique population snapshot per municipality/year remains the only
+  // permitted denominator for same-year per-capita investment.
+  // For risk monitoring, derive an annual YoY growth point only from consecutive
+  // 1 January snapshots. Do not bridge missing calendar years or mix snapshot dates.
+  for (const history of populationByMunicipalityDateSeries.values()) {
+    const points = history.slice().sort((a, b) => Number(a.reference_year) - Number(b.reference_year));
+    for (let index = 1; index < points.length; index += 1) {
+      const previous = points[index - 1];
+      const current = points[index];
+      if (Number(current.reference_year) - Number(previous.reference_year) !== 1
+        || !sameUnit(previous, current)
+        || Number(previous.value) <= 0
+        || Number(current.value) <= 0) continue;
+      const yearOverYear = (Number(current.value) / Number(previous.value) - 1) * 100;
+      push(
+        current,
+        'derived_population_growth_rate',
+        'Годовое изменение численности населения к 1 января',
+        yearOverYear,
+        '% за год',
+        'Расчёт по двум последовательным подтверждённым срезам на 1 января; пропуски лет не интерполируются. Показатель не заменяет полный демографический баланс рождаемости, смертности и миграции.',
+        [previous, current],
+        'annual',
+      );
+    }
   }
   return derived;
 }

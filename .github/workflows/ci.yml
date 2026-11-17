@@ -110,10 +110,10 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055917_add_municipality_indicator_quality_view.sql
       - name: Apply source catalog metadata migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107055919_extend_data_source_provenance_metadata.sql
-      - name: Harden staging import period and canonical provenance
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261118033000_harden_staging_import_integrity.sql
       - name: Align staging import with full source identity
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261107122134_allow_cross_source_staging_import.sql
+      - name: Harden staging import period and canonical provenance
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261118033000_harden_staging_import_integrity.sql
       - name: Test review-first external rating default migration
         run: |
           psql -v ON_ERROR_STOP=1 -f supabase/tests/external_rating_review_default_setup.sql
