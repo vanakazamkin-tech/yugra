@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { classify } from '../src/lib/indicatorClassification.js';
-import { directionForRiskIndicator } from '../src/lib/riskDirection.js';
-import { assessRiskSignals, buildRiskModel, countConsecutiveAdverseIntervals, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, parseRiskPeriod } from '../src/lib/riskModel.js';
+import { directionForRiskIndicator, riskSignalFamilyFor } from '../src/lib/riskDirection.js';
+import { assessRiskSignals, buildRiskAuditRows, buildRiskModel, countConsecutiveAdverseIntervals, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, parseRiskPeriod } from '../src/lib/riskModel.js';
 import { buildRiskSeries } from '../src/lib/riskSeries.js';
 
 assert.equal(directionForRiskIndicator({ indicator_code: 'derived_investment_per_capita', indicator_name: 'Инвестиции в основной капитал без добычи на одного жителя' }), 'context', 'nominal per-capita investment must not be treated as real growth without a deflator');
@@ -36,6 +36,21 @@ const riskRow = (year, period, value, overrides = {}) => ({
   reference_year: year, reference_period: period, value, unit: '%',
   verification_status: 'verified', geographic_level: 'municipality', source_id: 'test-source', ...overrides,
 });
+
+assert.equal(riskSignalFamilyFor('pokachi_registered_unemployed'), 'registered_unemployment');
+assert.equal(riskSignalFamilyFor('pokachi_registered_unemployment_rate'), 'registered_unemployment');
+const registeredUnemploymentSeries = buildRiskSeries([
+  riskRow(2023, '2023', 0.036, { indicator_code: 'pokachi_registered_unemployed', indicator_name: 'Численность зарегистрированных безработных на конец года', unit: 'тыс. человек' }),
+  riskRow(2024, '2024', 0.040, { indicator_code: 'pokachi_registered_unemployed', indicator_name: 'Численность зарегистрированных безработных на конец года', unit: 'тыс. человек' }),
+  riskRow(2023, '2023', 0.35, { indicator_code: 'pokachi_registered_unemployment_rate', indicator_name: 'Уровень зарегистрированной безработицы на конец года', unit: '%' }),
+  riskRow(2024, '2024', 0.39, { indicator_code: 'pokachi_registered_unemployment_rate', indicator_name: 'Уровень зарегистрированной безработицы на конец года', unit: '%' }),
+]);
+assert.equal(registeredUnemploymentSeries.length, 2, 'count and rate remain separate visible time series');
+assert.ok(registeredUnemploymentSeries.every((item) => item.signalFamily === 'registered_unemployment'), 'count and rate share one risk family');
+const registeredUnemploymentAssessment = assessRiskSignals(registeredUnemploymentSeries);
+assert.equal(registeredUnemploymentAssessment.usableCount, 1, 'registered-unemployment count and rate count as one independent signal');
+assert.equal(registeredUnemploymentAssessment.adverseCount, 1, 'the shared family contributes only one negative signal');
+assert.equal(registeredUnemploymentAssessment.usable[0].familyMembers, 2, 'the representative retains the number of family members');
 
 const budgetRow = (indicator_code, value) => riskRow(2024, 'annual', value, {
   indicator_code, indicator_name: indicator_code, unit: 'млн руб.',
@@ -93,6 +108,15 @@ const highConfidenceSeries = buildRiskSeries([
   riskRow(2022, 'annual', 70), riskRow(2023, 'annual', 65), riskRow(2024, 'annual', 60),
 ]);
 assert.equal(highConfidenceSeries[0].confidenceLevel, 'high', 'three continuous annual observations with source metadata receive high confidence');
+const provisionalLatestSeries = buildRiskSeries([
+  riskRow(2022, '2022', 100),
+  riskRow(2023, '2023', 90),
+  riskRow(2024, '2024', 80, { notes: 'Оценка администрации за 2024 год; не окончательный статистический итог.' }),
+]);
+assert.equal(provisionalLatestSeries[0].latestIsProvisional, true, 'the latest observation note must expose an administrative estimate');
+assert.equal(provisionalLatestSeries[0].confidenceLevel, 'low', 'a provisional latest observation must not receive high provenance quality from a long history');
+assert.equal(provisionalLatestSeries[0].confidenceLabel, 'Ограниченная');
+assert.equal(provisionalLatestSeries[0].adverse, true, 'a provisional value remains visible as an exploratory movement rather than being silently deleted');
 const incompleteSourceHistory = buildRiskSeries([
   riskRow(2022, 'annual', 70, { source_id: null }), riskRow(2023, 'annual', 65),
 ]);
@@ -228,7 +252,7 @@ const insufficient = buildRiskModel(municipalities, series.filter((item) => item
 assert.equal(insufficient.byMunicipality.m1.availablePillars, 1, 'one observed direction remains one risk-coverage direction');
 assert.equal(Object.hasOwn(MODEL_PILLARS.find((pillar) => pillar.key === 'social'), 'weight'), false, 'risk directions must not carry or reapply index weights');
 const riskSignal = (adverse, pillar) => ({ adverse, pillar: { key: pillar } });
-assert.deepEqual(DEFAULT_RISK_THRESHOLDS, { minimumUsable: 2, criticalSignals: 3, criticalPillars: 2, sharpChangePercent: 10 }, 'default deterioration thresholds remain unchanged; green coverage is a fixed six-pillar requirement');
+assert.deepEqual(DEFAULT_RISK_THRESHOLDS, { minimumUsable: 2, criticalSignals: 3, criticalPillars: 3, sharpChangePercent: 10 }, 'the conservative pilot red threshold requires three independent risk pillars; green coverage remains a fixed six-pillar requirement');
 assert.equal(assessRiskSignals([riskSignal(false, 'economy')]).level, 'insufficient', 'one usable signal is insufficient under the default threshold');
 const completeCoverageSignals = MODEL_PILLARS.map((pillar) => riskSignal(false, pillar.key));
 assert.equal(assessRiskSignals(completeCoverageSignals).level, 'stable', 'green requires comparable directional evidence in all six risk pillars');
@@ -236,7 +260,13 @@ assert.equal(assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 
 assert.equal(assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 'economy')]).level, 'insufficient', 'multiple healthy indicators in one pillar cannot replace missing risk directions');
 assert.equal(assessRiskSignals(completeCoverageSignals.slice(0, 5)).level, 'insufficient', 'missing even one of the six risk pillars prevents a green status');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(false, 'labour')]).level, 'watch', 'one negative signal is yellow');
-assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour'), riskSignal(true, 'finance')]).level, 'critical', 'three negative signals across two or more pillars are red by default');
+assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour'), riskSignal(true, 'finance')]).level, 'critical', 'three negative signals across three distinct pillars are red by default');
+const twoPillarBudgetDemography = assessRiskSignals([
+  { code: 'budget_own_share', signalFamily: 'budget_own_share', adverse: true, pillar: { key: 'finance' } },
+  { code: 'budget_balance', signalFamily: 'budget_balance', adverse: true, pillar: { key: 'finance' } },
+  { code: 'population_growth', signalFamily: 'population_growth', adverse: true, pillar: { key: 'demography' } },
+]);
+assert.equal(twoPillarBudgetDemography.level, 'watch', 'two budget signals plus one demographic signal do not satisfy the conservative three-pillar red threshold');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'economy'), riskSignal(true, 'economy')]).level, 'watch', 'multiple signals in one pillar do not satisfy the default cross-pillar red threshold');
 assert.equal(assessRiskSignals([riskSignal(true, 'health'), riskSignal(true, 'education'), riskSignal(true, 'social'), riskSignal(false, 'finance')]).level, 'watch', 'health, education and social subcategories count as one social direction, not three');
 const complementaryBudgetSignals = assessRiskSignals([
@@ -259,6 +289,22 @@ const conflictingBudgetSignals = assessRiskSignals([
 ]);
 assert.equal(conflictingBudgetSignals.level, 'insufficient', 'contradictory signals from one dependent family must be quarantined');
 assert.deepEqual(conflictingBudgetSignals.conflictingSignalFamilies, ['budget_revenue_structure']);
+
+const budgetAuditSeries = [
+  { key: 'own-share', code: 'derived_budget_own_revenue_share', name: 'Доля собственных доходов', signalFamily: 'budget_revenue_structure', direction: 'higher', adverse: true, pillar: { key: 'budget' }, change: -5, unit: '%', previous: { numericValue: 40, reference_period: '2024-Q3' }, latest: { numericValue: 35, reference_period: '2025-Q3', input_indicator_codes: ['budget_total_revenue', 'budget_revenue_excluding_grants'], source_id: 'budget-source' } },
+  { key: 'transfer-share', code: 'derived_budget_transfer_dependency', name: 'Зависимость от трансфертов', signalFamily: 'budget_revenue_structure', direction: 'lower', adverse: true, pillar: { key: 'budget' }, change: 5, unit: '%', previous: { numericValue: 60, reference_period: '2024-Q3' }, latest: { numericValue: 65, reference_period: '2025-Q3', input_indicator_codes: ['budget_total_revenue', 'budget_intergovernmental_transfers'], source_id: 'budget-source' } },
+  { key: 'context-series', code: 'sme_per_10k', name: 'Плотность МСП', signalFamily: 'sme_per_10k', direction: 'context', adverse: null, pillar: { key: 'business' }, latest: { numericValue: 10, reference_period: '2025', source_id: 'sme-source' } },
+];
+const budgetAuditAssessment = { id: 'm-audit', name: 'Тестовый муниципалитет', own: budgetAuditSeries, ...assessRiskSignals(budgetAuditSeries) };
+const budgetAuditRows = buildRiskAuditRows([budgetAuditAssessment]);
+const ownShareAudit = budgetAuditRows.find((row) => row.code === 'derived_budget_own_revenue_share');
+const transferAudit = budgetAuditRows.find((row) => row.code === 'derived_budget_transfer_dependency');
+const contextAudit = budgetAuditRows.find((row) => row.code === 'sme_per_10k');
+assert.deepEqual(ownShareAudit.sharedInputCodes, ['budget_total_revenue'], 'audit must disclose overlapping raw input codes between derived budget metrics');
+assert.equal(ownShareAudit.inclusionStatus, 'negative', 'the family representative remains included');
+assert.equal(transferAudit.inclusionStatus, 'excluded', 'the complementary family member is not counted twice');
+assert.match(transferAudit.exclusionReason, /семейство/i);
+assert.match(contextAudit.exclusionReason, /Контекстное направление/);
 
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 2, criticalSignals: 2, criticalPillars: 2 }).level, 'critical', 'observed negative signals may raise critical status despite incomplete coverage');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 3, criticalSignals: 2, criticalPillars: 2 }).level, 'insufficient', 'the minimum coverage threshold must take precedence over negative signals');
@@ -355,6 +401,8 @@ const derivedRows = deriveMunicipalIndicators([
 ]);
 const ownRevenueShares = derivedRows.filter((row) => row.indicator_code === 'derived_budget_own_revenue_share');
 assert.deepEqual(ownRevenueShares.map((row) => [row.reference_period, row.value]), [['2024-Q2', 40], ['2024-Q3', 30]], 'budget ratios must remain separated by reporting period');
+assert.deepEqual(ownRevenueShares.find((row) => row.reference_period === '2024-Q3').input_indicator_codes.slice().sort(), ['budget_revenue_excluding_grants', 'budget_total_revenue'], 'derived budget shares must preserve exact input indicator codes');
+assert.deepEqual(derivedRows.find((row) => row.indicator_code === 'derived_budget_balance_ratio' && row.reference_period === '2024-Q3').input_indicator_codes.slice().sort(), ['budget_total_expenditure', 'budget_total_revenue'], 'budget balance must preserve its own input components');
 assert.equal(derivedRows.find((row) => row.indicator_code === 'derived_budget_transfer_dependency')?.reference_period, '2024-Q3', 'transfer dependency must retain its source quarter');
 assert.deepEqual(derivedRows.filter((row) => row.indicator_code === 'derived_budget_balance_ratio').map((row) => [row.reference_period, Number(row.value.toFixed(4))]), [['2024-Q2', 25], ['2024-Q3', 11.1111]], 'budget balance must use values from the same quarter');
 assert.equal(derivedRows.find((row) => row.indicator_code === 'derived_investment_per_capita')?.value, 100, 'annual investment must join to the unique population snapshot for the same year');

@@ -91,6 +91,8 @@ export function buildRiskSeries(rows, thresholds = DEFAULT_RISK_THRESHOLDS) {
       const current = parseRiskPeriod(point), prior = parseRiskPeriod(points[index]);
       return current && prior && current.frequency === prior.frequency && current.slot === prior.slot && current.year - prior.year === 1;
     });
+    const latestNote = safeText(latest.notes);
+    const latestIsProvisional = /предварительн|оценка администрации|не окончательн|прогнозн.{0,24}данн|приблизительн/i.test(latestNote);
     let confidenceLevel = 'low';
     let confidenceLabel = 'Низкая';
     let confidenceReason = 'Нет подтверждённого сопоставимого интервала или метаданных источника.';
@@ -100,6 +102,10 @@ export function buildRiskSeries(rows, thresholds = DEFAULT_RISK_THRESHOLDS) {
       confidenceReason = 'Не заполнены идентификатор или ссылка на источник.';
     } else if (!comparable) {
       confidenceReason = 'Для последнего значения нет соседнего сопоставимого периода.';
+    } else if (latestIsProvisional) {
+      confidenceLevel = 'low';
+      confidenceLabel = 'Ограниченная';
+      confidenceReason = 'Последнее наблюдение помечено источником как предварительная оценка или неокончательный итог; требуется подтверждение фактическим значением.';
     } else if (historyConsistent) {
       confidenceLevel = 'high';
       confidenceLabel = 'Высокая';
@@ -109,7 +115,7 @@ export function buildRiskSeries(rows, thresholds = DEFAULT_RISK_THRESHOLDS) {
       confidenceLabel = 'Средняя';
       confidenceReason = 'Источник указан; последнее изменение сопоставимо, но история короткая.';
     }
-    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, signalFamily: riskSignalFamilyFor(latest.indicator_code), name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, sharpChange, sharpChangeThreshold, adverseStreak, excludedConflictingPeriods, conflictAfterLatest, confidenceLevel, confidenceLabel, confidenceReason });
+    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, signalFamily: riskSignalFamilyFor(latest.indicator_code), name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, sharpChange, sharpChangeThreshold, adverseStreak, excludedConflictingPeriods, conflictAfterLatest, confidenceLevel, confidenceLabel, confidenceReason, latestIsProvisional });
   });
   return result;
 }

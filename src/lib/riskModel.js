@@ -82,7 +82,7 @@ export function countConsecutiveAdverseIntervals(points = [], direction = 'conte
 export const DEFAULT_RISK_THRESHOLDS = Object.freeze({
   minimumUsable: 2,
   criticalSignals: 3,
-  criticalPillars: 2,
+  criticalPillars: 3,
   sharpChangePercent: 10,
 });
 
@@ -201,6 +201,98 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
     explanation: `По всем шести направлениям проверены сопоставимые ряды: среди ${usable.length} оцениваемых рядов негативных изменений не выявлено.${conflictNote}`,
     reasons: ['Негативных сигналов среди оцениваемых рядов нет; покрыты все шесть направлений', ...conflictReasons],
   };
+}
+
+export function buildRiskAuditRows(municipalityAssessments = []) {
+  const output = [];
+  for (const assessment of Array.isArray(municipalityAssessments) ? municipalityAssessments : []) {
+    const series = Array.isArray(assessment?.own) ? assessment.own : [];
+    const usable = Array.isArray(assessment?.usable) ? assessment.usable : [];
+    const includedKeys = new Set(usable.map((signal) => signal.key).filter(Boolean));
+    const conflicts = new Set((assessment?.conflictingSignalFamilies || []).map(String));
+    const familyCounts = new Map();
+    series.forEach((signal) => {
+      const family = String(signal.signalFamily || signal.code || signal.key || '');
+      familyCounts.set(family, (familyCounts.get(family) || 0) + 1);
+    });
+    for (const signal of series) {
+      const family = String(signal.signalFamily || signal.code || signal.key || '');
+      const latest = signal.latest || {};
+      const previous = signal.previous || {};
+      const sourceIds = [...new Set([
+        ...(Array.isArray(latest.source_ids) ? latest.source_ids : []),
+        ...(latest.source_id ? [latest.source_id] : []),
+      ].filter(Boolean))];
+      const sourceUrls = [...new Set([
+        ...(Array.isArray(latest.source_urls) ? latest.source_urls : []),
+        ...(latest.source_url ? [latest.source_url] : []),
+      ].filter(Boolean))];
+      const sourcePresent = sourceIds.length > 0 || sourceUrls.length > 0;
+      const inputCodes = [...new Set((latest.input_indicator_codes || []).map(String))];
+      const sharedInputCodes = new Set();
+      const sharedWith = [];
+      for (const other of series) {
+        if (other === signal) continue;
+        const otherCodes = new Set((other.latest?.input_indicator_codes || []).map(String));
+        const overlap = inputCodes.filter((code) => otherCodes.has(code));
+        if (overlap.length) {
+          overlap.forEach((code) => sharedInputCodes.add(code));
+          sharedWith.push(String(other.name || other.code || other.key || 'Другой показатель'));
+        }
+      }
+      const familyConflict = conflicts.has(family);
+      const included = includedKeys.has(signal.key);
+      let exclusionReason = '';
+      if (familyConflict) {
+        exclusionReason = 'Конфликт направлений у разных определений одного семейства; семейство исключено';
+      } else if (signal.direction === 'context') {
+        exclusionReason = 'Контекстное направление: методика не подтверждает монотонную связь с устойчивостью';
+      } else if (!['higher', 'lower'].includes(signal.direction)) {
+        exclusionReason = 'Не определено направление изменения';
+      } else if (signal.conflictAfterLatest) {
+        exclusionReason = 'Есть более новое конфликтующее наблюдение; текущий сигнал подавлен';
+      } else if (signal.adverse == null) {
+        exclusionReason = signal.excludedConflictingPeriods > 0
+          ? 'Нет сопоставимой пары после исключения конфликтующих значений'
+          : 'Нет соседней сопоставимой истории по периоду, частоте или году';
+      } else if (!included) {
+        exclusionReason = 'Схлопнут в семейство зависимых/дублирующих сигналов; учитывается один представитель';
+      }
+      const qualityNotes = [];
+      if (!sourcePresent) qualityNotes.push('У последнего наблюдения не указан источник');
+      if (signal.latestIsProvisional) qualityNotes.push('Последнее наблюдение помечено источником как предварительная оценка/неокончательный итог');
+      if (signal.excludedConflictingPeriods > 0) qualityNotes.push('Из истории исключено конфликтующих периодов: ' + signal.excludedConflictingPeriods);
+      if (sharedInputCodes.size) qualityNotes.push('Есть общие исходные компоненты с другими показателями; это пересечение входов, а не доказательство математической тождественности');
+      output.push({
+        municipalityId: assessment.id ?? assessment.municipalityId ?? '',
+        municipality: assessment.name ?? assessment.municipalityName ?? String(assessment.id ?? ''),
+        code: signal.code || '',
+        name: signal.name || '',
+        inclusionStatus: exclusionReason ? 'excluded' : signal.adverse === true ? 'negative' : 'no_adverse',
+        includedInCount: !exclusionReason,
+        direction: signal.direction || 'unknown',
+        family,
+        familyMembers: familyCounts.get(family) || 1,
+        pillar: signal.pillar?.title || signal.pillar?.key || '',
+        previousValue: previous.numericValue ?? '',
+        previousPeriod: previous.reference_period || previous.reference_year || '',
+        currentValue: latest.numericValue ?? '',
+        currentPeriod: latest.reference_period || latest.reference_year || '',
+        change: signal.change ?? '',
+        unit: signal.unit || '',
+        inputIndicatorCodes: inputCodes,
+        sharedInputCodes: [...sharedInputCodes],
+        sharedWith: [...new Set(sharedWith)],
+        exclusionReason,
+        qualityNotes,
+        confidenceLabel: signal.confidenceLabel || '',
+        confidenceReason: signal.confidenceReason || '',
+        sourceIds,
+        sourceUrls,
+      });
+    }
+  }
+  return output;
 }
 
 export function buildRiskModel(municipalities = [], series = []) {
@@ -340,6 +432,9 @@ export function deriveMunicipalIndicators(rows = []) {
       value,
       unit,
       source_id: 'derived_from_verified_municipal_indicators',
+      input_indicator_codes: [...new Set(inputs
+        .map((row) => String(row.indicator_code ?? '').trim())
+        .filter(Boolean))],
       source_ids: sourceIds,
       source_urls: sourceUrls,
       // Keep the legacy single-link field only when it is unambiguous.

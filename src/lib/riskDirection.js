@@ -19,10 +19,16 @@ export const directionForRiskIndicator = (row = {}) => {
  
 // These two budget shares are complementary parts of one revenue structure,
 // not independent pieces of evidence for the same financial risk.
+const RISK_SIGNAL_FAMILIES = new Map([
+  ['derived_budget_own_revenue_share', 'budget_revenue_structure'],
+  ['derived_budget_transfer_dependency', 'budget_revenue_structure'],
+  // These two Pokachi indicators come from the same municipal table and
+  // describe the same registered-unemployment phenomenon in count and rate.
+  ['pokachi_registered_unemployed', 'registered_unemployment'],
+  ['pokachi_registered_unemployment_rate', 'registered_unemployment'],
+]);
+
 export const riskSignalFamilyFor = (indicatorCode) => {
   const code = String(indicatorCode ?? '').trim().toLowerCase();
-  if (['derived_budget_own_revenue_share', 'derived_budget_transfer_dependency'].includes(code)) {
-    return 'budget_revenue_structure';
-  }
-  return code || null;
+  return RISK_SIGNAL_FAMILIES.get(code) || code || null;
 };
