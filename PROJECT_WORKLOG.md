@@ -971,3 +971,17 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Значения `275 699,9` и `879 716,1` тыс. руб. в конце текстовой строки страницы 6 не являются обслуживанием муниципального долга: они согласуются с положительным профицитом (+) по строке Нефтеюганска. На странице 7 в первом поле «Источники финансирования дефицита бюджетов муниципальных образований, всего» стоят соответствующие значения `-275 699,9` и `-879 716,1`.
 - Поэтому пустые ячейки Нефтеюганска в `duma_budget_page6_municipal_debt_service_manual_transcription.csv` сохранены как пустые, а не заполнены значениями профицита. Это предотвращает сдвиг колонок из-за пропущенных пустых ячеек в текстовом слое PDF.
 - Межстраничная арифметическая/семантическая сверка подтверждает трактовку, но не заменяет визуальную проверку оригинальной страницы. Все строки остаются `needs_visual_review`; Supabase не изменялся.
+
+
+## 18.11.2026 — Yugra18 finalization: coverage, sources and staging integrity
+- Rechecked production/main state: both remain on b3baa2e5162222b3c770fc17a532133492b08e72; created backup and work branches. No production deployment launched.
+- Measured current Supabase indicator coverage: 22 municipalities, 1,445 observations, 1,389 verified municipal-level observations, 243 indicator codes, 279 code-name pairs; only 8 pairs cover all 22 municipalities, 253 pairs cover 1–4 municipalities.
+- Added docs/MUNICIPAL_COVERAGE_MATRIX_2026-11-18.md and a 14-query read-only coverage/security audit supabase/audits/municipal_coverage_matrix_2026-11-18.sql; all 14 audit queries executed successfully against live Supabase.
+- Added docs/ROSSTAT_2026_SOURCE_MAP.md with official BД ПМО codes, reporting periods, geography and interpretation constraints. Binary Rosstat/Tyumenstat/processed BД ПМО files have not been downloaded; no indicator observations were imported.
+- Enriched seven existing data_sources cards only. All seven remain identified; no retrieved_at was fabricated.
+- Found migration drift: production migration history stops at 20261107055919; 20261107122134_allow_cross_source_staging_import.sql is in GitHub but was not applied. Live import RPC still used the early same-source-unsafe duplicate check.
+- Added forward migration 20261118033000_harden_staging_import_integrity.sql and scripts/test-staging-import-integrity.mjs, registered in scripts/test-all.mjs. The migration has NOT been applied permanently.
+- Executed the migration + synthetic staging fixture + RPC assertions on live PostgreSQL within a single transaction and rolled back. Tests passed for cross-source coexistence, same-source duplicate marking, explicit period gate, exact URL/date persistence and private provenance-link creation. After rollback: 1,445 observations, 1,445 provenance links, staging empty, zero test fixtures, no new columns left behind.
+- RLS remained unchanged. The five tables without policies remain closed to anon/authenticated, as intended. No public policy or grants were added.
+- Local npm test and npm run build remain unverified on this branch because checkout cannot be cloned from the container due to DNS/network restriction; prior GitHub Actions success belongs to old production SHA only.
+- Production deployment and main branch unchanged.
