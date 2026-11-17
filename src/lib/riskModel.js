@@ -118,7 +118,18 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
   const collapsed = collapseRiskSignals(signals);
   const usable = collapsed.usable;
   const bad = usable.filter((signal) => signal.adverse === true);
-  const pillarOf = (signal) => MODEL_PILLAR_BY_SERIES[signal.pillar?.key] || signal.pillar?.key;
+  const canonicalPillarKeys = new Set(MODEL_PILLARS.map((pillar) => pillar.key));
+  const pillarOf = (signal) => {
+    const key = signal.pillar?.key;
+    const mapped = MODEL_PILLAR_BY_SERIES[key] || key;
+    return canonicalPillarKeys.has(mapped) ? mapped : null;
+  };
+  const availablePillarKeys = new Set(usable.map(pillarOf).filter(Boolean));
+  const missingPillars = MODEL_PILLARS.filter((pillar) => !availablePillarKeys.has(pillar.key));
+  const missingPillarTitles = missingPillars.map((pillar) => pillar.title);
+  const coverageNote = missingPillars.length
+    ? ` Неполное покрытие: отсутствуют сопоставимые ряды по направлениям: ${missingPillarTitles.join(', ')}.`
+    : '';
   const affectedPillars = new Set(bad.map(pillarOf).filter(Boolean));
   const pillarCounts = Object.fromEntries([...affectedPillars].map((key) => [
     key, bad.filter((signal) => pillarOf(signal) === key).length,
@@ -133,6 +144,9 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
     usableCount: usable.length,
     adverseCount: bad.length,
     affectedPillars: affectedPillars.size,
+    availablePillars: availablePillarKeys.size,
+    coveragePillars: availablePillarKeys.size,
+    missingPillars: missingPillarTitles,
     pillarCounts,
     repeatedDeterioration,
     sharpChanges,
@@ -142,28 +156,38 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
   if (usable.length < settings.minimumUsable) {
     return {
       ...common, level: 'insufficient',
-      explanation: `Недостаточно данных: оцениваемых рядов ${usable.length}, требуется не менее ${settings.minimumUsable}. Неопределённые и контекстные показатели не учитываются как положительные.${conflictNote}`,
+      explanation: `Недостаточно данных: оцениваемых рядов ${usable.length}, требуется не менее ${settings.minimumUsable}; покрыто ${availablePillarKeys.size} из ${MODEL_PILLARS.length} направлений. Неопределённые и контекстные показатели не учитываются как положительные.${coverageNote}${conflictNote}`,
       reasons: ['Недостаточное покрытие показателями с однозначным направлением', ...conflictReasons],
+    };
+  }
+  // A positive/green status is a system-wide conclusion. It is only allowed
+  // when all six risk directions have at least one comparable, directional series.
+  // Negative observed signals may still raise a warning with incomplete coverage.
+  if (bad.length === 0 && missingPillars.length > 0) {
+    return {
+      ...common, level: 'insufficient',
+      explanation: `Нельзя подтвердить отсутствие рисков: сопоставимые ряды с однозначным направлением доступны только по ${availablePillarKeys.size} из ${MODEL_PILLARS.length} направлений.${coverageNote} Для зелёного статуса требуется покрытие всех шести направлений.${conflictNote}`,
+      reasons: [`Недостаточное покрытие: ${availablePillarKeys.size} из ${MODEL_PILLARS.length} направлений`, ...missingPillarTitles.map((title) => `Нет данных: ${title}`), ...conflictReasons],
     };
   }
   if (bad.length >= settings.criticalSignals && affectedPillars.size >= settings.criticalPillars) {
     return {
       ...common, level: 'critical',
-      explanation: `Зафиксировано ${bad.length} негативных сигналов в ${affectedPillars} направлениях; достигнуты оба настраиваемых порога повышенного внимания.${conflictNote}`,
-      reasons: [`Негативных сигналов: ${bad.length} из требуемых ${settings.criticalSignals}`, `Затронуто направлений: ${affectedPillars.size} из требуемых ${settings.criticalPillars}`, ...conflictReasons],
+      explanation: `Зафиксировано ${bad.length} негативных сигналов в ${affectedPillars} направлениях; достигнуты оба настраиваемых порога повышенного внимания.${coverageNote}${conflictNote}`,
+      reasons: [`Негативных сигналов: ${bad.length} из требуемых ${settings.criticalSignals}`, `Затронуто направлений: ${affectedPillars.size} из требуемых ${settings.criticalPillars}`, ...(missingPillarTitles.map((title) => `Непроверено направление: ${title}`)), ...conflictReasons],
     };
   }
   if (bad.length > 0) {
     return {
       ...common, level: 'watch',
-      explanation: `Есть ${bad.length} негативных сигнал(а/ов) в ${affectedPillars} направлениях, но критерий одновременного межотраслевого ухудшения не достигнут.${conflictNote}`,
-      reasons: [`Негативных сигналов: ${bad.length}`, `Затронуто направлений: ${affectedPillars.size}`, ...conflictReasons],
+      explanation: `Есть ${bad.length} негативных сигнал(а/ов) в ${affectedPillars} направлениях, но критерий одновременного межотраслевого ухудшения не достигнут.${coverageNote}${conflictNote}`,
+      reasons: [`Негативных сигналов: ${bad.length}`, `Затронуто направлений: ${affectedPillars.size}`, ...(missingPillarTitles.map((title) => `Непроверено направление: ${title}`)), ...conflictReasons],
     };
   }
   return {
     ...common, level: 'stable',
-    explanation: `Среди ${usable.length} оцениваемых рядов негативных изменений не выявлено. Это не подтверждает отсутствие рисков в направлениях без данных или с контекстными показателями.${conflictNote}`,
-    reasons: ['Негативных сигналов среди оцениваемых рядов нет', ...conflictReasons],
+    explanation: `По всем шести направлениям проверены сопоставимые ряды: среди ${usable.length} оцениваемых рядов негативных изменений не выявлено.${conflictNote}`,
+    reasons: ['Негативных сигналов среди оцениваемых рядов нет; покрыты все шесть направлений', ...conflictReasons],
   };
 }
 

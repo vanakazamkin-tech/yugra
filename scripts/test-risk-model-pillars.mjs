@@ -216,9 +216,13 @@ const insufficient = buildRiskModel(municipalities, series.filter((item) => item
 assert.equal(insufficient.byMunicipality.m1.availablePillars, 1, 'one observed direction remains one risk-coverage direction');
 assert.equal(Object.hasOwn(MODEL_PILLARS.find((pillar) => pillar.key === 'social'), 'weight'), false, 'risk directions must not carry or reapply index weights');
 const riskSignal = (adverse, pillar) => ({ adverse, pillar: { key: pillar } });
-assert.deepEqual(DEFAULT_RISK_THRESHOLDS, { minimumUsable: 2, criticalSignals: 3, criticalPillars: 2, sharpChangePercent: 10 }, 'default thresholds must preserve the existing traffic-light behavior');
+assert.deepEqual(DEFAULT_RISK_THRESHOLDS, { minimumUsable: 2, criticalSignals: 3, criticalPillars: 2, sharpChangePercent: 10 }, 'default deterioration thresholds remain unchanged; green coverage is a fixed six-pillar requirement');
 assert.equal(assessRiskSignals([riskSignal(false, 'economy')]).level, 'insufficient', 'one usable signal is insufficient under the default threshold');
-assert.equal(assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 'labour')]).level, 'stable', 'no negative signals with sufficient coverage is green');
+const completeCoverageSignals = MODEL_PILLARS.map((pillar) => riskSignal(false, pillar.key));
+assert.equal(assessRiskSignals(completeCoverageSignals).level, 'stable', 'green requires comparable directional evidence in all six risk pillars');
+assert.equal(assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 'labour')]).level, 'insufficient', 'two healthy signals from only two pillars cannot imply system-wide stability');
+assert.equal(assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 'economy')]).level, 'insufficient', 'multiple healthy indicators in one pillar cannot replace missing risk directions');
+assert.equal(assessRiskSignals(completeCoverageSignals.slice(0, 5)).level, 'insufficient', 'missing even one of the six risk pillars prevents a green status');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(false, 'labour')]).level, 'watch', 'one negative signal is yellow');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour'), riskSignal(true, 'finance')]).level, 'critical', 'three negative signals across two or more pillars are red by default');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'economy'), riskSignal(true, 'economy')]).level, 'watch', 'multiple signals in one pillar do not satisfy the default cross-pillar red threshold');
@@ -244,7 +248,7 @@ const conflictingBudgetSignals = assessRiskSignals([
 assert.equal(conflictingBudgetSignals.level, 'insufficient', 'contradictory signals from one dependent family must be quarantined');
 assert.deepEqual(conflictingBudgetSignals.conflictingSignalFamilies, ['budget_revenue_structure']);
 
-assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 2, criticalSignals: 2, criticalPillars: 2 }).level, 'critical', 'custom thresholds must recalculate the traffic-light status');
+assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 2, criticalSignals: 2, criticalPillars: 2 }).level, 'critical', 'observed negative signals may raise critical status despite incomplete coverage');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 3, criticalSignals: 2, criticalPillars: 2 }).level, 'insufficient', 'the minimum coverage threshold must take precedence over negative signals');
 
 
@@ -253,6 +257,8 @@ const repeated = assessRiskSignals([{ ...riskSignal(true, 'economy'), adverseStr
 assert.equal(repeated.level, 'watch', 'a repeated signal in one direction does not automatically become critical');
 assert.equal(repeated.earlyWarning, true, 'two consecutive adverse intervals must activate early warning');
 assert.equal(repeated.affectedPillars, 1, 'affected pillar count must be explicit');
+assert.equal(repeated.availablePillars, 2, 'available directional coverage must be explicit');
+assert.ok(repeated.missingPillars.length >= 4, 'missing risk directions must be returned for explanation');
 assert.match(repeated.explanation, /негативных сигнал/, 'assessment must explain its assigned level');
 assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2021, reference_period: 'annual', numericValue: 100 }, { reference_year: 2023, reference_period: 'annual', numericValue: 80 }], 'higher'), 0, 'a missing year must not count as a consecutive interval');
 assert.equal(countConsecutiveAdverseIntervals([{ reference_year: 2022, reference_period: '2022-Q1', numericValue: 100 }, { reference_year: 2023, reference_period: '2023-Q1', numericValue: 90 }, { reference_year: 2024, reference_period: '2024-Q1', numericValue: 80 }], 'higher'), 2, 'same-quarter year-over-year deterioration must activate the streak');

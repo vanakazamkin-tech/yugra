@@ -985,3 +985,12 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - RLS remained unchanged. The five tables without policies remain closed to anon/authenticated, as intended. No public policy or grants were added.
 - Local npm test and npm run build remain unverified on this branch because checkout cannot be cloned from the container due to DNS/network restriction; prior GitHub Actions success belongs to old production SHA only.
 - Production deployment and main branch unchanged.
+
+
+## 18.11.2026 — Risk traffic-light coverage gate
+- Found a false-green condition: assessRiskSignals() used minimumUsable row count only and could return stable while all assessable series belonged to one or two pillars.
+- Changed stable eligibility to require comparable, directional series in all six MODEL_PILLARS. If no deterioration is observed but any pillar is missing, the result is insufficient and lists missing directions.
+- Observed adverse signals can still produce watch/critical under incomplete coverage, with a clear coverage caveat.
+- Unknown pillar keys no longer count toward coverage or cross-pillar thresholds.
+- Updated UnifiedRiskForecast overview text, risk table coverage column and CSV export to show available pillars out of six.
+- Added regression tests for same-pillar, two-pillar, five-of-six and full six-pillar cases. Full npm test is still pending a runner/checkout.
