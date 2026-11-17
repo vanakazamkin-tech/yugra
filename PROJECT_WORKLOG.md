@@ -1063,3 +1063,5 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Added exact `indicator_name` to buildRiskSeries grouping identity so same-code/period/unit definitions cannot be mixed chronologically.
 - Retained the common same-code signal family to prevent double counting: concordant definition variants contribute one signal, contradictory variants are excluded as a family and reported.
 - Added tests for SME density contextual status and conflicting same-code source definitions.
+
+- After the SME-density direction was moved to context, the 279-pair rule distribution is 240 context / 23 higher / 16 lower. Recalculated actual classify() distribution: employment 53, income 36, budget 23, production 67, investment 23, demography 22, business 36, infrastructure 10, migration 7, social 2; no other/unclassified category. A read-only check found no currently overlapping same municipality/code/year/period/unit rows with multiple names, while the new identity guard protects against future definition merges.
