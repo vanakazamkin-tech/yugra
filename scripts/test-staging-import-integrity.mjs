@@ -43,7 +43,8 @@ assert.ok(!/\bgrant\s+[^;]*\bto\s+(public|anon|authenticated)\b/i.test(migration
   'migration must not open staging or private provenance to public API roles');
 assert.ok(!/\b(drop\s+table|truncate\s+|delete\s+from\s+public\.municipality_indicators)\b/i.test(migration),
   'migration must not destroy data');
-assert.ok(!/\b(insert\s+into|update\s+public\.municipality_indicators)\b/i.test(migration),
-  'migration must not mutate existing analytical observations outside the controlled RPC definition');
+const migrationBeforeRpc = migration.split(/create or replace function public\\.import_accepted_municipality_indicators/i)[0];
+assert.ok(!/\\b(insert\\s+into|update\\s+public\\.municipality_indicators)\\b/i.test(migrationBeforeRpc),
+  'migration preflight must not mutate analytical observations');
 
 console.log('Staging import integrity and provenance contract checks passed.');

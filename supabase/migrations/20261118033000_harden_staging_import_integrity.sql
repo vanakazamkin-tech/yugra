@@ -34,7 +34,9 @@ begin
           and nullif(btrim(mapped_indicator_code), '') is not null
           and normalized_value is not null
           and nullif(btrim(normalized_unit), '') is not null
-          and raw_year between 1900 and extract(year from current_date)::integer + 1
+          and raw_year is not null
+          and raw_year between 1900 and 2200
+          and normalized_period is not null
           and normalized_period ~ '^(annual|[0-9]{4}|[0-9]{4}-Q[1-4]|[0-9]{4}-H[1-2]|[0-9]{4}-[0-9]{2}-[0-9]{2})$'
           and (
             normalized_period = 'annual'
