@@ -33,6 +33,7 @@ assert.ok(compact.includes("coalesce(mi.geographic_name, '') = coalesce(s.raw_mu
   'duplicate gate must include geographic name');
 assert.ok(compact.includes('mi.reference_period = s.normalized_period'), 'duplicate gate must use normalized period');
 assert.ok(compact.includes('mi.unit = s.normalized_unit'), 'duplicate gate must use normalized unit');
+assert.ok(!compact.includes("mi.verification_status = 'verified'"), 'identity duplicate detection must match the unique index across all statuses');
 assert.ok(compact.includes('insert into private.municipality_indicator_source_links'),
   'successful imports must create a private primary-source provenance link');
 assert.ok(compact.includes('source_url_snapshot'), 'exact source URL snapshot must be preserved');

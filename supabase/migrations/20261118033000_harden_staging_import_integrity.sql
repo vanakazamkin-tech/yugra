@@ -141,7 +141,6 @@ select
         and mi.geographic_level = 'municipality'
         and coalesce(mi.geographic_name, '') = coalesce(s.raw_municipality_name, '')
         and mi.source_id = s.source_id
-        and mi.verification_status = 'verified'
     ) then 'possible_same_source_duplicate'
     else 'ready_for_manual_review'
   end as automated_review_result,
@@ -203,8 +202,7 @@ begin
           and mi.geographic_level = 'municipality'
           and coalesce(mi.geographic_name, '') = coalesce(s.raw_municipality_name, '')
           and mi.source_id = s.source_id
-          and mi.verification_status = 'verified'
-      )
+        )
     order by s.created_at, s.id
     for update of s skip locked
   loop
