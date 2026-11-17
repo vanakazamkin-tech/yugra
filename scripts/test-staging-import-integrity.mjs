@@ -1,0 +1,49 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const migrationPath = 'supabase/migrations/20261118033000_harden_staging_import_integrity.sql';
+const migration = readFileSync(migrationPath, 'utf8');
+const compact = migration.replace(/\s+/g, ' ').toLowerCase();
+
+for (const column of [
+  'normalized_period text',
+  'source_url_snapshot text',
+  'source_published_at date',
+  'source_retrieved_at timestamptz',
+]) {
+  assert.ok(compact.includes(column), 'staging must preserve ' + column);
+}
+
+for (const token of [
+  "normalized_period ~ '^(annual|[0-9]{4}|[0-9]{4}-q[1-4]|[0-9]{4}-h[1-2]|[0-9]{4}-[0-9]{2}-[0-9]{2})$'",
+  "left(normalized_period, 4) = raw_year::text",
+  "nullif(btrim(source_record_key), '') is not null",
+  "nullif(btrim(reviewed_by), '') is not null",
+  "coalesce(cardinality(validation_errors), 0) = 0",
+  "source_retrieved_at is not null",
+  "source_url_snapshot ~* '^https?://'",
+]) {
+  assert.ok(compact.includes(token), 'accepted-row contract is missing: ' + token);
+}
+
+assert.ok(compact.includes("mi.source_id = s.source_id"), 'duplicate gate must allow independent source observations');
+assert.ok(compact.includes("coalesce(mi.geographic_name, '') = coalesce(s.raw_municipality_name, '')"),
+  'duplicate gate must include geographic name');
+assert.ok(compact.includes('mi.reference_period = s.normalized_period'), 'duplicate gate must use normalized period');
+assert.ok(compact.includes('mi.unit = s.normalized_unit'), 'duplicate gate must use normalized unit');
+assert.ok(compact.includes('insert into private.municipality_indicator_source_links'),
+  'successful imports must create a private primary-source provenance link');
+assert.ok(compact.includes('source_url_snapshot'), 'exact source URL snapshot must be preserved');
+assert.ok(compact.includes('source_published_at'), 'publication date must flow to observations');
+assert.ok(compact.includes('source_retrieved_at'), 'retrieval timestamp must flow to observations');
+assert.ok(compact.includes("grant execute on function public.import_accepted_municipality_indicators(text) to service_role"),
+  'only service_role may execute the controlled import RPC');
+assert.ok(compact.includes('with (security_invoker = true)'), 'review view must respect invoker permissions');
+assert.ok(!/\bgrant\s+[^;]*\bto\s+(public|anon|authenticated)\b/i.test(migration),
+  'migration must not open staging or private provenance to public API roles');
+assert.ok(!/\b(drop\s+table|truncate\s+|delete\s+from\s+public\.municipality_indicators)\b/i.test(migration),
+  'migration must not destroy data');
+assert.ok(!/\b(insert\s+into|update\s+public\.municipality_indicators)\b/i.test(migration),
+  'migration must not mutate existing analytical observations outside the controlled RPC definition');
+
+console.log('Staging import integrity and provenance contract checks passed.');
