@@ -39,7 +39,7 @@ begin
           and normalized_period is not null
           and normalized_period ~ '^(annual|[0-9]{4}|[0-9]{4}-Q[1-4]|[0-9]{4}-H[1-2]|[0-9]{4}-(0[1-9]|1[0-2])|[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]))$'
           and case
-            when normalized_period ~ '^\d{4}-\d{2}-\d{2}$' then
+            when normalized_period ~ '^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$' then
               extract(year from (
                 make_date(
                   substring(normalized_period, 1, 4)::integer,
@@ -130,7 +130,7 @@ select
         and left(s.normalized_period, 4) <> s.raw_year::text
       )
       or case
-        when s.normalized_period ~ '^\d{4}-\d{2}-\d{2}$' then
+        when s.normalized_period ~ '^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$' then
           extract(year from (
             make_date(
               substring(s.normalized_period, 1, 4)::integer,
@@ -218,7 +218,7 @@ begin
       and s.raw_year between 1900 and extract(year from current_date)::integer + 1
       and s.normalized_period ~ '^(annual|[0-9]{4}|[0-9]{4}-Q[1-4]|[0-9]{4}-H[1-2]|[0-9]{4}-(0[1-9]|1[0-2])|[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]))$'
       and case
-        when s.normalized_period ~ '^\d{4}-\d{2}-\d{2}$' then
+        when s.normalized_period ~ '^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$' then
           extract(year from (
             make_date(
               substring(s.normalized_period, 1, 4)::integer,
