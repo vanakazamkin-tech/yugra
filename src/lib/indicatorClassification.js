@@ -16,10 +16,33 @@ export const PILLARS = [
 ];
 
 export const classify = (row) => {
-  // "Муниципального образования" describes the territory, not the education sector.
+  // Municipal geography is not an education sector.
+  // "Without SMEs" is a statistical-universe exclusion, not an SME/business activity.
   const text = (safeText(row.indicator_code) + ' ' + safeText(row.indicator_name))
-    .replace(/муниципального\s+образования/gi, '');
-  if (/(sme_employment_share|доля.*работников.*малых и средних)/i.test(text)) return PILLARS.find((p) => p.key === 'employment');
-  if (/(sme|small_business|entrepreneur|мсп|предприним)/i.test(text)) return PILLARS.find((p) => p.key === 'business');
+    .replace(/муниципального\s+образования/gi, '')
+    .replace(/без\s+субъектов\s+малого\s+предпринимательства/gi, ' ')
+    .replace(/без\s+субъектов\s+мсп/gi, ' ');
+
+  // SME employment is a labour-market outcome, not a count of businesses.
+  if (/(sme_employment_share|доля.*работников.*малых и средних)/i.test(text)) {
+    return PILLARS.find((p) => p.key === 'employment');
+  }
+  // Resolve the substantive measure before checking generic SME substrings.
+  if (/(salary|wage|income|зарплат|заработ|доход насел|среднедушев)/i.test(text)) {
+    return PILLARS.find((p) => p.key === 'income');
+  }
+  if (/(employ|employee|unemploy|job|jobs|работник|рабоч.*мест|занят|безработ|кадр|среднесписочн)/i.test(text)) {
+    return PILLARS.find((p) => p.key === 'employment');
+  }
+  if (/(investment|capital_investment|инвестици|капиталовлож)/i.test(text)) {
+    return PILLARS.find((p) => p.key === 'investment');
+  }
+  if (/(production|shipment|turnover|retail|goods|hospitality|hotel|restaurant|construction|building|industrial|industry|manufacturing|agri|agriculture|consumer_market|consumer|paid_services|oil|extraction|mining|fairs|fair|гостиниц|общепит|общественн.*питан|продукц|производств|промышлен|строительств|сельскохозяй|сельхоз|потребительск.*рын|платн.*услуг|добыч|нефт|рынок|отгруж|оборот|торговл|ярмар)/i.test(text)) {
+    return PILLARS.find((p) => p.key === 'production');
+  }
+  // SME density and business-registry counts remain business indicators.
+  if (/(sme_per_10k|small_business|entrepreneur|business|registered|corporate|предприним|хозяйственн.*обществ|мсп)/i.test(text)) {
+    return PILLARS.find((p) => p.key === 'business');
+  }
   return PILLARS.find((p) => p.match.test(text)) || { key: 'other', title: 'Прочие показатели', note: 'Дополнительные показатели проекта' };
 };

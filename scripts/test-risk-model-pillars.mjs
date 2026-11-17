@@ -158,6 +158,12 @@ assert.equal(classify({ indicator_code: 'consumer_market_volume', indicator_name
 assert.equal(classify({ indicator_code: 'kogalym_profitable_agri_org_share', indicator_name: 'Доля прибыльных сельскохозяйственных организаций' }).key, 'production');
 assert.equal(classify({ indicator_code: 'beloyarsky_oil_extraction', indicator_name: 'Добыча нефти' }).key, 'production');
 assert.equal(classify({ indicator_code: 'october_paid_services', indicator_name: 'Объём реализации платных услуг в действующих ценах' }).key, 'production');
+assert.equal(classify({ indicator_code: 'average_monthly_salary_annual', indicator_name: 'Среднемесячная заработная плата работников организаций без субъектов малого предпринимательства, всего по обследуемым видам экономической деятельности' }).key, 'income', 'SME exclusion wording must not reclassify wages as business activity');
+assert.equal(classify({ indicator_code: 'average_employees_annual', indicator_name: 'Среднесписочная численность работников организаций без субъектов малого предпринимательства, всего по обследуемым видам экономической деятельности' }).key, 'employment', 'employee count excluding SMEs remains a labour indicator');
+assert.equal(classify({ indicator_code: 'fixed_capital_investment_enterprises_non_sme', indicator_name: 'Инвестиции в основной капитал организаций без субъектов малого предпринимательства' }).key, 'investment', 'non-SME investment remains in the investment pillar');
+assert.equal(classify({ indicator_code: 'own_production_shipments_q1', indicator_name: 'Отгружено товаров собственного производства, без субъектов малого предпринимательства' }).key, 'production', 'non-SME production and shipments remain in production');
+assert.equal(classify({ indicator_code: 'sme_per_10k', indicator_name: 'Число субъектов малого и среднего предпринимательства на 10 тыс. человек' }).key, 'business', 'SME density remains a business-count indicator');
+assert.equal(classify({ indicator_code: 'sme_employment_share', indicator_name: 'Доля среднесписочной численности работников малых и средних предприятий' }).key, 'employment', 'SME employment share remains a labour indicator');
 
 const municipalities = [{ id: 'm1' }, { id: 'm2' }, { id: 'm3' }];
 const definitions = [

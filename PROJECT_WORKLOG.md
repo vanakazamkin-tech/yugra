@@ -1049,3 +1049,10 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Added 22-entry JSON candidate registry v1.1 with all rows hard-disabled for calculation and all expert approvals empty. Fixed SME-per-10k definition cohort split and added a CI safety test.
 - Updated docs/FINALIZATION_STATUS.md and the proposed registry review. No observations, Supabase schemas, RLS policies, index weights or production deployment changed.
 - Current PR #20 CI run 44198274091 on ec304e28 completed success for both Build verification and data-migrations-integration, including the new registry test and hardened staging migration.
+
+
+### 18.11.2026 — risk indicator semantic classification correction
+- Re-audited all 279 exact indicator_code × indicator_name pairs in Supabase against current direction and pillar rules. All 279 received a pillar; 238 remained conservative context, 25 higher, 16 lower.
+- Found that the substring “малого предпринимательства” was interpreted as SME/business even when it only excluded SMEs from the statistical universe. This misclassified non-SME wage, employee-count, investment and shipment observations.
+- Changed classify() priority so income, employment counts, investment and production/shipment semantics are resolved before generic SME/business substrings; SME density remains business, SME employment share remains labour.
+- Added regression assertions using exact indicator names from the current database. Direction rules were not broadened; nominal/context indicators remain context.
