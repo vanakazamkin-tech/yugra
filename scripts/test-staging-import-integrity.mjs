@@ -17,8 +17,10 @@ for (const column of [
 for (const token of [
   "normalized_period is not null",
   "normalized_period ~ '^(annual|[0-9]{4}|[0-9]{4}-q[1-4]|[0-9]{4}-h[1-2]|[0-9]{4}-(0[1-9]|1[0-2])|[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]))$'",
-  "to_char(to_date(normalized_period, 'yyyy-mm-dd'), 'yyyy-mm-dd') = normalized_period",
-  "to_char(to_date(s.normalized_period, 'yyyy-mm-dd'), 'yyyy-mm-dd') <> s.normalized_period",
+  "make_date(",
+  "substring(normalized_period, 9, 2)::integer - 1",
+  "extract(month from (",
+  "extract(year from (",
   "left(normalized_period, 4) = raw_year::text",
   "nullif(btrim(source_record_key), '') is not null",
   "nullif(btrim(reviewed_by), '') is not null",

@@ -1012,3 +1012,5 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Live Supabase contains 22 population observations per each January 1 year 2022–2025 and 22 consecutive municipality comparisons for each 2023/2024/2025 growth transition. Mean YoY changes: +0.3825%, +1.0808%, +0.5986% respectively; these are descriptive derived values, not an official demographic resilience score.
 
 - Extended staging SQL transaction caught an unassigned PL/pgSQL record reference in the canonical-name duplicate query; fixed it to use the joined `m.name` alias. The failed transaction rolled back fully (1,445 analytical rows and 1,445 provenance links unchanged; staging empty; no schema columns persisted).
+
+- Replaced PostgreSQL `to_date()` calendar validation after live rollback test showed it raises on 2026-02-31. The staging migration now validates a calendar date by constructing the first day of the month and checking that adding day-1 remains in the same year/month; impossible dates are a review result, not an exception.

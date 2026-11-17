@@ -38,10 +38,24 @@ begin
           and raw_year between 1900 and 2200
           and normalized_period is not null
           and normalized_period ~ '^(annual|[0-9]{4}|[0-9]{4}-Q[1-4]|[0-9]{4}-H[1-2]|[0-9]{4}-(0[1-9]|1[0-2])|[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]))$'
-          and (
-            normalized_period !~ '^\d{4}-\d{2}-\d{2}$'
-            or to_char(to_date(normalized_period, 'YYYY-MM-DD'), 'YYYY-MM-DD') = normalized_period
-          )
+          and case
+            when normalized_period ~ '^\d{4}-\d{2}-\d{2}$' then
+              extract(year from (
+                make_date(
+                  substring(normalized_period, 1, 4)::integer,
+                  substring(normalized_period, 6, 2)::integer,
+                  1
+                ) + substring(normalized_period, 9, 2)::integer - 1
+              ))::integer = raw_year
+              and extract(month from (
+                make_date(
+                  substring(normalized_period, 1, 4)::integer,
+                  substring(normalized_period, 6, 2)::integer,
+                  1
+                ) + substring(normalized_period, 9, 2)::integer - 1
+              ))::integer = substring(normalized_period, 6, 2)::integer
+            else true
+          end
           and (
             normalized_period = 'annual'
             or left(normalized_period, 4) = raw_year::text
@@ -115,10 +129,24 @@ select
         s.normalized_period <> 'annual'
         and left(s.normalized_period, 4) <> s.raw_year::text
       )
-      or (
-        s.normalized_period ~ '^\d{4}-\d{2}-\d{2}$'
-        and to_char(to_date(s.normalized_period, 'YYYY-MM-DD'), 'YYYY-MM-DD') <> s.normalized_period
-      )
+      or case
+        when s.normalized_period ~ '^\d{4}-\d{2}-\d{2}$' then
+          extract(year from (
+            make_date(
+              substring(s.normalized_period, 1, 4)::integer,
+              substring(s.normalized_period, 6, 2)::integer,
+              1
+            ) + substring(s.normalized_period, 9, 2)::integer - 1
+          ))::integer <> s.raw_year
+          or extract(month from (
+            make_date(
+              substring(s.normalized_period, 1, 4)::integer,
+              substring(s.normalized_period, 6, 2)::integer,
+              1
+            ) + substring(s.normalized_period, 9, 2)::integer - 1
+          ))::integer <> substring(s.normalized_period, 6, 2)::integer
+        else false
+      end
       then 'invalid_normalized_period'
     when nullif(btrim(s.source_record_key), '') is null
       then 'missing_source_record_key'
@@ -189,10 +217,24 @@ begin
       and nullif(btrim(s.normalized_unit), '') is not null
       and s.raw_year between 1900 and extract(year from current_date)::integer + 1
       and s.normalized_period ~ '^(annual|[0-9]{4}|[0-9]{4}-Q[1-4]|[0-9]{4}-H[1-2]|[0-9]{4}-(0[1-9]|1[0-2])|[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]))$'
-      and (
-        s.normalized_period !~ '^\d{4}-\d{2}-\d{2}$'
-        or to_char(to_date(s.normalized_period, 'YYYY-MM-DD'), 'YYYY-MM-DD') = s.normalized_period
-      )
+      and case
+        when s.normalized_period ~ '^\d{4}-\d{2}-\d{2}$' then
+          extract(year from (
+            make_date(
+              substring(s.normalized_period, 1, 4)::integer,
+              substring(s.normalized_period, 6, 2)::integer,
+              1
+            ) + substring(s.normalized_period, 9, 2)::integer - 1
+          ))::integer = s.raw_year
+          and extract(month from (
+            make_date(
+              substring(s.normalized_period, 1, 4)::integer,
+              substring(s.normalized_period, 6, 2)::integer,
+              1
+            ) + substring(s.normalized_period, 9, 2)::integer - 1
+          ))::integer = substring(s.normalized_period, 6, 2)::integer
+        else true
+      end
       and (
         s.normalized_period = 'annual'
         or left(s.normalized_period, 4) = s.raw_year::text
