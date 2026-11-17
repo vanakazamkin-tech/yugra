@@ -212,7 +212,7 @@ begin
           and mi.reference_period = s.normalized_period
           and mi.unit = s.normalized_unit
           and mi.geographic_level = 'municipality'
-          and mi.geographic_name = v_row.canonical_municipality_name
+          and mi.geographic_name = m.name
           and mi.source_id = s.source_id
         )
     order by s.created_at, s.id

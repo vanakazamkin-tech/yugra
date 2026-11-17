@@ -31,8 +31,7 @@ for (const token of [
 }
 
 assert.ok(compact.includes("mi.source_id = s.source_id"), 'duplicate gate must allow independent source observations');
-assert.ok(compact.includes('mi.geographic_name = m.name'), 'review duplicate gate must use the canonical municipality name');
-assert.ok(compact.includes('mi.geographic_name = v_row.canonical_municipality_name'), 'RPC duplicate gate must use the mapped municipality name');
+assert.equal(compact.split('mi.geographic_name = m.name').length - 1, 2, 'both review and RPC duplicate gates must use the joined canonical municipality name');
 assert.ok(compact.includes('m.name as canonical_municipality_name'), 'import cursor must carry canonical municipality name');
 assert.ok(compact.includes('v_row.canonical_municipality_name'), 'analytical geography must use canonical name, not source alias');
 assert.ok(compact.includes('исходное название мо в источнике:'), 'raw source municipality name must remain traceable in notes');

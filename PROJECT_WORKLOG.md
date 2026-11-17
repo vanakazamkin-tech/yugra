@@ -1010,3 +1010,5 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Added regression tests for monthly/date parsing, leap days, invalid dates, YoY derived history, risk-series adverse streaks, and gap exclusion.
 - Reordered the CI migration chain so 20261118033000 runs after 20261107122134 (the hardening RPC is not overwritten by the earlier cross-source migration).
 - Live Supabase contains 22 population observations per each January 1 year 2022–2025 and 22 consecutive municipality comparisons for each 2023/2024/2025 growth transition. Mean YoY changes: +0.3825%, +1.0808%, +0.5986% respectively; these are descriptive derived values, not an official demographic resilience score.
+
+- Extended staging SQL transaction caught an unassigned PL/pgSQL record reference in the canonical-name duplicate query; fixed it to use the joined `m.name` alias. The failed transaction rolled back fully (1,445 analytical rows and 1,445 provenance links unchanged; staging empty; no schema columns persisted).
