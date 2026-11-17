@@ -42,7 +42,7 @@ begin
             normalized_period = 'annual'
             or left(normalized_period, 4) = raw_year::text
           )
-          and geographic_level = 'municipality'
+          and geographic_level is not distinct from 'municipality'
           and nullif(btrim(source_url_snapshot), '') is not null
           and source_url_snapshot ~* '^https?://'
           and source_retrieved_at is not null
@@ -52,7 +52,7 @@ begin
         )
       );
   end if;
-end
+end;
 $accepted_contract$;
 
 create or replace view public.municipality_indicator_import_review
