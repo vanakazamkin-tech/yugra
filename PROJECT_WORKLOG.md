@@ -1023,3 +1023,11 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Waiting for the next PR synchronization run; no production deployment or database migration applied.
 
 - The first disposable PostgreSQL integration attempt reached the new controlled-import test, but the minimal bootstrap had granted service_role SELECT (not UPDATE) on data_sources; the RPC correctly failed when recording retrieved_at. Live Supabase grants UPDATE to service_role and denies it to anon/authenticated. The forward migration now explicitly grants SELECT, UPDATE to service_role only, and the SQL fixture mirrors that contract.
+
+
+### 18.11.2026 — expanding-window historical forecast diagnostics
+- Added buildHistoricalBacktest() to forecastModel.js: expanding-window predictions at 1/2/3 year horizons, comparing last-value, linear-trend and mean-log-growth baselines.
+- Inputs are restricted to verified municipal observations. Annual rows and same-calendar-date point-in-time snapshots are separated; quarters/halves/months are excluded from the annual evaluation.
+- Gaps split time series. Same-value duplicate sources collapse; inter-source value conflicts are quarantined rather than averaged or selected.
+- Metrics include test N, municipality N, MAE, MAPE (strictly positive actuals only), native-unit bias and percent bias. Tiny sample labels do not imply model validation.
+- Added regression tests and a diagnostic panel in Forecasting.jsx. It is display-only and does not change scenario coefficients or index scores.

@@ -212,3 +212,273 @@ export function summarizeForecast(rows = []) {
     investmentCoverage: safeRows.filter((row) => numeric(row?.projectedInvestments) != null).length,
   };
 }
+
+
+const BACKTEST_MODELS = Object.freeze([
+  { key: 'last_value', label: 'Последнее значение' },
+  { key: 'linear_trend', label: 'Линейный тренд' },
+  { key: 'mean_growth', label: 'Средний темп роста' },
+]);
+
+function backtestNumber(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  const parsed = Number(value.trim());
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function backtestPeriod(item) {
+  const year = Number(item?.reference_year);
+  if (!Number.isInteger(year) || year < 1900 || year > 2200) return null;
+  const period = String(item?.reference_period ?? '').trim();
+  if (period === 'annual' || period === String(year)) {
+    return { kind: 'annual', slot: 'annual', label: 'Годовой ряд' };
+  }
+  const date = period.match(/^(\d{4})-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/);
+  if (date) {
+    const dateYear = Number(date[1]);
+    const month = Number(date[2]);
+    const day = Number(date[3]);
+    const candidate = new Date(Date.UTC(dateYear, month - 1, day));
+    if (candidate.getUTCFullYear() !== dateYear
+      || candidate.getUTCMonth() + 1 !== month
+      || candidate.getUTCDate() !== day
+      || dateYear !== year) return null;
+    const slot = date.slice(2).join('-');
+    return { kind: 'point_in_time', slot, label: 'Срез на ' + slot };
+  }
+  return null;
+}
+
+function predictLastValue(training) {
+  return Number(training[training.length - 1].value);
+}
+
+function predictLinearTrend(training, targetYear) {
+  const meanYear = training.reduce((sum, point) => sum + point.year, 0) / training.length;
+  const meanValue = training.reduce((sum, point) => sum + point.value, 0) / training.length;
+  let numerator = 0;
+  let denominator = 0;
+  for (const point of training) {
+    numerator += (point.year - meanYear) * (point.value - meanValue);
+    denominator += (point.year - meanYear) ** 2;
+  }
+  if (!(denominator > 0)) return null;
+  const prediction = meanValue + (numerator / denominator) * (targetYear - meanYear);
+  return Number.isFinite(prediction) ? prediction : null;
+}
+
+function predictMeanGrowth(training, horizon) {
+  if (training.some((point) => !(point.value > 0))) return null;
+  const logRates = [];
+  for (let index = 1; index < training.length; index += 1) {
+    const previous = training[index - 1];
+    const current = training[index];
+    if (current.year - previous.year !== 1) return null;
+    logRates.push(Math.log(current.value / previous.value));
+  }
+  if (!logRates.length) return null;
+  const meanLogRate = logRates.reduce((sum, value) => sum + value, 0) / logRates.length;
+  const prediction = training[training.length - 1].value * Math.exp(meanLogRate * horizon);
+  return Number.isFinite(prediction) ? prediction : null;
+}
+
+/**
+ * Expanding-window historical validation for observed municipal indicator series.
+ * This is a diagnostic comparison against simple baselines, not model approval.
+ */
+export function buildHistoricalBacktest(indicators = [], options = {}) {
+  const sourceRows = Array.isArray(indicators) ? indicators : [];
+  const requestedHorizons = Array.isArray(options?.horizons) ? options.horizons : [1, 2, 3];
+  const horizons = [...new Set(requestedHorizons
+    .map(Number)
+    .filter((value) => Number.isInteger(value) && value >= 1 && value <= 3))]
+    .sort((a, b) => a - b);
+  const minTrainingPoints = Math.max(2, Math.min(5, Math.trunc(backtestNumber(options?.minTrainingPoints) ?? 2)));
+  const excluded = {
+    notVerified: 0,
+    nonMunicipal: 0,
+    unsupportedPeriod: 0,
+    invalidValue: 0,
+    duplicateSameValueRows: 0,
+    conflictingMunicipalityYearGroups: 0,
+    eligibleSegments: 0,
+    insufficientSegments: 0,
+  };
+  const groupedRows = new Map();
+  for (const item of sourceRows) {
+    if (item?.verification_status !== 'verified') {
+      excluded.notVerified += 1;
+      continue;
+    }
+    if (item?.geographic_level !== 'municipality') {
+      excluded.nonMunicipal += 1;
+      continue;
+    }
+    const period = backtestPeriod(item);
+    if (!period) {
+      excluded.unsupportedPeriod += 1;
+      continue;
+    }
+    const value = backtestNumber(item?.value);
+    if (value == null) {
+      excluded.invalidValue += 1;
+      continue;
+    }
+    const municipalityId = String(item?.municipality_id ?? '').trim();
+    const indicatorCode = String(item?.indicator_code ?? '').trim();
+    const indicatorName = String(item?.indicator_name ?? '').trim();
+    const unit = String(item?.unit ?? '').trim();
+    if (!municipalityId || !indicatorCode || !indicatorName || !unit) {
+      excluded.invalidValue += 1;
+      continue;
+    }
+    const identity = JSON.stringify([
+      municipalityId, indicatorCode, indicatorName, unit, period.kind, period.slot,
+    ]);
+    if (!groupedRows.has(identity)) {
+      groupedRows.set(identity, {
+        municipalityId, indicatorCode, indicatorName, unit,
+        periodKind: period.kind, periodSlot: period.slot, periodLabel: period.label,
+        years: new Map(),
+      });
+    }
+    const group = groupedRows.get(identity);
+    const year = Number(item.reference_year);
+    if (!group.years.has(year)) group.years.set(year, []);
+    group.years.get(year).push({ value });
+  }
+
+  const aggregateRows = new Map();
+  const testedMunicipalities = new Set();
+  const eligibleSeries = new Set();
+  const addPrediction = (series, horizon, modelDefinition, prediction, actualPoint) => {
+    if (!Number.isFinite(prediction) || !Number.isFinite(actualPoint.value)) return;
+    const error = prediction - actualPoint.value;
+    // MAPE and percentage bias are only meaningful for strictly positive actuals.
+    const hasPercentError = actualPoint.value > 0;
+    const metricKey = JSON.stringify([
+      series.indicatorCode, series.indicatorName, series.unit,
+      series.periodKind, series.periodSlot, horizon, modelDefinition.key,
+    ]);
+    if (!aggregateRows.has(metricKey)) {
+      aggregateRows.set(metricKey, {
+        indicatorCode: series.indicatorCode,
+        indicatorName: series.indicatorName,
+        unit: series.unit,
+        periodKind: series.periodKind,
+        periodSlot: series.periodSlot,
+        periodLabel: series.periodLabel,
+        horizon,
+        model: modelDefinition.key,
+        modelLabel: modelDefinition.label,
+        errors: [],
+        absoluteErrors: [],
+        percentErrors: [],
+        signedPercentErrors: [],
+        municipalities: new Set(),
+        series: new Set(),
+      });
+    }
+    const metric = aggregateRows.get(metricKey);
+    metric.errors.push(error);
+    metric.absoluteErrors.push(Math.abs(error));
+    if (hasPercentError) {
+      metric.percentErrors.push(Math.abs(error / actualPoint.value) * 100);
+      metric.signedPercentErrors.push((error / actualPoint.value) * 100);
+    }
+    metric.municipalities.add(series.municipalityId);
+    metric.series.add(series.municipalityId + '|' + series.periodKind + '|' + series.periodSlot);
+    testedMunicipalities.add(series.municipalityId);
+  };
+
+  for (const series of groupedRows.values()) {
+    const points = [];
+    for (const [year, rows] of [...series.years.entries()].sort((a, b) => a[0] - b[0])) {
+      const distinctValues = [...new Set(rows.map((row) => row.value))];
+      if (distinctValues.length !== 1) {
+        excluded.conflictingMunicipalityYearGroups += 1;
+        continue;
+      }
+      if (rows.length > 1) excluded.duplicateSameValueRows += rows.length - 1;
+      points.push({ year, value: distinctValues[0] });
+    }
+
+    let segment = [];
+    const flushSegment = () => {
+      if (segment.length < minTrainingPoints + 1) {
+        if (segment.length) excluded.insufficientSegments += 1;
+        segment = [];
+        return;
+      }
+      eligibleSeries.add(series.indicatorCode + '|' + series.municipalityId + '|' + series.periodKind + '|' + series.periodSlot);
+      excluded.eligibleSegments += 1;
+      for (let origin = minTrainingPoints - 1; origin < segment.length - 1; origin += 1) {
+        const training = segment.slice(0, origin + 1);
+        for (const horizon of horizons) {
+          const targetIndex = origin + horizon;
+          if (targetIndex >= segment.length) continue;
+          const actualPoint = segment[targetIndex];
+          if (actualPoint.year - training[training.length - 1].year !== horizon) continue;
+          for (const modelDefinition of BACKTEST_MODELS) {
+            let prediction = null;
+            if (modelDefinition.key === 'last_value') prediction = predictLastValue(training);
+            else if (modelDefinition.key === 'linear_trend') prediction = predictLinearTrend(training, actualPoint.year);
+            else if (modelDefinition.key === 'mean_growth') prediction = predictMeanGrowth(training, horizon);
+            addPrediction(series, horizon, modelDefinition, prediction, actualPoint);
+          }
+        }
+      }
+      segment = [];
+    };
+
+    for (const point of points) {
+      if (segment.length && point.year !== segment[segment.length - 1].year + 1) flushSegment();
+      segment.push(point);
+    }
+    flushSegment();
+  }
+
+  const mean = (values) => values.length
+    ? values.reduce((sum, value) => sum + value / values.length, 0)
+    : null;
+  const metrics = [...aggregateRows.values()].map((metric) => {
+    const testCount = metric.errors.length;
+    return {
+      indicatorCode: metric.indicatorCode,
+      indicatorName: metric.indicatorName,
+      unit: metric.unit,
+      periodKind: metric.periodKind,
+      periodSlot: metric.periodSlot,
+      periodLabel: metric.periodLabel,
+      horizon: metric.horizon,
+      model: metric.model,
+      modelLabel: metric.modelLabel,
+      testCount,
+      mapeCount: metric.percentErrors.length,
+      municipalityCount: metric.municipalities.size,
+      seriesCount: metric.series.size,
+      mae: mean(metric.absoluteErrors),
+      mape: mean(metric.percentErrors),
+      bias: mean(metric.errors),
+      biasPercent: mean(metric.signedPercentErrors),
+      sampleStatus: testCount < 2 ? 'very_small_sample' : testCount < 5 ? 'small_sample' : 'exploratory',
+    };
+  }).sort((a, b) =>
+    a.indicatorName.localeCompare(b.indicatorName, 'ru-RU')
+    || a.periodSlot.localeCompare(b.periodSlot, 'ru-RU')
+    || a.horizon - b.horizon
+    || a.model.localeCompare(b.model, 'en')
+  );
+
+  return {
+    metrics,
+    horizons,
+    minTrainingPoints,
+    totalTestPredictions: metrics.reduce((sum, metric) => sum + metric.testCount, 0),
+    testedMunicipalityCount: testedMunicipalities.size,
+    eligibleSeriesGroups: eligibleSeries.size,
+    excluded,
+    modelDefinitions: BACKTEST_MODELS.map(({ key, label }) => ({ key, label })),
+  };
+}
