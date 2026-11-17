@@ -274,7 +274,12 @@ export function deriveMunicipalIndicators(rows = []) {
     if (!bucket.ambiguousCodes.has(code)) {
       const existing = bucket.rows[code];
       if (!existing) bucket.rows[code] = row;
-      else if (Number(existing.value) !== Number(row.value) || !sameUnit(existing, row)) {
+      else if (Number(existing.value) !== Number(row.value)
+        || !sameUnit(existing, row)
+        || String(existing.indicator_name ?? '').trim() !== String(row.indicator_name ?? '').trim()) {
+        // Same code and value do not prove the same statistical definition.
+        // If the source wording changes within a municipality-period bucket,
+        // quarantine that code rather than derive ratios from an ambiguous row.
         delete bucket.rows[code];
         bucket.ambiguousCodes.add(code);
       } else {

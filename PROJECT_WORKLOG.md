@@ -1065,3 +1065,5 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Added tests for SME density contextual status and conflicting same-code source definitions.
 
 - After the SME-density direction was moved to context, the 279-pair rule distribution is 240 context / 23 higher / 16 lower. Recalculated actual classify() distribution: employment 53, income 36, budget 23, production 67, investment 23, demography 22, business 36, infrastructure 10, migration 7, social 2; no other/unclassified category. A read-only check found no currently overlapping same municipality/code/year/period/unit rows with multiple names, while the new identity guard protects against future definition merges.
+
+- Extended the same exact-definition guard to deriveMunicipalIndicators(): same-code, same-value, same-unit rows with different source names now mark the code ambiguous within that municipality/year/period and block derived ratios or denominators. Added a regression fixture proving an apparently identical total-budget value cannot be used to derive own-revenue share across different definitions.

@@ -309,6 +309,24 @@ const unitConflictRows = deriveMunicipalIndicators([
 ]);
 assert.equal(unitConflictRows.some((row) => row.indicator_code === 'derived_budget_own_revenue_share'), false, 'same numeric values in conflicting units must not be treated as duplicates');
 
+const definitionConflictRows = deriveMunicipalIndicators([
+  sourceRow('budget_total_revenue', 100, '2024-Q3', 'тыс. руб.', {
+    indicator_name: 'Доходы бюджета — всего, определение A',
+    source_id: 'definition-a',
+  }),
+  sourceRow('budget_total_revenue', 100, '2024-Q3', 'тыс. руб.', {
+    indicator_name: 'Общий объём доходов бюджета, определение B',
+    source_id: 'definition-b',
+  }),
+  sourceRow('budget_revenue_excluding_grants', 40, '2024-Q3', 'тыс. руб.'),
+]);
+assert.equal(
+  definitionConflictRows.some((row) => row.indicator_code === 'derived_budget_own_revenue_share'),
+  false,
+  'same value, unit and period but different source definitions must not feed a derived budget ratio',
+);
+
+
 const duplicateSourceRows = deriveMunicipalIndicators([
   sourceRow('budget_total_revenue', 100, '2024-Q3', 'тыс. руб.', { source_id: 'budget-source-a' }),
   sourceRow('budget_total_revenue', 100, '2024-Q3', 'тыс. руб.', { source_id: 'budget-source-b' }),
