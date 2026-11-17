@@ -1031,3 +1031,5 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Gaps split time series. Same-value duplicate sources collapse; inter-source value conflicts are quarantined rather than averaged or selected.
 - Metrics include test N, municipality N, MAE, MAPE (strictly positive actuals only), native-unit bias and percent bias. Tiny sample labels do not imply model validation.
 - Added regression tests and a diagnostic panel in Forecasting.jsx. It is display-only and does not change scenario coefficients or index scores.
+
+- First PR Actions run for commit 63ab328e passed both build and PostgreSQL migration integration. A post-review refinement fixed MAPE display (no spurious plus sign) and made eligible-series counts include exact indicator name and unit. Added regression coverage for code aliases/units staying separate.

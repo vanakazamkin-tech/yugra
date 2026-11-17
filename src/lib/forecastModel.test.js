@@ -398,3 +398,22 @@ test('identical cross-source values collapse but non-positive actuals are exclud
   assert.equal(negativeMetric.mape, null);
   assert.equal(negativeMetric.mapeCount, 0);
 });
+
+
+test('indicator aliases and units are never combined into one validation series', () => {
+  const first = [2020, 2021, 2022].map((year, index) => ({
+    municipality_id: 'm1', indicator_code: 'same_code', indicator_name: 'Original definition',
+    unit: 'persons', reference_year: year, reference_period: 'annual',
+    geographic_level: 'municipality', verification_status: 'verified', value: 10 + index,
+  }));
+  const second = [2020, 2021, 2022].map((year, index) => ({
+    ...first[index],
+    indicator_name: 'Different definition',
+    unit: 'thousand persons',
+    value: 1 + index,
+  }));
+  const result = buildHistoricalBacktest([...first, ...second], { horizons: [1] });
+  const distinctDefinitions = new Set(result.metrics.map((item) => item.indicatorName + '|' + item.unit));
+  assert.deepEqual([...distinctDefinitions].sort(), ['Different definition|thousand persons', 'Original definition|persons']);
+  assert.equal(result.eligibleSeriesGroups, 2);
+});

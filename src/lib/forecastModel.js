@@ -411,7 +411,7 @@ export function buildHistoricalBacktest(indicators = [], options = {}) {
         segment = [];
         return;
       }
-      eligibleSeries.add(series.indicatorCode + '|' + series.municipalityId + '|' + series.periodKind + '|' + series.periodSlot);
+      eligibleSeries.add(JSON.stringify([series.municipalityId, series.indicatorCode, series.indicatorName, series.unit, series.periodKind, series.periodSlot]));
       excluded.eligibleSegments += 1;
       for (let origin = minTrainingPoints - 1; origin < segment.length - 1; origin += 1) {
         const training = segment.slice(0, origin + 1);

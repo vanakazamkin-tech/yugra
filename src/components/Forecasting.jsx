@@ -276,7 +276,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
               <td><strong>{item.indicatorName}</strong><small>{item.indicatorCode} · {item.periodLabel} · {item.unit}</small></td>
               <td>{item.modelLabel}</td><td>{item.testCount}</td><td>{item.municipalityCount}</td>
               <td>{fmt(item.mae, 2)} <small>{item.unit}</small></td>
-              <td>{item.mape == null ? '—' : pct(item.mape)} <small>{item.mapeCount} положительных фактов</small></td>
+              <td>{item.mape == null ? '—' : fmt(item.mape, 1) + '%'} <small>{item.mapeCount} положительных фактов</small></td>
               <td>{fmt(item.bias, 2)} <small>{item.unit}</small></td>
               <td>{item.sampleStatus === 'exploratory' ? 'Исследовательская' : item.sampleStatus === 'small_sample' ? 'Малая' : 'Очень малая'}</td>
             </tr>)}</tbody>
