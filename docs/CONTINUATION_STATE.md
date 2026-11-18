@@ -1,3 +1,25 @@
+## Checkpoint — official comparison, mobile/settlement exports and Release 1.0 status consolidated (2026-11-18, UTC+05:00)
+
+- **Статус:** IN_PROGRESS — desktop/mobile comparability acceptance завершена; оба exact-HEAD CI прогона последнего проверенного SHA успешны; Production и human owner approval не выполнялись.
+- **Рабочая ветка / PR:** fix/risk-stable-provenance-gate-2026-11-18, PR #27 open / Draft / mergeable=true.
+- **Последний проверенный code/docs SHA перед обновлением Release Plan:** 061840749d30ee9456f77b984ceed7ae3a061030.
+- **GitHub Actions exact HEAD:** Push run 44293063022 и Pull Request run 44293069716 — success; в обоих build и data-migrations-integration завершились success, failed steps отсутствуют.
+- **main:** 4cb1171faf0c4e4568bc16226178730f5d04a9f5; branch comparison на этом checkpoint — 55 commits ahead / 0 behind.
+- **Последний готовый application Preview:** deployment dpl_3emHYQqMKoWXuoTbqf8mysufHguj, READY, URL https://yugra18-feh8kptgq-napishtu.vercel.app, exact app SHA e0e2da4adccccd82d3d4e9b8c96d471ab731dc15. Последующие commits до 0618407 были docs-only. Новые documentation-only deploys блокировались Hobby/free-tier deployment rate limit; не повторять вызовы ради получения другого URL.
+- **Official comparison desktop:** 19 series, 36 periods, 371 rows. 0 wrong-period, 0 duplicate/empty territory, 0 unsafe/missing HTTP(S) source; page errors=0, failed requests=0. Геоуровень заголовка соответствует конфигурации каждой серии (municipality vs settlement), внутри ряда уровни не смешиваются. Exact code/unit/geography/period gates также покрыты CI tests.
+- **Official municipal CSV:** yugra-official-municipal-comparison.csv — 1,208 bytes, UTF-8 BOM, header + 3 municipal rows; один показатель, 2026 Q1, unit тыс. руб., all rows have source ID and HTTPS source URL.
+- **Official settlement CSV:** population_settlement для 2024 — 4,642 bytes, UTF-8 BOM; 16 городов; все строки имеют geography Населённый пункт, unit тыс. человек, один период и HTTPS source URL; municipal geography rows отсутствуют.
+- **Official comparison mobile:** viewport 390×844, touch enabled; все 19 серий доступны, 29 first/last period samples проверены; selected period matched, all tables had rows, no page errors / failed requests, document/body width=390px. Table scroll area is internal (client 338px, content 760px); viewport-level overflow=false.
+- **Map/passports:** все 22 SVG hit targets открывают корректный паспорт по точке внутри фактической заливки (22/22); synchronized map list desktop/mobile также 22/22. Все 22 паспорта содержат demo disclaimer; вместе показано 1,433 official rows; invalid URL/missing geography/year/unit/count mismatch=0.
+- **Release Plan:** checklist comparison теперь [x]; описаны 19/36/371 sweep, mobile samples, municipal/settlement CSV; status section обновлён CI exact HEAD 0618407, rate-limit и последним application Preview.
+- **Документный commit после проверенного CI:** 1b2b0aadad4042bff0a2836d9f49c516b1216b36 обновил только docs/RELEASE_1_0_PLAN_2026-11-20.md, чтобы точно описать последнее CI и Vercel rate limit. Exact-HEAD CI для этого нового SHA нужно проверить отдельно; не переносить на него автоматически run status от 0618407.
+- **Старые PR:** #26 закрыт как superseded; #29 закрыт как duplicate docs PR. Полезные handoff/agent rules and release plan в активной PR #27; старый continuation log из PR #26 не объединялся поверх свежего.
+- **Production:** production deployment и Supabase DDL/DML/migrations/imports не выполнялись.
+- **Оставшиеся gates:** human owner/reviewer approval desktop/mobile ключевых сценариев и PDF; полистная проверка всех 144 PDF pages не выполнена (просмотрены representative pages 1/2/70/144); merge PR #27 после approval; Production release отдельно.
+- **Следующее действие:** проверить exact-HEAD CI для 1b2b0aa и обновлённого PR; держать Draft до owner approval. Не запускать Production и не обходить Vercel deployment rate limit.
+
+---
+
 ## Checkpoint — mobile comparison, settlement geography and exact-HEAD CI (2026-11-18, UTC+05:00)
 
 - **Статус:** `IN_PROGRESS` — desktop official comparability sweep и mobile selection sweep пройдены; CSV муниципального и поселенческого уровней проверены; Production release не выполнялся.
