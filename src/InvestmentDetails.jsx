@@ -1247,7 +1247,66 @@ export const InvestmentDetails = () => {
       setReportTemplateSaved(true);
     } catch { setReportTemplateSaved(false); }
   };
-  const exportReportCsv = () => downloadCsv(reportItems, reportPrintFields, 'yugra-analytical-report');
+  const exportReportCsv = () => {
+    const headers = [
+      'Раздел',
+      'Территория',
+      'Географический уровень',
+      'Группа',
+      'Статус данных',
+      ...reportPrintFields.map((key) => METRIC_BY_KEY[key]?.label || key),
+      'Официальный показатель',
+      'Значение',
+      'Единица измерения',
+      'Период',
+      'Источник ID',
+      'URL источника',
+      'Статус проверки',
+      'Примечание',
+    ];
+    const demoRows = reportItems.map((item) => [
+      'Демонстрационные показатели',
+      item.name,
+      'Муниципальное образование',
+      `Группа ${item.group2024}`,
+      'Демонстрационные значения — не официальная статистика',
+      ...reportPrintFields.map((key) => metricText(item, key)),
+      '', '', '', '', '', '', '', '',
+    ]);
+    const officialRows = (reportIncludeOfficialData ? reportOfficialIndicators : []).map((item) => {
+      const municipality = municipalities.find((entry) => entry.id === item.municipality_id);
+      const geography = item.geographic_level === 'settlement'
+        ? 'Населённый пункт'
+        : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
+      return [
+        'Проверенные официальные наблюдения',
+        item.geographic_name || municipality?.name || item.municipality_id,
+        geography,
+        '',
+        'Проверенные официальные данные',
+        ...reportPrintFields.map(() => ''),
+        item.indicator_name,
+        item.value,
+        item.unit,
+        formatReferencePeriod(item),
+        item.source_id || '',
+        item.source_url || '',
+        item.verification_status,
+        item.notes || '',
+      ];
+    });
+    const content = '\uFEFF' + [headers, ...demoRows, ...officialRows]
+      .map((row) => row.map(csvEscape).join(';'))
+      .join('\r\n');
+    const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8;' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'yugra-analytical-report.csv';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
 
   const renderTableRows = (items) => items.map((m, index) => {
     const population = populationByMunicipality.get(m.id);
