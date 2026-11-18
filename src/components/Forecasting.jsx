@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { buildForecastCoverage } from '../lib/forecastCoverage';
 import { buildForecasts, buildHistoricalBacktest, normalizeScenarioRows, summarizeForecast, sumFiniteValues } from '../lib/forecastModel';
 
@@ -14,7 +14,6 @@ const numericValue = (value) => {
   const parsed = Number(value.trim());
   return Number.isFinite(parsed) ? parsed : null;
 };
-const hasNumericValue = (value) => numericValue(value) != null;
 const n = (value) => numericValue(value) ?? 0;
 const fmt = (value, digits) => value == null || value === '' ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: digits == null ? 1 : digits, minimumFractionDigits: 0 }).format(value);
 const pct = (value) => (value > 0 ? '+' : '') + fmt(value, 1) + '%';
