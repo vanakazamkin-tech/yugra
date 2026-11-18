@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { MAP_VIEWBOX, districts, cities } from '../ugraMapGeo';
 
 const CITY_DOT = '#c29556';

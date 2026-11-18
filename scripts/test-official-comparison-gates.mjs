@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 
 const source = readFileSync(new URL('../src/InvestmentDetails.jsx', import.meta.url), 'utf8');
 const comparisonStart = source.indexOf('const officialComparisonSeriesOptions');
-const comparisonEnd = source.indexOf('const selectedRiskSignalConfig', comparisonStart);
+const comparisonEnd = source.indexOf('  const comparisonItems = useMemo(', comparisonStart);
 assert.ok(comparisonStart >= 0 && comparisonEnd > comparisonStart, 'official comparison logic must exist');
 const comparison = source.slice(comparisonStart, comparisonEnd);
 assert.ok((comparison.match(/item\.verification_status === 'verified'/g) || []).length >= 3, 'all comparison stages must require verified observations');

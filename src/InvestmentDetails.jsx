@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import data from '../data/municipalities-detailed.json';
 import { UgraMap, UgraMapList } from './components/UgraMap';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
@@ -90,14 +90,6 @@ const OFFICIAL_EMPLOYMENT_SECTORS = [
   { code: 'employees_public_admin', name: 'Государственное управление' },
   { code: 'employees_education', name: 'Образование' },
   { code: 'employees_healthcare', name: 'Здравоохранение и социальные услуги' },
-];
-const OFFICIAL_RISK_SIGNAL_SERIES = [
-  { code: 'average_employees_q1', label: 'Занятость · I квартал', unit: 'человек', period: 'Q1', definition: 'Среднесписочная численность работников организаций без субъектов малого предпринимательства. Это оценка численности за период, не число уникальных работников, прошедших через рынок труда.' },
-  { code: 'own_production_shipments_q1', label: 'Отгрузка продукции · I квартал', unit: 'тыс. руб.', period: 'Q1', definition: 'Накопительный номинальный объём отгрузки собственной продукции, работ и услуг за январь–март, без субъектов малого предпринимательства. Не скорректирован на инфляцию.' },
-  { code: 'resale_goods_q1', label: 'Продажа перепроданных товаров · I квартал', unit: 'тыс. руб.', period: 'Q1', definition: 'Накопительный номинальный объём продажи товаров несобственного производства за январь–март, без субъектов малого предпринимательства. Не скорректирован на инфляцию.' },
-  { code: 'fixed_capital_investment_enterprises_non_sme', label: 'Инвестиции организаций без субъектов МСП · год', unit: 'тыс. руб.', period: 'annual', definition: 'Годовой объём инвестиций организаций на территории Сургута, без субъектов малого предпринимательства. Это не только бюджетные средства и не реальный объём после инфляции.' },
-  { code: 'fixed_capital_investment_non_mining', label: 'Инвестиции в основной капитал без добычи · год', unit: 'руб.', period: 'annual', definition: 'Исторические муниципальные значения за 2022–2023 годы из отчёта рейтинга. Исключён вид деятельности «Добыча полезных ископаемых»; не смешивать с общими инвестициями.' },
-  { code: 'fixed_capital_investment_local_budget', label: 'Инвестиции за счёт местного бюджета · год', unit: 'тыс. руб.', period: 'annual', definition: 'Годовой объём инвестиций за счёт местного бюджета. Это отдельная бюджетная составляющая, не общая сумма всех инвестиций.' },
 ];
 const OFFICIAL_TREND_SERIES = [
   { code: 'average_employees_q1', title: 'Среднесписочная численность работников', periodLabel: 'I квартал', unit: 'человек', definition: 'Организации без субъектов малого предпринимательства; январь–март каждого года.' },
@@ -313,10 +305,6 @@ export const InvestmentDetails = () => {
   const [comparisonSearch, setComparisonSearch] = useState('');
   const [selectedCompareIds, setSelectedCompareIds] = useState(() => DEFAULT_COMPARE_IDS.filter((id) => municipalities.some((m) => m.id === id)));
   const [comparisonMetric, setComparisonMetric] = useState('score');
-  const [riskYellowThreshold, setRiskYellowThreshold] = useState(285);
-  const [riskGreenThreshold, setRiskGreenThreshold] = useState(330);
-  const [riskSearch, setRiskSearch] = useState('');
-  const [selectedRiskSignalCode, setSelectedRiskSignalCode] = useState('average_employees_q1');
   const [selectedTrendSeries, setSelectedTrendSeries] = useState('average_employees_h1');
   const [selectedSectorMunicipalityId, setSelectedSectorMunicipalityId] = useState('surgut');
   const [selectedSectorYear, setSelectedSectorYear] = useState('2026');
@@ -1030,137 +1018,6 @@ export const InvestmentDetails = () => {
     })).sort((a,b) => b.numericValue-a.numericValue);
   }, [officialIndicators, effectiveOfficialComparisonCode, effectiveOfficialComparisonPeriod, officialComparisonConfig, municipalities]);
 
-  const selectedRiskSignalConfig = OFFICIAL_RISK_SIGNAL_SERIES.find((series) => series.code === selectedRiskSignalCode) || OFFICIAL_RISK_SIGNAL_SERIES[0];
-  const officialRiskSignal = useMemo(() => {
-    const rows = officialIndicators.filter((item) =>
-      item.municipality_id === 'surgut'
-      && item.indicator_code === selectedRiskSignalConfig.code
-      && numericValue(item.value) != null
-      && (selectedRiskSignalConfig.period === 'annual'
-        ? String(item.reference_period || 'annual') === 'annual'
-        : String(item.reference_period || '').endsWith('-' + selectedRiskSignalConfig.period))
-    ).slice().sort((a,b) => Number(a.reference_year)-Number(b.reference_year));
-    const points = rows.map((item,index) => ({
-      ...item,
-      numericValue: numericValue(item.value),
-      changePercent: index > 0 && numericValue(rows[index-1].value) !== 0
-        ? (numericValue(item.value)/numericValue(rows[index-1].value)-1)*100
-        : null,
-    }));
-    const max = points.length ? Math.max(...points.map((item)=>item.numericValue)) : 1;
-    return {
-      config: selectedRiskSignalConfig,
-      rows: points,
-      previous: points.length > 1 ? points[points.length-2] : null,
-      latest: points[points.length-1] || null,
-      max: Math.max(1,max),
-      changePercent: points.length > 1 && points[points.length-2].numericValue !== 0
-        ? (points[points.length-1].numericValue/points[points.length-2].numericValue-1)*100
-        : null,
-      periodText: selectedRiskSignalConfig.period === 'annual' ? 'год к году' : 'одинаковый квартальный период год к году',
-    };
-  }, [officialIndicators, selectedRiskSignalConfig]);
-
-  const riskRows = useMemo(() => {
-    const query = riskSearch.trim().toLocaleLowerCase('ru-RU');
-    return municipalities.map((municipality) => {
-      const score = numericValue(municipality.score);
-      const level = score == null ? 'unknown' : score >= riskGreenThreshold ? 'green' : score >= riskYellowThreshold ? 'yellow' : 'red';
-      return { ...municipality, conceptScore: score, riskLevel: level };
-    }).filter((item) => !query || item.name.toLocaleLowerCase('ru-RU').includes(query))
-      .sort((a,b) => {
-        const priority = { red: 0, yellow: 1, green: 2, unknown: 3 };
-        return priority[a.riskLevel] - priority[b.riskLevel] || (a.conceptScore ?? Infinity) - (b.conceptScore ?? Infinity);
-      });
-  }, [municipalities, riskSearch, riskYellowThreshold, riskGreenThreshold]);
-
-  const riskCounts = useMemo(() => ({
-    red: municipalities.filter((m) => numericValue(m.score) != null && Number(m.score) < riskYellowThreshold).length,
-    yellow: municipalities.filter((m) => numericValue(m.score) != null && Number(m.score) >= riskYellowThreshold && Number(m.score) < riskGreenThreshold).length,
-    green: municipalities.filter((m) => numericValue(m.score) != null && Number(m.score) >= riskGreenThreshold).length,
-    missing: municipalities.filter((m) => numericValue(m.score) == null).length,
-  }), [municipalities, riskYellowThreshold, riskGreenThreshold]);
-
-  const pillarCoverage = useMemo(() => {
-    // Coverage is calculated only from verified municipal-level observations.
-    // Settlement-level values and unverified concept data must not inflate it.
-    const verifiedMunicipalRows = officialIndicators.filter((item) =>
-      item.verification_status === 'verified'
-      && (item.geographic_level || 'municipality') === 'municipality'
-      && item.municipality_id
-      && numericValue(item.value) != null
-    );
-    const verifiedPrograms = programExecution.filter((item) => item.verification_status === 'verified');
-
-    const makePillar = (key, title, description, matches, includePrograms = false) => {
-      const rows = verifiedMunicipalRows.filter(matches);
-      const programs = includePrograms ? verifiedPrograms : [];
-      const ids = new Set(rows.map((item) => item.municipality_id));
-      programs.forEach((item) => {
-        if (item.municipality_id) ids.add(item.municipality_id);
-      });
-      return {
-        key,
-        title,
-        description,
-        ids,
-        municipalityCount: ids.size,
-        observationCount: rows.length + programs.length,
-      };
-    };
-
-    return [
-      makePillar(
-        'employment',
-        'Занятость',
-        'Среднесписочная численность работников и отраслевые данные. Это не полная оценка занятости всего населения.',
-        (item) => String(item.indicator_code || '').startsWith('average_employees_')
-          || String(item.indicator_code || '').startsWith('employees_')
-          || item.indicator_code === 'sme_employment_share'
-      ),
-      makePillar(
-        'income',
-        'Доходы населения',
-        'Пока представлены отдельные показатели начисленной заработной платы; полного ряда располагаемых доходов населения нет.',
-        (item) => /salary|wage/i.test(String(item.indicator_code || ''))
-          || String(item.indicator_name || '').toLocaleLowerCase('ru-RU').includes('заработн')
-      ),
-      makePillar(
-        'budget',
-        'Местный бюджет',
-        'Есть отдельные инвестиции за счёт местного бюджета и подтверждённые отчёты по муниципальным программам. Это не полная панель доходов и расходов.',
-        () => false,
-        true
-      ),
-      makePillar(
-        'migration',
-        'Миграция',
-        'Есть отдельные подтверждённые ряды по Сургуту, Ханты-Мансийску, Ханты-Мансийскому району и Нефтеюганску; по Сургуту доступны компоненты миграционного прироста. Сопоставимой панели по всем 22 муниципалитетам пока нет.',
-        (item) => [
-          'migration_net_total',
-          'migration_net_domestic',
-          'migration_net_international',
-          'migration_net_interregional',
-          'migration_net_intraregional',
-          'migration_growth_municipal_report',
-          'migration_rate_per_1000',
-          'migration_arrivals',
-          'migration_departures',
-          'migration_balance',
-          'rosstat_migration_8112021',
-          'rosstat_migration_8112022',
-          'rosstat_migration_8112023',
-        ].includes(item.indicator_code)
-      ),
-      makePillar(
-        'investment',
-        'Инвестиции',
-        'Доступны отдельные подтверждённые оценки инвестиций организаций; охват муниципалитетов и периодов пока неполный.',
-        (item) => ['fixed_capital_investment_non_mining', 'fixed_capital_investment_enterprises_non_sme', 'fixed_capital_investment_local_budget', 'investment_per_capita_no_budget'].includes(item.indicator_code)
-      ),
-    ];
-  }, [officialIndicators, programExecution]);
-
   const comparisonItems = useMemo(() => municipalities.filter((m) => selectedCompareIds.includes(m.id)), [municipalities, selectedCompareIds]);
   const comparisonCandidates = useMemo(() => municipalities.filter((m) => m.name.toLocaleLowerCase('ru-RU').includes(comparisonSearch.trim().toLocaleLowerCase('ru-RU'))), [municipalities, comparisonSearch]);
   const reportItems = useMemo(() => {
@@ -1280,36 +1137,6 @@ export const InvestmentDetails = () => {
     const anchor = document.createElement('a');
     anchor.href=url;
     anchor.download=`yugra-${sectorEmploymentProfile.municipalityId}-sector-employment-${sectorEmploymentProfile.year}-${selectedSectorPeriod}.csv`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
-  const downloadOfficialRiskSignalCsv = () => {
-    const headers = ['Территория','Показатель','Значение','Единица измерения','Период','Изменение к предыдущему году, %','Источник','URL источника','Примечание'];
-    const rows = officialRiskSignal.rows.map((item) => [
-      item.geographic_name || 'Сургут',
-      officialRiskSignal.config.label,
-      item.numericValue,
-      officialRiskSignal.config.unit,
-      formatReferencePeriod(item),
-      item.changePercent == null ? '' : item.changePercent,
-      item.source_id || '',
-      item.source_url || '',
-      item.notes || '',
-    ]);
-    const escape = (value) => {
-      let text = String(value == null ? '' : value);
-      const first = text.trimStart()[0];
-      if (typeof value === 'string' && ['=', '+', '-', '@', '\t', '\r'].includes(first)) text = "'" + text;
-      return '"' + text.replaceAll('"', '""') + '"';
-    };
-    const csv = '\uFEFF' + [headers, ...rows].map((row)=>row.map(escape).join(';')).join('\r\n');
-    const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
-    const anchor = document.createElement('a');
-    anchor.href=url;
-    anchor.download=`yugra-surgut-risk-signal-${officialRiskSignal.config.code}.csv`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
