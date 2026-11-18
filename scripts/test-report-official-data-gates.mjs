@@ -20,4 +20,20 @@ for (const label of ['Средний демо-балл', 'Демо-объём и
 }
 assert.match(source, /сумма только по доступным значениям/);
 
-console.log('Analytical report official-data gates passed.');
+const exportStart = source.indexOf('const exportReportCsv = () =>');
+const exportEnd = source.indexOf('const renderTableRows', exportStart);
+assert.ok(exportStart >= 0 && exportEnd > exportStart, 'report CSV export must exist');
+const reportExport = source.slice(exportStart, exportEnd);
+assert.match(reportExport, /reportIncludeOfficialData \? reportOfficialIndicators : \[\]/, 'official observations must follow the report toggle');
+assert.match(reportExport, /item\.indicator_name/);
+assert.match(reportExport, /item\.geographic_level/);
+assert.match(reportExport, /formatReferencePeriod\(item\)/);
+assert.match(reportExport, /item\.unit/);
+assert.match(reportExport, /item\.source_id/);
+assert.match(reportExport, /item\.source_url/);
+assert.match(reportExport, /item\.verification_status/);
+assert.match(reportExport, /row\.map\(csvEscape\)/, 'all report CSV cells must use formula-safe escaping');
+assert.match(reportExport, /Демонстрационные значения — не официальная статистика/);
+assert.match(reportExport, /Проверенные официальные наблюдения/);
+
+console.log('Analytical report official-data and CSV export gates passed.');
