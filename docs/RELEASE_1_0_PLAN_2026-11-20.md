@@ -181,13 +181,15 @@ npm run validate:rosstat-crosswalk
 ## 4.2. Текущий статус GitHub и Preview — 18.11.2026
 
 - **Активный PR:** #27, ветка `fix/risk-stable-provenance-gate-2026-11-18`, open / Draft / mergeable=true.
-- **Последний подтверждённый HEAD до этого документационного обновления:** `d6aceae989c75a102049b088a4970e53b46f3706`.
-- **Синхронизация с main:** 43 commits ahead / 0 behind относительно `main` `4cb1171faf0c4e4568bc16226178730f5d04a9f5`.
-- **GitHub Actions exact HEAD:** Push run `44289992582` и Pull Request run `44290001962` — success. В обоих `build` и `data-migrations-integration` завершились success; failed steps отсутствуют.
-- **Vercel Preview exact HEAD:** deployment `dpl_F335Nus82Wk1yEDBGeFxSWi5xNwa`, READY; URL https://yugra18-6xfaicih9-napishtu.vercel.app. SHA deployment совпадает с HEAD; это Preview, не Production.
-- **План и handoff:** Release Plan, continuation ledger и README links находятся в PR #27. `AGENTS.md`, Copilot и ChatGPT Project instructions дополнены обязательными checkpoint/handoff правилами и ссылкой на Release Plan; существующий DEVELOPMENT FIRST из main сохранён.
-- **Старые PR:** #26 закрыт как superseded; его полезные инструкции и план перенесены/актуализированы в PR #27. #29 закрыт как duplicate docs PR.
-- **Оставшиеся gates:** человеческая визуальная проверка ключевых desktop/mobile экранов и выбранных PDF-страниц; reviewer/owner approval; merge PR #27. После merge Production release — отдельное решение и проверка exact SHA.
+- **Exact HEAD:** `dcb8eb72be990ca68a1fce2cbb9233b843ece647`.
+- **Синхронизация с main:** 54 commits ahead / 0 behind относительно `main` `4cb1171faf0c4e4568bc16226178730f5d04a9f5`.
+- **GitHub Actions exact HEAD:** Push run `44292933591` и Pull Request run `44292941030` — success. В обоих `build` и `data-migrations-integration` завершились success; failed steps отсутствуют.
+- **Vercel:** для последнего documentation-only SHA `dcb8eb7` status failure по внешнему Hobby/free-tier API deployment rate limit (`api-deployments-free-per-day`), не из-за build приложения. Повторные деплои не запускались, лимит не обходился.
+- **Последний готовый code Preview:** deployment `dpl_3emHYQqMKoWXuoTbqf8mysufHguj`, READY, URL https://yugra18-feh8kptgq-napishtu.vercel.app, exact Git SHA `e0e2da4adccccd82d3d4e9b8c96d471ab731dc15`. Между этим code SHA и текущим HEAD менялась только документация; application code не менялся. Это Preview, не Production.
+- **Functional browser QA:** все 9 разделов, карта/22 МО, паспорта/22 из 22, risk fail-closed, сценарии 1/2/3 года, CSV/PDF и Supabase outage fallback проверены. Официальное сравнение: 19 series, 36 periods, 371 rows; 0 mismatches/duplicates/empty names/unsafe sources; муниципальный и поселенческий уровни проверены раздельно. Desktop and mobile comparison tested; mobile width 390 px, document/body overflow отсутствует, таблица имеет собственный scroll container. CSV municipality and settlement cases saved and inspected.
+- **Release plan и handoff:** `docs/RELEASE_1_0_PLAN_2026-11-20.md`, checkpoint ledger и README links находятся в PR #27. `AGENTS.md`, Copilot и ChatGPT Project instructions дополнены durable checkpoint/handoff правилами; DEVELOPMENT FIRST из main сохранён.
+- **Старые PR:** #26 закрыт как superseded; #29 закрыт как duplicate docs PR. Полезные инструкции/план перенесены и актуализированы в PR #27.
+- **Оставшиеся gates:** human owner/reviewer approval ключевых desktop/mobile экранов и PDF-пагинации; все 144 PDF-страницы визуально не просмотрены (выборочно страницы 1/2/70/144); merge PR #27 после approval. После merge Production release — отдельное решение и проверка exact SHA.
 - **Production:** production deployment, Supabase DDL/DML, миграции, импорты и массовые записи не выполнялись.
 - **Этот план не является разрешением на Production deployment или изменение БД.**
 
