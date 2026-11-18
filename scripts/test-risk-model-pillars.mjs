@@ -253,7 +253,8 @@ const insufficient = buildRiskModel(municipalities, series.filter((item) => item
 assert.equal(insufficient.byMunicipality.m1.availablePillars, 1, 'one observed direction remains one risk-coverage direction');
 assert.equal(Object.hasOwn(MODEL_PILLARS.find((pillar) => pillar.key === 'social'), 'weight'), false, 'risk directions must not carry or reapply index weights');
 const riskSignal = (adverse, pillar, overrides = {}) => ({
-  adverse, pillar: { key: pillar }, latestSourcePresent: true, ...overrides,
+  adverse, pillar: { key: pillar }, latestSourcePresent: true,
+  latestIsProvisional: false, ...overrides,
 });
 assert.deepEqual(DEFAULT_RISK_THRESHOLDS, { minimumUsable: 2, criticalSignals: 3, criticalPillars: 3, sharpChangePercent: 10 }, 'the conservative pilot red threshold requires three independent risk pillars; green coverage remains a fixed six-pillar requirement');
 assert.equal(assessRiskSignals([riskSignal(false, 'economy')]).level, 'insufficient', 'one usable signal is insufficient under the default threshold');
@@ -284,6 +285,21 @@ const sourceMissingRedEvidence = assessRiskSignals([
 ]);
 assert.equal(sourceMissingRedEvidence.level, 'watch', 'a source-less signal cannot independently qualify a red status');
 assert.equal(sourceMissingRedEvidence.criticalEvidenceCount, 2);
+const unknownProvisionalMetadata = assessRiskSignals([
+  riskSignal(true, 'economy', { latestIsProvisional: undefined }),
+  riskSignal(true, 'labour'),
+  riskSignal(true, 'demography'),
+]);
+assert.equal(unknownProvisionalMetadata.level, 'watch', 'unknown provisional status must fail closed for Critical');
+assert.equal(unknownProvisionalMetadata.criticalEvidenceCount, 2);
+const unknownSourceMetadata = assessRiskSignals([
+  riskSignal(true, 'economy', { latestSourcePresent: undefined }),
+  riskSignal(true, 'labour'),
+  riskSignal(true, 'demography'),
+]);
+assert.equal(unknownSourceMetadata.level, 'watch', 'unknown latest-source status must fail closed for Critical');
+assert.equal(unknownSourceMetadata.criticalEvidenceCount, 2);
+assert.equal(unknownSourceMetadata.sourceMissingAdverseCount, 1);
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'economy'), riskSignal(true, 'economy')]).level, 'watch', 'multiple signals in one pillar do not satisfy the default cross-pillar red threshold');
 assert.equal(assessRiskSignals([riskSignal(true, 'health'), riskSignal(true, 'education'), riskSignal(true, 'social'), riskSignal(false, 'finance')]).level, 'watch', 'health, education and social subcategories count as one social direction, not three');
 const complementaryBudgetSignals = assessRiskSignals([
