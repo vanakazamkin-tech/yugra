@@ -37,6 +37,21 @@ Chat sessions can stop unexpectedly. **Never wait for the user to ask for a prog
 - Run relevant checks: `npm test`, `npm run build`, and when applicable `npm run check:map-coverage`, `npm run validate:rosstat-crosswalk`; wait for all PR checks before merge.
 - Current `package.json` has no dedicated lint script.
 
+## Release 1.0 target — November 20, 2026
+
+Follow `docs/RELEASE_1_0_PLAN_2026-11-20.md` as the release scope and acceptance contract.
+
+- Freeze scope: focus on P0 blockers and safe P1 polish; no new product features, wide refactors or redesign before the deadline.
+- Release goal is a stable demonstrator, not a production-certified or statistically validated forecasting system.
+- Protect the existing design, map and Khanty/Mansi-inspired visual system.
+- Validate the full critical path: app navigation, all 22 municipality profiles, data comparability/provenance, fail-closed risk status, 1–3-year scenario flows, report generation/exports and Supabase read path.
+- A button is not proof of a working feature: exercise exports and key UI actions in a smoke test.
+- Keep observed data, derived values, expert assumptions and forecast outputs clearly separated.
+- Treat missing coverage as a limitation, not proof of a crisis or stability. Never make incomplete data look complete.
+- Run all applicable tests and verify the current commit's CI. Old successful runs do not certify new commits.
+- Do not modify production Supabase without separate explicit user authorization. Never use blind `supabase db push`; known migration drift requires a separate reconciliation.
+- If any release gate fails, report the release as blocked with exact evidence rather than lowering the gate.
+
 ## Critical known issue
 
 The repository SQL migration files and production `schema_migrations` are not reconciled (110 SQL files versus 96 production entries at the 2026-11-18 audit; four duplicate version prefixes). Do not rename/delete migrations or run a blind `supabase db push`. Reconcile exact file versions/content against live history first. See `docs/AI_PROJECT_CONTEXT.md`.
