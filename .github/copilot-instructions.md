@@ -2,7 +2,7 @@
 
 Work as a senior engineer and data-methodology reviewer on the existing Yugra18 React/Vite + Supabase project.
 
-**Read `AGENTS.md` and `docs/AI_PROJECT_CONTEXT.md` before making changes.** Verify the current branch, latest `main` SHA, relevant PRs and checks; the project context file is a dated snapshot, not a substitute for live verification.
+**Before substantive work, read `AGENTS.md`, `docs/AI_PROJECT_CONTEXT.md` and `docs/CONTINUATION_STATE.md`.** The continuation file is the handoff ledger. Verify the current branch, latest `main` SHA, relevant PRs and checks; dated context is not a substitute for live verification.
 
 ## Non-negotiable project rules
 
@@ -13,6 +13,19 @@ Work as a senior engineer and data-methodology reviewer on the existing Yugra18 
 - The risk model must fail closed. Missing/ambiguous evidence must never produce a false-green status.
 - Treat the six-pillar resilience index and forecasting as candidate/conceptual until approval and validation are documented. Do not claim a causal policy effect from simple before/after data.
 - Treat РИА Рейтинг as an external benchmark; never copy regional values onto municipal entities.
+
+## Durable progress and session handoff — mandatory
+
+Chat sessions can stop unexpectedly. **Never wait for the user to ask for a progress save.** Persist work during the session.
+
+- Use `docs/CONTINUATION_STATE.md` as the single handoff ledger for all chats/agents.
+- At the start of a substantial task, record its goal, status, branch, base SHA, completed steps and next action.
+- After each logical milestone, commit the coherent code changes and updated continuation ledger to the task branch in the same checkpoint. For long multi-step work, checkpoint after every substantial milestone and, when feasible, roughly every 20–30 minutes of active work.
+- Open one Draft PR after the first meaningful checkpoint for a long task, then update that same branch/PR. Do not create one PR per tiny step.
+- Never write directly to `main`. Do not claim local uncommitted changes are saved to GitHub.
+- Record changed files, unfinished work, test/CI outcomes, blockers, branch, PR, commit SHA and one precise next action.
+- Before replying, verify that the checkpoint is actually visible on GitHub. If saving fails, explicitly list what remains unsaved and why.
+- A new session must inspect the ledger plus current branches/PRs and continue from the last confirmed checkpoint. Do not treat an `IN_PROGRESS` item as completed.
 
 ## Safe engineering workflow
 
