@@ -274,7 +274,7 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
         </div>
         <p className="forecast-coverage-footnote">
           Размер выборок по сочетаниям показателя, периода, горизонта и метода: {historicalBacktestSampleCounts.exploratory} исследовательских, {historicalBacktestSampleCounts.small_sample} малых и {historicalBacktestSampleCounts.very_small_sample} очень малых. Это диагностические категории по числу тестов, а не доверие или вероятность точности модели.
-          Из годовой проверки исключено записей с неподдерживаемыми периодами: {historicalBacktest.excluded.unsupportedPeriod}; коротких непрерывных фрагментов, не набравших историю: {historicalBacktest.excluded.insufficientSegments}; конфликтных сочетаний муниципалитет/показатель/год: {historicalBacktest.excluded.conflictingMunicipalityYearGroups}.
+          Из годовой проверки исключено записей без ссылки на источник: {historicalBacktest.excluded.missingProvenance}; с неподдерживаемыми периодами: {historicalBacktest.excluded.unsupportedPeriod}; коротких непрерывных фрагментов, не набравших историю: {historicalBacktest.excluded.insufficientSegments}; конфликтных сочетаний муниципалитет/показатель/год: {historicalBacktest.excluded.conflictingMunicipalityYearGroups}.
         </p>
         {historicalBacktestRows.length ? <div className="table-scroll" role="region" tabIndex={0} aria-label="Результаты walk-forward проверки прогнозных моделей">
           <table className="ranking-table forecast-table">
