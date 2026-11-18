@@ -1,3 +1,21 @@
+## Checkpoint — 2026-11-18 06:52 UTC+05:00
+
+- **Статус:** `IN_PROGRESS` — P0-аудит паспортов и официального сравнения завершён статически; production Supabase проверен read-only.
+- **Ветка / PR:** `chore/automatic-session-checkpoints-2026-11-18`, PR #26 (open, Draft).
+- **HEAD до этого checkpoint:** `cf886d39a97e0368e1f7296759fa1ca805617622`.
+- **CI exact HEAD:** workflow run `44218937582`, оба job (`build`, `data-migrations-integration`) завершились success.
+- **Vercel:** status `success` на exact HEAD; это не подтверждение Production.
+- **Passport audit:** selector требует `verified`, допустимый явный geography level (`municipality` / `settlement` / `region`), целый год, числовое значение и непустой indicator code; нет fallback отсутствующей географии к municipality. Население для муниципального KPI выбирается отдельно только с `geographic_level='municipality'`; settlement population исключена. Модальное окно маркирует geography, период, unit и source URL; focus trap/Escape/focus restore реализованы.
+- **Comparison audit:** фильтрация использует точный indicator code, `verified`, exact geography level, municipality ID, точный year/period/unit key и numeric value; пустые значения не подставляются нулями. Regression test `test-official-comparison-gates.mjs` покрывает geography/unit/period gates.
+- **Supabase read-only:** project `dmbikidqikjupkghywbz` ACTIVE_HEALTHY, PostgreSQL 17.11; `municipalities` — 22 строки; `municipality_indicators` — 1,445 строк. SELECT подтвердил: 1,389 verified municipality + 44 verified settlement + 12 needs_review municipality; у этих групп нет пустых unit/source_url.
+- **Comparison data readback:** для используемых официальных comparison codes единицы присутствуют и согласованы по кодам/периодам; пустых unit среди verified рядов не обнаружено.
+- **Migration drift подтверждён повторно:** Git main содержит 110 SQL migration files, 106 уникальных префиксов и четыре дублирующихся префикса (`20261030194500`, `20261030200000`, `20261030201500`, `20261030203000`); production history — 96 версий, последняя `20261107055919`. Никаких миграций не применялось.
+- **Изменения кода:** нет; по статическому аудиту паспортов/сравнения воспроизводимый P0-дефект не подтверждён.
+- **Production:** только read-only SELECT/metadata; DDL/DML, миграции и деплой не запускались.
+- **Следующее конкретное действие:** P0-аудит fail-closed risk pipeline: проверить входные фильтры (verified municipality-level, provenance, period comparability), направление индикаторов, collapse/conflict handling, quality gates для Critical и недостаточное покрытие; сверить с regression tests. Не менять production.
+
+---
+
 ## Checkpoint — 2026-11-18 06:49 UTC+05:00
 
 - **Статус:** `IN_PROGRESS` — восстановление продолжено, этап навигации/карты статически проверен.
