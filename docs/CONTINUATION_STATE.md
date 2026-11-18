@@ -6,9 +6,10 @@
 - **Найденный дефект:** в `src/components/Forecasting.jsx` при `scoreSource='resilience-index'` подпись ползунка неопределённости корректно называла единицу «баллов», а числовое значение рядом по-прежнему отображалось со знаком «%». Это путало единицу процентильного индекса (баллы) с процентной неопределённостью концептуального балла.
 - **Исправление:** отображаемый суффикс теперь зависит от режима: «балла» для индексного режима и «%» для концептуального. Существующая разметка и дизайн сохранены.
 - **Кодовый commit:** `645066dbcfa20bfa0e2a57e0a8bf572f06ceefdc`; файл: `src/components/Forecasting.jsx`.
-- **CI:** workflow run для нового exact HEAD пока не появился при readback; не считать изменение проверенным до результата нового CI. Предыдущий SHA CI success не переносится на этот commit.
-- **Preview / Production / Supabase:** новый Preview не подтверждён; Production deployment и production Supabase не менялись.
-- **Следующее действие:** получить CI для exact HEAD, затем проверить новый Vercel Preview при снятии внешнего build rate limit и выполнить ручные сценарии 1/2/3 года, PDF/CSV и узкого viewport.
+- **CI exact HEAD:** GitHub Actions run [44272282734](https://github.com/vanakazamkin-tech/yugra/actions/runs/44272282734) завершился `success`. `build` и `data-migrations-integration` — success; forecast unit tests, все data/risk/comparison/report/passport/map gates, production bundle, disposable-schema migration/idempotency/security checks и read-only audit завершились успешно.
+- **Vercel Preview exact HEAD:** deployment `dpl_5SYF8Y8evSBMrzj2nYgqiomdTXsv` — `READY`, URL https://yugra18-h60v1xzro-napishtu.vercel.app; commit SHA совпадает с `820b75f1b2290ae972e00446bbd25aa0b0b1b2ea`. Это Preview, не Production. Браузерный smoke-test в этой среде не завершён: проверка URL через доступный web-viewer недоступна.
+- **Production / Supabase:** Production deployment и production Supabase не менялись.
+- **Следующее действие:** выполнить ручную проверку Preview (сценарии 1/2/3 года, PDF/CSV, desktop/mobile), затем обновить checkpoint на exact HEAD после следующего изменения. Не считать Release 1.0 готовым без ручных gates.
 
 ---
 
