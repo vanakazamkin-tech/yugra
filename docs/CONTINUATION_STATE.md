@@ -1,3 +1,21 @@
+## Checkpoint — 2026-11-18 06:49 UTC+05:00
+
+- **Статус:** `IN_PROGRESS` — восстановление продолжено, этап навигации/карты статически проверен.
+- **Ветка / PR:** `chore/automatic-session-checkpoints-2026-11-18`, PR #26 (Draft, open).
+- **main SHA:** `8f291774044fd9f73e6b766e6196f02db3628bb7` (проверен через Git ref API).
+- **HEAD до этого checkpoint:** `549d4e2b5bb1630e7ad88287f9a5cc231288a1fe`.
+- **CI exact HEAD:** workflow run `44216001319`, Build verification — success; jobs `build` и `data-migrations-integration` завершились success. Build job подтвердил install dependencies, тесты модели/данных/сравнения/паспортов/карты и production bundle.
+- **Vercel:** commit status `Vercel=success`; это Preview/CI status, не подтверждение Production.
+- **Release plan:** `docs/RELEASE_1_0_PLAN_2026-11-20.md` прочитан из рабочей ветки PR #26 (в `main` пока отсутствует).
+- **P0 navigation/map static audit:** меню содержит отдельный branch `activeTab === 'map'`; карта и список используют общие `onSelect` для открытия паспорта; SVG targets имеют button role, keyboard handlers, focus/blur и aria-label; map list реализован отдельным дочерним компонентом.
+- **Map coverage readback:** 22 муниципалитета JSON ↔ 22 геометрических ID; missing=0, duplicates=0 с обеих сторон.
+- **Ограничение проверки:** ручной браузерный smoke-test на широком/узком экране не выполнен. Локальный clone и локальные npm-команды недоступны в этой среде из-за DNS `github.com`; exact-HEAD CI выше прошёл.
+- **Изменения кода:** отсутствуют; исправляемый P0-дефект на этапе навигации/карты статическим просмотром не подтверждён.
+- **Production Supabase / Production deployment:** не изменялись; БД не записывалась.
+- **Следующее конкретное действие:** завершить P0-аудит паспортов и официального сравнения: проверить модальное окно/поля происхождения, municipality vs settlement, period/unit/geography gates и CSV export; сверить с regression tests. Любой найденный воспроизводимый дефект исправить минимально и добавить regression test.
+
+---
+
 ## Checkpoint — 18.11.2026, 06:30 (UTC+5): первичный P0 code-path audit
 
 - **HEAD до записи:** 93969bdb313ac3b044329cff461bcc3fe9fad16a (checkpoint recovery/audit уже опубликован).
