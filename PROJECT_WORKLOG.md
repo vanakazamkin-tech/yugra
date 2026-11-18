@@ -1120,3 +1120,13 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - После уточнения metadata карточки муниципального мониторинга ХМАО итоговый счётчик по 161 источнику: owner 47/161, temporal_coverage 47/161, data_type 47/161, access_restrictions 16/161, retrieved_at 4/161, last_checked_at 126/161.
 - Числа 46/15, зафиксированные в предыдущей записи, были промежуточным состоянием сразу после первых пяти карточек; актуальный итог — 47/16.
 - Полнота provenance аналитических наблюдений не затронута: 1 389 verified municipal observations имеют действующий source_id, source_url и retrieved_at; 0 пропусков и 0 broken references.
+
+### 18.11.2026 — runtime backtesting на фактической муниципальной панели
+- Запущен реальный buildHistoricalBacktest() из forecastModel.js на том же verified municipal-срезе, который передаётся Forecasting.jsx: 1 389 исходных наблюдений, 22 муниципалитета. Производные 220 рядов отдельно не подмешивались, поскольку runtime-компонент проверяет officialIndicators.
+- Результат: 106 eligible series groups, 787 walk-forward predictions, 172 metric cells (indicator × exact definition/unit × period kind/slot × horizon × baseline).
+- По sampleStatus: 130 very_small_sample, 12 small_sample, 30 exploratory. Это классификация количества тестов внутри конкретной metric cell, не вероятность и не доверительный интервал.
+- Исключено: 559 наблюдений с периодами вне поддерживаемого annual/point-in-time набора; 324 коротких непрерывных фрагмента без минимальных 2 обучающих точек + будущего факта; конфликтные municipality-year группы = 0; same-value duplicate rows = 0.
+- По сравнению MAE между baseline в 58 metric/horizon группах: last_value был лучшим в 26, mean_growth в 17, linear_trend в 13, ties в 2. Это не глобальный рейтинг модели: большинство метрик имеют очень малую/малую выборку, а показатели имеют разные единицы и экономический смысл.
+- Горизонт 1 имеет больше тестов; горизонты 2 и 3 представлены лишь пятью и двумя metric cells соответственно. Ни один общий процент MAPE не трактуется как универсальная точность системы.
+- Forecasting.jsx дополнен динамическим пояснением количества very-small/small/exploratory metric cells и числа исключённых периодов/коротких сегментов/конфликтов. Существующие сценарные коэффициенты и прогнозные значения не менялись.
+- Локально проверены npm test, npm run build и git diff --check: все успешно. GitHub Actions и Vercel Preview для итогового коммита ожидают отдельной проверки.
