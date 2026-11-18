@@ -325,7 +325,7 @@ test('annual backtest excludes quarterly, half-year, monthly, settlement and unv
   const annual = [2020, 2021, 2022].map((year, index) => ({
     municipality_id: 'm1', indicator_code: 'indicator', indicator_name: 'Indicator',
     unit: 'unit', reference_year: year, reference_period: 'annual',
-    geographic_level: 'municipality', verification_status: 'verified', value: 10 + index,
+    geographic_level: 'municipality', verification_status: 'verified', value: 10 + index, source_id: 'source-annual',
   }));
   const excluded = [
     { ...annual[0], reference_period: '2020-Q1' },
@@ -346,6 +346,7 @@ test('point-in-time series only compare the same calendar date', () => {
     municipality_id: 'm1', indicator_code: 'population', indicator_name: 'Population',
     unit: 'persons', reference_year: year, reference_period: year + '-01-01',
     geographic_level: 'municipality', verification_status: 'verified', value: 100 + index * 10,
+    source_id: 'source-point-in-time',
   }));
   rows.push({ ...rows[2], reference_period: '2024-07-01', value: 500 });
   const result = buildHistoricalBacktest(rows, { horizons: [1] });
@@ -360,6 +361,7 @@ test('missing years split a series and are never bridged by the backtest', () =>
     municipality_id: 'm1', indicator_code: 'indicator', indicator_name: 'Indicator',
     unit: 'unit', reference_year: year, reference_period: 'annual',
     geographic_level: 'municipality', verification_status: 'verified', value: 10 + index,
+    source_id: 'source-missing-year',
   }));
   const result = buildHistoricalBacktest(rows, { horizons: [1] });
   assert.equal(result.totalTestPredictions, 0);
@@ -405,6 +407,7 @@ test('indicator aliases and units are never combined into one validation series'
     municipality_id: 'm1', indicator_code: 'same_code', indicator_name: 'Original definition',
     unit: 'persons', reference_year: year, reference_period: 'annual',
     geographic_level: 'municipality', verification_status: 'verified', value: 10 + index,
+    source_id: 'source-original',
   }));
   const second = [2020, 2021, 2022].map((year, index) => ({
     ...first[index],
@@ -416,4 +419,27 @@ test('indicator aliases and units are never combined into one validation series'
   const distinctDefinitions = new Set(result.metrics.map((item) => item.indicatorName + '|' + item.unit));
   assert.deepEqual([...distinctDefinitions].sort(), ['Different definition|thousand persons', 'Original definition|persons']);
   assert.equal(result.eligibleSeriesGroups, 2);
+});
+
+test('historical backtest excludes observations without a source reference', () => {
+  const rows = [2020, 2021, 2022].map((year, index) => ({
+    municipality_id: 'm1', indicator_code: 'indicator', indicator_name: 'Indicator',
+    unit: 'unit', reference_year: year, reference_period: 'annual',
+    geographic_level: 'municipality', verification_status: 'verified', value: 10 + index,
+  }));
+  const missing = buildHistoricalBacktest(rows, { horizons: [1] });
+  assert.equal(missing.totalTestPredictions, 0);
+  assert.equal(missing.excluded.missingProvenance, 3);
+
+  const withSourceId = buildHistoricalBacktest(rows.map((row) => ({ ...row, source_id: 'catalogue-source' })), { horizons: [1] });
+  assert.ok(withSourceId.totalTestPredictions > 0);
+  assert.equal(withSourceId.excluded.missingProvenance, 0);
+
+  const withSourceUrl = buildHistoricalBacktest(rows.map((row) => ({ ...row, source_url: 'https://example.gov.ru/source' })), { horizons: [1] });
+  assert.ok(withSourceUrl.totalTestPredictions > 0);
+  assert.equal(withSourceUrl.excluded.missingProvenance, 0);
+
+  const invalidUrl = buildHistoricalBacktest(rows.map((row) => ({ ...row, source_url: 'javascript:alert(1)' })), { horizons: [1] });
+  assert.equal(invalidUrl.totalTestPredictions, 0);
+  assert.equal(invalidUrl.excluded.missingProvenance, 3);
 });

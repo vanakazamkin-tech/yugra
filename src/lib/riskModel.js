@@ -139,8 +139,18 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
   const availablePillarKeys = new Set(usable.map(pillarOf).filter(Boolean));
   const missingPillars = MODEL_PILLARS.filter((pillar) => !availablePillarKeys.has(pillar.key));
   const missingPillarTitles = missingPillars.map((pillar) => pillar.title);
+  // A green status needs source-backed, explicitly non-provisional latest
+  // observations in every pillar, not merely a directional numeric value.
+  const stableEligible = usable.filter((signal) => signal.latestSourcePresent === true
+    && signal.latestIsProvisional === false);
+  const stablePillarKeys = new Set(stableEligible.map(pillarOf).filter(Boolean));
+  const missingStablePillars = MODEL_PILLARS.filter((pillar) => !stablePillarKeys.has(pillar.key));
+  const missingStablePillarTitles = missingStablePillars.map((pillar) => pillar.title);
   const coverageNote = missingPillars.length
     ? ` Неполное покрытие: отсутствуют сопоставимые ряды по направлениям: ${missingPillarTitles.join(', ')}.`
+    : '';
+  const stableQualityNote = missingStablePillars.length
+    ? ` Недостаточно подтверждённых данных для зелёного статуса: нет актуальных непредварительных наблюдений с источником по направлениям: ${missingStablePillarTitles.join(', ')}.`
     : '';
   const affectedPillars = new Set(bad.map(pillarOf).filter(Boolean));
   // Provisional or source-less observations remain visible as warnings, but
@@ -176,7 +186,9 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
       typeof signal.latestIsProvisional !== 'boolean' || typeof signal.latestSourcePresent !== 'boolean').length,
     availablePillars: availablePillarKeys.size,
     coveragePillars: availablePillarKeys.size,
+    stableQualityPillars: stablePillarKeys.size,
     missingPillars: missingPillarTitles,
+    missingStablePillars: missingStablePillarTitles,
     pillarCounts,
     repeatedDeterioration,
     sharpChanges,
@@ -193,11 +205,11 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
   // A positive/green status is a system-wide conclusion. It is only allowed
   // when all six risk directions have at least one comparable, directional series.
   // Negative observed signals may still raise a warning with incomplete coverage.
-  if (bad.length === 0 && missingPillars.length > 0) {
+  if (bad.length === 0 && (missingPillars.length > 0 || missingStablePillars.length > 0)) {
     return {
       ...common, level: 'insufficient',
-      explanation: `Нельзя подтвердить отсутствие рисков: сопоставимые ряды с однозначным направлением доступны только по ${availablePillarKeys.size} из ${MODEL_PILLARS.length} направлений.${coverageNote} Для зелёного статуса требуется покрытие всех шести направлений.${conflictNote}`,
-      reasons: [`Недостаточное покрытие: ${availablePillarKeys.size} из ${MODEL_PILLARS.length} направлений`, ...missingPillarTitles.map((title) => `Нет данных: ${title}`), ...conflictReasons],
+      explanation: `Нельзя подтвердить отсутствие рисков: сопоставимые ряды с однозначным направлением доступны по ${availablePillarKeys.size} из ${MODEL_PILLARS.length} направлений, а подтверждённые актуальные наблюдения с источником и без предварительного статуса — по ${stablePillarKeys.size} из ${MODEL_PILLARS.length} направлений.${coverageNote}${stableQualityNote} Для зелёного статуса требуются все шесть направлений и явные метаданные качества последнего наблюдения.${conflictNote}`,
+      reasons: [`Сопоставимое покрытие: ${availablePillarKeys.size} из ${MODEL_PILLARS.length} направлений`, ...missingPillarTitles.map((title) => `Нет сопоставимого ряда: ${title}`), ...missingStablePillarTitles.map((title) => `Нет подтверждённого актуального наблюдения с источником: ${title}`), ...conflictReasons],
     };
   }
   if (criticalBad.length >= settings.criticalSignals && criticalAffectedPillars.size >= settings.criticalPillars) {

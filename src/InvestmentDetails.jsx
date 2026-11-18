@@ -6,6 +6,7 @@ import { fetchMunicipalities } from './lib/municipalities';
 const UnifiedRiskForecast = lazy(() => import('./components/UnifiedRiskForecast'));
 const Forecasting = lazy(() => import('./components/Forecasting'));
 import { FALLBACK_DATA_SOURCES, fetchOfficialData, DATA_CATEGORY_LABELS, DATA_STATUS_LABELS } from './lib/officialData';
+import { isHttpSourceUrl } from './lib/sourceUrl';
 
 const Icon = ({ name, className = '' }) => {
   const paths = {
@@ -943,10 +944,10 @@ export const InvestmentDetails = () => {
       && item.geographic_level === geographyLevel
       && item.municipality_id != null
       && String(item.municipality_id).trim() !== ''
-      && (!item.unit || item.unit === series.unit)
+      && item.unit === series.unit
       && numericValue(item.value) != null
     ).forEach((item) => {
-      const periodKey = `${item.reference_year}|${item.reference_period || 'annual'}|${item.unit || series.unit}`;
+      const periodKey = `${item.reference_year}|${item.reference_period || 'annual'}|${item.unit}`;
       if (!periods.has(periodKey)) periods.set(periodKey, new Set());
       periods.get(periodKey).add(item.municipality_id);
     });
@@ -958,7 +959,8 @@ export const InvestmentDetails = () => {
     : officialComparisonSeriesOptions[0]?.code || selectedOfficialComparisonCode;
 
   const officialComparisonPeriods = useMemo(() => {
-    const geographyLevel = OFFICIAL_COMPARISON_SERIES.find((series) => series.code === effectiveOfficialComparisonCode)?.geographicLevel || 'municipality';
+    const comparisonConfig = OFFICIAL_COMPARISON_SERIES.find((series) => series.code === effectiveOfficialComparisonCode) || OFFICIAL_COMPARISON_SERIES[0];
+    const geographyLevel = comparisonConfig.geographicLevel || 'municipality';
     const seen = new Map();
     officialIndicators.filter((item) =>
       item.indicator_code === effectiveOfficialComparisonCode
@@ -966,9 +968,10 @@ export const InvestmentDetails = () => {
       && item.geographic_level === geographyLevel
       && item.municipality_id != null
       && String(item.municipality_id).trim() !== ''
+      && item.unit === comparisonConfig.unit
       && numericValue(item.value) != null
     ).forEach((item) => {
-      const key = String(item.reference_year) + '|' + String(item.reference_period || 'annual') + '|' + String(item.unit || '');
+      const key = String(item.reference_year) + '|' + String(item.reference_period || 'annual') + '|' + String(item.unit);
       if (!seen.has(key)) seen.set(key, {
         key,
         year: Number(item.reference_year),
@@ -1006,8 +1009,8 @@ export const InvestmentDetails = () => {
       && item.geographic_level === geographyLevel
       && item.municipality_id != null
       && String(item.municipality_id).trim() !== ''
-      && `${item.reference_year}|${item.reference_period || 'annual'}|${item.unit || ''}` === effectiveOfficialComparisonPeriod
-      && (!item.unit || item.unit === officialComparisonConfig.unit)
+      && `${item.reference_year}|${item.reference_period || 'annual'}|${item.unit}` === effectiveOfficialComparisonPeriod
+      && item.unit === officialComparisonConfig.unit
       && numericValue(item.value) != null
     ).map((item) => ({
       ...item,
@@ -1055,6 +1058,8 @@ export const InvestmentDetails = () => {
           && year >= 1900
           && year <= new Date().getFullYear() + 1
           && numericValue(item.value) != null
+          && String(item.unit || '').trim() !== ''
+          && isHttpSourceUrl(item.source_url)
           && String(item.indicator_code || '').trim() !== '';
       })
       .slice()
@@ -1247,7 +1252,66 @@ export const InvestmentDetails = () => {
       setReportTemplateSaved(true);
     } catch { setReportTemplateSaved(false); }
   };
-  const exportReportCsv = () => downloadCsv(reportItems, reportPrintFields, 'yugra-analytical-report');
+  const exportReportCsv = () => {
+    const headers = [
+      'Раздел',
+      'Территория',
+      'Географический уровень',
+      'Группа',
+      'Статус данных',
+      ...reportPrintFields.map((key) => METRIC_BY_KEY[key]?.label || key),
+      'Официальный показатель',
+      'Значение',
+      'Единица измерения',
+      'Период',
+      'Источник ID',
+      'URL источника',
+      'Статус проверки',
+      'Примечание',
+    ];
+    const demoRows = reportItems.map((item) => [
+      'Демонстрационные показатели',
+      item.name,
+      'Муниципальное образование',
+      `Группа ${item.group2024}`,
+      'Демонстрационные значения — не официальная статистика',
+      ...reportPrintFields.map((key) => metricText(item, key)),
+      '', '', '', '', '', '', '', '',
+    ]);
+    const officialRows = (reportIncludeOfficialData ? reportOfficialIndicators : []).map((item) => {
+      const municipality = municipalities.find((entry) => entry.id === item.municipality_id);
+      const geography = item.geographic_level === 'settlement'
+        ? 'Населённый пункт'
+        : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
+      return [
+        'Проверенные официальные наблюдения',
+        item.geographic_name || municipality?.name || item.municipality_id,
+        geography,
+        '',
+        'Проверенные официальные данные',
+        ...reportPrintFields.map(() => ''),
+        item.indicator_name,
+        item.value,
+        item.unit,
+        formatReferencePeriod(item),
+        item.source_id || '',
+        item.source_url || '',
+        item.verification_status,
+        item.notes || '',
+      ];
+    });
+    const content = '\uFEFF' + [headers, ...demoRows, ...officialRows]
+      .map((row) => row.map(csvEscape).join(';'))
+      .join('\r\n');
+    const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8;' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'yugra-analytical-report.csv';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
 
   const renderTableRows = (items) => items.map((m, index) => {
     const population = populationByMunicipality.get(m.id);

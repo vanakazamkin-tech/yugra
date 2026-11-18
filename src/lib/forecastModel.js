@@ -298,6 +298,7 @@ export function buildHistoricalBacktest(indicators = [], options = {}) {
   const excluded = {
     notVerified: 0,
     nonMunicipal: 0,
+    missingProvenance: 0,
     unsupportedPeriod: 0,
     invalidValue: 0,
     duplicateSameValueRows: 0,
@@ -318,6 +319,13 @@ export function buildHistoricalBacktest(indicators = [], options = {}) {
     const period = backtestPeriod(item);
     if (!period) {
       excluded.unsupportedPeriod += 1;
+      continue;
+    }
+    const sourceId = String(item?.source_id ?? '').trim();
+    const sourceUrl = typeof item?.source_url === 'string' ? item.source_url.trim() : '';
+    const hasSourceUrl = /^https?:\/\/\S+$/i.test(sourceUrl);
+    if (!sourceId && !hasSourceUrl) {
+      excluded.missingProvenance += 1;
       continue;
     }
     const value = backtestNumber(item?.value);
