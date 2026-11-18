@@ -145,15 +145,15 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
   const affectedPillars = new Set(bad.map(pillarOf).filter(Boolean));
   // Provisional or source-less observations remain visible as warnings, but
   // cannot independently qualify a municipality for the highest alert level.
-  const criticalBad = bad.filter((signal) => signal.latestIsProvisional !== true
-    && signal.latestSourcePresent !== false);
+  const criticalBad = bad.filter((signal) => signal.latestIsProvisional === false
+    && signal.latestSourcePresent === true);
   const criticalAffectedPillars = new Set(criticalBad.map(pillarOf).filter(Boolean));
   const criticalGateBlocked = bad.length >= settings.criticalSignals
     && affectedPillars.size >= settings.criticalPillars
     && (criticalBad.length < settings.criticalSignals
       || criticalAffectedPillars.size < settings.criticalPillars);
   const criticalGateReason = criticalGateBlocked
-    ? ' Красный статус не присвоен: часть негативных сигналов основана на предварительных наблюдениях или не имеет источника; они остаются в предупреждениях.'
+    ? ' Красный статус не присвоен: часть негативных сигналов основана на предварительных наблюдениях, не имеет подтверждённого источника или не содержит явных метаданных качества; они остаются в предупреждениях.'
     : '';
   const pillarCounts = Object.fromEntries([...affectedPillars].map((key) => [
     key, bad.filter((signal) => pillarOf(signal) === key).length,
@@ -171,7 +171,9 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
     criticalEvidenceCount: criticalBad.length,
     criticalAffectedPillars: criticalAffectedPillars.size,
     provisionalAdverseCount: bad.filter((signal) => signal.latestIsProvisional === true).length,
-    sourceMissingAdverseCount: bad.filter((signal) => signal.latestSourcePresent === false).length,
+    sourceMissingAdverseCount: bad.filter((signal) => signal.latestSourcePresent !== true).length,
+    criticalQualityMetadataUnknownCount: bad.filter((signal) =>
+      typeof signal.latestIsProvisional !== 'boolean' || typeof signal.latestSourcePresent !== 'boolean').length,
     availablePillars: availablePillarKeys.size,
     coveragePillars: availablePillarKeys.size,
     missingPillars: missingPillarTitles,
@@ -244,11 +246,15 @@ export function buildRiskAuditRows(municipalityAssessments = []) {
         ...(latest.source_url ? [latest.source_url] : []),
       ].filter(Boolean))];
       const sourcePresent = sourceIds.length > 0 || sourceUrls.length > 0;
-      const criticalEligible = sourcePresent && signal.latestIsProvisional !== true;
-      const criticalEligibilityReason = !sourcePresent
-        ? 'Нет источника у последнего наблюдения'
-        : signal.latestIsProvisional
-          ? 'Последнее наблюдение предварительное/оценочное'
+      const criticalEligible = sourcePresent
+        && signal.latestSourcePresent === true
+        && signal.latestIsProvisional === false;
+      const criticalEligibilityReason = !sourcePresent || signal.latestSourcePresent !== true
+        ? 'Нет подтверждённого источника у последнего наблюдения'
+        : signal.latestIsProvisional !== false
+          ? signal.latestIsProvisional === true
+            ? 'Последнее наблюдение предварительное/оценочное'
+            : 'Не определён статус предварительности последнего наблюдения'
           : '';
       const inputCodes = [...new Set((latest.input_indicator_codes || []).map(String))];
       const sharedInputCodes = new Set();
