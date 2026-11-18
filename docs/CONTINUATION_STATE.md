@@ -7,7 +7,9 @@
 - **Исправление:** selector теперь fail-closed требует явную единицу и ссылку на первоисточник; строки без них исключаются.
 - **Regression:** `scripts/test-report-official-data-gates.mjs` проверяет оба обязательных provenance gate.
 - **Затронутые файлы:** `src/InvestmentDetails.jsx`, `scripts/test-report-official-data-gates.mjs`, `docs/CONTINUATION_STATE.md`.
-- **Проверки:** предыдущий exact HEAD прошёл оба CI jobs; новый HEAD ожидает GitHub Actions. Локальные npm-команды не выполнялись.
+- **Checkpoint commit:** `198481438592424cc6642dc7113493896e4f0fa1`.
+- **Проверки exact HEAD:** GitHub Actions run [44221547413](https://github.com/vanakazamkin-tech/yugra/actions/runs/44221547413) завершился success: `build` и `data-migrations-integration` оба success. Build включает официальный comparison gate, report official-data gate и production bundle; integration job завершил read-only audit disposable schema и cleanup.
+- **Vercel:** check остаётся failure из-за build rate limit (retry in 24 hours); deployment не был создан. Локальные npm-команды не выполнялись.
 - **Production:** Supabase и Production deployment не менялись.
 - **Следующее действие:** проверить CI exact HEAD; затем продолжить ручные PDF/CSV и desktop/mobile smoke gates, если доступен Preview. Vercel build-rate-limit не обходить созданием production deployment.
 
