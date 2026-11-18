@@ -1,3 +1,18 @@
+## Checkpoint — Release plan consolidated into active code PR (2026-11-18, UTC+05:00)
+
+- **Current workstream:** Release 1.0 acceptance on `fix/risk-stable-provenance-gate-2026-11-18`, PR #27 (open / Draft).
+- **HEAD before this checkpoint:** `6b0c365bce9dcc6936b7d7d188604c24f2588b31` — Release 1.0 plan has now been copied from the stale PR #26 branch into the active PR #27 branch and updated with the observed browser QA evidence.
+- **Consolidated plan:** `docs/RELEASE_1_0_PLAN_2026-11-20.md` is present on the active code branch; the plan keeps remaining passport-by-passport review, manual data-comparability review, human visual review of PDF/screenshots and Production deployment unchecked. Verified manual/functional items are marked with exact evidence. PR #26 remains open / Draft and diverged from the older base; do not merge its old continuation state over this newer branch. Its documentation is now carried forward in PR #27.
+- **Previous browser acceptance tested:** exact Preview HEAD `cab70d7c13718b0cfc5f5034dba3a808335f62c1`, deployment `dpl_DEAsrWcwZFzoq19TkUHvSEkUKCm9`. Results are recorded in the immediately preceding checkpoint and in the new Release 1.0 plan.
+- **Acceptance result:** all 9 main sections opened on desktop and at 390×844; no blank pages or uncaught runtime exceptions. Map exposes 22 targets and a selected municipal passport; comparison supports 2/4 selections; risk monitor reports `Недостаточно данных` for all 22 municipalities at zero coverage (0/6), not green; 1/2/3-year scenario controls work; forecast CSV, demo/official report CSV and Chromium PDF were downloaded and inspected as described in plan.
+- **Resilience:** simulated REST `200 []` (9 requests) and `503` (33 requests) left app navigable with no uncaught page errors. Empty data uses built-in forecast templates; outage state explicitly warns that verified observations were not received. Simulation intercepted browser requests only; no Supabase writes/DDL/migrations.
+- **Mobile:** all nine sections opened at 390×844; document/body remain 390 px wide, main 370 px, no viewport-level horizontal overflow. Table scroll regions and horizontally scrollable navigation remain intentionally contained.
+- **Release boundary:** exact CI before documentation consolidation passed both `build` and `data-migrations-integration` on runs `44284698035` and `44284710477`. The plan commit `6b0c365...` has triggered a fresh GitHub Actions run `44288028024` (queued at checkpoint time) and Vercel deployment `dpl_9mwrzbsCmFiPFU6JCZXhGr7SeNrw` (BUILDING). Do not transfer earlier success to the new HEAD; verify new exact-SHA jobs and Preview before accepting this documentation update.
+- **Production:** no production deployment, Supabase writes, schema changes or migrations. Current status remains `IN_PROGRESS`; visual/owner acceptance and release authorization are outstanding.
+- **Next action:** verify CI and Vercel on the new checkpoint commit; then update PR #27 description with acceptance evidence and exact new SHA. Keep Draft until human visual review/owner approval; only then consider merge and separately authorized Production deployment.
+
+---
+
 ## Checkpoint — interactive Preview acceptance, Release 1.0 (2026-11-18, UTC+05:00)
 
 - **Status:** `IN_PROGRESS` — desktop/mobile functional browser acceptance and export/fail-safe checks completed on Preview exact HEAD. Human visual review of screenshots/PDF pages and owner approval remain outstanding; this checkpoint is not a Production release.
