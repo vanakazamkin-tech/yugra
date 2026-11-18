@@ -1,16 +1,17 @@
-## Checkpoint — main sync and release P0 gates (2026-11-18 07:08 UTC+05:00)
+## Checkpoint — main sync and release P0 gates (2026-11-18 07:12 UTC+05:00)
 
 - **Статус:** `IN_PROGRESS` — исправления provenance в risk/comparison/report опубликованы; exact-HEAD CI зелёный.
 - **Ветка / PR:** `fix/risk-stable-provenance-gate-2026-11-18`, PR #27 — open / Draft.
-- **Последний проверенный HEAD до sync:** `da8537ef87a7dbd155ed7722fe04cac5130de73d`.
-- **GitHub Actions exact HEAD:** run [44221621360](https://github.com/vanakazamkin-tech/yugra/actions/runs/44221621360) — success; `build` и `data-migrations-integration` оба success. Проверка включает unit tests, official comparison gate, report provenance gate, production bundle, migration integration/idempotency и disposable-schema read-only audit.
+- **Последний проверенный HEAD:** `abf0486d367a214906fa1235ee84b83ae7f743b2`.
+- **GitHub Actions exact HEAD:** run [44221747108](https://github.com/vanakazamkin-tech/yugra/actions/runs/44221747108) — success; `build` и `data-migrations-integration` оба success. Проверка включает unit tests, official comparison gate, report provenance gate, production bundle, migration integration/idempotency и disposable-schema read-only audit.
 - **Vercel:** status failure по внешнему build rate limit (retry in 24 hours); Preview для нового SHA не создан. Production не затронут.
 - **Синхронизация main:** main HEAD `4cb1171faf0c4e4568bc16226178730f5d04a9f5` содержит PR #28 с правилами DEVELOPMENT FIRST. Этот commit включён в рабочую ветку как второй parent merge commit; PR больше не должен отставать от main.
 - **Merge checkpoint commit:** `7bfe67843674b98c1b4a5fa68ec14428703f5245`; проверка compare: 14 commits ahead, 0 behind; PR mergeable=true.
 - **Кодовые изменения текущего этапа:** точные единицы на всех этапах official comparison; отчётный official selector требует unit и source URL; regression tests обновлены.
 - **Затронутые файлы:** `AGENTS.md`, `src/InvestmentDetails.jsx`, `scripts/test-official-comparison-gates.mjs`, `scripts/test-report-official-data-gates.mjs`, `docs/CONTINUATION_STATE.md`.
 - **Production:** Supabase read-only не запускался в этом этапе; никаких изменений БД, миграций или production deployment.
-- **Следующее действие:** проверить CI на merge checkpoint; затем продолжить только оставшиеся release gates — ручной PDF/CSV и desktop/mobile smoke-test. Не обходить Vercel rate limit новым production deployment.
+- **PR #27:** mergeable=true, 14 commits ahead / 0 behind current main; остаётся Draft до ручных gates.
+- **Следующее действие:** после снятия Vercel build rate limit создать Preview для exact code HEAD и выполнить desktop/mobile smoke-test, сохранить/открыть PDF и CSV, проверить страницы, таблицы и provenance. Если Preview недоступен, отметить ручные gates BLOCKED; не обходить ограничение production deployment.
 
 ---
 
