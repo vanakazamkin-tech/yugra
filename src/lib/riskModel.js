@@ -42,6 +42,18 @@ export function parseRiskPeriod(point = {}) {
   if (quarter) return { year, frequency: 'quarter', slot: Number(quarter[1]) };
   const half = period.match(/^(?:\d{4}[-_\s]?)?H([12])$/i);
   if (half) return { year, frequency: 'half', slot: Number(half[1]) };
+  const month = period.match(/^\d{4}-(0[1-9]|1[0-2])$/);
+  if (month) return { year, frequency: 'month', slot: Number(month[1]) };
+  const pointInTime = period.match(/^(\d{4})-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/);
+  if (pointInTime) {
+    const monthNumber = Number(pointInTime[2]);
+    const dayNumber = Number(pointInTime[3]);
+    const calendarDate = new Date(Date.UTC(year, monthNumber - 1, dayNumber));
+    if (calendarDate.getUTCFullYear() !== year
+      || calendarDate.getUTCMonth() + 1 !== monthNumber
+      || calendarDate.getUTCDate() !== dayNumber) return null;
+    return { year, frequency: 'point_in_time', slot: monthNumber * 100 + dayNumber };
+  }
   if (/^(?:annual|year|год|годовой|\d{4})$/i.test(period)) return { year, frequency: 'annual', slot: 0 };
   return null;
 }
@@ -70,7 +82,7 @@ export function countConsecutiveAdverseIntervals(points = [], direction = 'conte
 export const DEFAULT_RISK_THRESHOLDS = Object.freeze({
   minimumUsable: 2,
   criticalSignals: 3,
-  criticalPillars: 2,
+  criticalPillars: 3,
   sharpChangePercent: 10,
 });
 
@@ -118,8 +130,31 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
   const collapsed = collapseRiskSignals(signals);
   const usable = collapsed.usable;
   const bad = usable.filter((signal) => signal.adverse === true);
-  const pillarOf = (signal) => MODEL_PILLAR_BY_SERIES[signal.pillar?.key] || signal.pillar?.key;
+  const canonicalPillarKeys = new Set(MODEL_PILLARS.map((pillar) => pillar.key));
+  const pillarOf = (signal) => {
+    const key = signal.pillar?.key;
+    const mapped = MODEL_PILLAR_BY_SERIES[key] || key;
+    return canonicalPillarKeys.has(mapped) ? mapped : null;
+  };
+  const availablePillarKeys = new Set(usable.map(pillarOf).filter(Boolean));
+  const missingPillars = MODEL_PILLARS.filter((pillar) => !availablePillarKeys.has(pillar.key));
+  const missingPillarTitles = missingPillars.map((pillar) => pillar.title);
+  const coverageNote = missingPillars.length
+    ? ` Неполное покрытие: отсутствуют сопоставимые ряды по направлениям: ${missingPillarTitles.join(', ')}.`
+    : '';
   const affectedPillars = new Set(bad.map(pillarOf).filter(Boolean));
+  // Provisional or source-less observations remain visible as warnings, but
+  // cannot independently qualify a municipality for the highest alert level.
+  const criticalBad = bad.filter((signal) => signal.latestIsProvisional === false
+    && signal.latestSourcePresent === true);
+  const criticalAffectedPillars = new Set(criticalBad.map(pillarOf).filter(Boolean));
+  const criticalGateBlocked = bad.length >= settings.criticalSignals
+    && affectedPillars.size >= settings.criticalPillars
+    && (criticalBad.length < settings.criticalSignals
+      || criticalAffectedPillars.size < settings.criticalPillars);
+  const criticalGateReason = criticalGateBlocked
+    ? ' Красный статус не присвоен: часть негативных сигналов основана на предварительных наблюдениях, не имеет подтверждённого источника или не содержит явных метаданных качества; они остаются в предупреждениях.'
+    : '';
   const pillarCounts = Object.fromEntries([...affectedPillars].map((key) => [
     key, bad.filter((signal) => pillarOf(signal) === key).length,
   ]));
@@ -133,6 +168,15 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
     usableCount: usable.length,
     adverseCount: bad.length,
     affectedPillars: affectedPillars.size,
+    criticalEvidenceCount: criticalBad.length,
+    criticalAffectedPillars: criticalAffectedPillars.size,
+    provisionalAdverseCount: bad.filter((signal) => signal.latestIsProvisional === true).length,
+    sourceMissingAdverseCount: bad.filter((signal) => signal.latestSourcePresent !== true).length,
+    criticalQualityMetadataUnknownCount: bad.filter((signal) =>
+      typeof signal.latestIsProvisional !== 'boolean' || typeof signal.latestSourcePresent !== 'boolean').length,
+    availablePillars: availablePillarKeys.size,
+    coveragePillars: availablePillarKeys.size,
+    missingPillars: missingPillarTitles,
     pillarCounts,
     repeatedDeterioration,
     sharpChanges,
@@ -142,29 +186,143 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
   if (usable.length < settings.minimumUsable) {
     return {
       ...common, level: 'insufficient',
-      explanation: `Недостаточно данных: оцениваемых рядов ${usable.length}, требуется не менее ${settings.minimumUsable}. Неопределённые и контекстные показатели не учитываются как положительные.${conflictNote}`,
+      explanation: `Недостаточно данных: оцениваемых рядов ${usable.length}, требуется не менее ${settings.minimumUsable}; покрыто ${availablePillarKeys.size} из ${MODEL_PILLARS.length} направлений. Неопределённые и контекстные показатели не учитываются как положительные.${coverageNote}${conflictNote}`,
       reasons: ['Недостаточное покрытие показателями с однозначным направлением', ...conflictReasons],
     };
   }
-  if (bad.length >= settings.criticalSignals && affectedPillars.size >= settings.criticalPillars) {
+  // A positive/green status is a system-wide conclusion. It is only allowed
+  // when all six risk directions have at least one comparable, directional series.
+  // Negative observed signals may still raise a warning with incomplete coverage.
+  if (bad.length === 0 && missingPillars.length > 0) {
+    return {
+      ...common, level: 'insufficient',
+      explanation: `Нельзя подтвердить отсутствие рисков: сопоставимые ряды с однозначным направлением доступны только по ${availablePillarKeys.size} из ${MODEL_PILLARS.length} направлений.${coverageNote} Для зелёного статуса требуется покрытие всех шести направлений.${conflictNote}`,
+      reasons: [`Недостаточное покрытие: ${availablePillarKeys.size} из ${MODEL_PILLARS.length} направлений`, ...missingPillarTitles.map((title) => `Нет данных: ${title}`), ...conflictReasons],
+    };
+  }
+  if (criticalBad.length >= settings.criticalSignals && criticalAffectedPillars.size >= settings.criticalPillars) {
     return {
       ...common, level: 'critical',
-      explanation: `Зафиксировано ${bad.length} негативных сигналов в ${affectedPillars} направлениях; достигнуты оба настраиваемых порога повышенного внимания.${conflictNote}`,
-      reasons: [`Негативных сигналов: ${bad.length} из требуемых ${settings.criticalSignals}`, `Затронуто направлений: ${affectedPillars.size} из требуемых ${settings.criticalPillars}`, ...conflictReasons],
+      explanation: `Зафиксировано ${criticalBad.length} негативных непредварительных сигналов с указанными источниками в ${criticalAffectedPillars.size} направлениях; достигнуты оба настраиваемых порога повышенного внимания.${coverageNote}${conflictNote}`,
+      reasons: [`Непредварительных сигналов с источниками: ${criticalBad.length} из требуемых ${settings.criticalSignals}`, `Затронуто направлений по таким сигналам: ${criticalAffectedPillars.size} из требуемых ${settings.criticalPillars}`, ...(missingPillarTitles.map((title) => `Непроверено направление: ${title}`)), ...conflictReasons],
     };
   }
   if (bad.length > 0) {
     return {
       ...common, level: 'watch',
-      explanation: `Есть ${bad.length} негативных сигнал(а/ов) в ${affectedPillars} направлениях, но критерий одновременного межотраслевого ухудшения не достигнут.${conflictNote}`,
-      reasons: [`Негативных сигналов: ${bad.length}`, `Затронуто направлений: ${affectedPillars.size}`, ...conflictReasons],
+      explanation: `Есть ${bad.length} негативных сигнал(а/ов) в ${affectedPillars} направлениях, но критерий одновременного межотраслевого ухудшения на непредварительных данных с источниками не достигнут.${criticalGateReason}${coverageNote}${conflictNote}`,
+      reasons: [`Негативных сигналов: ${bad.length}`, `Затронуто направлений: ${affectedPillars.size}`, ...(criticalGateBlocked ? [`Красный порог учитывает только непредварительные сигналы с источниками: ${criticalBad.length} сигналов / ${criticalAffectedPillars.size} направлений`] : []), ...(missingPillarTitles.map((title) => `Непроверено направление: ${title}`)), ...conflictReasons],
     };
   }
   return {
     ...common, level: 'stable',
-    explanation: `Среди ${usable.length} оцениваемых рядов негативных изменений не выявлено. Это не подтверждает отсутствие рисков в направлениях без данных или с контекстными показателями.${conflictNote}`,
-    reasons: ['Негативных сигналов среди оцениваемых рядов нет', ...conflictReasons],
+    explanation: `По всем шести направлениям проверены сопоставимые ряды: среди ${usable.length} оцениваемых рядов негативных изменений не выявлено.${conflictNote}`,
+    reasons: ['Негативных сигналов среди оцениваемых рядов нет; покрыты все шесть направлений', ...conflictReasons],
   };
+}
+
+export function buildRiskAuditRows(municipalityAssessments = []) {
+  const output = [];
+  for (const assessment of Array.isArray(municipalityAssessments) ? municipalityAssessments : []) {
+    const series = Array.isArray(assessment?.own) ? assessment.own : [];
+    const usable = Array.isArray(assessment?.usable) ? assessment.usable : [];
+    const includedKeys = new Set(usable.map((signal) => signal.key).filter(Boolean));
+    const conflicts = new Set((assessment?.conflictingSignalFamilies || []).map(String));
+    const familyCounts = new Map();
+    series.forEach((signal) => {
+      const family = String(signal.signalFamily || signal.code || signal.key || '');
+      familyCounts.set(family, (familyCounts.get(family) || 0) + 1);
+    });
+    for (const signal of series) {
+      const family = String(signal.signalFamily || signal.code || signal.key || '');
+      const latest = signal.latest || {};
+      const previous = signal.previous || {};
+      const sourceIds = [...new Set([
+        ...(Array.isArray(latest.source_ids) ? latest.source_ids : []),
+        ...(latest.source_id ? [latest.source_id] : []),
+      ].filter(Boolean))];
+      const sourceUrls = [...new Set([
+        ...(Array.isArray(latest.source_urls) ? latest.source_urls : []),
+        ...(latest.source_url ? [latest.source_url] : []),
+      ].filter(Boolean))];
+      const sourcePresent = sourceIds.length > 0 || sourceUrls.length > 0;
+      const criticalEligible = sourcePresent
+        && signal.latestSourcePresent === true
+        && signal.latestIsProvisional === false;
+      const criticalEligibilityReason = !sourcePresent || signal.latestSourcePresent !== true
+        ? 'Нет подтверждённого источника у последнего наблюдения'
+        : signal.latestIsProvisional !== false
+          ? signal.latestIsProvisional === true
+            ? 'Последнее наблюдение предварительное/оценочное'
+            : 'Не определён статус предварительности последнего наблюдения'
+          : '';
+      const inputCodes = [...new Set((latest.input_indicator_codes || []).map(String))];
+      const sharedInputCodes = new Set();
+      const sharedWith = [];
+      for (const other of series) {
+        if (other === signal) continue;
+        const otherCodes = new Set((other.latest?.input_indicator_codes || []).map(String));
+        const overlap = inputCodes.filter((code) => otherCodes.has(code));
+        if (overlap.length) {
+          overlap.forEach((code) => sharedInputCodes.add(code));
+          sharedWith.push(String(other.name || other.code || other.key || 'Другой показатель'));
+        }
+      }
+      const familyConflict = conflicts.has(family);
+      const included = includedKeys.has(signal.key);
+      let exclusionReason = '';
+      if (familyConflict) {
+        exclusionReason = 'Конфликт направлений у разных определений одного семейства; семейство исключено';
+      } else if (signal.direction === 'context') {
+        exclusionReason = 'Контекстное направление: методика не подтверждает монотонную связь с устойчивостью';
+      } else if (!['higher', 'lower'].includes(signal.direction)) {
+        exclusionReason = 'Не определено направление изменения';
+      } else if (signal.conflictAfterLatest) {
+        exclusionReason = 'Есть более новое конфликтующее наблюдение; текущий сигнал подавлен';
+      } else if (signal.adverse == null) {
+        exclusionReason = signal.excludedConflictingPeriods > 0
+          ? 'Нет сопоставимой пары после исключения конфликтующих значений'
+          : 'Нет соседней сопоставимой истории по периоду, частоте или году';
+      } else if (!included) {
+        exclusionReason = 'Схлопнут в семейство зависимых/дублирующих сигналов; учитывается один представитель';
+      }
+      const qualityNotes = [];
+      if (!sourcePresent) qualityNotes.push('У последнего наблюдения не указан источник');
+      if (signal.latestIsProvisional) qualityNotes.push('Последнее наблюдение помечено источником как предварительная оценка/неокончательный итог');
+      if (signal.excludedConflictingPeriods > 0) qualityNotes.push('Из истории исключено конфликтующих периодов: ' + signal.excludedConflictingPeriods);
+      if (sharedInputCodes.size) qualityNotes.push('Есть общие исходные компоненты с другими показателями; это пересечение входов, а не доказательство математической тождественности');
+      output.push({
+        municipalityId: assessment.id ?? assessment.municipalityId ?? '',
+        municipality: assessment.name ?? assessment.municipalityName ?? String(assessment.id ?? ''),
+        code: signal.code || '',
+        name: signal.name || '',
+        inclusionStatus: exclusionReason ? 'excluded' : signal.adverse === true ? 'negative' : 'no_adverse',
+        includedInCount: !exclusionReason,
+        criticalEligible,
+        criticalEligibilityReason,
+        direction: signal.direction || 'unknown',
+        family,
+        familyMembers: familyCounts.get(family) || 1,
+        pillar: signal.pillar?.title || signal.pillar?.key || '',
+        previousValue: previous.numericValue ?? '',
+        previousPeriod: previous.reference_period || previous.reference_year || '',
+        currentValue: latest.numericValue ?? '',
+        currentPeriod: latest.reference_period || latest.reference_year || '',
+        change: signal.change ?? '',
+        unit: signal.unit || '',
+        inputIndicatorCodes: inputCodes,
+        sharedInputCodes: [...sharedInputCodes],
+        sharedWith: [...new Set(sharedWith)],
+        exclusionReason,
+        qualityNotes,
+        confidenceLabel: signal.confidenceLabel || '',
+        confidenceReason: signal.confidenceReason || '',
+        sourceIds,
+        sourceUrls,
+      });
+    }
+  }
+  return output;
 }
 
 export function buildRiskModel(municipalities = [], series = []) {
@@ -230,7 +388,6 @@ export function deriveMunicipalIndicators(rows = []) {
     && Number.isInteger(Number(row.reference_year))
   );
   const grouped = new Map();
-  const populationByMunicipalityYear = new Map();
   for (const row of verified) {
     const key = rowKey(row);
     if (!grouped.has(key)) grouped.set(key, { rows: {}, ambiguousCodes: new Set() });
@@ -239,7 +396,12 @@ export function deriveMunicipalIndicators(rows = []) {
     if (!bucket.ambiguousCodes.has(code)) {
       const existing = bucket.rows[code];
       if (!existing) bucket.rows[code] = row;
-      else if (Number(existing.value) !== Number(row.value) || !sameUnit(existing, row)) {
+      else if (Number(existing.value) !== Number(row.value)
+        || !sameUnit(existing, row)
+        || String(existing.indicator_name ?? '').trim() !== String(row.indicator_name ?? '').trim()) {
+        // Same code and value do not prove the same statistical definition.
+        // If the source wording changes within a municipality-period bucket,
+        // quarantine that code rather than derive ratios from an ambiguous row.
         delete bucket.rows[code];
         bucket.ambiguousCodes.add(code);
       } else {
@@ -256,10 +418,24 @@ export function deriveMunicipalIndicators(rows = []) {
         bucket.rows[code] = { ...existing, source_ids: sourceIds, source_urls: sourceUrls };
       }
     }
-    if (row.indicator_code === 'population_municipality') {
-      const populationKey = String(row.municipality_id) + '|' + String(row.reference_year);
-      if (!populationByMunicipalityYear.has(populationKey)) populationByMunicipalityYear.set(populationKey, []);
-      populationByMunicipalityYear.get(populationKey).push(row);
+  }
+
+  const populationByMunicipalityYear = new Map();
+  const populationByMunicipalityDateSeries = new Map();
+  for (const bucket of grouped.values()) {
+    const population = bucket.rows.population_municipality;
+    if (!population || Number(population.value) <= 0) continue;
+    const municipalityYearKey = String(population.municipality_id) + '|' + String(population.reference_year);
+    if (!populationByMunicipalityYear.has(municipalityYearKey)) populationByMunicipalityYear.set(municipalityYearKey, []);
+    populationByMunicipalityYear.get(municipalityYearKey).push(population);
+
+    const parsedPeriod = parseRiskPeriod(population);
+    // The source currently supplies 1 January snapshots. Keep a same-date
+    // comparison key so future point-in-time releases cannot be mixed silently.
+    if (parsedPeriod?.frequency === 'point_in_time' && parsedPeriod.slot === 101) {
+      const seriesKey = String(population.municipality_id) + '|0101|' + String(population.unit || '');
+      if (!populationByMunicipalityDateSeries.has(seriesKey)) populationByMunicipalityDateSeries.set(seriesKey, []);
+      populationByMunicipalityDateSeries.get(seriesKey).push(population);
     }
   }
 
@@ -286,6 +462,9 @@ export function deriveMunicipalIndicators(rows = []) {
       value,
       unit,
       source_id: 'derived_from_verified_municipal_indicators',
+      input_indicator_codes: [...new Set(inputs
+        .map((row) => String(row.indicator_code ?? '').trim())
+        .filter(Boolean))],
       source_ids: sourceIds,
       source_urls: sourceUrls,
       // Keep the legacy single-link field only when it is unambiguous.
@@ -332,22 +511,31 @@ export function deriveMunicipalIndicators(rows = []) {
     }
   }
 
-  const populationByMunicipality = new Map();
-  for (const history of populationByMunicipalityYear.values()) {
-    if (history.length !== 1) continue;
-    const row = history[0];
-    const municipalityId = String(row.municipality_id);
-    if (!populationByMunicipality.has(municipalityId)) populationByMunicipality.set(municipalityId, []);
-    populationByMunicipality.get(municipalityId).push(row);
-  }
-  for (const history of populationByMunicipality.values()) {
-    const points = history.sort((a, b) => Number(a.reference_year) - Number(b.reference_year));
-    const first = points[0], last = points[points.length - 1];
-    if (points.length < 2 || Number(first.value) <= 0) continue;
-    const span = Number(last.reference_year) - Number(first.reference_year);
-    if (span <= 0) continue;
-    const annualized = (Math.pow(Number(last.value) / Number(first.value), 1 / span) - 1) * 100;
-    push(last, 'derived_population_growth_rate', 'Среднегодовое изменение численности населения за доступный период', annualized, '% в год', 'Расчёт по крайним доступным годам; не заменяет полный демографический баланс рождаемости, смертности и миграции.', history, 'annual');
+  // A unique population snapshot per municipality/year remains the only
+  // permitted denominator for same-year per-capita investment.
+  // For risk monitoring, derive an annual YoY growth point only from consecutive
+  // 1 January snapshots. Do not bridge missing calendar years or mix snapshot dates.
+  for (const history of populationByMunicipalityDateSeries.values()) {
+    const points = history.slice().sort((a, b) => Number(a.reference_year) - Number(b.reference_year));
+    for (let index = 1; index < points.length; index += 1) {
+      const previous = points[index - 1];
+      const current = points[index];
+      if (Number(current.reference_year) - Number(previous.reference_year) !== 1
+        || !sameUnit(previous, current)
+        || Number(previous.value) <= 0
+        || Number(current.value) <= 0) continue;
+      const yearOverYear = (Number(current.value) / Number(previous.value) - 1) * 100;
+      push(
+        current,
+        'derived_population_growth_rate',
+        'Годовое изменение численности населения к 1 января',
+        yearOverYear,
+        '% за год',
+        'Расчёт по двум последовательным подтверждённым срезам на 1 января; пропуски лет не интерполируются. Показатель не заменяет полный демографический баланс рождаемости, смертности и миграции.',
+        [previous, current],
+        'annual',
+      );
+    }
   }
   return derived;
 }

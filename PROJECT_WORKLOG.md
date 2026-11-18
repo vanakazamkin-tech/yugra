@@ -971,3 +971,180 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Значения `275 699,9` и `879 716,1` тыс. руб. в конце текстовой строки страницы 6 не являются обслуживанием муниципального долга: они согласуются с положительным профицитом (+) по строке Нефтеюганска. На странице 7 в первом поле «Источники финансирования дефицита бюджетов муниципальных образований, всего» стоят соответствующие значения `-275 699,9` и `-879 716,1`.
 - Поэтому пустые ячейки Нефтеюганска в `duma_budget_page6_municipal_debt_service_manual_transcription.csv` сохранены как пустые, а не заполнены значениями профицита. Это предотвращает сдвиг колонок из-за пропущенных пустых ячеек в текстовом слое PDF.
 - Межстраничная арифметическая/семантическая сверка подтверждает трактовку, но не заменяет визуальную проверку оригинальной страницы. Все строки остаются `needs_visual_review`; Supabase не изменялся.
+
+
+## 18.11.2026 — Yugra18 finalization: coverage, sources and staging integrity
+- Rechecked production/main state: both remain on b3baa2e5162222b3c770fc17a532133492b08e72; created backup and work branches. No production deployment launched.
+- Measured current Supabase indicator coverage: 22 municipalities, 1,445 observations, 1,389 verified municipal-level observations, 243 indicator codes, 279 code-name pairs; only 8 pairs cover all 22 municipalities, 253 pairs cover 1–4 municipalities.
+- Added docs/MUNICIPAL_COVERAGE_MATRIX_2026-11-18.md and a 14-query read-only coverage/security audit supabase/audits/municipal_coverage_matrix_2026-11-18.sql; all 14 audit queries executed successfully against live Supabase.
+- Added docs/ROSSTAT_2026_SOURCE_MAP.md with official BД ПМО codes, reporting periods, geography and interpretation constraints. Binary Rosstat/Tyumenstat/processed BД ПМО files have not been downloaded; no indicator observations were imported.
+- Enriched seven existing data_sources cards only. All seven remain identified; no retrieved_at was fabricated.
+- Found migration drift: production migration history stops at 20261107055919; 20261107122134_allow_cross_source_staging_import.sql is in GitHub but was not applied. Live import RPC still used the early same-source-unsafe duplicate check.
+- Added forward migration 20261118033000_harden_staging_import_integrity.sql and scripts/test-staging-import-integrity.mjs, registered in scripts/test-all.mjs. The migration has NOT been applied permanently.
+- Executed the migration + synthetic staging fixture + RPC assertions on live PostgreSQL within a single transaction and rolled back. Tests passed for cross-source coexistence, same-source duplicate marking, explicit period gate, exact URL/date persistence and private provenance-link creation. After rollback: 1,445 observations, 1,445 provenance links, staging empty, zero test fixtures, no new columns left behind.
+- RLS remained unchanged. The five tables without policies remain closed to anon/authenticated, as intended. No public policy or grants were added.
+- Local npm test and npm run build remain unverified on this branch because checkout cannot be cloned from the container due to DNS/network restriction; prior GitHub Actions success belongs to old production SHA only.
+- Production deployment and main branch unchanged.
+
+
+## 18.11.2026 — Risk traffic-light coverage gate
+- Found a false-green condition: assessRiskSignals() used minimumUsable row count only and could return stable while all assessable series belonged to one or two pillars.
+- Changed stable eligibility to require comparable, directional series in all six MODEL_PILLARS. If no deterioration is observed but any pillar is missing, the result is insufficient and lists missing directions.
+- Observed adverse signals can still produce watch/critical under incomplete coverage, with a clear coverage caveat.
+- Unknown pillar keys no longer count toward coverage or cross-pillar thresholds.
+- Updated UnifiedRiskForecast overview text, risk table coverage column and CSV export to show available pillars out of six.
+- Added regression tests for same-pillar, two-pillar, five-of-six and full six-pillar cases. Full npm test is still pending a runner/checkout.
+
+
+### 18.11.2026 — canonical municipality mapping and CI migration integration
+- Corrected staging duplicate detection to resolve the source label through mapped_municipality_id and compare the canonical municipalities.name. The canonical name is written to municipality_indicators.geographic_name; the exact raw label remains in staging and observation notes.
+- Added a regression fixture where source aliases cannot bypass the same-source unique key, updated controlled cross-source SQL test for the hardened accepted-row contract, URL snapshots, period normalization and retrieval timestamps.
+- Added the 20261118033000 migration to CI disposable PostgreSQL migration apply + idempotency reapply. No production migration was permanently applied.
+- Existing Soviet district alias rows were left unchanged pending a separate source-level review.
+
+
+### 18.11.2026 — point-in-time demographic trend support
+- Extended parseRiskPeriod() for strict YYYY-MM and YYYY-MM-DD periods. Point-in-time observations compare only with the same month/day in consecutive calendar years; invalid dates are rejected.
+- Replaced the single end-to-end population CAGR with annual year-over-year population changes based only on adjacent 1 January snapshots. Missing years are not interpolated.
+- Population snapshots used for derived ratios are taken after duplicate/conflict resolution; each derived YoY point retains both underlying source IDs and URLs.
+- Added regression tests for monthly/date parsing, leap days, invalid dates, YoY derived history, risk-series adverse streaks, and gap exclusion.
+- Reordered the CI migration chain so 20261118033000 runs after 20261107122134 (the hardening RPC is not overwritten by the earlier cross-source migration).
+- Live Supabase contains 22 population observations per each January 1 year 2022–2025 and 22 consecutive municipality comparisons for each 2023/2024/2025 growth transition. Mean YoY changes: +0.3825%, +1.0808%, +0.5986% respectively; these are descriptive derived values, not an official demographic resilience score.
+
+- Extended staging SQL transaction caught an unassigned PL/pgSQL record reference in the canonical-name duplicate query; fixed it to use the joined `m.name` alias. The failed transaction rolled back fully (1,445 analytical rows and 1,445 provenance links unchanged; staging empty; no schema columns persisted).
+
+- Replaced PostgreSQL `to_date()` calendar validation after live rollback test showed it raises on 2026-02-31. The staging migration now validates a calendar date by constructing the first day of the month and checking that adding day-1 remains in the same year/month; impossible dates are a review result, not an exception.
+
+
+### 18.11.2026 — CI first-run repair
+- Draft PR #20 triggered GitHub Actions against the actual PR merge commit. The first build job ran npm ci and npm test; staging import static contract, risk data gates, forecast coverage, resilience methodology and 34 forecast unit tests passed.
+- The suite stopped on one stale test expectation: the same-year per-capita investment derivation correctly cited `population_source_2024`, while the test still expected the prior single-row fixture name `population_source`. Updated the assertion to the exact same-year source.
+- GitHub warned that the resolved Supabase JS packages require Node >=22 while workflows used Node 20. Updated both ci.yml and qa.yml to Node 22.
+- Waiting for the next PR synchronization run; no production deployment or database migration applied.
+
+- The first disposable PostgreSQL integration attempt reached the new controlled-import test, but the minimal bootstrap had granted service_role SELECT (not UPDATE) on data_sources; the RPC correctly failed when recording retrieved_at. Live Supabase grants UPDATE to service_role and denies it to anon/authenticated. The forward migration now explicitly grants SELECT, UPDATE to service_role only, and the SQL fixture mirrors that contract.
+
+
+### 18.11.2026 — expanding-window historical forecast diagnostics
+- Added buildHistoricalBacktest() to forecastModel.js: expanding-window predictions at 1/2/3 year horizons, comparing last-value, linear-trend and mean-log-growth baselines.
+- Inputs are restricted to verified municipal observations. Annual rows and same-calendar-date point-in-time snapshots are separated; quarters/halves/months are excluded from the annual evaluation.
+- Gaps split time series. Same-value duplicate sources collapse; inter-source value conflicts are quarantined rather than averaged or selected.
+- Metrics include test N, municipality N, MAE, MAPE (strictly positive actuals only), native-unit bias and percent bias. Tiny sample labels do not imply model validation.
+- Added regression tests and a diagnostic panel in Forecasting.jsx. It is display-only and does not change scenario coefficients or index scores.
+
+- First PR Actions run for commit 63ab328e passed both build and PostgreSQL migration integration. A post-review refinement fixed MAPE display (no spurious plus sign) and made eligible-series counts include exact indicator name and unit. Added regression coverage for code aliases/units staying separate.
+
+
+## 18.11.2026 — machine-readable candidate resilience registry
+- Added docs/INDEX_CANDIDATE_REGISTRY_V1_1.json: 22 candidate/context/hold entries, exact source-name contracts, coverage snapshots, proposed formulas, periods, sources and blockers.
+- Kept the catalogue disconnected from runtime scoring. Every entry is not approved and calculation-disabled; approvedIndicatorIds stays empty; six pillar weights remain 20/20/15/15/15/15.
+- Corrected the sme_per_10k coverage description: two exact-name cohorts of 3 municipalities each are not one n=6 peer group.
+- Added scripts/test-index-candidate-registry.mjs to enforce the six weights, no accidental approval, no enabled calculations, unique IDs and SME cohort separation.
+- Updated candidate/methodology/status docs; no index outputs or numeric observations changed.
+
+
+## 18.11.2026 — source provenance metadata completion and candidate registry CI
+- Filled owner, coverage period, data type, access restrictions and actual retrieved_at for three existing partially_imported sources: Duma Yugra 9m budget appendix (176 rows / 22 МО), appendix 2 (44 / 22), and InvestUgra municipal investment climate report 2023 (88 / 22). Source retrieved_at was derived from the max actual observation retrieval timestamp, not invented. import_status remained partially_imported.
+- Catalog metadata gaps dropped to 118 missing owner / temporal coverage / type; 149 access restrictions; 157 retrieved_at out of 161 sources.
+- Added 22-entry JSON candidate registry v1.1 with all rows hard-disabled for calculation and all expert approvals empty. Fixed SME-per-10k definition cohort split and added a CI safety test.
+- Updated docs/FINALIZATION_STATUS.md and the proposed registry review. No observations, Supabase schemas, RLS policies, index weights or production deployment changed.
+- Current PR #20 CI run 44198274091 on ec304e28 completed success for both Build verification and data-migrations-integration, including the new registry test and hardened staging migration.
+
+
+### 18.11.2026 — risk indicator semantic classification correction
+- Re-audited all 279 exact indicator_code × indicator_name pairs in Supabase against current direction and pillar rules. All 279 received a pillar; 238 remained conservative context, 25 higher, 16 lower.
+- Found that the substring “малого предпринимательства” was interpreted as SME/business even when it only excluded SMEs from the statistical universe. This misclassified non-SME wage, employee-count, investment and shipment observations.
+- Changed classify() priority so income, employment counts, investment and production/shipment semantics are resolved before generic SME/business substrings; SME density remains business, SME employment share remains labour.
+- Added regression assertions using exact indicator names from the current database. Direction rules were not broadened; nominal/context indicators remain context.
+
+
+### 18.11.2026 — risk exact-definition identity and SME-density direction gate
+- Kept `sme_per_10k` as contextual in operational risk direction rules. The two exact-name cohorts each cover only three municipalities and the relationship to resilience is not proven monotonic; the candidate index hypothesis does not automatically approve a risk direction.
+- Added exact `indicator_name` to buildRiskSeries grouping identity so same-code/period/unit definitions cannot be mixed chronologically.
+- Retained the common same-code signal family to prevent double counting: concordant definition variants contribute one signal, contradictory variants are excluded as a family and reported.
+- Added tests for SME density contextual status and conflicting same-code source definitions.
+
+- After the SME-density direction was moved to context, the 279-pair rule distribution is 240 context / 23 higher / 16 lower. Recalculated actual classify() distribution: employment 53, income 36, budget 23, production 67, investment 23, demography 22, business 36, infrastructure 10, migration 7, social 2; no other/unclassified category. A read-only check found no currently overlapping same municipality/code/year/period/unit rows with multiple names, while the new identity guard protects against future definition merges.
+
+- Extended the same exact-definition guard to deriveMunicipalIndicators(): same-code, same-value, same-unit rows with different source names now mark the code ambiguous within that municipality/year/period and block derived ratios or denominators. Added a regression fixture proving an apparently identical total-budget value cannot be used to derive own-revenue share across different definitions.
+
+### 18.11.2026 — повторный runtime-аудит независимости риск-сигналов
+- Повторно запущены реальные deriveMunicipalIndicators(), buildRiskSeries() и assessRiskSignals() на полном verified municipal-срезе Supabase: 1 389 исходных наблюдений, 220 производных наблюдений, 832 временных ряда, 22 муниципалитета.
+- Воспроизведены статусы 6 critical / 15 watch / 0 stable / 1 insufficient при исходном пороге 3 сигнала / 2 направления.
+- У четырёх исходных critical (Мегион, Югорск, Нефтеюганск, Нягань) комбинация одинакова: доля собственных доходов, отношение доходов к расходам и динамика населения; 3 сигнала / 2 направления.
+- Проверена бюджетная панель: у всех 22 МО есть пары 2024-Q3/2025-Q3 по доходам, собственным доходам и расходам. Доля собственных доходов и трансфертная зависимость — комплементарные доли; трансфертный ряд за 2024-Q3 отсутствует, поэтому он не создаёт второй сопоставимый сигнал. Отношение доходов к расходам математически не тождественно доле собственных доходов. Корреляция межмуниципальных изменений этих двух бюджетных коэффициентов на n=22 равна 0,109; это только описательная проверка одной пары периодов, не доказательство независимости.
+- В Покачах численность зарегистрированных безработных и уровень зарегистрированной безработицы поступают из одной муниципальной таблицы и описывают один феномен; объединены в одно семейство сигналов. Оценка 2024 года в этом источнике помечена как оценка администрации, а не окончательный статистический итог.
+- Производные показатели теперь сохраняют коды исходных компонентов для аудита пересечения входов. Последнее предварительное/оценочное наблюдение понижают качество основания ряда, но не удаляют значение и не меняют его направление автоматически.
+- Добавлен экспорт полного аудита CSV: негативные сигналы, включённые и исключённые ряды, семейства, общие исходные компоненты, периоды, значения, единицы, причины исключения и provenance.
+- Анализ чувствительности при criticalPillars=3 снизил число critical с 6 до 1 и повысил watch с 15 до 20. С учётом общего исходного компонента бюджетных коэффициентов стандартный criticalPillars повышен с 2 до 3: красный статус теперь требует не менее трёх негативных семейств в трёх разных направлениях. Это консервативное правило пилотного прототипа, не статистически/экспертно откалиброванный норматив; настройка остаётся доступной в интерфейсе. Production-данные не менялись, миграции не применялись.
+
+### 18.11.2026 — read-only аудит полноты каталога источников
+- В public.data_sources проверено 161 карточка. URL, географическое покрытие и import_status заполнены у 161/161; update_frequency — 160/161.
+- Владельца данных, временное покрытие и тип данных имеют только 43/161 карточек; ограничения доступа — 12/161; каталоговый retrieved_at — 4/161; last_checked_at — 124/161.
+- При этом provenance самих verified municipal observations полон: 1 389/1 389 имеют source_id, который разрешается в data_sources, source_url и retrieved_at; не найдено ни одной записи с отсутствующим источником, сломанной ссылкой на каталог или пустым retrieved_at.
+- Следовательно, основной пробел сейчас — описательные метаданные каталога источников, а не provenance уже подтверждённых наблюдений. Никакие значения, даты получения или владельцы источников не дополнялись по догадке; Supabase оставлен без изменений.
+- Следующий этап: поштучно обогатить поля data_owner, temporal_coverage, data_type и access_restrictions только по официальным страницам/документам; retrieved_at заполнять только при фактическом получении ресурса. В первую очередь проверить official_statistics (47 карточек), municipal_official_report (13) и regional_official_report (10).
+
+### 18.11.2026 — дополнительный quality gate для Critical
+- Единственный Critical после повышения требования до трёх направлений (Покачи) зависел от двух предварительных наблюдений 2024 года из одного прогноза администрации: индекс промышленного производства и зарегистрированная безработица.
+- Введено дополнительное правило: предварительные/оценочные наблюдения и сигналы без источника остаются видимыми в Watch и полном аудите, но не могут обеспечивать достижение порога Critical.
+- Critical теперь требует не менее трёх негативных семейств с непредварительными последними наблюдениями и источниками в трёх разных направлениях. Это консервативное правило прототипа; статистическая/экспертная калибровка ещё требуется.
+- В аудите CSV добавлены поля допуска в Critical и причина недопуска. Пороговые счётчики предупреждений и сами наблюдения не удаляются.
+
+### 18.11.2026 — read-only аудит RLS и истории миграций
+- RLS включён на municipalities, municipality_indicators, data_sources, municipal_program_execution и municipality_indicator_import_staging.
+- Для anon/authenticated доступны только SELECT на публичных таблицах; municipality_indicators и municipal_program_execution ограничены политиками verified. data_sources и municipalities публично читаемы.
+- Для municipality_indicator_import_staging RLS включён, политик нет, grants для anon/authenticated отсутствуют; права записи/чтения есть только у service_role. В staging 0 строк.
+- service_role сохраняет ожидаемые полномочия записи; FORCE ROW LEVEL SECURITY выключен, поэтому нельзя считать защиту от владельца/служебной роли абсолютной.
+- Последняя применённая миграция — 20261107055919 extend_data_source_provenance_metadata. Миграция 20261118033000_harden_staging_import_integrity в production не применена. Схема и данные не изменялись.
+
+### 18.11.2026 — итоговый runtime после quality gate
+- Повторный запуск фактической риск-модели после всех исправлений: 22 МО, 1 389 verified observations, 220 derived observations, 832 ряда.
+- Итоговые статусы: 0 critical / 21 watch / 0 stable / 1 insufficient. Ни один муниципалитет не набрал три непредварительных source-backed негативных семейства в трёх направлениях.
+- Покачи: 4 негативных сигнала, но только 2 допускаются к Critical; два других основаны на оценочных значениях 2024 года из одного источника. Итоговый статус — Watch.
+- Покрытие остаётся неполным: ни у одного муниципалитета нет подтверждённого покрытия всех шести направлений; отсутствие Stable не трактовать как доказательство риска у всех МО.
+- GitHub Actions run 44204720192 завершился успешно: build и data-migrations-integration. Vercel preview для кода готов; production/main не менялся.
+
+### 18.11.2026 — correction after source-catalogue metadata write
+- После фактического обновления пяти карточек data_sources повторный SQL-count показывает: owner 46/161, temporal_coverage 46/161, data_type 46/161, access_restrictions 15/161, retrieved_at 4/161, last_checked_at 126/161. Более ранние значения 43/12/4 в этом журнале относятся к снимку до обновления.
+- Для rosstat_municipal, rosstat_hmao_bdmo_access, emiss, rosstat_bdmo_indicator_list_2026 и tochno_bdmo_2026 заполнены только подтверждённые описательные поля. Их import_status не менялся; retrieved_at оставлен NULL, поскольку байтовые выгрузки не скачивались.
+- Текущая карточка «Если быть точным» в web-проверке показывает 2005–2026 и обновление 28.09.2026; предыдущая сохранённая проверка страницы показывала 2005–2025. Зафиксировано расхождение снимков. В БД отмечено текущее заявленное значение, но фактический пакет ещё не проверен и не импортирован.
+- Проверка provenance после изменения каталога: 1 389 verified municipal observations; 1 389 действующих source_id, 1 389 source_url, 1 389 retrieved_at; без источника/URL — 0, broken source references — 0.
+
+### 18.11.2026 — обогащение источника нового муниципального сборника
+- Для карточки rosstat_hmao_municipal_monitoring_2023_2025 подтверждён владелец (Тюменьстат), период публикации 2023–2025, тип источника и ограничения доступа. Официальная новостная страница сообщает о выпуске сборника 21.10.2026.
+- Прямая ссылка на бинарный файл и содержимое таблиц в текущей среде не извлечены; покрытие конкретных МО, показатели, единицы и методики не проверены. Статус import_status оставлен identified, retrieved_at не заполнен, наблюдения не импортированы.
+- Параллельно подтверждена карточка отдельной XLSX-выгрузки эффективности муниципального управления ХМАО (страница Тюменьстата указывает 70,13 КБ и дату 01.04.2026); бинарная книга не получена, её статус также остаётся identified.
+
+### 18.11.2026 — итоговые счётчики каталога после шестой карточки
+- После уточнения metadata карточки муниципального мониторинга ХМАО итоговый счётчик по 161 источнику: owner 47/161, temporal_coverage 47/161, data_type 47/161, access_restrictions 16/161, retrieved_at 4/161, last_checked_at 126/161.
+- Числа 46/15, зафиксированные в предыдущей записи, были промежуточным состоянием сразу после первых пяти карточек; актуальный итог — 47/16.
+- Полнота provenance аналитических наблюдений не затронута: 1 389 verified municipal observations имеют действующий source_id, source_url и retrieved_at; 0 пропусков и 0 broken references.
+
+### 18.11.2026 — runtime backtesting на фактической муниципальной панели
+- Запущен реальный buildHistoricalBacktest() из forecastModel.js на том же verified municipal-срезе, который передаётся Forecasting.jsx: 1 389 исходных наблюдений, 22 муниципалитета. Производные 220 рядов отдельно не подмешивались, поскольку runtime-компонент проверяет officialIndicators.
+- Результат: 106 eligible series groups, 787 walk-forward predictions, 172 metric cells (indicator × exact definition/unit × period kind/slot × horizon × baseline).
+- По sampleStatus: 130 very_small_sample, 12 small_sample, 30 exploratory. Это классификация количества тестов внутри конкретной metric cell, не вероятность и не доверительный интервал.
+- Исключено: 559 наблюдений с периодами вне поддерживаемого annual/point-in-time набора; 324 коротких непрерывных фрагмента без минимальных 2 обучающих точек + будущего факта; конфликтные municipality-year группы = 0; same-value duplicate rows = 0.
+- По сравнению MAE между baseline в 58 metric/horizon группах: last_value был лучшим в 26, mean_growth в 17, linear_trend в 13, ties в 2. Это не глобальный рейтинг модели: большинство метрик имеют очень малую/малую выборку, а показатели имеют разные единицы и экономический смысл.
+- Горизонт 1 имеет больше тестов; горизонты 2 и 3 представлены лишь пятью и двумя metric cells соответственно. Ни один общий процент MAPE не трактуется как универсальная точность системы.
+- Forecasting.jsx дополнен динамическим пояснением количества very-small/small/exploratory metric cells и числа исключённых периодов/коротких сегментов/конфликтов. Существующие сценарные коэффициенты и прогнозные значения не менялись.
+- Локально проверены npm test, npm run build и git diff --check: все успешно. GitHub Actions и Vercel Preview для итогового коммита ожидают отдельной проверки.
+
+### 18.11.2026 — fail-closed проверка доказательств для Critical
+- Ужесточена проверка допуска негативных сигналов к Critical: теперь требуется явное `latestIsProvisional === false` и `latestSourcePresent === true`. Отсутствующие/неопределённые флаги больше не трактуются как подтверждённое качество.
+- В аудит CSV добавлено различение отсутствующего подтверждённого source metadata и статуса предварительности последнего значения; в счётчике безисточниковых сигналов неявно неизвестный источник также считается недопущенным.
+- Добавлены регрессионные тесты на unknown provisional/source metadata. На свежем checkout HEAD 2154f1d выполнены `npm ci`, `npm test`, `npm run build`, `git diff --check`: все завершились успешно.
+- После данной пачки реальное приложение продолжает формировать оба флага в buildRiskSeries() из каждого последнего наблюдения; предыдущее фактическое воспроизведение остаётся 0 critical / 21 watch / 0 stable / 1 insufficient, поскольку все 832 серии содержали однозначные quality/source-флаги.
+
+### 18.11.2026 — перепроверка нового статистического сборника Тюменьстата
+- По официальной поисковой выдаче раздела новостей подтверждён отдельный выпуск ХМАО 21.10.2026: «Социально-экономический мониторинг муниципальных образований Ханты-Мансийского автономного округа – Югры (2023–2025)». Это отдельный выпуск от соседних сборников Тюменской области без автономных округов и ЯНАО от 20.10.2026.
+- Прямой URL/бинарное вложение по объявлению не извлечены. Повторный сетевой запрос HTML-страницы из изолированной среды завершился таймаутом; само содержимое сборника и таблиц не проверено.
+- Карточка источника остаётся identified, retrieved_at=NULL, без числового импорта. В notes зафиксированы различие выпусков и неудачная попытка получения ресурса.
+
+### 18.11.2026 — финальный CI/Preview контроль после fail-closed quality gate
+- Итоговый кодовый HEAD для риск-gate: 2154f1dd3c1a49ab552c68eca7f8cf288011202d. На чистом checkout этого коммита выполнены npm ci, npm test, npm run build и git diff --check — все успешно.
+- Последний docs HEAD на момент проверки: f4223a9168c228c025a7ebfd1d31d183ca66400b. GitHub Actions run 44206591186 (#2050) завершился success для build и data-migrations-integration.
+- Vercel Preview для HEAD f4223a9168c228c025a7ebfd1d31d183ca66400b готов: https://yugra18-ka4br3tjr-napishtu.vercel.app . Развёртывание относится к Preview, не Production.
+- PR #20 остаётся open/Draft, не объединён. Production deployment по-прежнему соответствует main b3baa2e5162222b3c770fc17a532133492b08e72.
+- Ни одна новая миграция не применялась к production; числовые observations и индексные веса не менялись. Изменения Supabase в этой сессии касались исключительно описательных метаданных карточек data_sources (шесть источников).

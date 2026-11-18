@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { buildForecastCoverage } from '../lib/forecastCoverage';
-import { buildForecasts, normalizeScenarioRows, summarizeForecast, sumFiniteValues } from '../lib/forecastModel';
+import { buildForecasts, buildHistoricalBacktest, normalizeScenarioRows, summarizeForecast, sumFiniteValues } from '../lib/forecastModel';
 
 const FALLBACK_SCENARIOS = [
   { id: null, key: 'cautious', title: 'Стрессовый', summary: 'Неблагоприятный сценарий: снижение экспортной выручки, усиление санкционных ограничений, рост издержек предприятий и дефицит кадров.', investment_growth_rate: -8, sme_growth_rate: -4, score_growth_rate: -3, uncertainty_rate: 18, export_shock_pct: -10, cost_pressure_pct: 8, labor_shortage_pct: 6, display_order: 1 },
@@ -121,6 +121,20 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
   const officialCoverage = useMemo(() => buildForecastCoverage(officialIndicators, programExecution, (municipalities || []).length || 22), [officialIndicators, programExecution, municipalities]);
   const officialCoverageLoaded = officialDataStatus === 'connected' || Boolean(officialDataSyncedAt);
   const officialCoverageStale = officialDataStatus === 'error' && Boolean(officialDataSyncedAt);
+  const historicalBacktest = useMemo(
+    () => buildHistoricalBacktest(officialIndicators, { horizons: [1, 2, 3], minTrainingPoints: 2 }),
+    [officialIndicators],
+  );
+  const historicalBacktestSampleCounts = useMemo(() => historicalBacktest.metrics.reduce((counts, item) => {
+    counts[item.sampleStatus] = (counts[item.sampleStatus] || 0) + 1;
+    return counts;
+  }, { very_small_sample: 0, small_sample: 0, exploratory: 0 }), [historicalBacktest]);
+  const historicalBacktestRows = useMemo(
+    () => historicalBacktest.metrics.filter((item) => item.horizon === horizon)
+      .sort((a, b) => b.testCount - a.testCount || a.indicatorName.localeCompare(b.indicatorName, 'ru-RU'))
+      .slice(0, 24),
+    [historicalBacktest, horizon],
+  );
   const officialCoverageSyncedLabel = officialDataSyncedAt
     ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(officialDataSyncedAt))
     : null;
@@ -249,7 +263,37 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
         <p className="forecast-coverage-footnote">Для местного бюджета отдельно учитываются подтверждённые записи исполнения муниципальных программ; они не заменяют полную бюджетную статистику. Городские/поселковые наблюдения и непроверенные записи исключены. Отсутствие записи не означает нулевое значение.</p>
       </section>
 
-      <div className="forecast-controls-grid">
+              <section className="forecast-coverage-panel" aria-labelledby="forecast-backtest-title">
+        <div className="forecast-coverage-heading">
+          <div><h3 id="forecast-backtest-title">Проверка на исторических данных</h3><p>Последовательное исключение будущих лет: каждый прогноз использует только более ранние наблюдения того же муниципалитета и показателя.</p></div>
+          <span className="forecast-coverage-status">Walk-forward · {horizon} {horizon === 1 ? 'год' : 'лет'}</span>
+        </div>
+        <div className="forecast-kpi-grid">
+          <article><span>Тестовых прогнозов</span><strong>{historicalBacktest.totalTestPredictions.toLocaleString('ru-RU')}</strong><em>по горизонтам 1–3 года</em></article>
+          <article><span>Сопоставимых серий</span><strong>{historicalBacktest.eligibleSeriesGroups.toLocaleString('ru-RU')}</strong><em>код · название · единица · период</em></article>
+          <article><span>Конфликтных срезов</span><strong>{historicalBacktest.excluded.conflictingMunicipalityYearGroups.toLocaleString('ru-RU')}</strong><em>исключены без усреднения</em></article>
+        </div>
+        <p className="forecast-coverage-footnote">
+          Размер выборок по сочетаниям показателя, периода, горизонта и метода: {historicalBacktestSampleCounts.exploratory} исследовательских, {historicalBacktestSampleCounts.small_sample} малых и {historicalBacktestSampleCounts.very_small_sample} очень малых. Это диагностические категории по числу тестов, а не доверие или вероятность точности модели.
+          Из годовой проверки исключено записей с неподдерживаемыми периодами: {historicalBacktest.excluded.unsupportedPeriod}; коротких непрерывных фрагментов, не набравших историю: {historicalBacktest.excluded.insufficientSegments}; конфликтных сочетаний муниципалитет/показатель/год: {historicalBacktest.excluded.conflictingMunicipalityYearGroups}.
+        </p>
+        {historicalBacktestRows.length ? <div className="table-scroll" role="region" tabIndex={0} aria-label="Результаты walk-forward проверки прогнозных моделей">
+          <table className="ranking-table forecast-table">
+            <thead><tr><th scope="col">Показатель</th><th scope="col">Модель</th><th scope="col">Тестов</th><th scope="col">МО</th><th scope="col">MAE</th><th scope="col">MAPE</th><th scope="col">Смещение</th><th scope="col">Выборка</th></tr></thead>
+            <tbody>{historicalBacktestRows.map((item) => <tr key={[item.indicatorCode,item.unit,item.periodKind,item.periodSlot,item.horizon,item.model].join('|')}>
+              <td><strong>{item.indicatorName}</strong><small>{item.indicatorCode} · {item.periodLabel} · {item.unit}</small></td>
+              <td>{item.modelLabel}</td><td>{item.testCount}</td><td>{item.municipalityCount}</td>
+              <td>{fmt(item.mae, 2)} <small>{item.unit}</small></td>
+              <td>{item.mape == null ? '—' : fmt(item.mape, 1) + '%'} <small>{item.mapeCount} положительных фактов</small></td>
+              <td>{fmt(item.bias, 2)} <small>{item.unit}</small></td>
+              <td>{item.sampleStatus === 'exploratory' ? 'Исследовательская' : item.sampleStatus === 'small_sample' ? 'Малая' : 'Очень малая'}</td>
+            </tr>)}</tbody>
+          </table>
+        </div> : <div className="empty-state" role="status"><strong>Пока недостаточно непрерывных исторических рядов</strong><p>Для проверки нужны минимум два последовательных прошлых наблюдения и хотя бы одно последующее фактическое значение. Кварталы, полугодия, месяцы, непроверенные и другие географические уровни в этот годовой тест не подмешиваются.</p></div>}
+        <p className="forecast-coverage-footnote">Сравниваются три простых базовых метода: последнее значение, линейный тренд и средний темп роста. MAE и смещение выражены в исходных единицах показателя; MAPE считается только при положительном факте. Метки выборки отражают число тестов, не доверие к модели. Это ретроспективная диагностика доступной истории, а не доказательство точности прогноза и не доверительные интервалы.</p>
+      </section>
+
+<div className="forecast-controls-grid">
         <div className="forecast-control-card">
           <label className="forecast-field"><span>Сценарий</span><select value={scenarioKey} onChange={(e) => selectScenario(e.target.value)}>{scenarios.map((scenario) => <option key={scenario.key} value={scenario.key}>{scenario.title}</option>)}</select></label>
           <p className="forecast-scenario-description">{activeScenario.summary}</p>

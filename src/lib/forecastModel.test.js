@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildForecasts, normalizeScenarioRows, summarizeForecast } from './forecastModel.js';
+import { buildForecasts, buildHistoricalBacktest, normalizeScenarioRows, summarizeForecast } from './forecastModel.js';
 
 const sample = [
   { id: 'a', name: 'Муниципалитет А', group2024: 1, score: 60, smeCount: 100, investments: { volumeBillion: 20 } },
@@ -301,4 +301,119 @@ test('scenario normalization prefers persisted factor columns when available', (
   assert.equal(rows[0].export_shock_pct, 12);
   assert.equal(rows[0].cost_pressure_pct, -4);
   assert.equal(rows[0].labor_shortage_pct, 3);
+});
+
+
+test('walk-forward backtest compares naive, linear and mean-growth baselines at one to three years', () => {
+  const rows = [2020, 2021, 2022, 2023, 2024].map((year, index) => ({
+    municipality_id: 'm1', indicator_code: 'population_municipality',
+    indicator_name: 'Population', unit: 'persons', reference_year: year,
+    reference_period: 'annual', geographic_level: 'municipality',
+    verification_status: 'verified', value: 100 + index * 10, source_id: 's' + year,
+  }));
+  const result = buildHistoricalBacktest(rows);
+  const linearOneYear = result.metrics.find((item) => item.model === 'linear_trend' && item.horizon === 1);
+  assert.equal(linearOneYear.testCount, 3);
+  assert.equal(linearOneYear.mae, 0);
+  assert.equal(linearOneYear.mape, 0);
+  assert.equal(linearOneYear.sampleStatus, 'small_sample');
+  assert.ok(result.metrics.some((item) => item.model === 'last_value' && item.horizon === 2));
+  assert.ok(result.metrics.some((item) => item.model === 'mean_growth' && item.horizon === 3));
+});
+
+test('annual backtest excludes quarterly, half-year, monthly, settlement and unverified observations', () => {
+  const annual = [2020, 2021, 2022].map((year, index) => ({
+    municipality_id: 'm1', indicator_code: 'indicator', indicator_name: 'Indicator',
+    unit: 'unit', reference_year: year, reference_period: 'annual',
+    geographic_level: 'municipality', verification_status: 'verified', value: 10 + index,
+  }));
+  const excluded = [
+    { ...annual[0], reference_period: '2020-Q1' },
+    { ...annual[0], reference_period: '2020-H1' },
+    { ...annual[0], reference_period: '2020-03' },
+    { ...annual[0], geographic_level: 'settlement' },
+    { ...annual[0], verification_status: 'needs_review' },
+  ];
+  const result = buildHistoricalBacktest([...annual, ...excluded]);
+  assert.ok(result.metrics.every((item) => item.periodKind === 'annual'));
+  assert.equal(result.excluded.nonMunicipal, 1);
+  assert.equal(result.excluded.notVerified, 1);
+  assert.equal(result.excluded.unsupportedPeriod, 3);
+});
+
+test('point-in-time series only compare the same calendar date', () => {
+  const rows = [2022, 2023, 2024].map((year, index) => ({
+    municipality_id: 'm1', indicator_code: 'population', indicator_name: 'Population',
+    unit: 'persons', reference_year: year, reference_period: year + '-01-01',
+    geographic_level: 'municipality', verification_status: 'verified', value: 100 + index * 10,
+  }));
+  rows.push({ ...rows[2], reference_period: '2024-07-01', value: 500 });
+  const result = buildHistoricalBacktest(rows, { horizons: [1] });
+  const january = result.metrics.find((item) => item.periodSlot === '01-01');
+  assert.ok(january);
+  assert.equal(january.testCount, 1);
+  assert.equal(result.metrics.some((item) => item.periodSlot === '07-01'), false);
+});
+
+test('missing years split a series and are never bridged by the backtest', () => {
+  const rows = [2020, 2021, 2023, 2024].map((year, index) => ({
+    municipality_id: 'm1', indicator_code: 'indicator', indicator_name: 'Indicator',
+    unit: 'unit', reference_year: year, reference_period: 'annual',
+    geographic_level: 'municipality', verification_status: 'verified', value: 10 + index,
+  }));
+  const result = buildHistoricalBacktest(rows, { horizons: [1] });
+  assert.equal(result.totalTestPredictions, 0);
+  assert.equal(result.excluded.insufficientSegments, 2);
+});
+
+test('conflicting values for one municipality-year are quarantined instead of averaged', () => {
+  const rows = [2020, 2021, 2022, 2023].map((year, index) => ({
+    municipality_id: 'm1', indicator_code: 'indicator', indicator_name: 'Indicator',
+    unit: 'unit', reference_year: year, reference_period: 'annual',
+    geographic_level: 'municipality', verification_status: 'verified', value: 10 + index,
+    source_id: 'source-a',
+  }));
+  rows.push({ ...rows[2], value: 99, source_id: 'source-b' });
+  const result = buildHistoricalBacktest(rows, { horizons: [1] });
+  assert.equal(result.excluded.conflictingMunicipalityYearGroups, 1);
+  assert.equal(result.totalTestPredictions, 0);
+});
+
+test('identical cross-source values collapse but non-positive actuals are excluded from MAPE', () => {
+  const rows = [2020, 2021, 2022].map((year) => ({
+    municipality_id: 'm1', indicator_code: 'zero_indicator', indicator_name: 'Zero indicator',
+    unit: 'unit', reference_year: year, reference_period: 'annual',
+    geographic_level: 'municipality', verification_status: 'verified', value: 0, source_id: 'source-a',
+  }));
+  rows.push({ ...rows[1], source_id: 'source-b' });
+  const result = buildHistoricalBacktest(rows, { horizons: [1] });
+  assert.equal(result.excluded.duplicateSameValueRows, 1);
+  const metric = result.metrics.find((item) => item.model === 'last_value');
+  assert.equal(metric.mae, 0);
+  assert.equal(metric.mape, null);
+  assert.equal(metric.mapeCount, 0);
+
+  const negative = rows.map((item) => ({ ...item, value: -item.value - 1 }));
+  const negativeMetric = buildHistoricalBacktest(negative, { horizons: [1] }).metrics.find((item) => item.model === 'last_value');
+  assert.equal(negativeMetric.mape, null);
+  assert.equal(negativeMetric.mapeCount, 0);
+});
+
+
+test('indicator aliases and units are never combined into one validation series', () => {
+  const first = [2020, 2021, 2022].map((year, index) => ({
+    municipality_id: 'm1', indicator_code: 'same_code', indicator_name: 'Original definition',
+    unit: 'persons', reference_year: year, reference_period: 'annual',
+    geographic_level: 'municipality', verification_status: 'verified', value: 10 + index,
+  }));
+  const second = [2020, 2021, 2022].map((year, index) => ({
+    ...first[index],
+    indicator_name: 'Different definition',
+    unit: 'thousand persons',
+    value: 1 + index,
+  }));
+  const result = buildHistoricalBacktest([...first, ...second], { horizons: [1] });
+  const distinctDefinitions = new Set(result.metrics.map((item) => item.indicatorName + '|' + item.unit));
+  assert.deepEqual([...distinctDefinitions].sort(), ['Different definition|thousand persons', 'Original definition|persons']);
+  assert.equal(result.eligibleSeriesGroups, 2);
 });

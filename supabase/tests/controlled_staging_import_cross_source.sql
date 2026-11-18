@@ -1,5 +1,8 @@
--- Regression: a verified observation from another source must not block a
--- manually accepted staging row. Same-source duplicates must still be blocked.
+-- Regression: different sources may store the same statistical fact, but
+-- same-source observations must remain unique on the complete identity key.
+-- The raw municipality label may be an alias; analytics must use the mapped
+-- canonical municipality name while retaining the source label in notes.
+
 insert into public.municipality_indicators (
   municipality_id, indicator_code, indicator_name, reference_year,
   reference_period, value, unit, source_id, source_url,
@@ -7,36 +10,44 @@ insert into public.municipality_indicators (
 ) values (
   'test-municipality', 'cross_source_import_test', 'Cross-source import test',
   2025, 'annual', 10, 'persons', 'src-primary',
-  'https://example.test/primary', 'verified', 'municipality', null
+  'https://example.test/primary', 'verified', 'municipality', 'Test municipality'
 );
 
-grant select on public.municipalities, public.data_sources to service_role;
+grant select on public.municipalities to service_role;
+grant select, update on public.data_sources to service_role;
 grant select, insert, update on public.municipality_indicators to service_role;
 grant select, insert, update on public.municipality_indicator_import_staging to service_role;
 
 insert into public.municipality_indicator_import_staging (
-  source_id, source_record_key, raw_record, raw_municipality_name,
-  raw_indicator_name, raw_year, raw_period, raw_value, raw_unit,
-  mapped_municipality_id, mapped_indicator_code, normalized_value,
-  normalized_unit, geographic_level, review_status, reviewed_by, reviewed_at, created_at
+  source_id, source_record_key, raw_record, raw_municipality_name, raw_oktmo,
+  raw_indicator_name, raw_indicator_code, raw_year, raw_period, raw_value, raw_unit,
+  mapped_municipality_id, mapped_indicator_code, normalized_value, normalized_unit,
+  geographic_level, review_status, reviewed_by, reviewed_at, created_at,
+  normalized_period, source_url_snapshot, source_published_at, source_retrieved_at
 ) values
   (
-    'src-secondary', 'cross-source-accepted', '{}'::jsonb, null,
-    'Cross-source import test', 2025, null, '12', 'persons',
+    'src-secondary', 'cross-source-accepted', '{}'::jsonb, 'Test municipality',
+    '00000000', 'Cross-source import test', 'cross_source_import_test',
+    2025, null, '12', 'persons',
     'test-municipality', 'cross_source_import_test', 12, 'persons',
-    'municipality', 'accepted', 'qa-test', now(), now() - interval '3 seconds'
+    'municipality', 'accepted', 'qa-test', now(), now() - interval '3 seconds',
+    'annual', 'https://example.test/secondary', date '2026-01-31', now()
   ),
   (
-    'src-primary', 'same-source-duplicate', '{}'::jsonb, null,
-    'Cross-source import test', 2025, '', '11', 'persons',
+    'src-primary', 'same-source-duplicate', '{}'::jsonb, 'Test municipality',
+    '00000000', 'Cross-source import test', 'cross_source_import_test',
+    2025, '', '11', 'persons',
     'test-municipality', 'cross_source_import_test', 11, 'persons',
-    'municipality', 'accepted', 'qa-test', now(), now() - interval '2 seconds'
+    'municipality', 'accepted', 'qa-test', now(), now() - interval '2 seconds',
+    'annual', 'https://example.test/primary', date '2026-01-31', now()
   ),
   (
-    'src-secondary', 'same-batch-duplicate', '{}'::jsonb, null,
-    'Cross-source import test', 2025, 'annual', '13', 'persons',
+    'src-secondary', 'same-batch-duplicate', '{}'::jsonb, 'Test municipality',
+    '00000000', 'Cross-source import test', 'cross_source_import_test',
+    2025, 'annual', '13', 'persons',
     'test-municipality', 'cross_source_import_test', 13, 'persons',
-    'municipality', 'accepted', 'qa-test', now(), now() - interval '1 second'
+    'municipality', 'accepted', 'qa-test', now(), now() - interval '1 second',
+    'annual', 'https://example.test/secondary', date '2026-01-31', now()
   );
 
 set role service_role;
@@ -49,6 +60,8 @@ declare
   accepted_duplicate integer;
   marked_duplicate integer;
   imported_link integer;
+  canonical_geo_name text;
+  preserved_raw_name boolean;
 begin
   select count(*) into secondary_rows
   from public.municipality_indicators
@@ -68,6 +81,15 @@ begin
     and mi.value = 12;
   if imported_link <> 1 then
     raise exception 'accepted cross-source staging row was not linked to its imported observation';
+  end if;
+
+  select mi.geographic_name, (mi.notes like '%Исходное название МО в источнике: Test municipality%')
+    into canonical_geo_name, preserved_raw_name
+  from public.municipality_indicator_import_staging s
+  join public.municipality_indicators mi on mi.id = s.imported_indicator_id
+  where s.source_record_key = 'cross-source-accepted';
+  if canonical_geo_name <> 'Test municipality' or not preserved_raw_name then
+    raise exception 'canonical geography or raw-source label provenance was not preserved';
   end if;
 
   select count(*) into accepted_duplicate
