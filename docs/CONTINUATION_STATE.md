@@ -1,3 +1,18 @@
+## Checkpoint — exact latest HEAD, browser smoke and consolidated Release 1.0 plan (2026-11-18, UTC+05:00)
+
+- **Verified branch state before this checkpoint:** PR #27, `fix/risk-stable-provenance-gate-2026-11-18`, HEAD `bf2d27802bc0a7d82ca34660efd93c8374a74b7a`; 35 commits ahead / 0 behind `main` `4cb1171faf0c4e4568bc16226178730f5d04a9f5`; PR open, Draft, mergeable.
+- **Exact-head CI:** Push run `44288279848` and Pull Request run `44288289486` — both success; each job `build` and `data-migrations-integration` completed success with no failed steps.
+- **Exact-head Preview:** deployment `dpl_BNKmkr81CNj25t2iGqq8cDXi4Emf` — READY; `https://yugra18-hbwal7826-napishtu.vercel.app/`; Git SHA matches `bf2d278...`. Root HTML and app JS / React vendor / Supabase vendor / CSS assets all returned HTTP 200.
+- **Repeated current-Preview browser smoke:** Chromium opened all 9 sections (Home, Map, Rating, Risks, Forecast, Comparison, Reports, Data, Concept); each had non-empty main content. Exact current Preview smoke: page errors=0, console errors=0, failed requests=0. Mobile viewport 390×844: document/body width 390 px, main width 370 px, no viewport-level horizontal overflow.
+- **Full functional acceptance:** detailed interaction, map/passport, comparison, risk, 1/2/3-year scenario, CSV/PDF, responsive and simulated Supabase 200[] / 503 results are preserved in `docs/RELEASE_1_0_PLAN_2026-11-20.md` §4.1 and the PR #27 description. The application code used by full Playwright acceptance was SHA `cab70d7...`; all commits from that app-test SHA through `bf2d278` changed documentation/README only, not application source.
+- **Release plan:** `docs/RELEASE_1_0_PLAN_2026-11-20.md` is now in active PR #27; README links to it. PR #29 is closed as a duplicate after plan consolidation. PR #26 remains open / Draft and diverged from old base; do not merge its stale checkpoint over this branch.
+- **Review state:** no PR #27 reviews or unresolved review threads were present at the last review read. Keep PR #27 Draft until a human visually reviews key desktop/mobile screens and selected PDF pages, checks all 22 passports and real comparison pairs, and approves.
+- **Outstanding gates:** visual layout/readability (especially 144-page official report), municipality-by-municipality passport correctness, manual comparability review, owner/reviewer approval and merge. A successful HTTP/CI/automated browser run is not equivalent to these human approvals.
+- **Production boundary:** no Production deployment, Supabase DDL/DML, migrations, imports or mass writes. No visual redesign. Forecast remains conceptual and not statistically validated; official/demo data remain distinct.
+- **Next action:** complete human acceptance/review, then decide whether to merge PR #27. Production deployment requires a separate explicit release decision, exact-SHA build/deploy verification and post-deploy smoke test. The checkpoint commit itself is documentation-only; verify its own Actions and Preview before any merge.
+
+---
+
 ## Checkpoint — Release plan consolidated into active code PR (2026-11-18, UTC+05:00)
 
 - **Current workstream:** Release 1.0 acceptance on `fix/risk-stable-provenance-gate-2026-11-18`, PR #27 (open / Draft).
