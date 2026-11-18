@@ -1,3 +1,19 @@
+## Checkpoint — exact-unit gate for official comparison (2026-11-18 07:08 UTC+05:00)
+
+- **Статус:** `IN_PROGRESS` — исправляется воспроизводимый P0-риск происхождения единиц измерения в официальном сравнении.
+- **Ветка / PR:** `fix/risk-stable-provenance-gate-2026-11-18`, PR #27 (open, Draft).
+- **База PR:** `main` SHA `8f291774044fd9f73e6b76626178730f5d04a9f5` (ветка пока не перебазирована на последующие документальные изменения main).
+- **Предыдущий HEAD:** `9d3434e745f53a8919594e997ae5b80c21b74e5c`; exact-HEAD GitHub Actions run `44220461874` завершился success для jobs build и data-migrations-integration. Vercel status на этом SHA — failure с сообщением build-rate-limit; это не означает production deployment failure.
+- **Найденный дефект:** official comparison discovery, period selection и row selection допускали пустую единицу; код подставлял единицу из конфигурации серии. Так наблюдение без единицы могло отображаться/экспортироваться как будто его единица подтверждена.
+- **Исправление:** на всех трёх стадиях требуется точное совпадение `item.unit` с единицей серии; ключ периода больше не использует fallback. Пустые/несовпадающие единицы исключаются, а не нормализуются.
+- **Regression:** `scripts/test-official-comparison-gates.mjs` проверяет exact-unit gates на discovery, period options и итоговых строках, а также запрещает fallback.
+- **Затронутые файлы:** `src/InvestmentDetails.jsx`, `scripts/test-official-comparison-gates.mjs`, `docs/CONTINUATION_STATE.md`.
+- **Проверки:** ожидается exact-HEAD GitHub Actions после публикации; локальные npm-команды в текущем окружении не выполнялись.
+- **Production:** Supabase не изменялась; DDL/DML/миграции не выполнялись; production deployment не запускался.
+- **Следующее действие:** проверить CI exact HEAD и продолжить P0-проверку отчётов/экспортов; PDF и desktop/mobile browser smoke-test остаются отдельными ручными release gates.
+
+---
+
 ## Checkpoint — report CSV official-data export fix (2026-11-18)
 
 - **PR:** #27, Draft/open.

@@ -943,10 +943,10 @@ export const InvestmentDetails = () => {
       && item.geographic_level === geographyLevel
       && item.municipality_id != null
       && String(item.municipality_id).trim() !== ''
-      && (!item.unit || item.unit === series.unit)
+      && item.unit === series.unit
       && numericValue(item.value) != null
     ).forEach((item) => {
-      const periodKey = `${item.reference_year}|${item.reference_period || 'annual'}|${item.unit || series.unit}`;
+      const periodKey = `${item.reference_year}|${item.reference_period || 'annual'}|${item.unit}`;
       if (!periods.has(periodKey)) periods.set(periodKey, new Set());
       periods.get(periodKey).add(item.municipality_id);
     });
@@ -958,7 +958,8 @@ export const InvestmentDetails = () => {
     : officialComparisonSeriesOptions[0]?.code || selectedOfficialComparisonCode;
 
   const officialComparisonPeriods = useMemo(() => {
-    const geographyLevel = OFFICIAL_COMPARISON_SERIES.find((series) => series.code === effectiveOfficialComparisonCode)?.geographicLevel || 'municipality';
+    const comparisonConfig = OFFICIAL_COMPARISON_SERIES.find((series) => series.code === effectiveOfficialComparisonCode) || OFFICIAL_COMPARISON_SERIES[0];
+    const geographyLevel = comparisonConfig.geographicLevel || 'municipality';
     const seen = new Map();
     officialIndicators.filter((item) =>
       item.indicator_code === effectiveOfficialComparisonCode
@@ -966,9 +967,10 @@ export const InvestmentDetails = () => {
       && item.geographic_level === geographyLevel
       && item.municipality_id != null
       && String(item.municipality_id).trim() !== ''
+      && item.unit === comparisonConfig.unit
       && numericValue(item.value) != null
     ).forEach((item) => {
-      const key = String(item.reference_year) + '|' + String(item.reference_period || 'annual') + '|' + String(item.unit || '');
+      const key = String(item.reference_year) + '|' + String(item.reference_period || 'annual') + '|' + String(item.unit);
       if (!seen.has(key)) seen.set(key, {
         key,
         year: Number(item.reference_year),
@@ -1006,8 +1008,8 @@ export const InvestmentDetails = () => {
       && item.geographic_level === geographyLevel
       && item.municipality_id != null
       && String(item.municipality_id).trim() !== ''
-      && `${item.reference_year}|${item.reference_period || 'annual'}|${item.unit || ''}` === effectiveOfficialComparisonPeriod
-      && (!item.unit || item.unit === officialComparisonConfig.unit)
+      && `${item.reference_year}|${item.reference_period || 'annual'}|${item.unit}` === effectiveOfficialComparisonPeriod
+      && item.unit === officialComparisonConfig.unit
       && numericValue(item.value) != null
     ).map((item) => ({
       ...item,
