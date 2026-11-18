@@ -1,3 +1,16 @@
+## Checkpoint — visual spot-check desktop/mobile and representative PDF pages (2026-11-18, UTC+05:00)
+
+- **Статус:** `IN_PROGRESS` — дополнительный выборочный визуальный gate пройден на контрольных изображениях; полный пользовательский/владельческий review всё ещё нужен.
+- **Preview:** проверен действующий deployment ветки `fix/risk-stable-provenance-gate-2026-11-18`; текущий code-preview exact HEAD до документационных обновлений — `bf2d27802bc0a7d82ca34660efd93c8374a74b7a`, READY URL https://yugra18-hbwal7826-napishtu.vercel.app.
+- **Mobile screenshots:** Playwright открыл каждый из 9 основных разделов на viewport 390×844 и сохранил по одному screenshot. Для каждого раздела `documentElement.scrollWidth=390`, `body.scrollWidth=390`, `main width=370px`; горизонтальная прокрутка верхнего меню (scrollWidth=863, clientWidth=338) остаётся внутри nav-контейнера. Browser page errors = 0.
+- **Visual spot-check UI:** выбранные desktop и mobile screenshots просмотрены как contact sheets; на контрольных кадрах не обнаружено очевидного перекрытия блоков, обрезанных заголовков или viewport-level overflow. Контактный лист уменьшен для обзора; это не pixel-perfect review каждого компонента.
+- **PDF spot-check:** визуально просмотрены representative landscape pages 1, 2, 70 и 144 из сохранённого Chromium PDF. Первая страница содержит сводный блок/график и методологическую вводную; page 2 содержит табличное приложение; pages 70 и 144 — табличные страницы с сохранёнными колонками. На этих четырёх образцах явных обрезаний/перекрытий не обнаружено. PDF остаётся большим (144 страницы); все 144 страницы вручную не просмотрены, поэтому не заявлять полную визуальную проверку PDF.
+- **Оставшиеся owner gates:** человеческая проверка ключевых экранов на реальном desktop/mobile устройстве, полистный/выборочный просмотр PDF владельцем, reviewer/owner approval и отдельное разрешение Production release.
+- **Production:** без изменений; production deployment, Supabase DDL/DML, миграции и записи не выполнялись.
+- **Следующее действие:** обновить текущий Release Plan и PR description с ограничениями этой выборочной визуальной проверки; сохранить PR #27 Draft до owner approval.
+
+---
+
 ## Checkpoint — exact latest HEAD, browser smoke and consolidated Release 1.0 plan (2026-11-18, UTC+05:00)
 
 - **Verified branch state before this checkpoint:** PR #27, `fix/risk-stable-provenance-gate-2026-11-18`, HEAD `bf2d27802bc0a7d82ca34660efd93c8374a74b7a`; 35 commits ahead / 0 behind `main` `4cb1171faf0c4e4568bc16226178730f5d04a9f5`; PR open, Draft, mergeable.
