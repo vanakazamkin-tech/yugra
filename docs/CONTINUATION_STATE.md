@@ -1,3 +1,23 @@
+## Checkpoint — exact HEAD CI, Preview and PR consolidation verified (2026-11-18, UTC+05:00)
+
+- **Статус:** `IN_PROGRESS` — все автоматические gates на текущем документированном HEAD прошли; Release 1.0 остаётся в review стадии, Production не запускался.
+- **Активная ветка / PR:** `fix/risk-stable-provenance-gate-2026-11-18`, PR #27 open / Draft / mergeable=true.
+- **Exact HEAD перед этим checkpoint:** `6cbd5e5efd3432269e3c7d5271337d98a49e6f6c`.
+- **main:** `4cb1171faf0c4e4568bc16226178730f5d04a9f5`; branch comparison — 44 commits ahead / 0 behind.
+- **GitHub Actions exact HEAD:** Push run `44290143179` и Pull Request run `44290152775` — оба success; в каждом `build` и `data-migrations-integration` завершились success, failed steps отсутствуют.
+- **Vercel Preview exact HEAD:** deployment `dpl_BG3jiPLAbXvFUUGEPJC6Do1RjT1C` — READY; URL https://yugra18-2g9a5rv1k-napishtu.vercel.app; Git SHA совпадает с exact HEAD. Главная страница проверена HTTP 200, title «ЮГРА — Аналитика муниципалитетов», deployment ID в странице совпадает. Это Preview, не Production.
+- **PR consolidation:** #27 теперь включает hardened risk/comparison/report/backtest/forecast behavior, актуальный `docs/RELEASE_1_0_PLAN_2026-11-20.md`, chronology в `docs/CONTINUATION_STATE.md`, README links, durable handoff/Release 1.0 rules в `AGENTS.md`, Copilot и ChatGPT Project instructions.
+- **PR #26:** CLOSED / not merged / superseded. Полезные инструкции/checkpoint rules/Release Plan перенесены и актуализированы в PR #27; устаревший continuation log с предыдущей базой намеренно не объединялся.
+- **PR #29:** CLOSED / not merged / superseded duplicate documentation PR; Release Plan находится в активной PR #27.
+- **Agent prompt length:** `docs/CHATGPT_PROJECT_INSTRUCTIONS.md` — 6 569 символов, меньше ограничения 8 000.
+- **Browser acceptance:** application code на SHA `cab70d7c13718b0cfc5f5034dba3a808335f62c1` (предок current HEAD, последующие изменения документальные) прошёл functional Chromium scenarios для 9 основных разделов, 22 МО, паспорта, сравнения (лимит 4), риск-монитора, прогнозов 1/2/3 года, CSV/PDF и Supabase fallback. На мобильном viewport 390×844 все 9 разделов проверены; viewport overflow отсутствует.
+- **Visual spot-check:** проверены contact sheets desktop/mobile и PDF pages 1, 2, 70, 144. На выбранных образцах не обнаружены явные clipping/overlap defects. Полный визуальный просмотр всех 144 страниц и human owner approval ещё не выполнены.
+- **Оставшиеся gates:** (1) владелец/ревьюер просматривает ключевые desktop/mobile экраны и PDF-страницы; (2) PR #27 получает owner/reviewer approval; (3) merge только после approval; (4) Production deployment — отдельный разрешённый этап на проверенном SHA, затем post-deploy smoke/readback.
+- **Production:** Production deployment не запускался; Supabase production DDL/DML, миграции, импорты и массовые записи не выполнялись.
+- **Следующее действие:** обновить PR #27 description до exact HEAD и сохранить следующий checkpoint после него. Держать PR Draft до human owner review/approval; не выпускать Production и не менять production Supabase.
+
+---
+
 ## Checkpoint — release documentation and agent handoff consolidated (2026-11-18, UTC+05:00)
 
 - **Статус:** `IN_PROGRESS` — план Release 1.0, журнал передачи и инструкции агентов сведены в одну актуальную ветку PR #27. Это документационный этап; код приложения в этих изменениях не менялся.
