@@ -1,3 +1,18 @@
+## Checkpoint — forecast backtest provenance gate (2026-11-18, active work)
+
+- **Статус:** `IN_PROGRESS`; исправлен fail-open путь в диагностической walk-forward проверке прогноза.
+- **Ветка / PR:** `fix/risk-stable-provenance-gate-2026-11-18`, PR #27 open / Draft.
+- **Кодовый commit:** `97e7cc833b4b6d20e83d5e3c7daf35e5a2c98478`.
+- **Дефект:** `buildHistoricalBacktest` отбирал строки только по `verification_status=verified`, географии, периоду, значению, коду/названию и единице. При этом не проверял `source_id` или `source_url`; verified-строка без ссылки на происхождение могла участвовать в диагностике.
+- **Исправление:** backtest теперь требует непустой `source_id` либо HTTP(S) `source_url`. Иначе строка исключается и учитывается в `excluded.missingProvenance`. В UI показывается число исключённых строк. Исторические данные не дополняются искусственными источниками.
+- **Regression:** добавлены сценарии missing source, source_id, source_url и небезопасного URL; fixtures существующих backtest-тестов дополнены явными source_id.
+- **Файлы:** `src/lib/forecastModel.js`, `src/lib/forecastModel.test.js`, `src/components/Forecasting.jsx`, `docs/FORECASTING_MODEL.md`, этот журнал.
+- **CI:** exact HEAD `97e7cc8` запустил два дублирующихся GitHub Actions runs `44222605786` и `44222598845`; на последнем readback jobs build и data-migrations-integration ещё выполнялись. Vercel Preview Comments — success; это не подтверждает фактический browser smoke-test.
+- **Production:** Supabase и Production deployment не менялись.
+- **Следующее действие:** дождаться exact-HEAD CI, исправить регрессию если тесты выявят; затем продолжить P0 сценарного экрана, ручную PDF/CSV и narrow viewport acceptance. Не заявлять релиз готовым без ручных gates.
+
+---
+
 ## Checkpoint — main sync and release P0 gates (2026-11-18 07:12 UTC+05:00)
 
 - **Статус:** `IN_PROGRESS` — исправления provenance в risk/comparison/report опубликованы; exact-HEAD CI зелёный.
