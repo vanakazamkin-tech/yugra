@@ -1,3 +1,16 @@
+## Checkpoint update — 2026-11-18 (после 07:10 UTC+05:00)
+
+- **PR:** #27, Draft/open — https://github.com/vanakazamkin-tech/yugra/pull/27.
+- **Исходный code/test HEAD:** `c7e302d019633b4044febc6df2fbc1f3e5ff68d5`; последующий documentation checkpoint HEAD: `1f7bbc08651f093e4c076faa0a6b6ba999ca4a3f`.
+- **Exact-HEAD CI для 1f7bbc0:** workflow run `44219541989`; jobs `build` и `data-migrations-integration` завершились `success`. Build прошёл forecast model tests, provenance/source catalog, migration staging/safety, risk provenance/geography, risk pillars, Rosstat crosswalk, official comparison, report official-data gates, municipality passport, operational registry, map coverage, error boundary и production bundle. Integration job прошёл миграции на disposable schema, повторное применение/idempotency, grants/uniqueness и read-only post-migration audit. Vercel Preview status на предыдущем code checkpoint был success; точный новый deployment card в этой сессии не удалось открыть.
+- **P0 audit — forecasting:** статически проверены `Forecasting.jsx`, `forecastModel.js`, `forecastModel.test.js`, `forecastCoverage.js`, `FORECASTING_MODEL.md`. Горизонт ограничен 1–3 годами; missing/invalid values остаются null; индексный режим требует approved version + complete result и не fallback-ит на demo score; факторы и uncertainty раскрыты как экспертные допущения, а не статистические оценки/доверительные интервалы. Backtest использует verified municipality-level ряды, разделяет annual и одинаковые календарные даты, разрывает пропуски лет, исключает конфликты без усреднения; малые выборки маркируются. В просмотренном коде воспроизводимый P0-дефект не подтверждён.
+- **P0 audit — reports/export:** статически проверены `InvestmentDetails.jsx`, `officialData.js`, `test-report-official-data-gates.mjs`. Официальные наблюдения отделены от demo-агрегатов; отчётный selector ограничивает статус, географический уровень, год, значение и код показателя; отдельная официальная таблица сохраняет географию/период/источник; CSV маркирует демонстрационные значения и экранирует потенциальные формулы. Отдельный CSV официальных наблюдений содержит единицу, период, source ID и URL. Подтверждённого воспроизводимого P0-дефекта не найдено.
+- **Ручной gate остаётся открытым:** PDF action — `window.print()`, не серверная генерация. Фактический PDF не сохранён/не открыт/не проверен; browser smoke test на desktop и narrow viewport не выполнен в текущей среде. Не утверждать PDF/UI готовыми до ручной проверки.
+- **Production:** Supabase не менялась; никаких DDL/DML/миграций. Production deployment не запускался.
+- **Следующее конкретное действие:** выполнить ручной smoke test на текущем Vercel Preview exact SHA (desktop + узкий экран), сохранить PDF из конструктора отчётов и проверить разрывы страниц/таблицы/источники/оговорки; проверить CSV открытиями в табличном редакторе. Если браузерное тестирование недоступно, зафиксировать gate как BLOCKED и не объявлять релиз готовым.
+
+---
+
 ## Checkpoint update — 2026-11-18 07:10 UTC+05:00
 
 - **PR:** #27, Draft/open — `https://github.com/vanakazamkin-tech/yugra/pull/27`.
