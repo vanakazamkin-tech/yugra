@@ -1090,3 +1090,10 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Введено дополнительное правило: предварительные/оценочные наблюдения и сигналы без источника остаются видимыми в Watch и полном аудите, но не могут обеспечивать достижение порога Critical.
 - Critical теперь требует не менее трёх негативных семейств с непредварительными последними наблюдениями и источниками в трёх разных направлениях. Это консервативное правило прототипа; статистическая/экспертная калибровка ещё требуется.
 - В аудите CSV добавлены поля допуска в Critical и причина недопуска. Пороговые счётчики предупреждений и сами наблюдения не удаляются.
+
+### 18.11.2026 — read-only аудит RLS и истории миграций
+- RLS включён на municipalities, municipality_indicators, data_sources, municipal_program_execution и municipality_indicator_import_staging.
+- Для anon/authenticated доступны только SELECT на публичных таблицах; municipality_indicators и municipal_program_execution ограничены политиками verified. data_sources и municipalities публично читаемы.
+- Для municipality_indicator_import_staging RLS включён, политик нет, grants для anon/authenticated отсутствуют; права записи/чтения есть только у service_role. В staging 0 строк.
+- service_role сохраняет ожидаемые полномочия записи; FORCE ROW LEVEL SECURITY выключен, поэтому нельзя считать защиту от владельца/служебной роли абсолютной.
+- Последняя применённая миграция — 20261107055919 extend_data_source_provenance_metadata. Миграция 20261118033000_harden_staging_import_integrity в production не применена. Схема и данные не изменялись.
