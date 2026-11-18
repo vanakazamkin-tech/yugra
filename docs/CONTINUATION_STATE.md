@@ -1,3 +1,21 @@
+## Checkpoint — Release 1.0 status consolidated after official comparison acceptance (2026-11-18, UTC+05:00)
+
+- **Статус:** IN_PROGRESS — автоматические и функциональные gates проверены; ожидается exact-HEAD CI для последней документационной синхронизации; Production и owner approval не выполнялись.
+- **Активная ветка / PR:** fix/risk-stable-provenance-gate-2026-11-18, PR #27 open / Draft / mergeable=true.
+- **Последний полностью проверенный HEAD до этих docs-only sync commits:** 327a558616345d9c1016d82cd16af30394c6b999.
+- **Exact-HEAD CI:** Push 44293244330 и Pull Request 44293255166 — success; в обоих build и data-migrations-integration завершились success, failed steps отсутствуют.
+- **main:** 4cb1171faf0c4e4568bc16226178730f5d04a9f5; перед текущими docs-only синхронизациями branch compare — 57 ahead / 0 behind.
+- **Application Preview:** последний READY code deployment dpl_3emHYQqMKoWXuoTbqf8mysufHguj, URL https://yugra18-feh8kptgq-napishtu.vercel.app, app SHA e0e2da4adccccd82d3d4e9b8c96d471ab731dc15. После этого application JS/JSX/CSS не менялись. Новые docs-only deploys блокировались Vercel Hobby rate limit; Preview не Production.
+- **Release Plan sync commit:** b30168da7bb656705999b2df3202a6c422541036 обновил section 4.2 до exact green CI HEAD 327a558, актуального branch state и Vercel rate limit. Этот docs commit требует отдельной exact-HEAD CI проверки.
+- **Official comparison:** 19 series / 36 periods / 371 desktop rows; zero wrong-period/duplicate/empty-name/unsafe-source cases. Mobile: 19 series, 29 first/last-period samples, 390px viewport без page overflow; internal table scroll. Municipal CSV 1,208 bytes / BOM / 3 rows; settlement CSV 4,642 bytes / BOM / 16 cities, geography «Населённый пункт», no municipal-level mixing.
+- **Map/passports:** SVG hit-test 22/22 correct passports, synced list 22/22 desktop/mobile; all 22 passports have demo caveat and collectively 1,433 verified rows with count/geo/year/unit/HTTP(S) source provenance matched; missing provenance=0.
+- **PR #26/#29:** оба закрыты как superseded/duplicate; полезные instructions, Release Plan, checkpoint rules, README links перенесены в #27. Development First rules from main are preserved.
+- **Оставшиеся gates:** owner/reviewer human approval desktop/mobile/PDF; full 144-page PDF not visually reviewed (sampled pages 1/2/70/144); merge PR #27 after approval; Production release отдельным разрешённым этапом.
+- **Production:** no deployment; no Supabase DDL/DML/migrations/imports.
+- **Следующее действие:** проверить exact-HEAD GitHub Actions для последнего docs commit, обновить PR metadata/description при необходимости и оставить PR Draft до owner approval. Не обходить Vercel deployment limit и не менять production.
+
+---
+
 ## Checkpoint — official comparison, mobile/settlement exports and Release 1.0 status consolidated (2026-11-18, UTC+05:00)
 
 - **Статус:** IN_PROGRESS — desktop/mobile comparability acceptance завершена; оба exact-HEAD CI прогона последнего проверенного SHA успешны; Production и human owner approval не выполнялись.
