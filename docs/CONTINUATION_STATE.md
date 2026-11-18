@@ -1,3 +1,13 @@
+## CI confirmation — checkpoint 1989d127 (2026-11-18)
+
+- **Текущий HEAD:** `1989d1276c7b2b660853b5fb358bd4a6a7462b59`; опубликован в PR #27.
+- **GitHub Actions exact HEAD:** runs `44219963905` и `44219969158`; в обоих jobs `build` и `data-migrations-integration` завершились `success`, без failed steps.
+- **Vercel:** check `Vercel Preview Comments` для exact SHA завершился `success` (unresolved feedback отсутствует). Это Preview feedback/status, не ручной браузерный smoke-test и не Production.
+- **PR #27:** open / Draft; PR head совпадает с SHA выше.
+- **Следующее действие без изменений:** ручная проверка desktop/mobile и PDF/CSV на Preview остаётся незакрытым release gate.
+
+---
+
 ## Checkpoint update — 2026-11-18 (после 07:10 UTC+05:00)
 
 - **PR:** #27, Draft/open — https://github.com/vanakazamkin-tech/yugra/pull/27.
