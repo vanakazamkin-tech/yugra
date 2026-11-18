@@ -1,3 +1,20 @@
+## Checkpoint — HTTP(S) provenance validation for official reports (2026-11-18 15:16 UTC+05:00)
+
+- **Статус:** `IN_PROGRESS` — исправлен обнаруженный fail-open крайний случай в отборе официальных наблюдений для отчётов.
+- **Ветка / PR:** `fix/risk-stable-provenance-gate-2026-11-18`, PR #27 open / Draft.
+- **Исходный HEAD:** `a224b808d7dabad73c53b5f540af294771002a03`; перед изменением PR был на 22 commits ahead / 0 behind относительно main.
+- **Дефект:** отчётный selector требовал только непустой `source_url`. Строка с `javascript:`, `data:` или `file:` могла пройти provenance gate, хотя такой URL не является допустимой ссылкой на первоисточник.
+- **Исправление:** добавлен `src/lib/sourceUrl.js` с проверкой корректного URL и схемы HTTP(S); официальный слой отчёта использует этот helper. Внешний дизайн и поведение экспорта не менялись.
+- **Regression:** `scripts/test-report-official-data-gates.mjs` теперь исполняет проверки для HTTPS/HTTP и отклоняет javascript/data/file/невалидные URL.
+- **Кодовые commits:** helper + selector опубликованы; code commit `3c023bf0751af2311d25e6c68db4fc6ebbb5c7d8`. Regression commit `124cdff182956e300ff2e9a7a70e9850215c17fd`.
+- **Проверки:** точные runtime assertions добавлены в существующий test gate; GitHub Actions для нового HEAD ожидается. Локальные npm-команды в текущем окружении не запускались.
+- **Preview / Production:** предыдущий Vercel check для исходного HEAD был success; Preview/Production для нового SHA ещё не подтверждены. Production deployment не запускался.
+- **Supabase:** не подключалась и не изменялась; DDL/DML/миграции отсутствуют.
+- **Осталось:** дождаться exact-HEAD GitHub Actions и Vercel; после успешной сборки продолжить ручную проверку Preview, фактических PDF/CSV и desktop/mobile. Релиз не объявлять готовым до ручных gates.
+- **Следующее конкретное действие:** проверить CI для нового HEAD и устранить возможную регрессию, затем выполнить доступную ручную приёмку Preview.
+
+---
+
 ## Checkpoint — единицы неопределённости в индексном сценарии (2026-11-18 14:01 UTC+05:00)
 
 - **Статус:** `IN_PROGRESS` — исправлена подпись единицы в UI для опционального режима процентильного индекса.
