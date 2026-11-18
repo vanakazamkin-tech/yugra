@@ -1,3 +1,20 @@
+## Checkpoint — mobile comparison, settlement geography and exact-HEAD CI (2026-11-18, UTC+05:00)
+
+- **Статус:** `IN_PROGRESS` — desktop official comparability sweep и mobile selection sweep пройдены; CSV муниципального и поселенческого уровней проверены; Production release не выполнялся.
+- **Проверенный exact HEAD до текущего обновления документации:** `e0e2da4adccccd82d3d4e9b8c96d471ab731dc15`.
+- **PR #27 CI exact HEAD:** Push run `44292194605` и Pull Request run `44292205069` — оба success. В обоих `build` и `data-migrations-integration` завершились success, failed steps отсутствуют.
+- **Vercel Preview exact HEAD:** deployment `dpl_3emHYQqMKoWXuoTbqf8mysufHguj` — READY; URL https://yugra18-feh8kptgq-napishtu.vercel.app; Git SHA совпадает с `e0e2da4`. Это Preview, не Production. Деплои для более поздних docs-only коммитов упирались в rate limit; не обходить его повторными запусками.
+- **Desktop official comparison:** 19 indicator series, 36 periods, 371 rendered observation rows; wrong-period rows=0, duplicate/empty names=0, unsafe/missing source URLs=0; browser page errors=0, failed requests=0. Таблица для каждой серии использует единый geography level.
+- **Municipal CSV:** `yugra-official-municipal-comparison.csv` для `own_production_shipments_q1`, период 2026-Q1, unit `тыс. руб.`, municipality geography; 1,208 bytes, UTF-8 BOM, header + 3 rows, все строки с source ID и HTTPS source URL.
+- **Settlement CSV:** `population_settlement`, период 2024, 16 городов; 4,642 bytes, UTF-8 BOM. Каждая строка имеет geography `Населённый пункт`, unit `тыс. человек`, один период и source URL. Нет смешивания с муниципальным уровнем.
+- **Mobile official comparison:** 390×844, touch enabled; все 19 series открываются, 29 first/last period samples проверены; selected period совпадает с отображаемым; rows>0. Таблица прокручивается внутри своего контейнера (client 338px / content 760px); document/body width=390px; page overflow=false; page errors=0; failed requests=0.
+- **Release Plan:** comparison checklist marked [x]; added desktop 19/36/371 sweep, municipal CSV, settlement CSV, and mobile 19/29-period sample acceptance. Не считать это статистической валидацией/полнотой coverage.
+- **Production:** без изменений; production deployment, Supabase DDL/DML/migrations/imports не выполнялись.
+- **Оставшиеся gates:** owner/reviewer approval ключевых desktop/mobile экранов и PDF; просмотр всех 144 PDF страниц не выполнен (только representative pages 1/2/70/144); approval/merge PR #27; Production release отдельно.
+- **Следующее действие:** проверить exact-HEAD CI/Preview после текущего docs-only обновления, обновить PR description; оставить PR Draft до human owner approval.
+
+---
+
 ## Checkpoint — mobile official comparison acceptance (2026-11-18, UTC+05:00)
 
 - **Статус:** `IN_PROGRESS` — official comparison manual QA завершена на desktop и mobile; Release Plan дополнен, отдельные owner/Production gates остаются.
