@@ -1,3 +1,18 @@
+## Checkpoint — all 22 passport provenance checks passed (2026-11-18, UTC+05:00)
+
+- **Статус:** `IN_PROGRESS` — карта и все 22 паспорта прошли расширенную browser QA; Release Plan обновлён. Сопоставление, human owner review и Production остаются отдельными gates.
+- **Preview:** проверен build PR #27 на HEAD `19d508fcbc8b920c544fced1974df5a84d2ca67c`; URL https://yugra18-39jtpvntu-napishtu.vercel.app.
+- **Map hit-testing:** 22 SVG targets имеют уникальные aria-label. Для каждого найден экранный point внутри реальной заливки path / clickable city target и выполнен реальный pointer click. Итог: 22/22 заголовков паспорта точно совпадают с aria-label; noVisibleHit=0; mismatch=0; browser page errors=0.
+- **Map list / desktop:** 22/22 пункта `button.map-list-item` открывают паспорт с тем же названием; mismatch=0.
+- **Map list / mobile:** viewport 390×844, mobile/touch context; 22/22 пункта открывают корректный паспорт; mismatch=0; document/body width=390px; horizontal page overflow отсутствует; page errors=0.
+- **Passport provenance QA:** каждый из 22 паспортов открыт через synced list; heading match=22/22; demo disclaimer=22/22; official rows total=1,433; displayed counter matches rendered rows for every territory; invalid HTTP(S) URL=0; missing geography=0; missing year=0; missing unit=0; count mismatches=0; empty official state=0; page errors=0. По текущему срезу хотя бы одна verified запись присутствует в каждом из 22 паспортов. Это означает наличие записей, но не сбалансированное покрытие каждого показателя.
+- **False-positive clarification:** предыдущий explorer test использовал forced-click по центру bounding box SVG path. У сложного/вогнутого полигона центр bbox может не лежать в самом path или перекрываться соседней фигурой, поэтому такой тест давал ложные mismatches. Реальная проверка точки внутри fill и обычный pointer click подтвердили корректность всех 22 mapping. Никакой map code/design fix не потребовался.
+- **Release Plan:** в `docs/RELEASE_1_0_PLAN_2026-11-20.md` map/passport checklist теперь [x]; manual comparability gate остаётся [ ] до отдельной проверки разных кодов/периодов/geography/unit. Human owner visual approval и Production deployment остаются отдельными gates.
+- **Production:** не изменялась; no production deployment, DDL/DML, migrations or imports.
+- **Следующее действие:** проверить actual code/plan checkpoint commit на exact-HEAD CI и Preview; затем продолжить целевую ручную проверку comparison comparability. Не объявлять Release 1.0 полностью accepted до owner approval.
+
+---
+
 ## Checkpoint — проверка 22 паспортов через map hit-testing и mobile list (2026-11-18, UTC+05:00)
 
 - **Статус:** `IN_PROGRESS` — углублённая map/passport functional QA завершена; ошибки геометрии или ID mapping не подтверждены.
