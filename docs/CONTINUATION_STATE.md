@@ -1,3 +1,19 @@
+## Checkpoint — release documentation and agent handoff consolidated (2026-11-18, UTC+05:00)
+
+- **Статус:** `IN_PROGRESS` — план Release 1.0, журнал передачи и инструкции агентов сведены в одну актуальную ветку PR #27. Это документационный этап; код приложения в этих изменениях не менялся.
+- **Ветка / PR:** `fix/risk-stable-provenance-gate-2026-11-18`, PR #27 (open / Draft).
+- **HEAD до checkpoint:** `3beccf9ba3f2eeeff965c89f7dab7ea257bbc2d4`; compare с `main` `4cb1171faf0c4e4568bc16226178730f5d04a9f5`: 42 commits ahead / 0 behind.
+- **Сохранённые docs commits:** updated `AGENTS.md` (`1b3d4bb)); Copilot instructions (`6049139`); ChatGPT Project instructions (`2a08a42`, 6 569 символов, ниже 8 000); README checkpoint link (`3beccf9`). Release Plan и визуальный spot-check сохранены отдельными предыдущими коммитами в той же ветке.
+- **Интеграция старого PR #26:** полезные изменения из шести файлов PR #26 перенесены поверх актуальных файлов main: обязательные checkpoints/handoff, Release 1.0 scope rules, обновлённая инструкция Copilot/ChatGPT, README links, текущий continuation ledger и Release Plan. Сохранён актуальный раздел `DEVELOPMENT FIRST` из main; устаревшая версия AGENTS из PR #26 не копировалась целиком. PR #26 на момент checkpoint ещё открыт / Draft и будет закрыт как superseded после проверки exact-HEAD CI.
+- **PR #29:** закрыт как duplicate documentation PR; Release Plan перенесён в активную ветку PR #27.
+- **Последняя browser QA:** application code проверен на SHA `cab70d7c13718b0cfc5f5034dba3a808335f62c1`; последующие изменения только documentation. Desktop: все 9 разделов, карта/22 МО, passport, comparison, risk, forecasts, CSV/PDF, Supabase fallback. Mobile 390×844: все 9 разделов проверены отдельными screenshots; каждый даёт doc/body width 390px и main width 370px, page errors=0.
+- **Визуальный spot-check:** просмотрены contact sheets desktop и mobile; PDF pages 1, 2, 70 и 144. На выбранных образцах не найдено очевидных clipping/overlap/layout-breaking defects. Не просмотрены все 144 PDF-страницы и не получено human owner approval; эти gates остаются открыты.
+- **CI/Vercel нового HEAD:** Push workflow `44289929803` был queued на момент фиксации; Vercel deployment `dpl_47xcP6rhXUULee7bQvKjtcBkEoYt` также QUEUED. Не переносить статус success с предыдущего SHA.
+- **Production:** без изменений; production deployment не запускался, Supabase DDL/DML, миграции и массовые записи не выполнялись.
+- **Следующее действие:** проверить exact-HEAD CI и Preview для документационного checkpoint; при success закрыть PR #26 как superseded, оставить PR #27 Draft до визуального approval владельца и только затем обсуждать merge/Production release.
+
+---
+
 ## Checkpoint — visual spot-check desktop/mobile and representative PDF pages (2026-11-18, UTC+05:00)
 
 - **Статус:** `IN_PROGRESS` — дополнительный выборочный визуальный gate пройден на контрольных изображениях; полный пользовательский/владельческий review всё ещё нужен.
