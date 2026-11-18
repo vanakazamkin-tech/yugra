@@ -1,3 +1,19 @@
+## Checkpoint — exhaustive official-comparison UI and CSV acceptance (2026-11-18, UTC+05:00)
+
+- **Статус:** `IN_PROGRESS` — закрыта ручная проверка comparability gate для официального сравнителя; Production/owner release approval остаются отдельными этапами.
+- **Preview/application code:** функциональный sweep выполнен в Chromium на Preview build с application code SHA `19d508fcbc8b920c544fced1974df5a84d2ca67c`; с последнего code commit в PR изменялась только документация. Preview URL: https://yugra18-39jtpvntu-napishtu.vercel.app.
+- **Официальный сравнитель:** 19 доступных indicator series, 36 периодов, 371 отображённая observation row. Каждая комбинация series-period проверена после выбора в UI.
+- **Comparability assertions:** 0 строк с неверным периодом; 0 повторов территории внутри среза; 0 пустых названий; 0 небезопасных или отсутствующих HTTP(S) source URL; 0 browser page errors; 0 failed requests.
+- **Geography:** в срезах отображается корректный заголовок географии для настройки серии: «Муниципальное образование» либо «Город / населённый пункт». Муниципальные и поселенческие значения не смешиваются внутри выбранного ряда. Низкое покрытие видно по фактическому числу строк; пропуски не подменяются нулями.
+- **Unit/code/period contract:** доступные series options, period options и итоговые rows соответствуют точному `indicator_code`, configured `unit`, configured `geographic_level` и составному ключу `year|period|unit`. Тот же fail-closed контракт покрыт regression gates CI PR #27.
+- **CSV export:** скачан `yugra-official-municipal-comparison.csv` для «Отгрузка собственной продукции · I квартал», периода `2026|2026-Q1|тыс. руб.`. 1,208 bytes, UTF-8 BOM, 4 строки (header + 3 муниципалитета); все data rows имеют один период «2026 · I квартал», одну единицу «тыс. руб.», один географический уровень «Муниципальное образование», source ID и HTTPS primary-source URL.
+- **Release Plan:** в `docs/RELEASE_1_0_PLAN_2026-11-20.md` comparability checklist отмечен [x], добавлены результаты sweep 19/36/371 и реального CSV export. Отдельный concept/demo comparison рейтингов проверялся ранее; этот sweep относится к отдельному official data comparison panel.
+- **Production:** без изменений; production deployment, Supabase DDL/DML/migrations/imports не выполнялись.
+- **Оставшиеся gates:** человеческое owner/reviewer approval ключевых экранов и выбранных PDF-страниц; полный PDF на 144 страницы не просматривался постранично; merge PR #27 и отдельное разрешение Production release.
+- **Следующее действие:** сохранить этот checkpoint, получить exact-HEAD CI/Preview для обновлённого плана и журнала, затем обновить PR #27 описание. Не переводить PR в Ready/merge и не выпускать Production без owner approval.
+
+---
+
 ## Checkpoint — all 22 passport provenance checks passed (2026-11-18, UTC+05:00)
 
 - **Статус:** `IN_PROGRESS` — карта и все 22 паспорта прошли расширенную browser QA; Release Plan обновлён. Сопоставление, human owner review и Production остаются отдельными gates.
