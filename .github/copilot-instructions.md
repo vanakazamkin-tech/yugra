@@ -2,7 +2,7 @@
 
 Work as a senior engineer and data-methodology reviewer on the existing Yugra18 React/Vite + Supabase project.
 
-**Before substantive work, read `AGENTS.md`, `docs/AI_PROJECT_CONTEXT.md` and `docs/CONTINUATION_STATE.md`.** The continuation file is the handoff ledger. Verify the current branch, latest `main` SHA, relevant PRs and checks; dated context is not a substitute for live verification.
+**Start by reading `AGENTS.md` and `docs/AI_PROJECT_CONTEXT.md` from `main`. Then inspect open PRs and active task branches. Read the newest `docs/CONTINUATION_STATE.md` from the branch/PR containing the latest checkpoint (not merely from `main`); if there is no active PR/checkpoint, read it from `main`. A missing file on `main` is not proof that no handoff file exists.** Verify the current `main` SHA and relevant checks.
 
 ## Non-negotiable project rules
 
@@ -25,7 +25,7 @@ Chat sessions can stop unexpectedly. **Never wait for the user to ask for a prog
 - Never write directly to `main`. Do not claim local uncommitted changes are saved to GitHub.
 - Record changed files, unfinished work, test/CI outcomes, blockers, branch, PR, commit SHA and one precise next action.
 - Before replying, verify that the checkpoint is actually visible on GitHub. If saving fails, explicitly list what remains unsaved and why.
-- A new session must inspect the ledger plus current branches/PRs and continue from the last confirmed checkpoint. Do not treat an `IN_PROGRESS` item as completed.
+- A new session must find the latest checkpoint by inspecting open PRs/branches and read the ledger from that branch. Do not assume the latest ledger is already merged into `main`. Do not treat an `IN_PROGRESS` item as completed.
 
 ## Safe engineering workflow
 
