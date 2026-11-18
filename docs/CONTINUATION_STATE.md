@@ -1,3 +1,17 @@
+## Checkpoint — проверка 22 паспортов через map hit-testing и mobile list (2026-11-18, UTC+05:00)
+
+- **Статус:** `IN_PROGRESS` — углублённая map/passport functional QA завершена; ошибки геометрии или ID mapping не подтверждены.
+- **Preview:** проверен тот же application build, опубликованный на exact doc HEAD `19d508fcbc8b920c544fced1974df5a84d2ca67c`; Preview READY: https://yugra18-39jtpvntu-napishtu.vercel.app.
+- **Контракт ID:** `data/municipalities-detailed.json` содержит 22 уникальных municipality IDs; `src/ugraMapGeo.js` содержит 22 уникальных district/city IDs; `scripts/check-map-coverage.mjs` сравнивает обе стороны и ранее прошёл как exact-HEAD CI gate.
+- **Карта / desktop:** 22 SVG targets с уникальными aria-label проверены. Для каждого path найден экранный point, который одновременно (a) лежит внутри заполненной геометрии path по `isPointInFill`, (b) является реальным верхним элементом под курсором (`elementFromPoint`). Фактический click по этой точке открыл паспорт с тем же названием, что и aria-label: 22/22 совпадений, noVisibleHit=0, mismatches=0, page errors=0.
+- **Важно о методике:** предыдущий exploratory loop использовал центры bounding boxes путём force-click. У вогнутых/непрямоугольных SVG-полигонов bounding-box center иногда лежит вне самого path или перекрыт соседним path; это привело к ложным mismatches тестового метода, а не доказало неверное сопоставление ID. Последующая проверка реальных точек внутри видимого fill подтвердила корректный click-to-passport mapping для всех 22 targets.
+- **Список карты / desktop:** все 22 `button.map-list-item` открывают паспорт с точным совпадением выбранного названия: 22/22, mismatches=0, page errors=0.
+- **Список карты / mobile:** viewport 390×844, `isMobile=true`, `hasTouch=true`; все 22 пункта по очереди успешно открыли корректный паспорт: 22/22, mismatches=0, page errors=0. Document/body width=390 px; горизонтального overflow нет. Горизонтальная прокрутка верхнего меню остаётся внутри nav-container (clientWidth=338, scrollWidth=863).
+- **Вывод:** code fix не нужен; существующие UI handlers используют прямой `byId[id]` lookup, а map IDs сопоставлены с 22 данными. Дизайн, карта и геометрия не менялись.
+- **Следующее действие:** обновить Release Plan/PR description с точными результатами desktop/mobile 22/22; оставить owner approval и Production release отдельными gates.
+
+---
+
 ## Checkpoint — exact HEAD CI, Preview and PR consolidation verified (2026-11-18, UTC+05:00)
 
 - **Статус:** `IN_PROGRESS` — все автоматические gates на текущем документированном HEAD прошли; Release 1.0 остаётся в review стадии, Production не запускался.
