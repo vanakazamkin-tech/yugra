@@ -4,6 +4,8 @@ import { spawnSync } from 'node:child_process';
 const checks = [
   ['Migration staging syntax', ['--check', 'scripts/prepare-rosstat-migration-import.mjs']],
   ['Migration staging filters', ['scripts/test-rosstat-migration-staging.mjs']],
+  ['Tochno BDMO extractor syntax', ['--check', 'scripts/extract-tochno-hmao.mjs']],
+  ['Tochno BDMO extractor regression', ['scripts/test-tochno-hmao-extractor.mjs']],
   ['Staging import identity, period and provenance', ['scripts/test-staging-import-integrity.mjs']],
   ['Candidate resilience registry approval and pillar-weight safety', ['scripts/test-index-candidate-registry.mjs']],
   ['Forecast coverage classification', ['scripts/test-forecast-coverage.mjs']],
