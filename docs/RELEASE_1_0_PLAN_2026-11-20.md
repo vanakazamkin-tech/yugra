@@ -181,14 +181,15 @@ npm run validate:rosstat-crosswalk
 ## 4.2. Текущий статус GitHub и Preview — 18.11.2026
 
 - **Активный PR:** #27, ветка `fix/risk-stable-provenance-gate-2026-11-18`, open / Draft / mergeable=true.
-- **Последний exact HEAD:** `061840749d30ee9456f77b984ceed7ae3a061030`.
-- **Синхронизация с main:** 55 commits ahead / 0 behind относительно `main` `4cb1171faf0c4e4568bc16226178730f5d04a9f5`.
-- **GitHub Actions exact HEAD:** Push run `44293063022` и Pull Request run `44293069716` — success. В обоих `build` и `data-migrations-integration` завершились success; failed steps отсутствуют.
-- **Vercel:** для последнего documentation-only SHA статус failure по внешнему Hobby/free-tier API deployment rate limit (`api-deployments-free-per-day`), не из-за build приложения. Повторные попытки не выполнялись, лимит не обходился.
-- **Последний готовый application Preview:** deployment `dpl_3emHYQqMKoWXuoTbqf8mysufHguj`, READY, URL https://yugra18-feh8kptgq-napishtu.vercel.app, exact Git SHA `e0e2da4adccccd82d3d4e9b8c96d471ab731dc15`. Между этим code SHA и последним HEAD менялась только документация; приложение не менялось. Это Preview, не Production.
-- **Functional browser QA:** все 9 основных разделов, 22 паспорта, 1 433 provenance rows, fail-closed risk, сценарии 1/2/3 года, CSV/PDF, Supabase fallback, mobile 390×844 проверены. Официальное сравнение: 19 series / 36 periods / 371 rows; desktop mismatch/duplicate/empty-name/unsafe-source=0, mobile 29 period samples; municipal и settlement CSV отдельно проверены.
-- **План и handoff:** Release Plan, continuation ledger и README links находятся в PR #27. `AGENTS.md`, Copilot и ChatGPT Project instructions содержат durable checkpoint/handoff правила; DEVELOPMENT FIRST из main сохранён. Старые PR #26/#29 закрыты как superseded/duplicate.
-- **Оставшиеся gates:** owner/reviewer approval ключевых desktop/mobile экранов и PDF-пагинации; все 144 PDF-страницы вручную не просмотрены (только representative pages 1/2/70/144); merge PR #27 после approval. Production release — отдельное решение после merge и проверки exact SHA.
+- **Последний проверенный exact HEAD:** `327a558616345d9c1016d82cd16af30394c6b999`.
+- **Синхронизация с main:** 57 commits ahead / 0 behind относительно `main` `4cb1171faf0c4e4568bc16226178730f5d04a9f5`.
+- **GitHub Actions exact HEAD:** Push run `44293244330` и Pull Request run `44293255166` — success. В обоих `build` и `data-migrations-integration` завершились success; failed steps отсутствуют.
+- **Vercel:** новый Preview для documentation-only HEAD не создан из-за внешнего Hobby/free-tier API deployment rate limit (`api-deployments-free-per-day`); это не ошибка сборки приложения. Повторные попытки/обход лимита не выполнялись.
+- **Последний готовый application Preview:** deployment `dpl_3emHYQqMKoWXuoTbqf8mysufHguj`, READY, URL https://yugra18-feh8kptgq-napishtu.vercel.app, exact code SHA `e0e2da4adccccd82d3d4e9b8c96d471ab731dc15`. После этого application code не менялся, только docs. Это Preview, не Production.
+- **Functional browser acceptance:** все 9 основных разделов; 22 карты/паспорта; 1 433 verified passport rows с provenance; 19 official comparison series / 36 periods / 371 rows; municipal and settlement CSV separation; mobile 390×844; risk fail-closed; сценарии 1/2/3 года; report CSV/PDF; Supabase outage fallback.
+- **План и handoff:** Release Plan, checkpoint ledger и README links находятся в PR #27. `AGENTS.md`, Copilot и ChatGPT Project instructions содержат durable checkpoint/handoff правила; DEVELOPMENT FIRST из main сохранён.
+- **Старые PR:** #26 закрыт как superseded; #29 закрыт как duplicate docs PR. Полезные инструкции и план перенесены/обновлены в PR #27.
+- **Оставшиеся gates:** human owner/reviewer approval ключевых desktop/mobile экранов и PDF-пагинации; все 144 PDF-страницы вручную не просмотрены (выборочно просмотрены 1/2/70/144); merge PR #27 после approval. Production release — отдельное решение.
 - **Production:** production deployment, Supabase DDL/DML, миграции, импорты и массовые записи не выполнялись.
 - **Этот план не является разрешением на Production deployment или изменение БД.**
 
