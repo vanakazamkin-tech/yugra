@@ -259,7 +259,21 @@ const riskSignal = (adverse, pillar, overrides = {}) => ({
 assert.deepEqual(DEFAULT_RISK_THRESHOLDS, { minimumUsable: 2, criticalSignals: 3, criticalPillars: 3, sharpChangePercent: 10 }, 'the conservative pilot red threshold requires three independent risk pillars; green coverage remains a fixed six-pillar requirement');
 assert.equal(assessRiskSignals([riskSignal(false, 'economy')]).level, 'insufficient', 'one usable signal is insufficient under the default threshold');
 const completeCoverageSignals = MODEL_PILLARS.map((pillar) => riskSignal(false, pillar.key));
-assert.equal(assessRiskSignals(completeCoverageSignals).level, 'stable', 'green requires comparable directional evidence in all six risk pillars');
+assert.equal(assessRiskSignals(completeCoverageSignals).level, 'stable', 'green requires comparable directional evidence and source-backed non-provisional latest observations in all six risk pillars');
+const sourceMissingStableCoverage = assessRiskSignals(completeCoverageSignals.map((signal, index) =>
+  index === 0 ? { ...signal, latestSourcePresent: false } : signal
+));
+assert.equal(sourceMissingStableCoverage.level, 'insufficient', 'a source-less latest observation in any pillar must block green');
+assert.equal(sourceMissingStableCoverage.stableQualityPillars, 5);
+assert.ok(sourceMissingStableCoverage.missingStablePillars.length === 1);
+const provisionalStableCoverage = assessRiskSignals(completeCoverageSignals.map((signal, index) =>
+  index === 1 ? { ...signal, latestIsProvisional: true } : signal
+));
+assert.equal(provisionalStableCoverage.level, 'insufficient', 'a provisional latest observation in any pillar must block green');
+assert.equal(provisionalStableCoverage.stableQualityPillars, 5);
+assert.equal(assessRiskSignals(completeCoverageSignals.map((signal) => ({
+  ...signal, latestSourcePresent: false,
+}))).level, 'insufficient', 'full directional coverage without latest-source provenance cannot imply stability');
 assert.equal(assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 'labour')]).level, 'insufficient', 'two healthy signals from only two pillars cannot imply system-wide stability');
 assert.equal(assessRiskSignals([riskSignal(false, 'economy'), riskSignal(false, 'economy')]).level, 'insufficient', 'multiple healthy indicators in one pillar cannot replace missing risk directions');
 assert.equal(assessRiskSignals(completeCoverageSignals.slice(0, 5)).level, 'insufficient', 'missing even one of the six risk pillars prevents a green status');
