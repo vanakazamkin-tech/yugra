@@ -1104,3 +1104,9 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Покачи: 4 негативных сигнала, но только 2 допускаются к Critical; два других основаны на оценочных значениях 2024 года из одного источника. Итоговый статус — Watch.
 - Покрытие остаётся неполным: ни у одного муниципалитета нет подтверждённого покрытия всех шести направлений; отсутствие Stable не трактовать как доказательство риска у всех МО.
 - GitHub Actions run 44204720192 завершился успешно: build и data-migrations-integration. Vercel preview для кода готов; production/main не менялся.
+
+### 18.11.2026 — correction after source-catalogue metadata write
+- После фактического обновления пяти карточек data_sources повторный SQL-count показывает: owner 46/161, temporal_coverage 46/161, data_type 46/161, access_restrictions 15/161, retrieved_at 4/161, last_checked_at 126/161. Более ранние значения 43/12/4 в этом журнале относятся к снимку до обновления.
+- Для rosstat_municipal, rosstat_hmao_bdmo_access, emiss, rosstat_bdmo_indicator_list_2026 и tochno_bdmo_2026 заполнены только подтверждённые описательные поля. Их import_status не менялся; retrieved_at оставлен NULL, поскольку байтовые выгрузки не скачивались.
+- Текущая карточка «Если быть точным» в web-проверке показывает 2005–2026 и обновление 28.09.2026; предыдущая сохранённая проверка страницы показывала 2005–2025. Зафиксировано расхождение снимков. В БД отмечено текущее заявленное значение, но фактический пакет ещё не проверен и не импортирован.
+- Проверка provenance после изменения каталога: 1 389 verified municipal observations; 1 389 действующих source_id, 1 389 source_url, 1 389 retrieved_at; без источника/URL — 0, broken source references — 0.
