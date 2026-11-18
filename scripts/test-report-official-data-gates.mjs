@@ -14,7 +14,7 @@ assert.match(selector, /year >= 1900/);
 assert.match(selector, /year <= new Date\(\)\.getFullYear\(\) \+ 1/);
 assert.match(selector, /numericValue\(item\.value\) != null/);
 assert.match(selector, /String\(item\.unit \|\| ''\)\.trim\(\) !== ''/, 'official report observations must have an explicit unit');
-assert.match(selector, /isHttpSourceUrl\\(item\\.source_url\\)/, 'official report observations must use a safe HTTP(S) source URL');
+assert.ok(selector.includes('isHttpSourceUrl(item.source_url)'), 'official report observations must use a safe HTTP(S) source URL');
 assert.equal(isHttpSourceUrl('https://rosstat.gov.ru/source'), true);
 assert.equal(isHttpSourceUrl('http://example.org/source'), true);
 assert.equal(isHttpSourceUrl('javascript:alert(1)'), false);
