@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { isEligibleAnnualForecastSeries } from '../lib/forecastCoverage.js';
 import { assessRiskSignals, backtestAnnualSeries, buildRiskAuditRows, buildRiskModel, DEFAULT_RISK_THRESHOLDS, deriveMunicipalIndicators, MODEL_PILLARS, parseRiskPeriod, RISK_CHAINS } from '../lib/riskModel.js';
 import './UnifiedRiskForecast.css';
@@ -6,7 +6,6 @@ import { PILLARS } from '../lib/indicatorClassification.js';
 import { buildRiskSeries } from '../lib/riskSeries.js';
 
 
-const number = (v) => v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v);
 const fmt = (v, digits = 1) => v == null || !Number.isFinite(Number(v)) ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: digits }).format(Number(v));
 const pct = (v) => v == null ? '—' : (v > 0 ? '+' : '') + fmt(v, 1) + '%';
 const safeText = (v) => String(v ?? '').trim();
@@ -130,7 +129,6 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
   const selected = municipalityAnalysis.find((m) => m.id === (selectedMunicipality || municipalityId)) || municipalityAnalysis[0];
   const forecastOptions = useMemo(() => series.filter((s) => parseRiskPeriod(s.latest)?.frequency === 'annual' && isEligibleAnnualForecastSeries(s)), [series]);
   const forecastSeries = forecastOptions.find((s) => s.key === selectedSeriesKey) || forecastOptions.find((s) => s.municipalityId === (municipalityId === 'ALL' ? selected?.id : municipalityId)) || forecastOptions[0] || null;
-  const forecastMunicipality = forecastSeries ? municipalityNames.get(forecastSeries.municipalityId) || forecastSeries.municipalityId : '—';
   const history = forecastSeries?.points || [];
   const forecastBacktest = useMemo(() => backtestAnnualSeries(forecastSeries), [forecastSeries]);
   const annualRates = history.slice(1).map((p, i) => {
