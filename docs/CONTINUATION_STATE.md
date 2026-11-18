@@ -1,3 +1,14 @@
+## Checkpoint — 18.11.2026, 06:30 (UTC+5): первичный P0 code-path audit
+
+- **HEAD до записи:** 93969bdb313ac3b044329cff461bcc3fe9fad16a (checkpoint recovery/audit уже опубликован).
+- **Подтверждение предыдущего checkpoint:** GitHub Actions run 44215813068 на exact SHA 93969bd завершился success; jobs build и data-migrations-integration успешны. Commit checks: build, data-migrations-integration, Vercel Preview Comments — success. Vercel deployment dpl_ox5bCrEZnUrMXwBSzBAUVRP3wrMP — READY для exact SHA 93969bd, Preview URL https://yugra18-jlf5cbuon-napishtu.vercel.app.
+- **Проверены статически:** навигационные tab routes в InvestmentDetails.jsx; карта UgraMap.jsx и связанный список муниципалитетов; выборки паспортов и сравнения; reportOfficialIndicators; CSV export handlers; officialData.js fetchOfficialData; supabase.js client config; соответствующие QA gates.
+- **Подтверждённые защитные механизмы:** карта и муниципальные списки используют municipality id и проверяют соответствие объектов; официальное сравнение требует verification_status=verified, точный geographic_level, период и единицу; паспорт отдельно ограничивает population municipal-level; официальные наблюдения в отчёте выводятся отдельным слоем с географическим уровнем и источником; CSV escape префиксует опасные текстовые значения, demo CSV явно помечает значения как неофициальные; официальный read path запрашивает только verified indicators и использует детерминированную пагинацию по 500 строк; публичный Supabase client использует только VITE_SUPABASE_ANON_KEY и persistSession=false.
+- **Риск / ручной gate:** PDF-кнопка в конструкторе отчётов вызывает window.print(); это browser print-to-PDF, а не серверная генерация файла. По Release Plan PDF нельзя считать принятым до фактического сохранения/открытия файла и проверки страниц, таблиц, источников и оговорок. Такой ручной тест в этой среде не выполнен.
+- **Результат аудита:** в просмотренных навигации, карте, паспортах, сравнении, CSV и Supabase read path не подтверждён воспроизводимый P0-дефект. Это статический просмотр кода плюс уже прошедшие CI gates, не ручной browser smoke-test.
+- **Следующее конкретное действие:** продолжить проверку риск-модели и сценарного расчёта на edge cases (пропуски, противоречивые периоды, неполные источники, отрицательные/нулевые значения), затем проверить экспортный отчёт в браузере и на узком viewport. Любой найденный дефект сначала воспроизвести тестом; не менять стабильный UI без необходимости.
+
+---
 ## Последний checkpoint — 18.11.2026, 06:22 (UTC+5)
 
 - **Статус:** IN_PROGRESS — восстановление завершено, P0-аудит приложения начат.
