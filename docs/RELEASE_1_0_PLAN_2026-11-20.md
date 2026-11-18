@@ -172,6 +172,16 @@ npm run validate:rosstat-crosswalk
 
 **Блокирующие условия:** красный CI, сломанная навигация/карта, некорректное смешение географии или периодов, ложный зелёный статус из-за отсутствия данных, экспорт недостоверных чисел как официальных, утечка секрета, production migration без разрешения.
 
+## 4.2. Текущий статус GitHub и Preview — 18.11.2026
+
+- **Активный PR:** #27, ветка `fix/risk-stable-provenance-gate-2026-11-18`; latest verified checkpoint до этого обновления — `1b68372a203a9cf96a2f3807840299b3b799e531`.
+- **Синхронизация:** 33 commits ahead / 0 behind относительно `main` `4cb1171faf0c4e4568bc16226178730f5d04a9f5`.
+- **GitHub Actions exact HEAD:** Push run `44288080216` и Pull Request run `44288090790` завершились success; в обоих успешно завершились `build` и `data-migrations-integration`, failed steps отсутствуют.
+- **Vercel Preview exact HEAD:** deployment `dpl_Bn4iVTqFQppL2Pea1cPhhJjJk3F4`, READY; URL https://yugra18-cf9k32umt-napishtu.vercel.app. Это Preview, не Production.
+- **Оставшиеся release gates:** человеческая визуальная проверка ключевых desktop/mobile экранов и выбранных PDF-страниц; review/approval владельца; интеграция PR #27. После merge Production release — отдельное решение и отдельная проверка точного SHA.
+- **Production:** deployment, production Supabase DDL/DML, миграции, импорты и массовые записи не выполнялись.
+- **План не является разрешением на Production deployment или изменение БД.** 
+
 ## 5. Безопасность БД и известные долги
 
 - На аудите 18.11.2026 репозиторий содержал 110 SQL-файлов, а production migration history — 96 записей; обнаружены повторяющиеся version prefixes и различия версий.
