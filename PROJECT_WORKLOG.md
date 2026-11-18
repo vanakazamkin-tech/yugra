@@ -1097,3 +1097,10 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - Для municipality_indicator_import_staging RLS включён, политик нет, grants для anon/authenticated отсутствуют; права записи/чтения есть только у service_role. В staging 0 строк.
 - service_role сохраняет ожидаемые полномочия записи; FORCE ROW LEVEL SECURITY выключен, поэтому нельзя считать защиту от владельца/служебной роли абсолютной.
 - Последняя применённая миграция — 20261107055919 extend_data_source_provenance_metadata. Миграция 20261118033000_harden_staging_import_integrity в production не применена. Схема и данные не изменялись.
+
+### 18.11.2026 — итоговый runtime после quality gate
+- Повторный запуск фактической риск-модели после всех исправлений: 22 МО, 1 389 verified observations, 220 derived observations, 832 ряда.
+- Итоговые статусы: 0 critical / 21 watch / 0 stable / 1 insufficient. Ни один муниципалитет не набрал три непредварительных source-backed негативных семейства в трёх направлениях.
+- Покачи: 4 негативных сигнала, но только 2 допускаются к Critical; два других основаны на оценочных значениях 2024 года из одного источника. Итоговый статус — Watch.
+- Покрытие остаётся неполным: ни у одного муниципалитета нет подтверждённого покрытия всех шести направлений; отсутствие Stable не трактовать как доказательство риска у всех МО.
+- GitHub Actions run 44204720192 завершился успешно: build и data-migrations-integration. Vercel preview для кода готов; production/main не менялся.

@@ -278,3 +278,10 @@ Forward migration обновлена: review-view и RPC сравнивают/з
 - anon/authenticated имеют только SELECT; для municipality_indicators и municipal_program_execution читаются только verified-записи. Staging не имеет публичных политик или grants; доступ остаётся у service_role, staging rows = 0.
 - service_role имеет права записи, FORCE RLS не включён; это ожидаемая административная модель, но не защита от привилегированного владельца.
 - Последняя применённая миграция: 20261107055919 extend_data_source_provenance_metadata. Миграция 20261118033000_harden_staging_import_integrity не применялась. Production Supabase не изменялся.
+
+## Итоговый runtime после quality gate
+- Фактический запуск после исправлений: 22 МО, 1 389 verified observations, 220 derived observations, 832 ряда.
+- Итоговые статусы: 0 critical / 21 watch / 0 stable / 1 insufficient.
+- Покачи: четыре негативных сигнала, но только два непредварительных source-backed сигнала; два оценочных значения 2024 года не могут обеспечить Critical. Итог — Watch.
+- Ни один муниципалитет не имеет полного подтверждённого покрытия шести направлений. Отсутствие Stable обусловлено в том числе недостаточной полнотой покрытия и не означает, что все МО находятся в кризисе.
+- GitHub Actions run 44204720192: build и data-migrations-integration — success. Production/main не менялся.
