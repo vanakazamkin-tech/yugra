@@ -143,6 +143,18 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
     ? ` Неполное покрытие: отсутствуют сопоставимые ряды по направлениям: ${missingPillarTitles.join(', ')}.`
     : '';
   const affectedPillars = new Set(bad.map(pillarOf).filter(Boolean));
+  // Provisional or source-less observations remain visible as warnings, but
+  // cannot independently qualify a municipality for the highest alert level.
+  const criticalBad = bad.filter((signal) => signal.latestIsProvisional !== true
+    && signal.latestSourcePresent !== false);
+  const criticalAffectedPillars = new Set(criticalBad.map(pillarOf).filter(Boolean));
+  const criticalGateBlocked = bad.length >= settings.criticalSignals
+    && affectedPillars.size >= settings.criticalPillars
+    && (criticalBad.length < settings.criticalSignals
+      || criticalAffectedPillars.size < settings.criticalPillars);
+  const criticalGateReason = criticalGateBlocked
+    ? ' Красный статус не присвоен: часть негативных сигналов основана на предварительных наблюдениях или не имеет источника; они остаются в предупреждениях.'
+    : '';
   const pillarCounts = Object.fromEntries([...affectedPillars].map((key) => [
     key, bad.filter((signal) => pillarOf(signal) === key).length,
   ]));
@@ -156,6 +168,10 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
     usableCount: usable.length,
     adverseCount: bad.length,
     affectedPillars: affectedPillars.size,
+    criticalEvidenceCount: criticalBad.length,
+    criticalAffectedPillars: criticalAffectedPillars.size,
+    provisionalAdverseCount: bad.filter((signal) => signal.latestIsProvisional === true).length,
+    sourceMissingAdverseCount: bad.filter((signal) => signal.latestSourcePresent === false).length,
     availablePillars: availablePillarKeys.size,
     coveragePillars: availablePillarKeys.size,
     missingPillars: missingPillarTitles,
@@ -182,18 +198,18 @@ export function assessRiskSignals(signals = [], thresholds = DEFAULT_RISK_THRESH
       reasons: [`Недостаточное покрытие: ${availablePillarKeys.size} из ${MODEL_PILLARS.length} направлений`, ...missingPillarTitles.map((title) => `Нет данных: ${title}`), ...conflictReasons],
     };
   }
-  if (bad.length >= settings.criticalSignals && affectedPillars.size >= settings.criticalPillars) {
+  if (criticalBad.length >= settings.criticalSignals && criticalAffectedPillars.size >= settings.criticalPillars) {
     return {
       ...common, level: 'critical',
-      explanation: `Зафиксировано ${bad.length} негативных сигналов в ${affectedPillars} направлениях; достигнуты оба настраиваемых порога повышенного внимания.${coverageNote}${conflictNote}`,
-      reasons: [`Негативных сигналов: ${bad.length} из требуемых ${settings.criticalSignals}`, `Затронуто направлений: ${affectedPillars.size} из требуемых ${settings.criticalPillars}`, ...(missingPillarTitles.map((title) => `Непроверено направление: ${title}`)), ...conflictReasons],
+      explanation: `Зафиксировано ${criticalBad.length} негативных непредварительных сигналов с указанными источниками в ${criticalAffectedPillars.size} направлениях; достигнуты оба настраиваемых порога повышенного внимания.${coverageNote}${conflictNote}`,
+      reasons: [`Непредварительных сигналов с источниками: ${criticalBad.length} из требуемых ${settings.criticalSignals}`, `Затронуто направлений по таким сигналам: ${criticalAffectedPillars.size} из требуемых ${settings.criticalPillars}`, ...(missingPillarTitles.map((title) => `Непроверено направление: ${title}`)), ...conflictReasons],
     };
   }
   if (bad.length > 0) {
     return {
       ...common, level: 'watch',
-      explanation: `Есть ${bad.length} негативных сигнал(а/ов) в ${affectedPillars} направлениях, но критерий одновременного межотраслевого ухудшения не достигнут.${coverageNote}${conflictNote}`,
-      reasons: [`Негативных сигналов: ${bad.length}`, `Затронуто направлений: ${affectedPillars.size}`, ...(missingPillarTitles.map((title) => `Непроверено направление: ${title}`)), ...conflictReasons],
+      explanation: `Есть ${bad.length} негативных сигнал(а/ов) в ${affectedPillars} направлениях, но критерий одновременного межотраслевого ухудшения на непредварительных данных с источниками не достигнут.${criticalGateReason}${coverageNote}${conflictNote}`,
+      reasons: [`Негативных сигналов: ${bad.length}`, `Затронуто направлений: ${affectedPillars.size}`, ...(criticalGateBlocked ? [`Красный порог учитывает только непредварительные сигналы с источниками: ${criticalBad.length} сигналов / ${criticalAffectedPillars.size} направлений`] : []), ...(missingPillarTitles.map((title) => `Непроверено направление: ${title}`)), ...conflictReasons],
     };
   }
   return {
@@ -228,6 +244,12 @@ export function buildRiskAuditRows(municipalityAssessments = []) {
         ...(latest.source_url ? [latest.source_url] : []),
       ].filter(Boolean))];
       const sourcePresent = sourceIds.length > 0 || sourceUrls.length > 0;
+      const criticalEligible = sourcePresent && signal.latestIsProvisional !== true;
+      const criticalEligibilityReason = !sourcePresent
+        ? 'Нет источника у последнего наблюдения'
+        : signal.latestIsProvisional
+          ? 'Последнее наблюдение предварительное/оценочное'
+          : '';
       const inputCodes = [...new Set((latest.input_indicator_codes || []).map(String))];
       const sharedInputCodes = new Set();
       const sharedWith = [];
@@ -270,6 +292,8 @@ export function buildRiskAuditRows(municipalityAssessments = []) {
         name: signal.name || '',
         inclusionStatus: exclusionReason ? 'excluded' : signal.adverse === true ? 'negative' : 'no_adverse',
         includedInCount: !exclusionReason,
+        criticalEligible,
+        criticalEligibilityReason,
         direction: signal.direction || 'unknown',
         family,
         familyMembers: familyCounts.get(family) || 1,

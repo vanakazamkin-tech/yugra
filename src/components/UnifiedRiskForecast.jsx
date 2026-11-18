@@ -165,11 +165,12 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
   };
 
   const exportRiskAudit = () => exportCsv([
-    ['Муниципалитет','Статус учёта','Показатель','Код','Семейство сигналов','Членов семейства','Направление','Сфера','Значение до','Период до','Значение после','Период после','Изменение','Единица','Исходные коды','Общие исходные компоненты','Связанные показатели','Причина исключения','Ограничения качества','Качество основания','Обоснование качества','ID источников','URL источников'],
+    ['Муниципалитет','Статус учёта','Показатель','Код','Семейство сигналов','Членов семейства','Направление','Сфера','Значение до','Период до','Значение после','Период после','Изменение','Единица','Исходные коды','Общие исходные компоненты','Связанные показатели','Для Critical','Причина недопуска в Critical','Причина исключения','Ограничения качества','Качество основания','Обоснование качества','ID источников','URL источников'],
     ...riskAuditRows.map((item) => [
       item.municipality,item.inclusionStatus,item.name,item.code,item.family,item.familyMembers,item.direction,item.pillar,
       item.previousValue,item.previousPeriod,item.currentValue,item.currentPeriod,item.change,item.unit,
       item.inputIndicatorCodes.join(', '),item.sharedInputCodes.join(', '),item.sharedWith.join('; '),
+      item.criticalEligible ? 'Да' : 'Нет',item.criticalEligibilityReason,
       item.exclusionReason,item.qualityNotes.join('; '),item.confidenceLabel,item.confidenceReason,
       item.sourceIds.join(', '),item.sourceUrls.join(' | '),
     ]),
@@ -304,7 +305,7 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
       {selected && <><div className="unified-section-head"><div><h3>Покрытие направлений: {selected.name}</h3><p>Количество временных рядов с однозначным направлением и сопоставимой последней динамикой.</p></div><span>{selected.model?.usableIndicators ?? 0} из {selected.coverage} подтверждённых рядов</span></div>
         <div className="unified-model-pillar-grid">{(selected.model?.pillars || MODEL_PILLARS.map((p) => ({ ...p, indicators: 0, adverse: 0, totalSeries: 0 }))).map((p) => <article className="unified-pillar" key={p.key}><div><strong>{p.title}</strong><span>{p.indicators}</span></div><p>{p.adverse} негативных сигналов · {p.totalSeries} всего рядов</p><small>Неизвестное направление и несопоставимые периоды не учитываются как благополучие.</small></article>)}</div>
       </>}
-      <div className="unified-method-note"><strong>Ограничение.</strong> По умолчанию красный статус требует не менее трёх негативных семейств сигналов и трёх затронутых направлений. Это настраиваемое диагностическое правило, а не статистически откалиброванный порог. Общие исходные компоненты двух производных показателей отмечаются в аудите отдельно: пересечение входных данных само по себе не доказывает математическую тождественность сигналов. Статусы не складываются в интегральный индекс, не заменяют экспертную оценку и не означают вероятность кризиса.</div>
+      <div className="unified-method-note"><strong>Ограничение.</strong> По умолчанию красный статус требует не менее трёх негативных семейств с непредварительными последними наблюдениями и указанными источниками в трёх разных направлениях. Предварительные и не имеющие источника сигналы остаются в предупреждениях, но не могут самостоятельно создавать Critical. Это настраиваемое диагностическое правило, а не статистически откалиброванный порог. Общие исходные компоненты двух производных показателей отмечаются в аудите отдельно: пересечение входных данных само по себе не доказывает математическую тождественность сигналов. Статусы не складываются в интегральный индекс, не заменяют экспертную оценку и не означают вероятность кризиса.</div>
     </section>}
 
     {tab === 'chains' && <section className="unified-section">

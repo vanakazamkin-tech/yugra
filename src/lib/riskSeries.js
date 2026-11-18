@@ -87,6 +87,9 @@ export function buildRiskSeries(rows, thresholds = DEFAULT_RISK_THRESHOLDS) {
         || (Array.isArray(point.source_ids) && point.source_ids.length)
         || (Array.isArray(point.source_urls) && point.source_urls.length))
     );
+    const latestSourcePresent = Boolean(latest.source_id || latest.source_url
+      || (Array.isArray(latest.source_ids) && latest.source_ids.length)
+      || (Array.isArray(latest.source_urls) && latest.source_urls.length));
     const historyConsistent = points.length >= 3 && points.slice(1).every((point, index) => {
       const current = parseRiskPeriod(point), prior = parseRiskPeriod(points[index]);
       return current && prior && current.frequency === prior.frequency && current.slot === prior.slot && current.year - prior.year === 1;
@@ -115,7 +118,7 @@ export function buildRiskSeries(rows, thresholds = DEFAULT_RISK_THRESHOLDS) {
       confidenceLabel = 'Средняя';
       confidenceReason = 'Источник указан; последнее изменение сопоставимо, но история короткая.';
     }
-    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, signalFamily: riskSignalFamilyFor(latest.indicator_code), name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, sharpChange, sharpChangeThreshold, adverseStreak, excludedConflictingPeriods, conflictAfterLatest, confidenceLevel, confidenceLabel, confidenceReason, latestIsProvisional });
+    result.push({ key, municipalityId: latest.municipality_id, code: latest.indicator_code, signalFamily: riskSignalFamilyFor(latest.indicator_code), name: safeText(latest.indicator_name) || latest.indicator_code, unit: latest.unit || '—', pillar: classify(latest), direction, points, latest, previous, change, changePercent, adverse, sharpChange, sharpChangeThreshold, adverseStreak, excludedConflictingPeriods, conflictAfterLatest, confidenceLevel, confidenceLabel, confidenceReason, latestIsProvisional, latestSourcePresent });
   });
   return result;
 }

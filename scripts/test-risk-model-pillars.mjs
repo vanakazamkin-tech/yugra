@@ -114,6 +114,7 @@ const provisionalLatestSeries = buildRiskSeries([
   riskRow(2024, '2024', 80, { notes: 'Оценка администрации за 2024 год; не окончательный статистический итог.' }),
 ]);
 assert.equal(provisionalLatestSeries[0].latestIsProvisional, true, 'the latest observation note must expose an administrative estimate');
+assert.equal(provisionalLatestSeries[0].latestSourcePresent, true, 'the latest observation source must be tracked separately from full-history provenance');
 assert.equal(provisionalLatestSeries[0].confidenceLevel, 'low', 'a provisional latest observation must not receive high provenance quality from a long history');
 assert.equal(provisionalLatestSeries[0].confidenceLabel, 'Ограниченная');
 assert.equal(provisionalLatestSeries[0].adverse, true, 'a provisional value remains visible as an exploratory movement rather than being silently deleted');
@@ -251,7 +252,9 @@ assert.equal(buildRiskModel(municipalities, unknownDirectionSeries).byMunicipali
 const insufficient = buildRiskModel(municipalities, series.filter((item) => item.pillar.key === 'investment'));
 assert.equal(insufficient.byMunicipality.m1.availablePillars, 1, 'one observed direction remains one risk-coverage direction');
 assert.equal(Object.hasOwn(MODEL_PILLARS.find((pillar) => pillar.key === 'social'), 'weight'), false, 'risk directions must not carry or reapply index weights');
-const riskSignal = (adverse, pillar) => ({ adverse, pillar: { key: pillar } });
+const riskSignal = (adverse, pillar, overrides = {}) => ({
+  adverse, pillar: { key: pillar }, latestSourcePresent: true, ...overrides,
+});
 assert.deepEqual(DEFAULT_RISK_THRESHOLDS, { minimumUsable: 2, criticalSignals: 3, criticalPillars: 3, sharpChangePercent: 10 }, 'the conservative pilot red threshold requires three independent risk pillars; green coverage remains a fixed six-pillar requirement');
 assert.equal(assessRiskSignals([riskSignal(false, 'economy')]).level, 'insufficient', 'one usable signal is insufficient under the default threshold');
 const completeCoverageSignals = MODEL_PILLARS.map((pillar) => riskSignal(false, pillar.key));
@@ -267,6 +270,20 @@ const twoPillarBudgetDemography = assessRiskSignals([
   { code: 'population_growth', signalFamily: 'population_growth', adverse: true, pillar: { key: 'demography' } },
 ]);
 assert.equal(twoPillarBudgetDemography.level, 'watch', 'two budget signals plus one demographic signal do not satisfy the conservative three-pillar red threshold');
+const provisionalRedEvidence = assessRiskSignals([
+  riskSignal(true, 'economy', { latestIsProvisional: true }),
+  riskSignal(true, 'labour'),
+  riskSignal(true, 'demography'),
+]);
+assert.equal(provisionalRedEvidence.level, 'watch', 'a provisional signal cannot independently qualify a red status');
+assert.equal(provisionalRedEvidence.criticalEvidenceCount, 2);
+const sourceMissingRedEvidence = assessRiskSignals([
+  riskSignal(true, 'economy', { latestSourcePresent: false }),
+  riskSignal(true, 'labour'),
+  riskSignal(true, 'demography'),
+]);
+assert.equal(sourceMissingRedEvidence.level, 'watch', 'a source-less signal cannot independently qualify a red status');
+assert.equal(sourceMissingRedEvidence.criticalEvidenceCount, 2);
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'economy'), riskSignal(true, 'economy')]).level, 'watch', 'multiple signals in one pillar do not satisfy the default cross-pillar red threshold');
 assert.equal(assessRiskSignals([riskSignal(true, 'health'), riskSignal(true, 'education'), riskSignal(true, 'social'), riskSignal(false, 'finance')]).level, 'watch', 'health, education and social subcategories count as one social direction, not three');
 const complementaryBudgetSignals = assessRiskSignals([
@@ -305,6 +322,19 @@ assert.equal(ownShareAudit.inclusionStatus, 'negative', 'the family representati
 assert.equal(transferAudit.inclusionStatus, 'excluded', 'the complementary family member is not counted twice');
 assert.match(transferAudit.exclusionReason, /семейство/i);
 assert.match(contextAudit.exclusionReason, /Контекстное направление/);
+const provisionalAuditSignal = {
+  key: 'provisional-audit', code: 'estimate-series', name: 'Оценочный показатель',
+  signalFamily: 'estimate-series', direction: 'higher', adverse: true,
+  latestIsProvisional: true, latestSourcePresent: true, pillar: { key: 'economy' },
+  latest: { numericValue: 1, reference_period: '2024', source_id: 'estimate-source' },
+  previous: { numericValue: 2, reference_period: '2023' },
+};
+const provisionalAudit = buildRiskAuditRows([{
+  id: 'm-provisional', name: 'Тест', own: [provisionalAuditSignal],
+  ...assessRiskSignals([provisionalAuditSignal]),
+}])[0];
+assert.equal(provisionalAudit.criticalEligible, false, 'provisional values remain visible but are not eligible to qualify Critical');
+assert.match(provisionalAudit.criticalEligibilityReason, /предварительное/);
 
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 2, criticalSignals: 2, criticalPillars: 2 }).level, 'critical', 'observed negative signals may raise critical status despite incomplete coverage');
 assert.equal(assessRiskSignals([riskSignal(true, 'economy'), riskSignal(true, 'labour')], { minimumUsable: 3, criticalSignals: 2, criticalPillars: 2 }).level, 'insufficient', 'the minimum coverage threshold must take precedence over negative signals');
