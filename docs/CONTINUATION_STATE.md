@@ -1,3 +1,17 @@
+## Checkpoint — единицы неопределённости в индексном сценарии (2026-11-18 14:01 UTC+05:00)
+
+- **Статус:** `IN_PROGRESS` — исправлена подпись единицы в UI для опционального режима процентильного индекса.
+- **Ветка / PR:** `fix/risk-stable-provenance-gate-2026-11-18`, PR #27 open / Draft.
+- **Предыдущий подтверждённый HEAD:** `d46005c2869c539d800f82d4075f90eea1d66d8f`; его GitHub Actions run `44222768230` завершился success. Combined status для этого SHA содержит Vercel failure по внешнему build-rate-limit, без фактического Preview deployment.
+- **Найденный дефект:** в `src/components/Forecasting.jsx` при `scoreSource='resilience-index'` подпись ползунка неопределённости корректно называла единицу «баллов», а числовое значение рядом по-прежнему отображалось со знаком «%». Это путало единицу процентильного индекса (баллы) с процентной неопределённостью концептуального балла.
+- **Исправление:** отображаемый суффикс теперь зависит от режима: «балла» для индексного режима и «%» для концептуального. Существующая разметка и дизайн сохранены.
+- **Кодовый commit:** `645066dbcfa20bfa0e2a57e0a8bf572f06ceefdc`; файл: `src/components/Forecasting.jsx`.
+- **CI:** workflow run для нового exact HEAD пока не появился при readback; не считать изменение проверенным до результата нового CI. Предыдущий SHA CI success не переносится на этот commit.
+- **Preview / Production / Supabase:** новый Preview не подтверждён; Production deployment и production Supabase не менялись.
+- **Следующее действие:** получить CI для exact HEAD, затем проверить новый Vercel Preview при снятии внешнего build rate limit и выполнить ручные сценарии 1/2/3 года, PDF/CSV и узкого viewport.
+
+---
+
 ## Checkpoint — forecast backtest provenance gate (2026-11-18, active work)
 
 - **Статус:** `IN_PROGRESS`; исправлен fail-open путь в диагностической walk-forward проверке прогноза.
