@@ -5,8 +5,8 @@
 - **Исходный HEAD:** `a224b808d7dabad73c53b5f540af294771002a03`; перед изменением PR был на 22 commits ahead / 0 behind относительно main.
 - **Дефект:** отчётный selector требовал только непустой `source_url`. Строка с `javascript:`, `data:` или `file:` могла пройти provenance gate, хотя такой URL не является допустимой ссылкой на первоисточник.
 - **Исправление:** добавлен `src/lib/sourceUrl.js` с проверкой корректного URL и схемы HTTP(S); официальный слой отчёта использует этот helper. Внешний дизайн и поведение экспорта не менялись.
-- **Regression:** `scripts/test-report-official-data-gates.mjs` теперь исполняет проверки для HTTPS/HTTP и отклоняет javascript/data/file/невалидные URL.
-- **Кодовые commits:** helper + selector опубликованы; code commit `3c023bf0751af2311d25e6c68db4fc6ebbb5c7d8`. Regression commit `124cdff182956e300ff2e9a7a70e9850215c17fd`.
+- **Regression:** `scripts/test-report-official-data-gates.mjs` входит в `npm test` и исполняет проверки для HTTPS/HTTP; отклоняет javascript/data/file/невалидные URL; отдельно подтверждает вызов helper в selector.
+- **Кодовые commits:** helper создан commit `83880f159a24161eb2b8ef99b55d45af6fdeffcd`; selector опубликован в `3c023bf0751af2311d25e6c68db4fc6ebbb5c7d8`. Regression test опубликован в `124cdff182956e300ff2e9a7a70e9850215c17fd` и уточнён в `dfa56d95c69a309b4f17446694623c7b761e24ae`.
 - **Проверки:** точные runtime assertions добавлены в существующий test gate; GitHub Actions для нового HEAD ожидается. Локальные npm-команды в текущем окружении не запускались.
 - **Preview / Production:** предыдущий Vercel check для исходного HEAD был success; Preview/Production для нового SHA ещё не подтверждены. Production deployment не запускался.
 - **Supabase:** не подключалась и не изменялась; DDL/DML/миграции отсутствуют.
