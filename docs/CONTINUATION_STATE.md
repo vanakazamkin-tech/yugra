@@ -1,3 +1,19 @@
+## Checkpoint — exact-HEAD CI and Vercel Preview availability (2026-11-18, UTC+05:00)
+
+- **Статус:** `IN_PROGRESS` — автоматические проверки последнего code HEAD успешны; Preview доступен по точному SHA. Интерактивная ручная приёмка ещё не завершена.
+- **main:** `4cb1171faf0c4e4568bc16226178730f5d04a9f5`.
+- **Рабочая ветка / PR:** `fix/risk-stable-provenance-gate-2026-11-18`, PR #27 (open / Draft).
+- **Exact HEAD:** `521e8ffc99a274bd4bf5e5d154a4c59da588b91b`; compare с main: 28 commits ahead / 0 behind. PR mergeable=true; reviews=0, unresolved review threads=0.
+- **GitHub Actions exact HEAD:** run `44284184481` — `success`. Jobs `build` и `data-migrations-integration` завершились success; failed steps отсутствуют. Build подтвердил forecast unit tests, provenance/data/risk/comparison/report/passport/registry/map/error-boundary gates и production bundle. Integration job подтвердил disposable-schema migration sequence, повторное применение/idempotency, security grants, uniqueness, controlled staging import и read-only audit.
+- **Vercel exact HEAD:** deployment `dpl_G2B5vPDRugvoEE74uG9yLZwawgWZ` — `READY`; Git ref `fix/risk-stable-provenance-gate-2026-11-18`, SHA совпадает с exact HEAD. Preview URL: https://yugra18-f8vodr7gq-napishtu.vercel.app. Это Preview, не Production.
+- **Доступность Preview:** Vercel fetch вернул HTTP 200 для главной страницы и для главного JS bundle, CSS, React vendor и Supabase vendor assets. HTML содержит русскую locale, заголовок «ЮГРА — Аналитика муниципалитетов» и метаданные платформы.
+- **Ограничение ручной проверки:** доступный здесь Vercel fetch подтверждает HTTP-ответы и загрузку статических ресурсов, но не исполняет клиентское приложение и не предоставляет интерактивный браузер. Попытка прямого сетевого доступа из контейнера/просмотрщика не прошла из-за DNS. Поэтому переходы по экранам, карту, сравнение, прогнозы 1/2/3 года, реальное сохранение/открытие PDF и CSV, desktop/mobile layout и browser console ещё нельзя отметить как пройденные.
+- **PR #26:** остаётся open / Draft; его ветка `chore/automatic-session-checkpoints-2026-11-18` — 21 commit ahead / 1 behind main, compare status diverged, mergeable=false. План `docs/RELEASE_1_0_PLAN_2026-11-20.md` пока находится в PR #26; при интеграции нужно согласовать две независимые версии `docs/CONTINUATION_STATE.md`, не затирая новый checkpoint.
+- **Production:** Production deployment и Production Supabase не менялись; DB writes, DDL/DML и миграции не выполнялись.
+- **Следующее конкретное действие:** выполнить настоящую интерактивную приёмку Preview на desktop и узком viewport: все основные вкладки/карта/паспорта/сравнение, risk monitor, сценарии 1/2/3 года, сохранение и повторное открытие CSV/PDF, проверка source provenance и отсутствие runtime/network ошибок. До этих gates PR #27 оставить Draft; не объявлять Release 1.0 готовым и не выполнять Production deployment.
+
+---
+
 ## Checkpoint — HTTP(S) provenance validation for official reports (2026-11-18 15:16 UTC+05:00)
 
 - **Статус:** `IN_PROGRESS` — исправлен обнаруженный fail-open крайний случай в отборе официальных наблюдений для отчётов.
