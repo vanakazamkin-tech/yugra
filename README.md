@@ -55,6 +55,7 @@ npm run preview
 - [`.github/copilot-instructions.md`](./.github/copilot-instructions.md) — автоматические правила GitHub Copilot для этого репозитория.
 - [`docs/AI_PROJECT_CONTEXT.md`](./docs/AI_PROJECT_CONTEXT.md) — архитектура, текущий проверенный срез, известные риски и ограничения.
 - [`docs/CHATGPT_PROJECT_INSTRUCTIONS.md`](./docs/CHATGPT_PROJECT_INSTRUCTIONS.md) — готовая инструкция для вставки в настройки ChatGPT Project «Yugra18».
+- [`docs/RELEASE_1_0_PLAN_2026-11-20.md`](./docs/RELEASE_1_0_PLAN_2026-11-20.md) — актуальный объём демонстрационного Release 1.0, release gates, результаты приёмки и оставшиеся блокеры.
 
 ## Документация данных
 
