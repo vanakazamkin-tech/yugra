@@ -1,3 +1,21 @@
+## Последний checkpoint — 18.11.2026, 06:22 (UTC+5)
+
+- **Статус:** IN_PROGRESS — восстановление завершено, P0-аудит приложения начат.
+- **Рабочая ветка:** chore/automatic-session-checkpoints-2026-11-18.
+- **PR:** #26, OPEN / DRAFT, base main.
+- **Базовый main SHA:** 8f291774044fd9f73e6b766e6196f02db3628bb7.
+- **HEAD до этого checkpoint:** 037be70fff11d00caeaabf0f28dc498552979e1d.
+- **Проверка GitHub:** PR head совпадает с веткой; относительно main — 17 commits ahead, 0 behind; в PR шесть документальных файлов, код приложения не менялся.
+- **CI для точного HEAD 037be70:** workflow run 44213682471; jobs build и data-migrations-integration — success. Build включает npm ci, npm test, npm run test:data-quality, migration/forecast/risk/comparison/passport/export gates, map coverage, Rosstat crosswalk и npm run build.
+- **Vercel Preview:** deployment dpl_5AEJ8AGysaZzNS1htmk4aa4PGfWH — READY для exact SHA 037be70; URL https://yugra18-pktnnb1ft-napishtu.vercel.app. Это Preview, не Production.
+- **Supabase production read-only:** проект dmbikidqikjupkghywbz ACTIVE_HEALTHY, PostgreSQL 17.11. Проверено: 22 municipalities; 1,445 municipality_indicators; 1,433 verified, из них 1,389 municipality-level и 44 other geography; 12 needs_review; 161 data_sources; staging 0; forecast_scenarios 3; forecast_runs 0; migration history 96 записей, последняя 20261107055919. Значения совпадают с зафиксированным срезом 18.11.
+- **Migration drift:** в контексте Git — 110 migration files; production history — 96. Новые migration files, отсутствующие в production history, не применялись. db push не выполнялся.
+- **Кодовый аудит:** начат статический просмотр riskModel.js, riskSeries.js, forecastModel.js, forecastCoverage.js, UnifiedRiskForecast.jsx, Forecasting.jsx, supabase.js и QA scripts. На текущем проходе подтверждён fail-closed gate risk assessment и фильтр verified municipality-level в buildRiskSeries; окончательный аудит UI/export/read path ещё не завершён. Не зафиксировано доказанного P0-дефекта, требующего немедленного патча.
+- **Ограничение среды:** прямой git clone из контейнера не удался из-за DNS/network недоступности github.com. Чтение GitHub API/raw доступно; локальные npm ci/test/build в этой сессии не выполнялись. Их успех подтверждён CI для exact HEAD выше.
+- **Production изменения:** отсутствуют. Supabase операции были только get_project, list_tables, list_migrations и read-only SELECT.
+- **Следующее конкретное действие:** завершить P0-аудит навигации/карты и паспортов, затем сравнения/отчётов/CSV export и Supabase read path; сверить каждый найденный риск с соответствующими regression tests. Любой патч делать минимальным в этой ветке, добавить regression test, проверить diff и дождаться CI на новом SHA. Не менять production Supabase.
+
+---
 # Yugra18 — журнал контрольных сохранений и передачи между чатами
 
 > Единая точка восстановления работы для ChatGPT, Codex, Copilot и других совместимых агентов. Обновляй этот файл по ходу работы, а не только перед завершением чата.
