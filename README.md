@@ -49,6 +49,13 @@ npm run preview
 
 Поля SQL преобразуются в существующую модель интерфейса, поэтому фильтры, карта, сравнение, рейтинг и отчёты продолжают использовать единый формат объектов. Это тестовое периодическое обновление раз в минуту, а не push-подписка Supabase Realtime.
 
+## Инструкции для AI-агентов и ChatGPT
+
+- [`AGENTS.md`](./AGENTS.md) — обязательные правила для Codex и совместимых coding-агентов.
+- [`.github/copilot-instructions.md`](./.github/copilot-instructions.md) — автоматические правила GitHub Copilot для этого репозитория.
+- [`docs/AI_PROJECT_CONTEXT.md`](./docs/AI_PROJECT_CONTEXT.md) — архитектура, текущий проверенный срез, известные риски и ограничения.
+- [`docs/CHATGPT_PROJECT_INSTRUCTIONS.md`](./docs/CHATGPT_PROJECT_INSTRUCTIONS.md) — готовая инструкция для вставки в настройки ChatGPT Project «Yugra18».
+
 ## Документация данных
 
 Данные в Supabase обновляются отдельно от релизов интерфейса. Последний документированный read-only срез базы — 18.11.2026; см. `docs/FINALIZATION_STATUS.md` и `docs/MUNICIPAL_COVERAGE_MATRIX_2026-11-18.md`.
