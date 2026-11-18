@@ -1,3 +1,15 @@
+## Checkpoint — report CSV official-data export fix (2026-11-18)
+
+- **PR:** #27, Draft/open.
+- **Код:** `src/InvestmentDetails.jsx` — report CSV теперь включает два явно разделённых блока: демонстрационные показатели и, только при включённом переключателе, проверенные официальные наблюдения. Для официальной строки сохраняются территория, географический уровень, показатель, значение, единица, период, source ID, URL источника, verification status и примечание. Все ячейки проходят общий formula-safe CSV escaper. Файл: `yugra-analytical-report.csv`.
+- **Регрессия:** `scripts/test-report-official-data-gates.mjs` проверяет включение официального слоя по toggle, сохранение provenance полей и применение CSV escaping.
+- **Коммиты этапа:** implementation `64567ed4f4fc448c17c38de3654ccb1b9ef919bd`; regression test `33b8380635a3e78b4e8a6eb487fd8c3905681649`.
+- **CI:** ожидается для текущего checkpoint; не считать исправление проверенным до прохождения exact-HEAD workflow.
+- **Production:** Supabase не менялась; production deployment не выполнялся.
+- **Следующее действие:** проверить GitHub Actions на новом HEAD; при успехе продолжить следующий P0 блок отчётов/экспорта и оставить PDF/UI ручные gates открытыми до фактической проверки.
+
+---
+
 ## CI confirmation — checkpoint 1989d127 (2026-11-18)
 
 - **Текущий HEAD:** `1989d1276c7b2b660853b5fb358bd4a6a7462b59`; опубликован в PR #27.
