@@ -1,3 +1,17 @@
+## Checkpoint — mobile official comparison acceptance (2026-11-18, UTC+05:00)
+
+- **Статус:** `IN_PROGRESS` — official comparison manual QA завершена на desktop и mobile; Release Plan дополнен, отдельные owner/Production gates остаются.
+- **Application Preview:** browser QA выполнялась на коде приложения без последующих JS/JSX/CSS изменений, на Preview https://yugra18-39jtpvntu-napishtu.vercel.app (app SHA `19d508fcbc8b920c544fced1974df5a84d2ca67c`; все последующие изменения — docs-only).
+- **Desktop official comparison:** 19 series, 36 period options, 371 rendered observation rows. По всем срезам wrong period=0, duplicate territory=0, empty name=0, invalid/missing HTTP(S) source=0, page errors=0, failed requests=0.
+- **CSV official comparison:** файл `yugra-official-municipal-comparison.csv` скачан через UI для series `own_production_shipments_q1`, period `2026|2026-Q1|тыс. руб.`; 1,208 bytes, UTF-8 BOM, 4 lines (header + 3 rows). Все три строки имеют same period, unit, municipal geography level, source IDs and HTTPS Rosstat source URLs.
+- **Mobile official comparison:** viewport 390×844, `isMobile=true`, touch enabled. Все 19 series выбирались успешно; первый и последний period каждой серии проверены (29 samples). Selected period matched displayed table period in 29/29; data rows >0 in each sample; no JS errors or failed requests. Table overflow is contained inside its own horizontal scroll area (client width 338px, content width 760px), document/body width remains 390px, page-level horizontal overflow=false.
+- **Release Plan:** official comparison checklist now [x]; recorded exhaustive 19/36/371 desktop sweep, real CSV download and mobile 29-sample sweep. README links Release Plan and checkpoint ledger.
+- **Production:** без изменений; no Production deployment or Supabase DDL/DML/migrations/imports.
+- **Оставшиеся gates:** owner/reviewer approval of screenshots and PDF pagination (only representative PDF pages 1/2/70/144 visually sampled; all 144 pages not manually reviewed); PR #27 review/merge; Production release is separate approval.
+- **Следующее действие:** проверить exact-head CI/Preview for updated plan+checkpoint commits, refresh PR description, keep PR Draft until owner approval.
+
+---
+
 ## Checkpoint — exhaustive official-comparison UI and CSV acceptance (2026-11-18, UTC+05:00)
 
 - **Статус:** `IN_PROGRESS` — закрыта ручная проверка comparability gate для официального сравнителя; Production/owner release approval остаются отдельными этапами.
