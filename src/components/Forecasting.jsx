@@ -125,6 +125,10 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
     () => buildHistoricalBacktest(officialIndicators, { horizons: [1, 2, 3], minTrainingPoints: 2 }),
     [officialIndicators],
   );
+  const historicalBacktestSampleCounts = useMemo(() => historicalBacktest.metrics.reduce((counts, item) => {
+    counts[item.sampleStatus] = (counts[item.sampleStatus] || 0) + 1;
+    return counts;
+  }, { very_small_sample: 0, small_sample: 0, exploratory: 0 }), [historicalBacktest]);
   const historicalBacktestRows = useMemo(
     () => historicalBacktest.metrics.filter((item) => item.horizon === horizon)
       .sort((a, b) => b.testCount - a.testCount || a.indicatorName.localeCompare(b.indicatorName, 'ru-RU'))
@@ -269,6 +273,10 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
           <article><span>Сопоставимых серий</span><strong>{historicalBacktest.eligibleSeriesGroups.toLocaleString('ru-RU')}</strong><em>код · название · единица · период</em></article>
           <article><span>Конфликтных срезов</span><strong>{historicalBacktest.excluded.conflictingMunicipalityYearGroups.toLocaleString('ru-RU')}</strong><em>исключены без усреднения</em></article>
         </div>
+        <p className="forecast-coverage-footnote">
+          Размер выборок по сочетаниям показателя, периода, горизонта и метода: {historicalBacktestSampleCounts.exploratory} исследовательских, {historicalBacktestSampleCounts.small_sample} малых и {historicalBacktestSampleCounts.very_small_sample} очень малых. Это диагностические категории по числу тестов, а не доверие или вероятность точности модели.
+          Из годовой проверки исключено записей с неподдерживаемыми периодами: {historicalBacktest.excluded.unsupportedPeriod}; коротких непрерывных фрагментов, не набравших историю: {historicalBacktest.excluded.insufficientSegments}; конфликтных сочетаний муниципалитет/показатель/год: {historicalBacktest.excluded.conflictingMunicipalityYearGroups}.
+        </p>
         {historicalBacktestRows.length ? <div className="table-scroll" role="region" tabIndex={0} aria-label="Результаты walk-forward проверки прогнозных моделей">
           <table className="ranking-table forecast-table">
             <thead><tr><th scope="col">Показатель</th><th scope="col">Модель</th><th scope="col">Тестов</th><th scope="col">МО</th><th scope="col">MAE</th><th scope="col">MAPE</th><th scope="col">Смещение</th><th scope="col">Выборка</th></tr></thead>
