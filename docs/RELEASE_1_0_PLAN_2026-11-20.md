@@ -175,13 +175,16 @@ npm run validate:rosstat-crosswalk
 
 ## 4.2. Текущий статус GitHub и Preview — 18.11.2026
 
-- **Активный PR:** #27, ветка `fix/risk-stable-provenance-gate-2026-11-18`; latest verified checkpoint до этого обновления — `1b68372a203a9cf96a2f3807840299b3b799e531`.
-- **Синхронизация:** 33 commits ahead / 0 behind относительно `main` `4cb1171faf0c4e4568bc16226178730f5d04a9f5`.
-- **GitHub Actions exact HEAD:** Push run `44288080216` и Pull Request run `44288090790` завершились success; в обоих успешно завершились `build` и `data-migrations-integration`, failed steps отсутствуют.
-- **Vercel Preview exact HEAD:** deployment `dpl_Bn4iVTqFQppL2Pea1cPhhJjJk3F4`, READY; URL https://yugra18-cf9k32umt-napishtu.vercel.app. Это Preview, не Production.
-- **Оставшиеся release gates:** человеческая визуальная проверка ключевых desktop/mobile экранов и выбранных PDF-страниц; review/approval владельца; интеграция PR #27. После merge Production release — отдельное решение и отдельная проверка точного SHA.
-- **Production:** deployment, production Supabase DDL/DML, миграции, импорты и массовые записи не выполнялись.
-- **План не является разрешением на Production deployment или изменение БД.** 
+- **Активный PR:** #27, ветка `fix/risk-stable-provenance-gate-2026-11-18`, open / Draft / mergeable=true.
+- **Последний подтверждённый HEAD до этого документационного обновления:** `d6aceae989c75a102049b088a4970e53b46f3706`.
+- **Синхронизация с main:** 43 commits ahead / 0 behind относительно `main` `4cb1171faf0c4e4568bc16226178730f5d04a9f5`.
+- **GitHub Actions exact HEAD:** Push run `44289992582` и Pull Request run `44290001962` — success. В обоих `build` и `data-migrations-integration` завершились success; failed steps отсутствуют.
+- **Vercel Preview exact HEAD:** deployment `dpl_F335Nus82Wk1yEDBGeFxSWi5xNwa`, READY; URL https://yugra18-6xfaicih9-napishtu.vercel.app. SHA deployment совпадает с HEAD; это Preview, не Production.
+- **План и handoff:** Release Plan, continuation ledger и README links находятся в PR #27. `AGENTS.md`, Copilot и ChatGPT Project instructions дополнены обязательными checkpoint/handoff правилами и ссылкой на Release Plan; существующий DEVELOPMENT FIRST из main сохранён.
+- **Старые PR:** #26 закрыт как superseded; его полезные инструкции и план перенесены/актуализированы в PR #27. #29 закрыт как duplicate docs PR.
+- **Оставшиеся gates:** человеческая визуальная проверка ключевых desktop/mobile экранов и выбранных PDF-страниц; reviewer/owner approval; merge PR #27. После merge Production release — отдельное решение и проверка exact SHA.
+- **Production:** production deployment, Supabase DDL/DML, миграции, импорты и массовые записи не выполнялись.
+- **Этот план не является разрешением на Production deployment или изменение БД.**
 
 ## 5. Безопасность БД и известные долги
 
