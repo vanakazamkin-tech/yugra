@@ -6,6 +6,7 @@ import { fetchMunicipalities } from './lib/municipalities';
 const UnifiedRiskForecast = lazy(() => import('./components/UnifiedRiskForecast'));
 const Forecasting = lazy(() => import('./components/Forecasting'));
 import { FALLBACK_DATA_SOURCES, fetchOfficialData, DATA_CATEGORY_LABELS, DATA_STATUS_LABELS } from './lib/officialData';
+import { isHttpSourceUrl } from './lib/sourceUrl';
 
 const Icon = ({ name, className = '' }) => {
   const paths = {
@@ -1058,7 +1059,7 @@ export const InvestmentDetails = () => {
           && year <= new Date().getFullYear() + 1
           && numericValue(item.value) != null
           && String(item.unit || '').trim() !== ''
-          && String(item.source_url || '').trim() !== ''
+          && isHttpSourceUrl(item.source_url)
           && String(item.indicator_code || '').trim() !== '';
       })
       .slice()
