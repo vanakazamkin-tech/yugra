@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { isHttpSourceUrl } from '../src/lib/sourceUrl.js';
 
 const source = readFileSync(new URL('../src/InvestmentDetails.jsx', import.meta.url), 'utf8');
 const start = source.indexOf('const reportOfficialIndicators = useMemo');
@@ -13,7 +14,14 @@ assert.match(selector, /year >= 1900/);
 assert.match(selector, /year <= new Date\(\)\.getFullYear\(\) \+ 1/);
 assert.match(selector, /numericValue\(item\.value\) != null/);
 assert.match(selector, /String\(item\.unit \|\| ''\)\.trim\(\) !== ''/, 'official report observations must have an explicit unit');
-assert.match(selector, /String\(item\.source_url \|\| ''\)\.trim\(\) !== ''/, 'official report observations must link to a source');
+assert.match(selector, /isHttpSourceUrl\\(item\\.source_url\\)/, 'official report observations must use a safe HTTP(S) source URL');
+assert.equal(isHttpSourceUrl('https://rosstat.gov.ru/source'), true);
+assert.equal(isHttpSourceUrl('http://example.org/source'), true);
+assert.equal(isHttpSourceUrl('javascript:alert(1)'), false);
+assert.equal(isHttpSourceUrl('data:text/html,source'), false);
+assert.equal(isHttpSourceUrl('file:///etc/passwd'), false);
+assert.equal(isHttpSourceUrl('https://'), false);
+
 assert.match(selector, /String\(item\.indicator_code \|\| ''\)\.trim\(\) !== ''/);
 assert.doesNotMatch(selector, /item\.geographic_level\s*\|\|\s*'municipality'/);
 
