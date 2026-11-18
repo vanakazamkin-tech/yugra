@@ -1057,6 +1057,8 @@ export const InvestmentDetails = () => {
           && year >= 1900
           && year <= new Date().getFullYear() + 1
           && numericValue(item.value) != null
+          && String(item.unit || '').trim() !== ''
+          && String(item.source_url || '').trim() !== ''
           && String(item.indicator_code || '').trim() !== '';
       })
       .slice()

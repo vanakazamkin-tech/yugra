@@ -12,6 +12,8 @@ assert.match(selector, /Number\.isInteger\(year\)/);
 assert.match(selector, /year >= 1900/);
 assert.match(selector, /year <= new Date\(\)\.getFullYear\(\) \+ 1/);
 assert.match(selector, /numericValue\(item\.value\) != null/);
+assert.match(selector, /String\(item\.unit \|\| ''\)\.trim\(\) !== ''/, 'official report observations must have an explicit unit');
+assert.match(selector, /String\(item\.source_url \|\| ''\)\.trim\(\) !== ''/, 'official report observations must link to a source');
 assert.match(selector, /String\(item\.indicator_code \|\| ''\)\.trim\(\) !== ''/);
 assert.doesNotMatch(selector, /item\.geographic_level\s*\|\|\s*'municipality'/);
 

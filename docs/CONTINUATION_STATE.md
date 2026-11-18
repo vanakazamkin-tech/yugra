@@ -1,3 +1,18 @@
+## Checkpoint — fail-closed provenance for official report rows (2026-11-18 07:08 UTC+05:00)
+
+- **Статус:** `IN_PROGRESS` — второй P0-дефект provenance в отчётах исправлен; ожидается CI нового checkpoint.
+- **Ветка / PR:** `fix/risk-stable-provenance-gate-2026-11-18`, PR #27 (open, Draft).
+- **Предыдущий HEAD:** `385167a7e89c9bcd2510ab84198200c630b2f28a`; GitHub Actions exact HEAD: runs [44221371684](https://github.com/vanakazamkin-tech/yugra/actions/runs/44221371684) и [44221364621](https://github.com/vanakazamkin-tech/yugra/actions/runs/44221364621), оба завершились success. Build и data-migrations-integration — success. Vercel check остаётся failure из-за внешнего build rate limit (retry in 24 hours), не из-за ошибки приложения.
+- **Найденный дефект:** selector официального слоя отчёта проверял verified/geography/year/value/code, но не требовал непустых единицы измерения и source URL. Поэтому неполная по provenance строка могла попасть в отчёт как официальное наблюдение.
+- **Исправление:** selector теперь fail-closed требует явную единицу и ссылку на первоисточник; строки без них исключаются.
+- **Regression:** `scripts/test-report-official-data-gates.mjs` проверяет оба обязательных provenance gate.
+- **Затронутые файлы:** `src/InvestmentDetails.jsx`, `scripts/test-report-official-data-gates.mjs`, `docs/CONTINUATION_STATE.md`.
+- **Проверки:** предыдущий exact HEAD прошёл оба CI jobs; новый HEAD ожидает GitHub Actions. Локальные npm-команды не выполнялись.
+- **Production:** Supabase и Production deployment не менялись.
+- **Следующее действие:** проверить CI exact HEAD; затем продолжить ручные PDF/CSV и desktop/mobile smoke gates, если доступен Preview. Vercel build-rate-limit не обходить созданием production deployment.
+
+---
+
 ## Checkpoint — exact-unit gate for official comparison (2026-11-18 07:08 UTC+05:00)
 
 - **Статус:** `IN_PROGRESS` — исправляется воспроизводимый P0-риск происхождения единиц измерения в официальном сравнении.
