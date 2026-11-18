@@ -1,3 +1,15 @@
+## Checkpoint update — 2026-11-18 07:10 UTC+05:00
+
+- **PR:** #27, Draft/open — `https://github.com/vanakazamkin-tech/yugra/pull/27`.
+- **Code/test HEAD, CI-verified:** `c7e302d019633b4044febc6df2fbc1f3e5ff68d5`.
+- **Exact HEAD CI:** runs `44219455222` and `44219468658`; in both, `build` and `data-migrations-integration` completed `success`. No failed steps. Build job executed forecast unit tests, data/provenance gates, risk model pillars regression (including new stable provenance tests), comparison, passport, map coverage and production bundle.
+- **Vercel:** `Vercel Preview Comments` completed `success`; Preview only, not Production.
+- **Risk fix:** stable requires explicit latest source and non-provisional status across all six pillars; source-less/provisional quality gaps with no adverse signal return `insufficient`.
+- **Production Supabase:** unchanged; no DDL/DML/migrations. Production deploy not performed.
+- **Следующее конкретное действие:** продолжить P0-аудит сценариев 1–3 лет и фактических отчётов/экспортов; после проверки — browser smoke test desktop/mobile and exact-HEAD CI. Не переводить PR из Draft до всех gates.
+
+---
+
 ## Checkpoint — 2026-11-18 07:04 UTC+05:00
 
 - **Статус:** `IN_PROGRESS` — обнаружен и исправлен P0 fail-closed дефект зелёного статуса риск-модели; regression tests добавлены.
