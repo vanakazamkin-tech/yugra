@@ -7,7 +7,8 @@
 - **Исправление:** backtest теперь требует непустой `source_id` либо HTTP(S) `source_url`. Иначе строка исключается и учитывается в `excluded.missingProvenance`. В UI показывается число исключённых строк. Исторические данные не дополняются искусственными источниками.
 - **Regression:** добавлены сценарии missing source, source_id, source_url и небезопасного URL; fixtures существующих backtest-тестов дополнены явными source_id.
 - **Файлы:** `src/lib/forecastModel.js`, `src/lib/forecastModel.test.js`, `src/components/Forecasting.jsx`, `docs/FORECASTING_MODEL.md`, этот журнал.
-- **CI:** exact HEAD `97e7cc8` запустил два дублирующихся GitHub Actions runs `44222605786` и `44222598845`; на последнем readback jobs build и data-migrations-integration ещё выполнялись. Vercel Preview Comments — success; это не подтверждает фактический browser smoke-test.
+- **CI exact checkpoint HEAD:** `f1c30119ed1ad51c7daba8eae0e875de19cc4c09`; GitHub Actions runs [44222658968](https://github.com/vanakazamkin-tech/yugra/actions/runs/44222658968) и [44222651420](https://github.com/vanakazamkin-tech/yugra/actions/runs/44222651420) завершились success. В обоих `build` и `data-migrations-integration` — success, failed steps нет. В build явно прошёл `Run forecast model unit tests` и production bundle.
+- **Vercel Preview:** deployment list для exact SHA `f1c3011` пуст; check `Vercel Preview Comments` success не является фактическим Preview deployment. Browser smoke-test пока заблокирован отсутствием Preview.
 - **Production:** Supabase и Production deployment не менялись.
 - **Следующее действие:** дождаться exact-HEAD CI, исправить регрессию если тесты выявят; затем продолжить P0 сценарного экрана, ручную PDF/CSV и narrow viewport acceptance. Не заявлять релиз готовым без ручных gates.
 
