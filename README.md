@@ -56,6 +56,7 @@ npm run preview
 - [`docs/AI_PROJECT_CONTEXT.md`](./docs/AI_PROJECT_CONTEXT.md) — архитектура, текущий проверенный срез, известные риски и ограничения.
 - [`docs/CHATGPT_PROJECT_INSTRUCTIONS.md`](./docs/CHATGPT_PROJECT_INSTRUCTIONS.md) — готовая инструкция для вставки в настройки ChatGPT Project «Yugra18».
 - [`docs/RELEASE_1_0_PLAN_2026-11-20.md`](./docs/RELEASE_1_0_PLAN_2026-11-20.md) — текущий объём демонстрационного Release 1.0, критерии приёмки, ограничения и оставшиеся блокеры.
+- [`docs/CONTINUATION_STATE.md`](./docs/CONTINUATION_STATE.md) — актуальный журнал checkpoints, CI, блокеров и следующего действия для продолжения работы между чатами.
 
 ## Документация данных
 
