@@ -760,6 +760,42 @@ export const InvestmentDetails = () => {
     ));
   }, [externalRatings, activeModalItem]);
 
+  const modalPopulationTrend = useMemo(() => {
+    if (!activeModalItem) return { rows: [], first: null, latest: null, change: null, changePercent: null };
+
+    const rows = [2022, 2023, 2024, 2025].map((year) => {
+      const period = `${year}-01-01`;
+      const matches = officialIndicators.filter((item) => (
+        item.municipality_id === activeModalItem.id
+        && item.indicator_code === 'population_municipality'
+        && item.source_id === 'rosstat_hmao_municipal_population_2022_2025'
+        && item.verification_status === 'verified'
+        && item.geographic_level === 'municipality'
+        && item.reference_year === year
+        && item.reference_period === period
+        && item.unit === 'человек'
+        && numericValue(item.value) != null
+      ));
+      if (matches.length !== 1) return null;
+      return {
+        year,
+        value: numericValue(matches[0].value),
+        sourceUrl: matches[0].source_url,
+      };
+    }).filter(Boolean);
+
+    const first = rows[0] || null;
+    const latest = rows[rows.length - 1] || null;
+    const change = first && latest ? latest.value - first.value : null;
+    return {
+      rows,
+      first,
+      latest,
+      change,
+      changePercent: first && latest && first.value > 0 ? change / first.value * 100 : null,
+    };
+  }, [officialIndicators, activeModalItem]);
+
   const modalBudgetSnapshots = useMemo(() => {
     if (!activeModalItem) return [];
 
@@ -826,13 +862,14 @@ export const InvestmentDetails = () => {
     const municipalityId = activeModalItem.id;
     return [
       { key: 'indicators', label: 'Проверенные показатели', count: modalOfficialIndicators.length },
+      { key: 'population', label: 'Динамика населения', count: modalPopulationTrend.rows.length },
       { key: 'budget', label: 'Бюджетные срезы', count: modalBudgetSnapshots.length },
       { key: 'ratings', label: 'Внешние рейтинги', count: modalExternalRatings.length },
       { key: 'sites', label: 'Инвестиционные площадки', count: investmentSites.filter((item) => item.municipality_id === municipalityId).length },
       { key: 'facilities', label: 'Образовательные объекты', count: facilities.filter((item) => item.municipality_id === municipalityId).length },
       { key: 'programs', label: 'Отчёты о программах', count: programExecution.filter((item) => item.municipality_id === municipalityId).length },
     ];
-  }, [activeModalItem, modalOfficialIndicators, modalBudgetSnapshots, modalExternalRatings, investmentSites, facilities, programExecution]);
+  }, [activeModalItem, modalOfficialIndicators, modalPopulationTrend, modalBudgetSnapshots, modalExternalRatings, investmentSites, facilities, programExecution]);
 
   const surgutPopulationTrend = useMemo(() => {
     const rows = officialIndicators
@@ -2176,6 +2213,18 @@ export const InvestmentDetails = () => {
           <p className="modal-coverage-note">{officialDataStatus === 'loading' ? 'Каталог официальных данных загружается; состав разделов может обновиться.' : officialDataStatus === 'error' ? 'Не удалось обновить каталог официальных данных. Показано последнее доступное состояние.' : officialDataStatus === 'connected' ? 'Каталог загружен' + (officialDataSyncedAt ? ' · обновлено ' + new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(officialDataSyncedAt) : '') + '. Наличие записей не означает полного статистического покрытия территории.' : 'Каталог официальных данных сейчас не подключён. Нулевое количество записей не означает нулевое значение показателя.'}</p>
         </section>
         <div className="modal-stats"><div><span>Итоговый балл · демо</span><strong>{formatNumber(activeModalItem.score, 1)}</strong></div><div><span>Инвестиции · демо</span><strong>{formatBillion(activeModalItem.investments?.volumeBillion)}</strong></div><div><span>Динамика инвестиций · демо</span><strong className="growth-value">{numericValue(activeModalItem.investments?.growthPercent) == null ? '—' : `${formatNumber(activeModalItem.investments.growthPercent)}%`}</strong></div><div><span>Субъекты МСП · демо</span><strong>{formatNumber(activeModalItem.smeCount)}</strong></div><div><span>Оценка бизнеса · демо</span><strong>{formatNumber(activeModalItem.assessmentScore, 2)} / 5.0</strong></div></div>
+        {modalPopulationTrend.rows.length > 0 && <section className="modal-official-data" aria-labelledby="modal-population-heading">
+          <div className="modal-official-heading">
+            <h3 id="modal-population-heading">Динамика численности населения</h3>
+            <span>РОССТАТ · МУНИЦИПАЛЬНЫЙ УРОВЕНЬ</span>
+          </div>
+          <div className="modal-official-list">{modalPopulationTrend.rows.map((item) => <article className="modal-official-row" key={item.year}>
+            <div><strong>На 1 января {item.year} года</strong></div>
+            <b>{formatNumber(item.value)} чел.</b>
+          </article>)}</div>
+          {modalPopulationTrend.first && modalPopulationTrend.latest && <p className="modal-no-official">Изменение за период {modalPopulationTrend.first.year}–{modalPopulationTrend.latest.year}: {modalPopulationTrend.change > 0 ? '+' : ''}{formatNumber(modalPopulationTrend.change)} человек ({modalPopulationTrend.changePercent > 0 ? '+' : ''}{formatNumber(modalPopulationTrend.changePercent, 1)}%). Показатель относится ко всему муниципальному образованию на 1 января, а не только к административному центру.</p>}
+          <p className="modal-no-official"><a href={modalPopulationTrend.rows[0].sourceUrl} target="_blank" rel="noreferrer">Официальная таблица Тюменьстата (XLSX) ↗</a>. Отсутствующие годы не заменяются нулём.</p>
+        </section>}
         {modalBudgetSnapshots.length > 0 && <section className="modal-official-data" aria-labelledby="modal-budget-heading">
           <div className="modal-official-heading">
             <h3 id="modal-budget-heading">Исполнение муниципального бюджета</h3>
