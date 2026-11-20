@@ -796,6 +796,42 @@ export const InvestmentDetails = () => {
     };
   }, [officialIndicators, activeModalItem]);
 
+  const modalInvestmentSnapshots = useMemo(() => {
+    if (!activeModalItem) return { rows: [], first: null, latest: null, change: null, changePercent: null };
+
+    const rows = [2022, 2023].map((year) => {
+      const matches = officialIndicators.filter((item) => (
+        item.municipality_id === activeModalItem.id
+        && item.indicator_code === 'fixed_capital_investment_non_mining'
+        && item.source_id === 'investugra_municipal_rating_report_2023'
+        && item.verification_status === 'verified'
+        && item.geographic_level === 'municipality'
+        && item.reference_year === year
+        && item.reference_period === 'annual'
+        && item.unit === 'руб.'
+        && numericValue(item.value) != null
+        && numericValue(item.value) > 0
+      ));
+      if (matches.length !== 1) return null;
+      return {
+        year,
+        value: numericValue(matches[0].value),
+        sourceUrl: matches[0].source_url,
+      };
+    }).filter(Boolean);
+
+    const first = rows[0] || null;
+    const latest = rows[rows.length - 1] || null;
+    const change = first && latest ? latest.value - first.value : null;
+    return {
+      rows,
+      first,
+      latest,
+      change,
+      changePercent: first && latest && first.value > 0 ? change / first.value * 100 : null,
+    };
+  }, [officialIndicators, activeModalItem]);
+
   const modalBudgetSnapshots = useMemo(() => {
     if (!activeModalItem) return [];
 
@@ -863,13 +899,14 @@ export const InvestmentDetails = () => {
     return [
       { key: 'indicators', label: 'Проверенные показатели', count: modalOfficialIndicators.length },
       { key: 'population', label: 'Динамика населения', count: modalPopulationTrend.rows.length },
+      { key: 'investment', label: 'Инвестиционные наблюдения', count: modalInvestmentSnapshots.rows.length },
       { key: 'budget', label: 'Бюджетные срезы', count: modalBudgetSnapshots.length },
       { key: 'ratings', label: 'Внешние рейтинги', count: modalExternalRatings.length },
       { key: 'sites', label: 'Инвестиционные площадки', count: investmentSites.filter((item) => item.municipality_id === municipalityId).length },
       { key: 'facilities', label: 'Образовательные объекты', count: facilities.filter((item) => item.municipality_id === municipalityId).length },
       { key: 'programs', label: 'Отчёты о программах', count: programExecution.filter((item) => item.municipality_id === municipalityId).length },
     ];
-  }, [activeModalItem, modalOfficialIndicators, modalPopulationTrend, modalBudgetSnapshots, modalExternalRatings, investmentSites, facilities, programExecution]);
+  }, [activeModalItem, modalOfficialIndicators, modalPopulationTrend, modalInvestmentSnapshots, modalBudgetSnapshots, modalExternalRatings, investmentSites, facilities, programExecution]);
 
   const surgutPopulationTrend = useMemo(() => {
     const rows = officialIndicators
@@ -2224,6 +2261,19 @@ export const InvestmentDetails = () => {
           </article>)}</div>
           {modalPopulationTrend.first && modalPopulationTrend.latest && <p className="modal-no-official">Изменение за период {modalPopulationTrend.first.year}–{modalPopulationTrend.latest.year}: {modalPopulationTrend.change > 0 ? '+' : ''}{formatNumber(modalPopulationTrend.change)} человек ({modalPopulationTrend.changePercent > 0 ? '+' : ''}{formatNumber(modalPopulationTrend.changePercent, 1)}%). Показатель относится ко всему муниципальному образованию на 1 января, а не только к административному центру.</p>}
           <p className="modal-no-official"><a href={modalPopulationTrend.rows[0].sourceUrl} target="_blank" rel="noreferrer">Официальная таблица Тюменьстата (XLSX) ↗</a>. Отсутствующие годы не заменяются нулём.</p>
+        </section>}
+        {modalInvestmentSnapshots.rows.length > 0 && <section className="modal-official-data" aria-labelledby="modal-investment-heading">
+          <div className="modal-official-heading">
+            <h3 id="modal-investment-heading">Инвестиции в основной капитал без добычи</h3>
+            <span>INVESTUGRA · {modalInvestmentSnapshots.rows[0].year}{modalInvestmentSnapshots.rows.length > 1 ? '–' + modalInvestmentSnapshots.rows[modalInvestmentSnapshots.rows.length - 1].year : ''}</span>
+          </div>
+          <div className="modal-official-list">{modalInvestmentSnapshots.rows.map((item) => <article className="modal-official-row" key={item.year}>
+            <div><strong>{item.year} год · муниципальный уровень</strong></div>
+            <b>{formatNumber(item.value / 1_000_000_000, 2)} млрд ₽</b>
+            <a href={item.sourceUrl} target="_blank" rel="noreferrer">Аналитический отчёт InvestUgra ↗</a>
+          </article>)}</div>
+          {modalInvestmentSnapshots.first && modalInvestmentSnapshots.latest && modalInvestmentSnapshots.rows.length > 1 && <p className="modal-no-official">Номинальное изменение между {modalInvestmentSnapshots.first.year} и {modalInvestmentSnapshots.latest.year} годами: {modalInvestmentSnapshots.change > 0 ? '+' : ''}{formatNumber(modalInvestmentSnapshots.change / 1_000_000_000, 2)} млрд ₽ ({modalInvestmentSnapshots.changePercent > 0 ? '+' : ''}{formatNumber(modalInvestmentSnapshots.changePercent, 1)}%). Суммы приведены в текущих ценах; изменение не скорректировано на инфляцию и не является оценкой реального роста инвестиций.</p>}
+          <p className="modal-no-official">Показатель исключает инвестиции по виду экономической деятельности «Добыча полезных ископаемых». Источник — аналитический отчёт о результатах рейтинга муниципальных образований по инвестиционному климату за 2023 год.</p>
         </section>}
         {modalBudgetSnapshots.length > 0 && <section className="modal-official-data" aria-labelledby="modal-budget-heading">
           <div className="modal-official-heading">
