@@ -40,6 +40,8 @@ jobs:
           rc = int(sys.argv[1])
           summary_path = pathlib.Path("employment-2026-extract/summary.json")
           summary = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.exists() else {}
+          member_path = pathlib.Path("employment-2026-extract/archive_csv_members.txt")
+          member_names = member_path.read_text(encoding="utf-8").splitlines() if member_path.exists() else []
           indicators = []
           for item in summary.get("indicators", []):
               indicators.append({
@@ -61,6 +63,8 @@ jobs:
               "range_requests": summary.get("range_requests", 0),
               "archive_bytes_downloaded_via_ranges": summary.get("archive_bytes_downloaded_via_ranges", 0),
               "source_archive": summary.get("source_archive"),
+              "archive_csv_member_count": len(member_names),
+              "archive_csv_member_names": member_names[:500],
               "indicators": indicators,
           }
           pathlib.Path("employment-extract-status.json").write_text(
