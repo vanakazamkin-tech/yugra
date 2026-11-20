@@ -141,6 +141,8 @@ jobs:
               "status": report.get("status", "failed_or_no_report"),
               "submitted_rows": report.get("submitted_rows", 0),
               "source_rows_by_rosstat_code": report.get("source_rows_by_rosstat_code", {}),
+              "source_rows_by_bdmo_indicator_code": report.get("source_rows_by_bdmo_indicator_code", {}),
+              "municipalities_by_bdmo_indicator_code": report.get("municipalities_by_bdmo_indicator_code", {}),
               "missing_source_series": report.get("missing_source_series", []),
               "municipalities_by_source_code": report.get("municipalities_by_source_code", {}),
               "years_by_source_code": report.get("years_by_source_code", {}),
