@@ -1,0 +1,72 @@
+name: Probe BDPMO archive paths and indicator catalogue
+
+on:
+  push:
+    branches:
+      - ops/extract-hmao-demography-2026-11
+    paths:
+      - ".github/workflows/probe-bdmo-archives.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Probe official data archive endpoints
+        run: |
+          python - <<'PY'
+          from urllib.request import Request, urlopen
+          from urllib.error import HTTPError, URLError
+          import struct
+
+          codes = ["8112001", "8112003", "8112004", "8112007", "8112008", "8112009", "8112027"]
+          bases = [
+            "https://storage.yandexcloud.net/tochno-st-catalog/Rosstat/data_bdmo_118_v20260928/regions",
+            "https://storage.yandexcloud.net/tochno-st-catalog/Rosstat/data_bdmo_118_v20250918/regions",
+          ]
+          for base in bases:
+            for code in codes:
+              name = f"data_Y4{code}_region71_112_v{base.split('_v')[-1]}.zip"
+              url = f"{base}/{name}"
+              try:
+                req=Request(url,method="HEAD",headers={"User-Agent":"Yugra18-source-probe/1.0"})
+                with urlopen(req,timeout=30) as response:
+                  print("HEAD", code, response.status, response.headers.get("Content-Length"), response.headers.get("Content-Type"), url)
+              except HTTPError as exc:
+                print("HEAD", code, exc.code, url)
+              except URLError as exc:
+                print("HEAD", code, "URL_ERROR", exc, url)
+
+          section_zip = "https://storage.yandexcloud.net/tochno-st-catalog/Rosstat/data_bdmo_118_v20250918/by_indicator/data_section31_112_v20250918.zip"
+          try:
+            req=Request(section_zip,method="HEAD",headers={"User-Agent":"Yugra18-source-probe/1.0"})
+            with urlopen(req,timeout=30) as response:
+              print("SECTION31_HEAD",response.status,response.headers.get("Content-Length"),response.headers.get("Content-Type"),section_zip)
+          except Exception as exc:
+            print("SECTION31_HEAD_ERROR",repr(exc),section_zip)
+          try:
+            req=Request(section_zip,headers={"User-Agent":"Yugra18-source-probe/1.0","Range":"bytes=-65536"})
+            with urlopen(req,timeout=30) as response:
+              tail=response.read()
+              print("SECTION31_RANGE",response.status,response.headers.get("Content-Range"),len(tail))
+              pos=tail.rfind(b"PK\\x05\\x06")
+              if pos>=0 and len(tail)>=pos+22:
+                count=struct.unpack_from("<H",tail,pos+10)[0]
+                cd_size=struct.unpack_from("<I",tail,pos+12)[0]
+                cd_offset=struct.unpack_from("<I",tail,pos+16)[0]
+                print("SECTION31_ZIP_DIRECTORY",count,cd_size,cd_offset)
+          except Exception as exc:
+            print("SECTION31_RANGE_ERROR",repr(exc))
+
+          sheet="https://docs.google.com/spreadsheets/d/1Z66eXdgzyBg2NPV4cRzrTtv6BSZFVaAi/export?format=xlsx"
+          try:
+            req=Request(sheet,method="HEAD",headers={"User-Agent":"Mozilla/5.0"})
+            with urlopen(req,timeout=30) as response:
+              print("CATALOGUE_SHEET",response.status,response.headers.get("Content-Length"),response.headers.get("Content-Type"),response.geturl())
+          except Exception as exc:
+            print("CATALOGUE_SHEET_ERROR",repr(exc))
+          PY
