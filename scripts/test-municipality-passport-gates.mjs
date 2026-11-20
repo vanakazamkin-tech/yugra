@@ -23,4 +23,20 @@ assert.match(population, /\['population_municipality', 'population_municipality_
 assert.doesNotMatch(population, /population_settlement/);
 assert.doesNotMatch(population, /item\.geographic_level\s*\|\|\s*'municipality'/);
 assert.match(source, /item\.source_url \? <a href=\{item\.source_url\}/);
+
+const budgetStart = source.indexOf('const modalBudgetSnapshots = useMemo');
+const budgetEnd = source.indexOf('const modalDataCoverage', budgetStart);
+assert.ok(budgetStart >= 0 && budgetEnd > budgetStart, 'municipal budget selector must exist');
+const budget = source.slice(budgetStart, budgetEnd);
+assert.match(budget, /item\.verification_status === 'verified'/);
+assert.match(budget, /item\.geographic_level === 'municipality'/);
+assert.match(budget, /item\.unit === 'тыс\. руб\.'/);
+assert.match(budget, /\['2024-Q3', '2025-Q3'\]/);
+assert.match(budget, /duma_hmao_municipal_budget_9m_2025/);
+assert.match(budget, /matches\.length === 1/);
+assert.match(budget, /Math\.abs\(derivedTransfers - transferValue\) <= 0\.1/);
+assert.doesNotMatch(budget, /geographic_level\s*\|\|\s*'municipality'/);
+assert.doesNotMatch(budget, /reference_period\s*===\s*'annual'/);
+assert.match(source, /Все суммы — накопительное исполнение за январь–сентябрь/);
+
 console.log('Municipality passport data-integrity gates passed.');
