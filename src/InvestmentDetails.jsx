@@ -760,17 +760,79 @@ export const InvestmentDetails = () => {
     ));
   }, [externalRatings, activeModalItem]);
 
+  const modalBudgetSnapshots = useMemo(() => {
+    if (!activeModalItem) return [];
+
+    const municipalityId = activeModalItem.id;
+    const budgetObservations = officialIndicators.filter((item) => (
+      item.municipality_id === municipalityId
+      && item.verification_status === 'verified'
+      && item.geographic_level === 'municipality'
+      && item.unit === 'тыс. руб.'
+      && ['2024-Q3', '2025-Q3'].includes(item.reference_period)
+    ));
+
+    const uniqueObservation = (code, period, sourceId) => {
+      const matches = budgetObservations.filter((item) => (
+        item.indicator_code === code
+        && item.reference_period === period
+        && item.source_id === sourceId
+        && Number(item.reference_year) === Number(period.slice(0, 4))
+        && numericValue(item.value) != null
+      ));
+      return matches.length === 1 ? matches[0] : null;
+    };
+
+    return ['2024-Q3', '2025-Q3'].map((period) => {
+      const revenue = uniqueObservation('budget_total_revenue', period, 'duma_hmao_municipal_budget_9m_2025');
+      const revenueWithoutGrants = uniqueObservation('budget_revenue_excluding_grants', period, 'duma_hmao_municipal_budget_9m_2025');
+      const expenditure = uniqueObservation('budget_total_expenditure', period, 'duma_hmao_municipal_budget_9m_2025');
+
+      if (!revenue || !revenueWithoutGrants || !expenditure) return null;
+
+      const totalRevenue = numericValue(revenue.value);
+      const nonGrantRevenue = numericValue(revenueWithoutGrants.value);
+      const totalExpenditure = numericValue(expenditure.value);
+      if (totalRevenue == null || totalRevenue <= 0 || nonGrantRevenue == null
+        || nonGrantRevenue < 0 || nonGrantRevenue > totalRevenue || totalExpenditure == null) {
+        return null;
+      }
+
+      const transferObservation = period === '2025-Q3'
+        ? uniqueObservation('budget_intergovernmental_transfers', period, 'duma_hmao_municipal_budget_appendix2_9m_2025')
+        : null;
+      const transferValue = transferObservation ? numericValue(transferObservation.value) : null;
+      const derivedTransfers = totalRevenue - nonGrantRevenue;
+      const transfersReconciled = transferValue != null && Math.abs(derivedTransfers - transferValue) <= 0.1;
+
+      return {
+        year: Number(period.slice(0, 4)),
+        period,
+        totalRevenue,
+        nonGrantRevenue,
+        totalExpenditure,
+        balance: totalRevenue - totalExpenditure,
+        nonGrantRevenueShare: nonGrantRevenue / totalRevenue * 100,
+        transfers: transfersReconciled ? transferValue : null,
+        transfersShare: transfersReconciled ? transferValue / totalRevenue * 100 : null,
+        sourceUrl: revenue.source_url,
+        transfersSourceUrl: transfersReconciled ? transferObservation.source_url : null,
+      };
+    }).filter(Boolean);
+  }, [officialIndicators, activeModalItem]);
+
   const modalDataCoverage = useMemo(() => {
     if (!activeModalItem) return [];
     const municipalityId = activeModalItem.id;
     return [
       { key: 'indicators', label: 'Проверенные показатели', count: modalOfficialIndicators.length },
+      { key: 'budget', label: 'Бюджетные срезы', count: modalBudgetSnapshots.length },
       { key: 'ratings', label: 'Внешние рейтинги', count: modalExternalRatings.length },
       { key: 'sites', label: 'Инвестиционные площадки', count: investmentSites.filter((item) => item.municipality_id === municipalityId).length },
       { key: 'facilities', label: 'Образовательные объекты', count: facilities.filter((item) => item.municipality_id === municipalityId).length },
       { key: 'programs', label: 'Отчёты о программах', count: programExecution.filter((item) => item.municipality_id === municipalityId).length },
     ];
-  }, [activeModalItem, modalOfficialIndicators, modalExternalRatings, investmentSites, facilities, programExecution]);
+  }, [activeModalItem, modalOfficialIndicators, modalBudgetSnapshots, modalExternalRatings, investmentSites, facilities, programExecution]);
 
   const surgutPopulationTrend = useMemo(() => {
     const rows = officialIndicators
@@ -2114,6 +2176,30 @@ export const InvestmentDetails = () => {
           <p className="modal-coverage-note">{officialDataStatus === 'loading' ? 'Каталог официальных данных загружается; состав разделов может обновиться.' : officialDataStatus === 'error' ? 'Не удалось обновить каталог официальных данных. Показано последнее доступное состояние.' : officialDataStatus === 'connected' ? 'Каталог загружен' + (officialDataSyncedAt ? ' · обновлено ' + new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(officialDataSyncedAt) : '') + '. Наличие записей не означает полного статистического покрытия территории.' : 'Каталог официальных данных сейчас не подключён. Нулевое количество записей не означает нулевое значение показателя.'}</p>
         </section>
         <div className="modal-stats"><div><span>Итоговый балл · демо</span><strong>{formatNumber(activeModalItem.score, 1)}</strong></div><div><span>Инвестиции · демо</span><strong>{formatBillion(activeModalItem.investments?.volumeBillion)}</strong></div><div><span>Динамика инвестиций · демо</span><strong className="growth-value">{numericValue(activeModalItem.investments?.growthPercent) == null ? '—' : `${formatNumber(activeModalItem.investments.growthPercent)}%`}</strong></div><div><span>Субъекты МСП · демо</span><strong>{formatNumber(activeModalItem.smeCount)}</strong></div><div><span>Оценка бизнеса · демо</span><strong>{formatNumber(activeModalItem.assessmentScore, 2)} / 5.0</strong></div></div>
+        {modalBudgetSnapshots.length > 0 && <section className="modal-official-data" aria-labelledby="modal-budget-heading">
+          <div className="modal-official-heading">
+            <h3 id="modal-budget-heading">Исполнение муниципального бюджета</h3>
+            <span>ЯНВАРЬ–СЕНТЯБРЬ · {modalBudgetSnapshots[0].year}{modalBudgetSnapshots.length > 1 ? '–' + modalBudgetSnapshots[modalBudgetSnapshots.length - 1].year : ''}</span>
+          </div>
+          <div className="modal-official-list">{modalBudgetSnapshots.map((item) => {
+            const balanceLabel = item.balance > 0 ? 'Доходы выше расходов' : item.balance < 0 ? 'Расходы выше доходов' : 'Доходы равны расходам';
+            const balancePrefix = item.balance > 0 ? '+' : '';
+            return <article className="modal-official-row" key={item.period}>
+              <div>
+                <strong>{item.year} · исполнение за 9 месяцев</strong>
+                <span>Доходы бюджета: {formatNumber(item.totalRevenue / 1_000_000, 2)} млрд ₽</span>
+                <span>Расходы бюджета: {formatNumber(item.totalExpenditure / 1_000_000, 2)} млрд ₽</span>
+                <span>Доходы без безвозмездных поступлений: {formatNumber(item.nonGrantRevenue / 1_000_000, 2)} млрд ₽ · {formatNumber(item.nonGrantRevenueShare, 1)}% доходов</span>
+                {item.transfers != null && <span>Безвозмездные поступления: {formatNumber(item.transfers / 1_000_000, 2)} млрд ₽ · {formatNumber(item.transfersShare, 1)}% доходов</span>}
+                <span>{balanceLabel}</span>
+              </div>
+              <b>{balancePrefix}{formatNumber(item.balance / 1_000_000, 2)} млрд ₽</b>
+              <a href={item.sourceUrl} target="_blank" rel="noreferrer">Приложение 1 Думы Югры ↗</a>
+              {item.transfersSourceUrl && <a href={item.transfersSourceUrl} target="_blank" rel="noreferrer">Приложение 2 Думы Югры ↗</a>}
+            </article>;
+          })}</div>
+          <p className="modal-no-official">Все суммы — накопительное исполнение за январь–сентябрь, а не итог полного года. Срезы 2024 и 2025 годов сравниваются за одинаковые девять месяцев. Промежуточное сальдо рассчитано как доходы минус расходы; оно не является итоговым годовым профицитом или дефицитом. Доля доходов без безвозмездных поступлений — расчётная доля от доходов бюджета, а не самостоятельный опубликованный рейтинг.</p>
+        </section>}
         <section className="modal-official-data" aria-labelledby="modal-official-heading">
           <div className="modal-official-heading"><h3 id="modal-official-heading">Подтверждённые официальные показатели</h3><span>{modalOfficialIndicators.length} знач.</span></div>
           {modalOfficialIndicators.length > 0 ? <div className="modal-official-list">
