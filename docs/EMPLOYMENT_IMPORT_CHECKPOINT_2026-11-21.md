@@ -84,7 +84,7 @@ On 2026-11-21, an additional 34 rows were added from eight municipal official so
 | `megion_municipal_labour_2024` | Megion | 4 | 01.01.2024 and 01.01.2025 |
 | **Additional total** | | **34** | **8 municipal areas** |
 
-After the subsequent imports, together with the 44 pre-existing 2022 observations, the unemployment/vacancy source set contains **120 observations across 27 sources**. The latest 10 observations described in section J are included; all remain pending. Do not rely on earlier historical subtotals in sections B–I as the current total.
+After the subsequent imports, together with the 44 pre-existing 2022 observations, the unemployment/vacancy source set contains **121 observations across 28 sources**. The latest 11 additions described in sections J and K are included; all remain pending. Do not rely on earlier historical subtotals in sections B–I as the current total.
 
 ### Distinguish vacancy measures
 
@@ -102,19 +102,19 @@ These are not interchangeable with the number of active vacancy advertisements o
 
 Direct SQL verification after the additional imports confirmed:
 
-- Total rows across the twenty-seven sources above: **120**.
-- Distinct source keys: **120**.
-- Review status: **120 pending**.
+- Total rows across the twenty-eight sources above: **121**.
+- Distinct source keys: **121**.
+- Review status: **121 pending**.
 - Validation errors: **0**.
 - Unmapped municipalities: **0**.
 - Municipalities represented across the combined base and local sources: **22**.
-- Sources: **27**.
+- Sources: **28**.
 - Rows with `imported_indicator_id` set: **0**.
 - No rows have been promoted into the analytical table.
 
 All 44 rows from Decree No. 422-п remain one observation set for 2022 across all 22 municipalities. New municipality observations begin in the years or point-in-time dates stated in their source documents. Do not treat missing years or municipalities as zero.
 
-The source registry has been updated with twenty-six additional source records and their URLs, owners, temporal coverage, formats and usage notes. Each is marked `partially_imported`.
+The source registry has been updated with twenty-seven additional source records and their URLs, owners, temporal coverage, formats and usage notes. Each is marked `partially_imported`.
 
 ## D. Remaining Stage 2 work
 
@@ -148,11 +148,11 @@ A later Surgut city strategy monitoring page (published 26.02.2026 for 2024–20
 
 ## Updated expanded-staging verification
 
-The final 2026-11-21 check across the twenty-seven unemployment/vacancy sources found:
-- **120 total staging rows; 120 distinct source keys.**
-- **120 pending; 0 validation errors; 0 unmapped municipality IDs.**
+The final 2026-11-21 check across the twenty-eight unemployment/vacancy sources found:
+- **121 total staging rows; 121 distinct source keys.**
+- **121 pending; 0 validation errors; 0 unmapped municipality IDs.**
 - All **22** project municipalities appear in the combined source set (the full 2022 table covers all 22).
-- **27 source IDs** represented in staging.
+- **28 source IDs** represented in staging.
 - **0** rows with `imported_indicator_id`; no promotion or production/site change.
 - 96 registered-unemployment observations and 6 vacancy / employer-demand / employment-centre-openings observations.
 
@@ -217,7 +217,7 @@ Source documents:
 ### Latest Supabase verification after this extension
 
 Direct SQL check over the 19 unemployment/vacancy source IDs confirms:
-- **120 rows total and 120 distinct source keys**.
+- **121 rows total and 121 distinct source keys**.
 - **102 pending**, 0 validation errors, 0 unmapped municipality IDs.
 - All 22 project municipalities are represented by the combined series, including the all-municipality 2022 base table.
 - **19 source IDs** represented in staging.
@@ -254,4 +254,26 @@ Direct SQL verification across the 27 source IDs confirms:
 - All **22** municipalities are represented by the combined source set; the 2022 Decree No.422-п baseline covers every municipality.
 - **0** rows with `imported_indicator_id`; no analytical promotion or production change.
 
-The three remaining areas with no post-2022 registered-unemployment observations in the current source set are Beryozovsky district, Kondinsky district, and Nizhnevartovsk district. Pyt-Yakh's 2025 observation is secondary and needs primary confirmation; Langepas's 2025–2026 media figures also need primary source confirmation before promotion. Keep these quality distinctions visible in all further summaries.
+The two remaining areas with no post-2022 registered-unemployment observations in the current source set are Kondinsky district and Nizhnevartovsk district. Beryozovsky district now has a 2025 rate observation from the municipality-founded news outlet reporting the annual head-of-district report. Pyt-Yakh's 2025 observation is secondary and needs primary confirmation; Langepas's 2025–2026 media figures also need primary source confirmation before promotion. Keep these quality distinctions visible in all further summaries.
+
+
+## K. Further official municipal report — Beryozovsky district (21 November 2026)
+
+One additional fact observation was added from the annual report of the head of Beryozovsky district for 2025, heard at the 31st meeting of the district Duma on 17.02.2026:
+
+| Source ID | Area | Rows | Observation |
+|---|---|---:|---|
+| `berezovsky_labour_2025` | Beryozovsky district | 1 | Registered unemployment rate 0.54% for the completed 2025 period |
+
+The report is covered by a municipal news publication, “Березово.Инфо”, whose founder is the Administration of Beryozovsky district: [article dated 17.02.2026](https://berezovoinfo.ru/2026/02/17/prioritet-komfort-i-blagopoluchie-zhitelej/). It states the 2025 annual report and the reduction in registered unemployment from 0.89% to 0.54%. Only the 0.54% current 2025 outcome was imported. The comparison figure 0.89% was not inserted as a separate observation because the article does not specify its exact reference date.
+
+## Latest final Supabase control (after section K)
+
+Direct SQL verification across the 28 source IDs confirms:
+- **121 staging rows and 121 distinct source keys.**
+- **121 pending**, 0 validation errors, 0 unmapped municipality IDs.
+- **28 source IDs** represented.
+- All **22** municipalities are present in the combined set via the full 2022 baseline table.
+- **0** rows with `imported_indicator_id`; no analytical promotion or production/site change.
+
+Post-2022 municipal coverage has now expanded for Beryozovsky district through 2025, Langepas through the secondary 2026 snapshot, and Pyt-Yakh through the secondary 2025 report. The two remaining areas without later-than-2022 observations in the current staging set are **Kondinsky district and Nizhnevartovsk district**. The Pyt-Yakh and recent Langepas observations remain secondary and require primary-source corroboration before promotion.
