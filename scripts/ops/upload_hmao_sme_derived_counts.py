@@ -11,7 +11,7 @@ import concurrent.futures, json, os, sys, time, urllib.error, urllib.parse, urll
 from datetime import datetime, timezone
 from pathlib import Path
 
-REPORT=Path(".ops-results/hmao-sme-regional-aggregates.json")
+REPORT=Path(".ops-results/fns-sme-regional-aggregates.json")
 BASE_URL=os.getenv("SUPABASE_URL","https://dmbikidqikjupkghywbz.supabase.co").rstrip("/")
 API_KEY=os.getenv("SUPABASE_SERVICE_ROLE_KEY","").strip()
 SOURCE_ID="tochno_fns_sme_hmao_v20260605"
