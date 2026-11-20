@@ -1,0 +1,165 @@
+{
+  "source_url": "https://www.nalog.gov.ru/opendata/7707329152-rsmp/",
+  "snapshot": "2026-11-10",
+  "xsd": {
+    "xsd_bytes": 32641,
+    "xsd_sha256": "1d90729f30a3b6119f20db6ca34664034950ecacf86f9fae925ab60ce3cf3845",
+    "geography_relevant_schema_names": [
+      "CCРФТип",
+      "ВидСубМСП",
+      "Город",
+      "Дата0Тип",
+      "ДатаВклМСП",
+      "ДатаДог",
+      "ДатаКонЛиценз",
+      "ДатаЛиценз",
+      "ДатаНачЛиценз",
+      "ДатаОстЛиценз",
+      "ДатаСост",
+      "ИННФЛТип",
+      "ИННЮЛ",
+      "ИННЮЛ_ПП",
+      "ИННЮЛТип",
+      "ИПВклМСП",
+      "КППТип",
+      "КатСубМСП",
+      "КодРегион",
+      "НаимАдрТип1",
+      "НаимЮЛ_ПП",
+      "НаселПункт",
+      "ОГРНИП",
+      "ОГРНИПТип",
+      "ОГРНТип",
+      "ОКВЭДТип",
+      "Район",
+      "Регион",
+      "СОНОТип",
+      "СвОКВЭДТип",
+      "СведОКВЭДТип",
+      "Тип",
+      "ТипИнф",
+      "ФИО0Тип",
+      "ФИОИП"
+    ]
+  },
+  "xml_sample": {
+    "archive_size_bytes": 2169961249,
+    "range_requests": 203,
+    "archive_bytes_downloaded": 29980820,
+    "xml_member_count": 7661,
+    "sampled_xml_members": 100,
+    "sampled_documents": 90004,
+    "region86_document_hits_in_sample": 955,
+    "relevant_fields_present_document_count": {
+      "ВидСубМСП": 90004,
+      "Город": 56796,
+      "ДатаВклМСП": 90004,
+      "ДатаКонЛиценз": 898,
+      "ДатаЛиценз": 4628,
+      "ДатаНачЛиценз": 4632,
+      "ДатаСост": 90004,
+      "КатСубМСП": 90004,
+      "КодРегион": 90004,
+      "НаселПункт": 15357,
+      "Район": 19458,
+      "Регион": 90004,
+      "СведМН": 90004
+    },
+    "relevant_attribute_names": [
+      "ВидСубМСП",
+      "ДатаВклМСП",
+      "ДатаКонЛиценз",
+      "ДатаЛиценз",
+      "ДатаНачЛиценз",
+      "ДатаСост",
+      "КатСубМСП",
+      "КодРегион"
+    ],
+    "sample_members": [
+      {
+        "name": "VO_RRMSPSV_0000_9965_20261110_00cd15f8-f62e-4dac-b629-631cc6d18dc1.xml",
+        "docs": 900,
+        "uncompressed_bytes": 2855046,
+        "crc32": "ok",
+        "region86_document_hits": 0
+      },
+      {
+        "name": "VO_RRMSPSV_0000_9965_20261110_00d67de6-962a-472c-af32-a10cc3d2e461.xml",
+        "docs": 900,
+        "uncompressed_bytes": 2394551,
+        "crc32": "ok",
+        "region86_document_hits": 7
+      },
+      {
+        "name": "VO_RRMSPSV_0000_9965_20261110_00f0bd90-d558-4194-a387-a0b65801bca9.xml",
+        "docs": 900,
+        "uncompressed_bytes": 3721717,
+        "crc32": "ok",
+        "region86_document_hits": 0
+      },
+      {
+        "name": "VO_RRMSPSV_0000_9965_20261110_00f150a1-6ac5-4764-8d15-3b5a172e3200.xml",
+        "docs": 900,
+        "uncompressed_bytes": 1834265,
+        "crc32": "ok",
+        "region86_document_hits": 24
+      },
+      {
+        "name": "VO_RRMSPSV_0000_9965_20261110_0a0cccb4-e485-4e63-b8af-9e0527e4d99b.xml",
+        "docs": 900,
+        "uncompressed_bytes": 3878740,
+        "crc32": "ok",
+        "region86_document_hits": 0
+      },
+      {
+        "name": "VO_RRMSPSV_0000_9965_20261110_0a1c1366-e2b8-4ef4-9f86-37094eff1e30.xml",
+        "docs": 900,
+        "uncompressed_bytes": 3873675,
+        "crc32": "ok",
+        "region86_document_hits": 0
+      },
+      {
+        "name": "VO_RRMSPSV_0000_9965_20261110_0a1dd1f7-332f-418e-8a03-b5e22d1f28f6.xml",
+        "docs": 900,
+        "uncompressed_bytes": 2102756,
+        "crc32": "ok",
+        "region86_document_hits": 3
+      },
+      {
+        "name": "VO_RRMSPSV_0000_9965_20261110_0a1e6794-60be-41f0-8252-74822239916e.xml",
+        "docs": 900,
+        "uncompressed_bytes": 3001160,
+        "crc32": "ok",
+        "region86_document_hits": 7
+      },
+      {
+        "name": "VO_RRMSPSV_0000_9965_20261110_0a1f3c32-7047-42c5-904c-11666d22d66d.xml",
+        "docs": 900,
+        "uncompressed_bytes": 3279097,
+        "crc32": "ok",
+        "region86_document_hits": 721
+      },
+      {
+        "name": "VO_RRMSPSV_0000_9965_20261110_0a1fa617-8889-4736-a9fc-d9cfedc1f0d4.xml",
+        "docs": 900,
+        "uncompressed_bytes": 2012829,
+        "crc32": "ok",
+        "region86_document_hits": 0
+      },
+      {
+        "name": "VO_RRMSPSV_0000_9965_20261110_0a3b8e0d-0589-4032-816c-b5fe46bb5550.xml",
+        "docs": 900,
+        "uncompressed_bytes": 3989981,
+        "crc32": "ok",
+        "region86_document_hits": 0
+      },
+      {
+        "name": "VO_RRMSPSV_0000_9965_20261110_0a4f58fe-c205-42fa-8d56-747c57e7d5e9.xml",
+        "docs": 900,
+        "uncompressed_bytes": 2324873,
+        "crc32": "ok",
+        "region86_document_hits": 0
+      }
+    ]
+  }
+}
