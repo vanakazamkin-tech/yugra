@@ -1,16 +1,78 @@
 {
   "job": "upload",
-  "exit_code": 1,
-  "status": "failed_or_no_report",
-  "submitted_rows": 0,
-  "source_rows_by_rosstat_code": {},
-  "source_rows_by_bdmo_indicator_code": {},
-  "municipalities_by_bdmo_indicator_code": {},
-  "missing_source_series": [],
-  "municipalities_by_source_code": {},
-  "years_by_source_code": {},
+  "exit_code": 0,
+  "status": "submitted_to_review_staging",
+  "submitted_rows": 48396,
+  "source_rows_by_rosstat_code": {
+    "1121100010003": 15303,
+    "1134431020014": 21,
+    "2152320020022": 15429,
+    "2211110020001": 17643
+  },
+  "source_rows_by_bdmo_indicator_code": {
+    "8423001": 21,
+    "8423005": 14031,
+    "8423006": 14127,
+    "8423007": 15370,
+    "8423015": 1272,
+    "8423016": 1302,
+    "8423017": 2273
+  },
+  "municipalities_by_bdmo_indicator_code": {
+    "8423001": 7,
+    "8423005": 22,
+    "8423006": 22,
+    "8423007": 22,
+    "8423015": 22,
+    "8423016": 22,
+    "8423017": 22
+  },
+  "missing_source_series": [
+    "8423002",
+    "8423003",
+    "8423004"
+  ],
+  "municipalities_by_source_code": {
+    "8423001": 7,
+    "8423005": 22,
+    "8423006": 22,
+    "8423007": 22,
+    "8423015": 22,
+    "8423016": 22,
+    "8423017": 22
+  },
+  "years_by_source_code": {
+    "8423001": [
+      2017,
+      2020
+    ],
+    "8423005": [
+      2017,
+      2026
+    ],
+    "8423006": [
+      2017,
+      2026
+    ],
+    "8423007": [
+      2017,
+      2026
+    ],
+    "8423015": [
+      2017,
+      2025
+    ],
+    "8423016": [
+      2017,
+      2025
+    ],
+    "8423017": [
+      2017,
+      2025
+    ]
+  },
   "blank_values_by_source_code": {},
   "non_numeric_values_by_source_code": {},
   "pending_review": true,
-  "error_log_tail": "ERROR: SUPABASE_SERVICE_ROLE_KEY is missing\nTraceback (most recent call last):\n  File \"/home/runner/work/yugra/yugra/scripts/ops/upload_hmao_employment_staging.py\", line 281, in <module>\n    try: raise SystemExit(main())\n                          ^^^^^^\n  File \"/home/runner/work/yugra/yugra/scripts/ops/upload_hmao_employment_staging.py\", line 202, in main\n    if not api_key: raise RuntimeError(\"SUPABASE_SERVICE_ROLE_KEY is missing\")\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: SUPABASE_SERVICE_ROLE_KEY is missing\n"
+  "error_log_tail": "{\n  \"status\": \"submitted_to_review_staging\",\n  \"source_id\": \"tochno_bdmo_hmao_20260928\",\n  \"submitted_rows\": 48396,\n  \"source_rows_by_rosstat_code\": {\n    \"1121100010003\": 15303,\n    \"1134431020014\": 21,\n    \"2152320020022\": 15429,\n    \"2211110020001\": 17643\n  },\n  \"source_rows_by_bdmo_indicator_code\": {\n    \"8423001\": 21,\n    \"8423005\": 14031,\n    \"8423006\": 14127,\n    \"8423007\": 15370,\n    \"8423015\": 1272,\n    \"8423016\": 1302,\n    \"8423017\": 2273\n  },\n  \"municipalities_by_bdmo_indicator_code\": {\n    \"8423001\": 7,\n    \"8423005\": 22,\n    \"8423006\": 22,\n    \"8423007\": 22,\n    \"8423015\": 22,\n    \"8423016\": 22,\n    \"8423017\": 22\n  },\n  \"missing_source_series\": [\n    \"8423002\",\n    \"8423003\",\n    \"8423004\"\n  ],\n  \"municipalities_by_source_code\": {\n    \"8423001\": 7,\n    \"8423005\": 22,\n    \"8423006\": 22,\n    \"8423007\": 22,\n    \"8423015\": 22,\n    \"8423016\": 22,\n    \"8423017\": 22\n  },\n  \"years_by_source_code\": {\n    \"8423001\": [\n      2017,\n      2020\n    ],\n    \"8423005\": [\n      2017,\n      2026\n    ],\n    \"8423006\": [\n      2017,\n      2026\n    ],\n    \"8423007\": [\n      2017,\n      2026\n    ],\n    \"8423015\": [\n      2017,\n      2025\n    ],\n    \"8423016\": [\n      2017,\n      2025\n    ],\n    \"8423017\": [\n      2017,\n      2025\n    ]\n  },\n  \"blank_values_by_source_code\": {},\n  \"non_numeric_values_by_source_code\": {},\n  \"pending_review\": true,\n  \"mapped_indicator_code\": null,\n  \"normalized_unit\": null,\n  \"normalized_period\": null,\n  \"batch_size\": 100,\n  \"workers\": 3,\n  \"retrieved_at\": \"2026-11-20T21:39:56.390766+00:00\",\n  \"note\": \"Each BDPMO display indicator is stored separately with its original Rosstat form code. Municipal-owned indicators 8423015-8423017 are kept distinct. All rows remain pending; no analytical table was modified.\"\n}\n"
 }
