@@ -203,7 +203,7 @@ def extract_member(remote: HttpRangeFile, info: zipfile.ZipInfo, source_code: st
             ).hexdigest()
             if digest in state["seen"]: continue
             state["seen"].add(digest)
-            member_match = re.search(r"Y4(8423\\d{3})", info.filename)
+            member_match = re.search(r"Y4(8423\d{3})", info.filename)
             bdmo_indicator_code = member_match.group(1) if member_match else None
             record = {
                 "source": "rosstat_bdmo_processed_by_tochno",
@@ -266,13 +266,18 @@ def main() -> int:
             # member or the year-partitioned files.
             hmao_parts = [
                 item for item in matches
-                if re.search(r"_region71(?:_|\\.)", item.filename)
+                if re.search(r"_region71(?:_|\.|$)", item.filename)
             ]
+            whole_members = [item for item in matches if "parts/" not in item.filename.lower()]
             if hmao_parts:
                 selected_matches = hmao_parts
+                selection_mode = "region71_parts"
+            elif whole_members:
+                selected_matches = whole_members
+                selection_mode = "whole_member"
             else:
-                whole_members = [item for item in matches if "parts/" not in item.filename.lower()]
-                selected_matches = whole_members if whole_members else matches
+                selected_matches = matches
+                selection_mode = "year_or_other_parts"
             state = {
                 "rows": 0, "seen": set(), "municipalities": Counter(),
                 "years": Counter(), "dimensions": defaultdict(Counter),
@@ -299,7 +304,7 @@ def main() -> int:
                 "candidate_bdmo_codes": series["bdmo_codes"],
                 "status": "extracted" if state["rows"] else "no_region71_yugra_rows",
                 "matched_members": [x["filename"] for x in state["members"]],
-                "matched_member_selection": "region71_parts" if hmao_parts else ("whole_member" if selected_matches == whole_members else "year_or_other_parts"),
+                "matched_member_selection": selection_mode,
                 "matched_rows": state["rows"],
                 "municipalities_matched": len(state["municipalities"]),
                 "missing_municipalities": [
