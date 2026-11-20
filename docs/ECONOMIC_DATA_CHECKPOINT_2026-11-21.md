@@ -261,3 +261,44 @@ The official 10.11.2026 FNS Unified SME Register XSD confirms the codes:
 The 100-XML-member probe contained 90,004 documents and 955 region-86 documents. All 955 region-86 addresses in that sample mapped to 21 different Yugra municipalities with no unmatched address tuple; the sample simply did not include Pokachi. This sample is a crosswalk validation only, not an SME count.
 
 A full-archive aggregate job has been started. It streams the 10.11.2026 ZIP and will write only municipal totals (not taxpayer IDs, organisation names or personal information). Upload is blocked automatically unless every region-86 record can be placed unambiguously across all 22 municipal IDs and all type/category codes validate.
+
+
+## Nizhnevartovsk — additional 2024 and 9M 2025 economic series
+
+Two more official municipal economic reviews were transcribed into private review staging.
+
+### Full-year 2024 (official city economic department review)
+
+- Shipped own-produced goods, works and services by large and medium enterprises: 108.9bn RUB.
+- Industry structure by share of industrial output: mining 58.1%; manufacturing 16.8%; electricity/gas/steam 22.2%; water supply, wastewater and waste management 2.9%.
+- SMEs: about 4.2 thousand (rounded).
+- SME turnover: 190.6bn RUB (estimate).
+- Investment volume: 61.8bn RUB (source-specific “investment volume”; not yet mapped to standard BDPMO 8109001 because its detailed coverage is not explicit in the overview).
+- Retail turnover: 145.6bn RUB (estimate).
+
+Official PDF: https://www.n-vartovsk.ru/upload/iblock/102/wot9sgh0u96gs1klhksfg5dxxkbj5yzz/yaqiotpv4sve44hhw5yw975vuwuv6rh4.pdf
+
+### January–September 2025 (official preliminary city economic department review)
+
+- Shipped own-produced goods, works and services by large and medium enterprises: 80.4bn RUB.
+- Industry structure: mining 52.2%; manufacturing 18.9%; electricity/gas/steam 26.2%; water supply, wastewater and waste management 2.7%.
+- SMEs: about 4.0 thousand (rounded point-in-time register figure; precise register date not stated in the review).
+- SME turnover: 145.1bn RUB.
+- Investment volume: 32.4bn RUB (source-specific; not mapped to standard BDPMO indicator pending definition review).
+- Retail turnover: 109.3bn RUB.
+
+Official PDF: https://www.n-vartovsk.ru/upload/iblock/ea1/vbv0sg29sjkubywf7bl21buwrw8nh7hr/40goi4g4b0vq8bjvahuta05e00v5fc8i.pdf
+
+Both reviews state that macro- and microeconomic values are estimates subject to statistical revision. Jan–Sep 2025 values are cumulative nine-month figures, not full-year totals. Industry shares are stored as reported percentages; no money amounts were reverse-calculated from the shares.
+
+## Current Stage 3 staging update
+
+Direct SQL checks as of this update:
+- **16,755 observations** across the Stage 3 BDPMO and municipal official sources.
+- **16,755 unique source keys**.
+- All 16,755 are pending.
+- 0 validation errors in this Stage 3 source set.
+- 0 promoted rows.
+- All 22 canonical municipal IDs appear in the BDPMO series.
+
+The full FNS SME snapshot aggregation is still running and is not included in the 16,755-row subtotal.
