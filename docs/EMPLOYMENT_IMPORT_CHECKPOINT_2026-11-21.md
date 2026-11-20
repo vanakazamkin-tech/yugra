@@ -84,7 +84,7 @@ On 2026-11-21, an additional 34 rows were added from eight municipal official so
 | `megion_municipal_labour_2024` | Megion | 4 | 01.01.2024 and 01.01.2025 |
 | **Additional total** | | **34** | **8 municipal areas** |
 
-After the subsequent imports, together with the 44 pre-existing 2022 observations, the unemployment/vacancy source set contains **102 observations across 19 sources**. Of these, 96 are registered-unemployment rate/count observations and 6 represent separate local vacancy/worker-demand definitions.
+After the subsequent imports, together with the 44 pre-existing 2022 observations, the unemployment/vacancy source set contains **120 observations across 27 sources**. The latest 10 observations described in section J are included; all remain pending. Do not rely on earlier historical subtotals in sections B–I as the current total.
 
 ### Distinguish vacancy measures
 
@@ -102,19 +102,19 @@ These are not interchangeable with the number of active vacancy advertisements o
 
 Direct SQL verification after the additional imports confirmed:
 
-- Total rows across the nineteen sources above: **102**.
-- Distinct source keys: **102**.
-- Review status: **102 pending**.
+- Total rows across the twenty-seven sources above: **120**.
+- Distinct source keys: **120**.
+- Review status: **120 pending**.
 - Validation errors: **0**.
 - Unmapped municipalities: **0**.
 - Municipalities represented across the combined base and local sources: **22**.
-- Sources: **19**.
+- Sources: **27**.
 - Rows with `imported_indicator_id` set: **0**.
 - No rows have been promoted into the analytical table.
 
 All 44 rows from Decree No. 422-п remain one observation set for 2022 across all 22 municipalities. New municipality observations begin in the years or point-in-time dates stated in their source documents. Do not treat missing years or municipalities as zero.
 
-The source registry has been updated with eighteen additional source records and their URLs, owners, temporal coverage, formats and usage notes. Each is marked `partially_imported`.
+The source registry has been updated with twenty-six additional source records and their URLs, owners, temporal coverage, formats and usage notes. Each is marked `partially_imported`.
 
 ## D. Remaining Stage 2 work
 
@@ -148,11 +148,11 @@ A later Surgut city strategy monitoring page (published 26.02.2026 for 2024–20
 
 ## Updated expanded-staging verification
 
-The final 2026-11-21 check across the nineteen unemployment/vacancy sources found:
-- **102 total staging rows; 102 distinct source keys.**
-- **102 pending; 0 validation errors; 0 unmapped municipality IDs.**
+The final 2026-11-21 check across the twenty-seven unemployment/vacancy sources found:
+- **120 total staging rows; 120 distinct source keys.**
+- **120 pending; 0 validation errors; 0 unmapped municipality IDs.**
 - All **22** project municipalities appear in the combined source set (the full 2022 table covers all 22).
-- **19 source IDs** represented in staging.
+- **27 source IDs** represented in staging.
 - **0** rows with `imported_indicator_id`; no promotion or production/site change.
 - 96 registered-unemployment observations and 6 vacancy / employer-demand / employment-centre-openings observations.
 
@@ -217,12 +217,41 @@ Source documents:
 ### Latest Supabase verification after this extension
 
 Direct SQL check over the 19 unemployment/vacancy source IDs confirms:
-- **102 rows total and 102 distinct source keys**.
+- **120 rows total and 120 distinct source keys**.
 - **102 pending**, 0 validation errors, 0 unmapped municipality IDs.
 - All 22 project municipalities are represented by the combined series, including the all-municipality 2022 base table.
 - **19 source IDs** represented in staging.
 - **0** rows with `imported_indicator_id`; no promotion to `municipality_indicators`.
 
-The 102 rows consist of 96 registered-unemployment rate/count observations and 6 separately defined local vacancy / employer-demand / employment-centre openings.
+The 120 rows include both registered-unemployment rate/count observations and locally reported vacancy/worker-demand figures with separate definitions; exact current measure counts must be taken from the raw indicator names/codes rather than the historical 102-row subtotal.
 
-The following municipalities still have only the all-municipality 2022 baseline for registered unemployment in the currently staged sources: **Beryozovsky district, Kondinsky district, Langepas, Nizhnevartovsk district, Pokachi, Pyt-Yakh, Sovetsky district and Urai**. Continue acquisition for these areas first. Do not extrapolate missing years or replace municipal values with the HMAO regional aggregate.
+The following municipalities still have only the all-municipality 2022 baseline for registered unemployment in the currently staged sources: **Beryozovsky district, Kondinsky district and Nizhnevartovsk district** still have only the full 2022 baseline. Langepas has later secondary-source observations and an official 2024 point; Pyt-Yakh has a 2025 secondary-source observation only, requiring primary-source confirmation; Pokachi has an official 2023 report; Urai has a 2024 rate observation; Sovetsky district has a 2023 baseline and a separate 2024 estimate. Continue acquisition for these areas first. Do not extrapolate missing years or replace municipal values with the HMAO regional aggregate.
+
+
+## J. Latest source additions — Langepas and Pyt-Yakh (21 November 2026)
+
+Ten additional observations were imported into review staging from four source IDs:
+
+| Source ID | Area | Rows | Coverage |
+|---|---|---:|---|
+| `langepas_labour_2024_official` | Langepas | 1 | Official annual unemployment rate 0.08% for 2024 |
+| `langepas_labour_2025_07_secondary` | Langepas | 3 | 0.08% at beginning of 2025; 0.07% and 18 registered unemployed by end-July 2025 |
+| `langepas_labour_2026_03_secondary` | Langepas | 3 | 0.10%, 24 registered unemployed, and 234 reported vacancies at beginning of spring 2026 |
+| `pytyakh_labour_2025_h1_secondary` | Pyt-Yakh | 3 | At 01.07.2025: 36 registered unemployed, rate 0.13%, employer-reported need 668 vacancies |
+
+### Source quality notes
+
+- Langepas 2024: municipal administration document, Section 3.3.3; the 0.08% annual rate is a directly stated official municipal value.
+- Langepas July 2025 and early-spring 2026: local city newspaper `Звезда Лангепаса`, citing the HMAO Department of Labour and Employment. These are secondary reproductions, not the primary administrative table. Exact reference date for the early-spring 2026 snapshot is not disclosed, so the raw period preserves the wording “к началу весны 2026 года”; the figure 234 vacancies is a separate, currently insufficiently defined measure and must not be equated with employer-declared need or federal portal listings. The July 2025 article says “более 450” vacancies; this inexact quantity was not imported.
+- Pyt-Yakh: the three 01.07.2025 values come from an independent appraisal report by LLC “Integral-Partner”, report No.24-2025 dated 22.09.2025, section 7.1. This is not the municipality's primary statistical report. All observations are explicitly pending and require corroboration against the city's first-half 2025 report / employment-centre statement. The official city site page with annual reports linked a 2024 DOCX, but the file retrieval failed in the current session; no uninspected DOCX values were used.
+
+## Updated final Supabase control (after section J)
+
+Direct SQL verification across the 27 source IDs confirms:
+- **120 staging rows and 120 distinct `source_record_key` values within their source IDs.**
+- **120 pending**, 0 validation errors, 0 unmapped municipality IDs.
+- **27 source IDs** represented.
+- All **22** municipalities are represented by the combined source set; the 2022 Decree No.422-п baseline covers every municipality.
+- **0** rows with `imported_indicator_id`; no analytical promotion or production change.
+
+The three remaining areas with no post-2022 registered-unemployment observations in the current source set are Beryozovsky district, Kondinsky district, and Nizhnevartovsk district. Pyt-Yakh's 2025 observation is secondary and needs primary confirmation; Langepas's 2025–2026 media figures also need primary source confirmation before promotion. Keep these quality distinctions visible in all further summaries.
