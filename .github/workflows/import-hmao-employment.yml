@@ -12,7 +12,7 @@ on:
 
 permissions:
   actions: read
-  contents: read
+  contents: write
 
 jobs:
   extract:
@@ -29,9 +29,66 @@ jobs:
           python-version: "3.12"
 
       - name: Extract section-32 CSV members by HTTP Range
-        run: python scripts/ops/extract_hmao_municipality_employment.py
+        id: extract
+        shell: bash
+        run: |
+          set +e
+          python scripts/ops/extract_hmao_municipality_employment.py > /tmp/employment-extract.log 2>&1
+          rc=$?
+          python - "$rc" <<'PY'
+          import json, pathlib, sys
+          rc = int(sys.argv[1])
+          summary_path = pathlib.Path("employment-2026-extract/summary.json")
+          summary = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.exists() else {}
+          indicators = []
+          for item in summary.get("indicators", []):
+              indicators.append({
+                  "source_indicator_code": item.get("source_indicator_code"),
+                  "candidate_bdmo_codes": item.get("candidate_bdmo_codes"),
+                  "status": item.get("status"),
+                  "matched_members": item.get("matched_members", []),
+                  "matched_rows": item.get("matched_rows", 0),
+                  "municipalities_matched": item.get("municipalities_matched", 0),
+                  "missing_municipalities": item.get("missing_municipalities", []),
+                  "rows_by_year": item.get("rows_by_year", {}),
+              })
+          result = {
+              "job": "extract",
+              "exit_code": rc,
+              "ok": summary.get("ok", False),
+              "all_source_series_found": summary.get("all_source_series_found", False),
+              "total_rows": summary.get("total_rows", 0),
+              "range_requests": summary.get("range_requests", 0),
+              "archive_bytes_downloaded_via_ranges": summary.get("archive_bytes_downloaded_via_ranges", 0),
+              "source_archive": summary.get("source_archive"),
+              "indicators": indicators,
+          }
+          pathlib.Path("employment-extract-status.json").write_text(
+              json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+          )
+          PY
+          cat /tmp/employment-extract.log | tail -n 35
+          exit "$rc"
+
+      - name: Publish extraction status to branch
+        if: always()
+        shell: bash
+        run: |
+          if [ ! -f employment-extract-status.json ]; then
+            printf '{"job":"extract","status":"failed_before_status_capture"}\n' > employment-extract-status.json
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p .ops-results
+          cp employment-extract-status.json .ops-results/employment-extract-status.json
+          git add .ops-results/employment-extract-status.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record employment extraction result"
+            git push
+          fi
 
       - name: Save source extract and audit report
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: hmao-employment-2026-extract
@@ -42,6 +99,7 @@ jobs:
   upload:
     name: Upload extracted rows to Supabase review staging
     needs: extract
+    if: needs.extract.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -60,14 +118,56 @@ jobs:
           path: employment-2026-extract
 
       - name: Upload pending review rows to Supabase
-        env:
-          SUPABASE_URL: https://dmbikidqikjupkghywbz.supabase.co
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          STAGING_BATCH_SIZE: "100"
-          STAGING_UPLOAD_WORKERS: "3"
-        run: python scripts/ops/upload_hmao_employment_staging.py
+        id: upload
+        shell: bash
+        run: |
+          set +e
+          python scripts/ops/upload_hmao_employment_staging.py > /tmp/employment-upload.log 2>&1
+          rc=$?
+          python - "$rc" <<'PY'
+          import json, pathlib, sys
+          rc = int(sys.argv[1])
+          report_path = pathlib.Path("employment-2026-extract/staging-upload-employment-report.json")
+          report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.exists() else {}
+          result = {
+              "job": "upload",
+              "exit_code": rc,
+              "status": report.get("status", "failed_or_no_report"),
+              "submitted_rows": report.get("submitted_rows", 0),
+              "source_rows_by_rosstat_code": report.get("source_rows_by_rosstat_code", {}),
+              "missing_source_series": report.get("missing_source_series", []),
+              "municipalities_by_source_code": report.get("municipalities_by_source_code", {}),
+              "years_by_source_code": report.get("years_by_source_code", {}),
+              "blank_values_by_source_code": report.get("blank_values_by_source_code", {}),
+              "non_numeric_values_by_source_code": report.get("non_numeric_values_by_source_code", {}),
+              "pending_review": report.get("pending_review", True),
+          }
+          pathlib.Path("employment-upload-status.json").write_text(
+              json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+          )
+          PY
+          cat /tmp/employment-upload.log | tail -n 35
+          exit "$rc"
+
+      - name: Publish upload status to branch
+        if: always()
+        shell: bash
+        run: |
+          if [ ! -f employment-upload-status.json ]; then
+            printf '{"job":"upload","status":"failed_before_status_capture"}\n' > employment-upload-status.json
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p .ops-results
+          cp employment-upload-status.json .ops-results/employment-upload-status.json
+          git add .ops-results/employment-upload-status.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record employment staging upload result"
+            git push
+          fi
 
       - name: Save Supabase staging report
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: hmao-employment-staging-report
