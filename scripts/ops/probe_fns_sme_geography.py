@@ -66,7 +66,8 @@ def element_value(node):
 def main():
     remote=RangeFile(ZIP_URL)
     field_counts={k:Counter() for k in ("Регион","Район","Город","НаселПункт")}
-    tuples=Counter(); records=0; region86=0; files=[]
+    tuples=Counter(); records=0; region86=0; files=[]; xml_docs=0
+    entity_kind=Counter(); sme_category=Counter(); mapped_area=Counter(); unmatched=Counter()
     geo_tags={"регион":"Регион","район":"Район","город":"Город","населпункт":"НаселПункт"}
     with zipfile.ZipFile(remote,"r") as z:
         members=[i for i in z.infolist() if i.filename.lower().endswith(".xml")]
@@ -76,6 +77,7 @@ def main():
             file_hits=0
             for doc in root.iter():
                 if local(doc.tag)!="Документ":continue
+                xml_docs += 1
                 code86=False
                 for n in doc.iter():
                     for k,v in n.attrib.items():
@@ -83,6 +85,8 @@ def main():
                     if local(n.tag).lower()=="кодрегион" and (n.text or "").strip()=="86":code86=True
                 if not code86:continue
                 region86+=1;file_hits+=1;records+=1
+                entity_kind[str(doc.attrib.get("ВидСубМСП",""))] += 1
+                sme_category[str(doc.attrib.get("КатСубМСП",""))] += 1
                 vals={}
                 for n in doc.iter():
                     key=geo_tags.get(local(n.tag).lower())
@@ -92,12 +96,33 @@ def main():
                             vals[key]=val
                 for k,v in vals.items():field_counts[k][v]+=1
                 tuples[tuple(vals.get(k,"") for k in ("Район","Город","НаселПункт"))]+=1
+                def clean(v):
+                    v=str(v or "").lower().replace("ё","е").strip()
+                    v=re.sub(r"^(г\.?|город|р-н|район)\\s*", "", v)
+                    v=re.sub(r"[^а-яa-z0-9]+", "", v)
+                    return v
+                district_map={
+                    "белоярский":"beloyarsky-raion","березовский":"berezovsky-raion","кондинский":"kondinsky-raion",
+                    "нефтеюганский":"nefteyugansky-raion","нижневартовский":"nizhnevartovsky-raion",
+                    "октябрьский":"october-raion","советский":"sovetsky-raion","сургутский":"surgutsky",
+                    "хантымансийский":"khanty-mansiysky-raion"}
+                city_map={
+                    "когалым":"kogalym","лангепас":"langepas","мегион":"megion","нефтеюганск":"nefteyugansk",
+                    "нижневартовск":"nizhnevartovsk","нягань":"nyagan-city","покачи":"pokachi","пытьях":"pyt-yah",
+                    "радужный":"raduzhny","сургут":"surgut","урай":"uray","хантымансийск":"khanty-mansiysk","югорск":"ugorsk",
+                    "белоярский":"beloyarsky-raion","советский":"sovetsky-raion"}
+                d=clean(vals.get("Район","")); city=clean(vals.get("Город","")); settlement=clean(vals.get("НаселПункт",""))
+                municipality=district_map.get(d) or city_map.get(city) or city_map.get(settlement)
+                if municipality: mapped_area[municipality]+=1
+                else: unmatched[(d,city,settlement)]+=1
             if len(files)<12:files.append({"member":info.filename,"region86_records":file_hits,"crc32":"ok"})
     report={
       "snapshot":"2026-11-10","archive_size_bytes":remote.size,
-      "sampled_members":len(files) if len(files)<100 else 100,
-      "sampled_member_limit":100,"range_requests":remote.requests,
-      "range_bytes_downloaded":remote.bytes,"region86_records_sampled":region86,
+      "sampled_members":min(100,len(members)), "sampled_member_limit":100, "xml_documents_sampled":xml_docs,
+      "range_requests":remote.requests, "range_bytes_downloaded":remote.bytes,"region86_records_sampled":region86,
+      "entity_kind_code_counts":dict(entity_kind),"sme_category_code_counts":dict(sme_category),
+      "municipality_crosswalk_sample_counts":dict(sorted(mapped_area.items())),
+      "unmatched_geography_tuples": [{"district":x[0],"city":x[1],"settlement":x[2],"count":n} for x,n in unmatched.most_common(80)],
       "field_value_counts":{k:[{"value":v,"count":c} for v,c in ctr.most_common(80)] for k,ctr in field_counts.items()},
       "common_geography_tuples":[{"district":t[0],"city":t[1],"settlement":t[2],"count":c} for t,c in tuples.most_common(120)],
       "sample_members":files,
