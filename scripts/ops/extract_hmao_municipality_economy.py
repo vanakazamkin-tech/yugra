@@ -182,7 +182,7 @@ class HttpRangeFile(io.RawIOBase):
 
 def extract_member(remote: HttpRangeFile, info: zipfile.ZipInfo, section: str,
                    indicator_code: str, form_code: str, title: str, out_stream,
-                   state: dict) -> None:
+                   state: dict, seen: set[str]) -> None:
     hdr = remote.read_range(info.header_offset, info.header_offset + 29)
     if len(hdr) != 30: raise RuntimeError(f"{indicator_code}: truncated ZIP header {info.filename}")
     fields = struct.unpack("<IHHHHHIIIHH", hdr)
@@ -228,6 +228,9 @@ def extract_member(remote: HttpRangeFile, info: zipfile.ZipInfo, section: str,
                 ensure_ascii=False, sort_keys=True, separators=(",", ":")
             ).encode("utf-8")).hexdigest()
 
+            if digest in seen:
+                continue
+            seen.add(digest)
             record = {
                 "source": "rosstat_bdmo_processed_by_tochno",
                 "source_page": SOURCE_PAGE,
@@ -311,17 +314,8 @@ def extract_section(section: str, config: dict) -> dict:
             seen = set()
             with gzip.open(outfile, "wt", encoding="utf-8", newline="", compresslevel=6) as output:
                 for info in selected:
-                    # A display-code member can contain repeated lines in a set of period/partition files.
-                    # Row hashes keep overlaps from being imported twice.
-                    temp = io.StringIO()
-                    extract_member(remote, info, section, code, form_code, title, temp, state)
-                    # gzip/jsonl stream is assembled below from the member's canonical row content.
-                    for line in temp.getvalue().splitlines():
-                        record = json.loads(line)
-                        if record["row_sha256"] in seen:
-                            continue
-                        seen.add(record["row_sha256"])
-                        output.write(json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n")
+                    # Row hashes remove any overlapping period/year parts.
+                    extract_member(remote, info, section, code, form_code, title, output, state, seen)
 
             # The state counters above are member-level and can include overlaps. Re-read the deduplicated output.
             actual_rows = 0
