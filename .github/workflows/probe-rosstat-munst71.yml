@@ -1,0 +1,43 @@
+name: Probe Rosstat municipal database for HMAO demographic indicators
+
+on:
+  push:
+    branches:
+      - ops/extract-hmao-demography-2026-11
+    paths:
+      - ".github/workflows/probe-rosstat-munst71.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect Rosstat HMAO municipal indicator pages
+        run: |
+          python - <<'PY'
+          import re
+          from urllib.request import Request, urlopen
+          from urllib.error import HTTPError, URLError
+          codes = ["8112001", "8112003", "8112004", "8112007", "8112008", "8112009"]
+          base = "https://rosstat.gov.ru/dbscripts/munst/munst71/DBInet.cgi?pl="
+          for code in codes:
+              url = base + code
+              try:
+                  req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                  with urlopen(req, timeout=30) as response:
+                      body = response.read().decode("cp1251", "replace")
+                      print(f"\n=== {code} HTTP {response.status} bytes={len(body)} url={response.geturl()} ===")
+                      print("TITLE:", re.findall(r"<title[^>]*>(.*?)</title>", body, re.I|re.S)[:1])
+                      selects = re.findall(r"<select\\b[^>]*>", body, re.I)
+                      print("SELECTS:", selects[:20])
+                      for needle in ["Ханты", "2024", "2023", "Муниципальное образование", "Показатель"]:
+                          pos = body.lower().find(needle.lower())
+                          print("FIND", needle, "pos", pos, "sample", body[max(0,pos-120):pos+450] if pos >= 0 else "")
+              except HTTPError as exc:
+                  print(f"\n=== {code} HTTP_ERROR {exc.code} {exc.reason} ===")
+              except URLError as exc:
+                  print(f"\n=== {code} URL_ERROR {exc} ===")
+          PY
