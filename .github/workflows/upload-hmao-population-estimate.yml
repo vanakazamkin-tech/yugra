@@ -1,0 +1,53 @@
+name: Upload HMAO population estimate to Supabase staging
+
+on:
+  push:
+    branches:
+      - ops/extract-hmao-demography-2026-11
+    paths:
+      - ".github/workflows/upload-hmao-population-estimate.yml"
+      - "scripts/ops/upload_hmao_population_estimate_staging.py"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  upload:
+    name: Upload 8112027 to review staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download additional demographic extract
+        uses: actions/download-artifact@v4
+        with:
+          name: hmao-demography-additional-extract
+          path: demography-additional-extract
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: 44804573058
+
+      - name: Upload review-only rows to Supabase staging
+        env:
+          SUPABASE_URL: https://dmbikidqikjupkghywbz.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_BATCH_SIZE: "100"
+          STAGING_UPLOAD_WORKERS: "3"
+        run: python scripts/ops/upload_hmao_population_estimate_staging.py
+
+      - name: Upload staging report
+        uses: actions/upload-artifact@v4
+        with:
+          name: hmao-population-estimate-staging-report
+          path: demography-additional-extract/staging-upload-8112027-report.json
+          if-no-files-found: error
+          retention-days: 7
