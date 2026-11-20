@@ -266,6 +266,7 @@ def process_archive():
         "unmapped_region86_records": sum(unmatched.values()),
         "mapped_municipality_count": len(mapped_municipalities),
         "mapped_municipality_ids": mapped_municipalities,
+        "municipality_names": MUNICIPALITIES,
         "missing_municipality_ids": missing_municipalities,
         "snapshot_dates": dict(snapshot_dates),
         "entity_type_definitions": TYPE_MAP,
