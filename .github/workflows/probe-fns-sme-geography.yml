@@ -1,0 +1,61 @@
+name: Probe FNS SME municipality address fields
+
+on:
+  push:
+    branches:
+      - ops/extract-hmao-demography-2026-11
+    paths:
+      - ".github/workflows/probe-fns-sme-geography.yml"
+      - "scripts/ops/probe_fns_sme_geography.py"
+  workflow_dispatch:
+
+concurrency:
+  group: fns-sme-geography-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Inspect geographic fields in region-86 sample
+        run: python scripts/ops/probe_fns_sme_geography.py
+
+      - name: Publish aggregate geography report
+        if: always()
+        shell: bash
+        run: |
+          if [ ! -f fns-sme-geo-probe/fns-sme-geo-probe.json ]; then
+            mkdir -p fns-sme-geo-probe
+            printf '{"status":"probe_failed_before_report"}\n' > fns-sme-geo-probe/fns-sme-geo-probe.json
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p .ops-results
+          cp fns-sme-geo-probe/fns-sme-geo-probe.json .ops-results/fns-sme-geo-probe.json
+          git add .ops-results/fns-sme-geo-probe.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record FNS SME municipal geography probe"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Save report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fns-sme-municipal-geography
+          path: fns-sme-geo-probe/fns-sme-geo-probe.json
+          if-no-files-found: warn
+          retention-days: 7
