@@ -1,0 +1,198 @@
+name: Import HMAO Stage 3 economic indicators to review staging
+
+on:
+  push:
+    branches:
+      - ops/extract-hmao-demography-2026-11
+    paths:
+      - ".github/workflows/import-hmao-economy.yml"
+      - "scripts/ops/extract_hmao_municipality_economy.py"
+      - "scripts/ops/upload_hmao_economy_staging.py"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  extract:
+    name: Extract Stage 3 economic indicators for 22 Yugra municipalities
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Extract BDPMO sections 2, 9, 39 and 41 using HTTP Range
+        id: extract
+        shell: bash
+        run: |
+          set +e
+          python scripts/ops/extract_hmao_municipality_economy.py > /tmp/economy-extract.log 2>&1
+          rc=$?
+          python - "$rc" <<'PY'
+          import json, pathlib, sys
+          rc = int(sys.argv[1])
+          summary_path = pathlib.Path("economy-2026-extract/summary.json")
+          summary = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.exists() else {}
+          sections = []
+          for section in summary.get("sections", []):
+              indicators = []
+              for item in section.get("indicators", []):
+                  indicators.append({
+                      "source_indicator_code": item.get("source_indicator_code"),
+                      "rosstat_form_code": item.get("rosstat_form_code"),
+                      "status": item.get("status"),
+                      "matched_members": item.get("matched_members", []),
+                      "matched_rows": item.get("matched_rows", 0),
+                      "municipalities_matched": item.get("municipalities_matched", 0),
+                      "missing_municipalities": item.get("missing_municipalities", []),
+                      "rows_by_year": item.get("rows_by_year", {}),
+                      "dimension_fields": item.get("dimension_fields", {}),
+                      "members": item.get("members", []),
+                  })
+              sections.append({
+                  "section": section.get("section"),
+                  "source_id": section.get("source_id"),
+                  "archive_size_bytes": section.get("archive_size_bytes"),
+                  "range_requests": section.get("range_requests"),
+                  "archive_bytes_downloaded_via_ranges": section.get("archive_bytes_downloaded_via_ranges"),
+                  "total_rows": section.get("total_rows", 0),
+                  "indicators": indicators,
+              })
+          result = {
+              "job": "extract",
+              "exit_code": rc,
+              "ok": summary.get("ok", False),
+              "total_rows": summary.get("total_rows", 0),
+              "source_published_at": summary.get("source_published_at"),
+              "sections": sections,
+              "errors": summary.get("errors", []),
+          }
+          pathlib.Path("economy-extract-status.json").write_text(
+              json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+          )
+          PY
+          tail -n 60 /tmp/economy-extract.log
+          exit "$rc"
+
+      - name: Publish extraction status to branch
+        if: always()
+        shell: bash
+        run: |
+          if [ ! -f economy-extract-status.json ]; then
+            printf '{"job":"extract","status":"failed_before_status_capture"}\n' > economy-extract-status.json
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p .ops-results
+          cp economy-extract-status.json .ops-results/economy-extract-status.json
+          git add .ops-results/economy-extract-status.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record Stage 3 economy extraction result"
+            git push
+          fi
+
+      - name: Save extraction artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hmao-economy-2026-extract
+          path: economy-2026-extract/
+          if-no-files-found: error
+          retention-days: 7
+
+  upload:
+    name: Upload Stage 3 economic rows to Supabase private review staging
+    needs: extract
+    if: needs.extract.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout latest branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download extracted archive members
+        uses: actions/download-artifact@v4
+        with:
+          name: hmao-economy-2026-extract
+          path: economy-2026-extract
+
+      - name: Upload pending review rows to Supabase
+        id: upload
+        env:
+          SUPABASE_URL: https://dmbikidqikjupkghywbz.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_BATCH_SIZE: "100"
+          STAGING_UPLOAD_WORKERS: "3"
+        shell: bash
+        run: |
+          set +e
+          python scripts/ops/upload_hmao_economy_staging.py > /tmp/economy-upload.log 2>&1
+          rc=$?
+          python - "$rc" <<'PY'
+          import json, pathlib, sys
+          rc = int(sys.argv[1])
+          report_path = pathlib.Path("economy-2026-extract/staging-upload-economy-report.json")
+          report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.exists() else {}
+          log_path = pathlib.Path("/tmp/economy-upload.log")
+          log_tail = log_path.read_text(encoding="utf-8", errors="replace")[-12000:] if log_path.exists() else ""
+          result = {
+              "job": "upload",
+              "exit_code": rc,
+              "status": report.get("status", "failed_or_no_report"),
+              "submitted_rows": report.get("submitted_rows", 0),
+              "source_rows_by_section": report.get("source_rows_by_section", {}),
+              "source_rows_by_indicator_code": report.get("source_rows_by_indicator_code", {}),
+              "municipalities_by_indicator_code": report.get("municipalities_by_indicator_code", {}),
+              "years_by_indicator_code": report.get("years_by_indicator_code", {}),
+              "missing_source_indicators": report.get("missing_source_indicators", []),
+              "blank_values_by_indicator_code": report.get("blank_values_by_indicator_code", {}),
+              "non_numeric_values_by_indicator_code": report.get("non_numeric_values_by_indicator_code", {}),
+              "pending_review": report.get("pending_review", True),
+              "error_log_tail": log_tail,
+          }
+          pathlib.Path("economy-upload-status.json").write_text(
+              json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+          )
+          PY
+          tail -n 60 /tmp/economy-upload.log
+          exit "$rc"
+
+      - name: Publish upload status to branch
+        if: always()
+        shell: bash
+        run: |
+          if [ ! -f economy-upload-status.json ]; then
+            printf '{"job":"upload","status":"failed_before_status_capture"}\n' > economy-upload-status.json
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p .ops-results
+          cp economy-upload-status.json .ops-results/economy-upload-status.json
+          git add .ops-results/economy-upload-status.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record Stage 3 economy staging upload result"
+            git push
+          fi
+
+      - name: Save staging upload report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hmao-economy-staging-report
+          path: economy-2026-extract/staging-upload-economy-report.json
+          if-no-files-found: error
+          retention-days: 7
