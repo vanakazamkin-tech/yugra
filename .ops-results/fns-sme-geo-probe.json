@@ -1,11 +1,46 @@
 {
   "snapshot": "2026-11-10",
   "archive_size_bytes": 2169961249,
-  "sampled_members": 12,
+  "sampled_members": 100,
   "sampled_member_limit": 100,
+  "xml_documents_sampled": 90004,
   "range_requests": 203,
   "range_bytes_downloaded": 29980820,
   "region86_records_sampled": 955,
+  "entity_kind_code_counts": {
+    "2": 564,
+    "1": 390,
+    "3": 1
+  },
+  "sme_category_code_counts": {
+    "1": 881,
+    "2": 56,
+    "3": 18
+  },
+  "municipality_crosswalk_sample_counts": {
+    "beloyarsky-raion": 3,
+    "berezovsky-raion": 2,
+    "khanty-mansiysk": 18,
+    "khanty-mansiysky-raion": 2,
+    "kogalym": 2,
+    "kondinsky-raion": 2,
+    "langepas": 3,
+    "megion": 15,
+    "nefteyugansk": 24,
+    "nefteyugansky-raion": 6,
+    "nizhnevartovsk": 744,
+    "nizhnevartovsky-raion": 13,
+    "nyagan-city": 5,
+    "october-raion": 1,
+    "pyt-yah": 9,
+    "raduzhny": 4,
+    "sovetsky-raion": 3,
+    "surgut": 73,
+    "surgutsky": 20,
+    "ugorsk": 3,
+    "uray": 3
+  },
+  "unmatched_geography_tuples": [],
   "field_value_counts": {
     "Регион": [
       {
