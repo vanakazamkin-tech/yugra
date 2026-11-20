@@ -121,3 +121,19 @@ Total rows by archive section: section 9 — 4,665; section 2 — 2,794; section
 - SME turnover: seek official municipal observations or a valid FNS/statistical municipal source; do not substitute tax receipts, support programmes or enterprise locations for turnover.
 - Industrial production by major sectors: the OKVED2 dimensions in 8401008 and 8401011 can support this, but require an audited sector crosswalk and clear coverage notes.
 - Continue reviewing the annual Duma 2023–2024 budget appendix and BDPMO section 13 for local-budget comparability.
+
+
+## Retail indicator extension — annual food sales companion series (21 November 2026)
+
+A follow-up inspection of the official BDPMO section-2 catalogue and its archive member list confirmed the archive contains indicator 8801004, “Общий объем всех продовольственных товаров, реализованных в границах муниципального образования”. It was restored to the extractor and loaded as a separate indicator, not mapped to total retail turnover.
+
+Updated Stage 3 staging total: **16,690 rows** (the previous 16,558 plus 132 rows of 8801004), 16,690 unique source keys, all pending, 0 validation errors, 0 promoted rows, all 22 municipalities represented for every code. The final section-2 archive total is 2,926 rows (2,794 for 8401003 and 132 for 8801004). Latest successful workflow: https://github.com/vanakazamkin-tech/yugra/actions/runs/44837202819
+
+| Code | Rows | Municipalities | Period | Scope |
+|---|---:|---:|---|---|
+| 8401003 | 2,794 | 22 | 2017–2026; cumulative Jan–Mar / Jun / Sep / Dec | Retail turnover excluding small businesses; 2026 only Jan–Mar |
+| 8801004 | 132 | 22 | 2020–2025; annual | Total food goods sold in municipality |
+
+These series have different definitions and periods. Do not add them together. 8401003 excludes small businesses; 8801004 is a broad measure of food goods sales but is not the full turnover of all retail goods.
+
+The overall Stage 3 BDPMO staging total is now 16,690 (11 separate indicator codes): 4,665 in section 9; 2,926 in section 2; 8,791 in section 39; 308 in section 41. The 11 codes are 8009001, 8109001, 8109002, 8109003, 8401003, 8801004, 8401008, 8401011, 8401012, 9010002 and 9010003.
