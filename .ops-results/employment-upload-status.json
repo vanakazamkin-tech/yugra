@@ -11,5 +11,6 @@
   "years_by_source_code": {},
   "blank_values_by_source_code": {},
   "non_numeric_values_by_source_code": {},
-  "pending_review": true
+  "pending_review": true,
+  "error_log_tail": "ERROR: SUPABASE_SERVICE_ROLE_KEY is missing\nTraceback (most recent call last):\n  File \"/home/runner/work/yugra/yugra/scripts/ops/upload_hmao_employment_staging.py\", line 275, in <module>\n    try: raise SystemExit(main())\n                          ^^^^^^\n  File \"/home/runner/work/yugra/yugra/scripts/ops/upload_hmao_employment_staging.py\", line 196, in main\n    if not api_key: raise RuntimeError(\"SUPABASE_SERVICE_ROLE_KEY is missing\")\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: SUPABASE_SERVICE_ROLE_KEY is missing\n"
 }
