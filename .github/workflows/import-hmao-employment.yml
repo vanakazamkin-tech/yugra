@@ -1,0 +1,76 @@
+name: Import HMAO employment indicators to review staging
+
+on:
+  push:
+    branches:
+      - ops/import-employment-2026-11
+    paths:
+      - ".github/workflows/import-hmao-employment.yml"
+      - "scripts/ops/extract_hmao_municipality_employment.py"
+      - "scripts/ops/upload_hmao_employment_staging.py"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  extract:
+    name: Extract employment indicators for 22 Yugra municipalities
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Extract section-32 CSV members by HTTP Range
+        run: python scripts/ops/extract_hmao_municipality_employment.py
+
+      - name: Save source extract and audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: hmao-employment-2026-extract
+          path: employment-2026-extract/
+          if-no-files-found: error
+          retention-days: 7
+
+  upload:
+    name: Upload extracted rows to Supabase review staging
+    needs: extract
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download verified employment extract
+        uses: actions/download-artifact@v4
+        with:
+          name: hmao-employment-2026-extract
+          path: employment-2026-extract
+
+      - name: Upload pending review rows to Supabase
+        env:
+          SUPABASE_URL: https://dmbikidqikjupkghywbz.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: \${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_BATCH_SIZE: "100"
+          STAGING_UPLOAD_WORKERS: "3"
+        run: python scripts/ops/upload_hmao_employment_staging.py
+
+      - name: Save Supabase staging report
+        uses: actions/upload-artifact@v4
+        with:
+          name: hmao-employment-staging-report
+          path: employment-2026-extract/staging-upload-employment-report.json
+          if-no-files-found: error
+          retention-days: 7
