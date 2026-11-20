@@ -24,6 +24,20 @@ assert.doesNotMatch(population, /population_settlement/);
 assert.doesNotMatch(population, /item\.geographic_level\s*\|\|\s*'municipality'/);
 assert.match(source, /item\.source_url \? <a href=\{item\.source_url\}/);
 
+const populationTrendStart = source.indexOf('const modalPopulationTrend = useMemo');
+const populationTrendEnd = source.indexOf('const modalBudgetSnapshots', populationTrendStart);
+assert.ok(populationTrendStart >= 0 && populationTrendEnd > populationTrendStart, 'municipal population trend selector must exist');
+const populationTrend = source.slice(populationTrendStart, populationTrendEnd);
+assert.match(populationTrend, /item\.indicator_code === 'population_municipality'/);
+assert.match(populationTrend, /rosstat_hmao_municipal_population_2022_2025/);
+assert.match(populationTrend, /item\.verification_status === 'verified'/);
+assert.match(populationTrend, /item\.geographic_level === 'municipality'/);
+assert.match(populationTrend, /\[2022, 2023, 2024, 2025\]/);
+assert.match(populationTrend, /item\.reference_period === period/);
+assert.match(populationTrend, /item\.unit === 'человек'/);
+assert.match(populationTrend, /matches\.length !== 1/);
+assert.doesNotMatch(populationTrend, /population_settlement/);
+
 const budgetStart = source.indexOf('const modalBudgetSnapshots = useMemo');
 const budgetEnd = source.indexOf('const modalDataCoverage', budgetStart);
 assert.ok(budgetStart >= 0 && budgetEnd > budgetStart, 'municipal budget selector must exist');
