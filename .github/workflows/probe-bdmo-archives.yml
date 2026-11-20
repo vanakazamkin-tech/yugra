@@ -71,3 +71,49 @@ jobs:
           except Exception as exc:
             print("CATALOGUE_SHEET_ERROR",repr(exc))
           PY
+
+      - name: Inspect official regional Rosstat page links
+        run: |
+          python - <<'PY'
+          from urllib.request import Request, urlopen
+          from urllib.error import HTTPError, URLError
+          from html.parser import HTMLParser
+
+          class Links(HTMLParser):
+            def __init__(self):
+              super().__init__()
+              self.links=[]
+              self.current=None
+            def handle_starttag(self, tag, attrs):
+              if tag.lower()=="a":
+                item=dict(attrs)
+                self.current={"href":item.get("href",""),"text":""}
+                self.links.append(self.current)
+            def handle_data(self, data):
+              if self.current is not None:
+                self.current["text"] += data.strip()+" "
+
+          for url in [
+            "https://72.rosstat.gov.ru/ofs_demp_hmao",
+            "https://72.rosstat.gov.ru/ofs_demp_ug",
+            "https://72.rosstat.gov.ru/ofs_teru_hmao",
+            "https://72.rosstat.gov.ru/dbscripts/munst/munst71/DBInet.cgi?pl=8112001",
+            "https://72.rosstat.gov.ru/dbscripts/munst/munst71/DBInet.cgi?pl=8112003",
+          ]:
+            try:
+              request=Request(url,headers={"User-Agent":"Mozilla/5.0"})
+              with urlopen(request,timeout=30) as response:
+                body=response.read().decode("utf-8","replace")
+                parser=Links()
+                parser.feed(body)
+                print("\\nPAGE",url,"HTTP",response.status,"BYTES",len(body),"FINAL",response.geturl())
+                for link in parser.links:
+                  href=link["href"]
+                  text=link["text"]
+                  if any(k in (href+" "+text).lower() for k in [".xlsx",".xls",".pdf","рождаем","смерт","миграц","муницип"]):
+                    print("LINK",text[:180],href)
+            except HTTPError as exc:
+              print("PAGE_HTTP_ERROR",url,exc.code)
+            except URLError as exc:
+              print("PAGE_URL_ERROR",url,repr(exc))
+          PY
