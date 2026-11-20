@@ -78,8 +78,8 @@ def main() -> None:
         raise RuntimeError(f"Missing municipalities: {report['missing_municipality_ids']}")
     if report.get("invalid_type_codes") or report.get("invalid_category_codes"):
         raise RuntimeError("Unknown FNS type/category code")
-    if report.get("snapshot_date_warning"):
-        raise RuntimeError(report["snapshot_date_warning"])
+    if report.get("snapshot_dates") != {"10.11.2026": EXPECTED_REGION_ROWS}:
+        raise RuntimeError(f"Unexpected snapshot date control: {report.get('snapshot_dates')}")
 
     municipality_names = report.get("municipality_names", {})
     type_by_municipality = report.get("entity_type_counts_by_municipality", {})
