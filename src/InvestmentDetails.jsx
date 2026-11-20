@@ -173,6 +173,7 @@ export const InvestmentDetails = () => {
   const [programExecution, setProgramExecution] = useState([]);
   const [fuelPrices, setFuelPrices] = useState([]);
   const [facilities, setFacilities] = useState([]);
+  const [externalRatings, setExternalRatings] = useState([]);
   const [facilityFilter, setFacilityFilter] = useState('all');
   const [facilitySearch, setFacilitySearch] = useState('');
   const [indicatorSearch, setIndicatorSearch] = useState('');
@@ -254,6 +255,7 @@ export const InvestmentDetails = () => {
         setProgramExecution(result.programExecution || []);
         setFuelPrices(result.fuelPrices || []);
         setFacilities(result.facilities || []);
+        setExternalRatings(result.externalRatings || []);
         setOfficialDataStatus('connected');
         setOfficialDataSyncedAt(new Date());
         setOfficialDataError('');
@@ -747,16 +749,28 @@ export const InvestmentDetails = () => {
         || String(a.indicator_name || '').localeCompare(String(b.indicator_name || ''), 'ru-RU'));
   }, [officialIndicators, activeModalItem]);
 
+  const modalExternalRatings = useMemo(() => {
+    const municipalityName = String(activeModalItem?.name || '').trim().toLocaleLowerCase('ru-RU');
+    if (!municipalityName) return [];
+
+    return externalRatings.filter((item) => (
+      item.geographic_level === 'city'
+      && item.verification_status === 'verified'
+      && String(item.geography_name || '').trim().toLocaleLowerCase('ru-RU') === municipalityName
+    ));
+  }, [externalRatings, activeModalItem]);
+
   const modalDataCoverage = useMemo(() => {
     if (!activeModalItem) return [];
     const municipalityId = activeModalItem.id;
     return [
       { key: 'indicators', label: 'Проверенные показатели', count: modalOfficialIndicators.length },
+      { key: 'ratings', label: 'Внешние рейтинги', count: modalExternalRatings.length },
       { key: 'sites', label: 'Инвестиционные площадки', count: investmentSites.filter((item) => item.municipality_id === municipalityId).length },
       { key: 'facilities', label: 'Образовательные объекты', count: facilities.filter((item) => item.municipality_id === municipalityId).length },
       { key: 'programs', label: 'Отчёты о программах', count: programExecution.filter((item) => item.municipality_id === municipalityId).length },
     ];
-  }, [activeModalItem, modalOfficialIndicators, investmentSites, facilities, programExecution]);
+  }, [activeModalItem, modalOfficialIndicators, modalExternalRatings, investmentSites, facilities, programExecution]);
 
   const surgutPopulationTrend = useMemo(() => {
     const rows = officialIndicators
@@ -2110,6 +2124,27 @@ export const InvestmentDetails = () => {
             </article>)}
           </div> : <p className="modal-no-official">Для этой территории пока нет проверенных официальных показателей в базе. Новые значения будут добавляться только после проверки источника, периода и территориальной привязки.</p>}
         </section>
+        {modalExternalRatings.length > 0 && <section className="modal-official-data" aria-labelledby="modal-ratings-heading">
+          <div className="modal-official-heading">
+            <h3 id="modal-ratings-heading">Внешний городской рейтинг по зарплатам</h3>
+            <span>РИА Рейтинг · 2026</span>
+          </div>
+          <div className="modal-official-list">{modalExternalRatings.map((item) => {
+            const metrics = item.metrics || {};
+            return <article key={item.id} className="modal-official-row modal-site-row">
+              <div>
+                <strong>{item.title}</strong>
+                <span>{item.geography_name} · городской уровень · {item.reference_period}</span>
+                <span>Средняя чистая зарплата: {formatNumber(metrics.average_net_monthly_salary_rub)} ₽/мес.</span>
+                <span>Изменение к I полугодию 2025 года: {formatNumber(metrics.salary_growth_yoy_percent, 1)}%</span>
+                <span>Покупательная способность: {formatNumber(metrics.salary_to_fixed_consumer_basket_ratio, 2)} фиксированных потребительских набора</span>
+              </div>
+              <b>{item.national_rank == null ? '—' : `№ ${formatNumber(item.national_rank)}`}</b>
+              <a href={item.source_url || item.dataset_url || item.url} target="_blank" rel="noreferrer">Первоисточник ↗</a>
+            </article>;
+          })}</div>
+          <p className="modal-no-official">Внешний сравнительный бенчмарк РИА Рейтинг, а не муниципальная официальная статистика. Показатель относится к городу и не переносится на муниципальные районы; в интегральный индекс Yugra18 автоматически не включается.</p>
+        </section>}
         <section className="modal-official-data" aria-labelledby="modal-sites-heading">
           <div className="modal-official-heading"><h3 id="modal-sites-heading">Инвестиционные площадки</h3><span>{investmentSites.filter((site) => site.municipality_id === activeModalItem.id).length} объектов</span></div>
           {investmentSites.some((site) => site.municipality_id === activeModalItem.id) ? <div className="modal-official-list">{investmentSites.filter((site) => site.municipality_id === activeModalItem.id).map((site) => <article key={site.id} className="modal-official-row modal-site-row">
