@@ -14,6 +14,23 @@ SOURCE_CODES = {
     "1134431020014", "1134431020016",
     "1121100010003", "2152320020022", "2211110020001",
 }
+BDMO_CODES = {
+    "8423001", "8423002", "8423003", "8423004",
+    "8423005", "8423006", "8423007",
+    "8423015", "8423016", "8423017",
+}
+BDMO_LABELS = {
+    "8423001": "Просроченная задолженность по заработной плате — всего",
+    "8423002": "Просроченная задолженность из-за несвоевременного получения средств из федерального бюджета",
+    "8423003": "Просроченная задолженность из-за несвоевременного получения средств из бюджета субъекта РФ",
+    "8423004": "Просроченная задолженность из-за несвоевременного получения средств из местных бюджетов",
+    "8423005": "Среднесписочная численность работников организаций (без субъектов малого предпринимательства)",
+    "8423006": "Фонд заработной платы работников организаций (без субъектов малого предпринимательства)",
+    "8423007": "Среднемесячная заработная плата работников организаций (без субъектов малого предпринимательства)",
+    "8423015": "Среднесписочная численность работников организаций муниципальной формы собственности",
+    "8423016": "Фонд заработной платы работников организаций муниципальной формы собственности",
+    "8423017": "Среднемесячная заработная плата работников организаций муниципальной формы собственности",
+}
 BATCH_SIZE = int(os.getenv("STAGING_BATCH_SIZE", "100"))
 WORKERS = int(os.getenv("STAGING_UPLOAD_WORKERS", "3"))
 EXPECTED_MUNICIPALITIES = {
@@ -42,8 +59,12 @@ def to_numeric(raw_value: str):
     return float(value) if value.is_finite() else None
 
 def make_payload(record: dict, retrieved_at: str) -> dict:
-    code = str(record.get("source_indicator_code", "")).strip()
-    if code not in SOURCE_CODES: raise RuntimeError(f"Unexpected source code {code!r}")
+    source_code = str(record.get("source_indicator_code", "")).strip()
+    if source_code not in SOURCE_CODES:
+        raise RuntimeError(f"Unexpected Rosstat form code {source_code!r}")
+    bdmo_code = str(record.get("bdmo_indicator_code_from_member") or "").strip()
+    if bdmo_code not in BDMO_CODES:
+        raise RuntimeError(f"Could not resolve BDMO indicator code from member {record.get('source_member')!r}")
     attrs = record.get("attributes") or {}
     oktmo = str(record.get("oktmo", "")).strip()
     municipality_id = str(record.get("municipality_id", "")).strip()
@@ -72,16 +93,18 @@ def make_payload(record: dict, retrieved_at: str) -> dict:
     raw_record = dict(attrs)
     raw_record["_source_member"] = str(record.get("source_member", ""))
     raw_record["_source_row_sha256"] = digest
+    raw_record["_source_statistical_form_code"] = source_code
+    raw_record["_bdmo_indicator_code"] = bdmo_code
     raw_record["_candidate_bdmo_indicator_codes"] = record.get("candidate_bdmo_indicator_codes", [])
 
     return {
         "source_id": SOURCE_ID,
-        "source_record_key": f"employment-source:{code}:{digest}",
+        "source_record_key": f"employment:{bdmo_code}:{source_code}:{digest}",
         "raw_record": raw_record,
         "raw_municipality_name": str(record.get("municipality_name", "")),
         "raw_oktmo": oktmo,
-        "raw_indicator_name": str(record.get("source_indicator_name", "")),
-        "raw_indicator_code": code,
+        "raw_indicator_name": BDMO_LABELS[bdmo_code],
+        "raw_indicator_code": bdmo_code,
         "raw_year": year,
         "raw_period": raw_period,
         "raw_value": raw_value,
@@ -137,7 +160,11 @@ def main() -> int:
 
     retrieved_at = datetime.now(timezone.utc).isoformat()
     prepared_dir = Path(tempfile.mkdtemp(prefix="yugra-employment-staging-"))
-    totals, municipalities, years = Counter(), {c: set() for c in SOURCE_CODES}, {c: [] for c in SOURCE_CODES}
+    totals = Counter()
+    municipalities = {c: set() for c in SOURCE_CODES}
+    years = {c: [] for c in SOURCE_CODES}
+    bdmo_totals = Counter()
+    bdmo_municipalities = {c: set() for c in BDMO_CODES}
     blanks, non_numeric = Counter(), Counter()
     prepared = []
     for code in sorted(SOURCE_CODES):
@@ -155,6 +182,9 @@ def main() -> int:
                 totals[code] += 1
                 municipalities[code].add(payload["mapped_municipality_id"])
                 years[code].append(payload["raw_year"])
+                bdmo_code = payload["raw_indicator_code"]
+                bdmo_totals[bdmo_code] += 1
+                bdmo_municipalities[bdmo_code].add(payload["mapped_municipality_id"])
                 if not payload["raw_value"]: blanks[code] += 1
                 if "source_value_not_numeric" in payload["validation_errors"]: non_numeric[code] += 1
         if totals[code] != expected: raise RuntimeError(f"{code}: summary {expected}, prepared {totals[code]}")
@@ -209,8 +239,9 @@ def main() -> int:
         "source_id": SOURCE_ID,
         "submitted_rows": submitted,
         "source_rows_by_rosstat_code": dict(sorted(totals.items())),
-        "bdmo_indicator_codes_to_classify": {
-            code: items[code].get("candidate_bdmo_codes", []) for code in sorted(items)
+        "source_rows_by_bdmo_indicator_code": dict(sorted(bdmo_totals.items())),
+        "municipalities_by_bdmo_indicator_code": {
+            code: len(bdmo_municipalities[code]) for code in sorted(bdmo_totals)
         },
         "missing_source_series": [c for c in sorted(SOURCE_CODES) if not totals[c]],
         "municipalities_by_source_code": {
