@@ -18,6 +18,7 @@ import time
 import urllib.error
 import urllib.request
 import zipfile
+import zlib
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -125,6 +126,36 @@ class HttpRangeFile(io.RawIOBase):
         self.position = min(new_pos, self.size)
         return self.position
 
+    def read_range(self, start: int, end: int) -> bytes:
+        if start < 0 or end < start or end >= self.size:
+            raise ValueError(f"Invalid byte range {start}-{end}")
+        request = urllib.request.Request(
+            self.url,
+            headers={
+                "User-Agent": "Yugra18-BDPMO-range-extractor/1.0",
+                "Range": f"bytes={start}-{end}",
+            },
+        )
+        last_error = None
+        expected = end - start + 1
+        for attempt in range(5):
+            try:
+                with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                    if response.status != 206:
+                        raise RuntimeError(f"Range request returned HTTP {response.status}; refusing full archive download")
+                    data = response.read()
+                    content_range = response.headers.get("Content-Range", "")
+                    if len(data) != expected or not content_range.startswith(f"bytes {start}-{end}/"):
+                        raise RuntimeError(f"Unexpected partial response: range={content_range}, bytes={len(data)}, expected={expected}")
+                    self.requests += 1
+                    self.bytes_downloaded += len(data)
+                    return data
+            except (urllib.error.URLError, TimeoutError, RuntimeError) as exc:
+                last_error = exc
+                if attempt < 4:
+                    time.sleep(min(2 ** attempt, 12))
+        raise RuntimeError(f"HTTP Range request failed at {start}-{end}: {last_error}")
+
     def read(self, size: int = -1) -> bytes:
         if self.position >= self.size:
             return b""
@@ -135,34 +166,11 @@ class HttpRangeFile(io.RawIOBase):
             return b""
         start = self.position
         end = start + size - 1
-        request = urllib.request.Request(
-            self.url,
-            headers={
-                "User-Agent": "Yugra18-BDPMO-range-extractor/1.0",
-                "Range": f"bytes={start}-{end}",
-            },
-        )
-        last_error = None
-        for attempt in range(5):
-            try:
-                with urllib.request.urlopen(request, timeout=self.timeout) as response:
-                    if response.status != 206:
-                        raise RuntimeError(f"Range request returned HTTP {response.status}; refusing full archive download")
-                    data = response.read()
-                    content_range = response.headers.get("Content-Range", "")
-                    if len(data) != size or not content_range.startswith(f"bytes {start}-{end}/"):
-                        raise RuntimeError(f"Unexpected partial response: range={content_range}, bytes={len(data)}, expected={size}")
-                    self.position += len(data)
-                    self.requests += 1
-                    self.bytes_downloaded += len(data)
-                    return data
-            except (urllib.error.URLError, TimeoutError, RuntimeError) as exc:
-                last_error = exc
-                if attempt < 4:
-                    time.sleep(min(2 ** attempt, 12))
-        raise RuntimeError(f"HTTP Range request failed at {start}-{end}: {last_error}")
+        data = self.read_range(start, end)
+        self.position += len(data)
+        return data
 
-def extract_indicator_rows(outer: zipfile.ZipFile, code: str, title: str, out_dir: Path) -> dict:
+def extract_indicator_rows(outer: zipfile.ZipFile, remote: HttpRangeFile, code: str, title: str, out_dir: Path) -> dict:
     candidates = [
         name for name in outer.namelist()
         if code in name and name.lower().endswith(".csv") and "parts/" not in name.lower()
@@ -182,7 +190,35 @@ def extract_indicator_rows(outer: zipfile.ZipFile, code: str, title: str, out_di
     seen: set[tuple[str, str]] = set()
     headers = []
 
-    with outer.open(member_name, "r") as raw, io.TextIOWrapper(raw, encoding="utf-8-sig", newline="") as text:
+    # Fetch the compressed member as one small HTTP Range request rather
+    # than streaming thousands of tiny blocks from the 7 GB outer ZIP.
+    local_header = remote.read_range(info.header_offset, info.header_offset + 29)
+    if len(local_header) != 30:
+        raise RuntimeError(f"{code}: truncated local ZIP header")
+    header_fields = struct.unpack("<IHHHHHIIIHH", local_header)
+    signature, _version, _flags, compression, _time, _date, crc32_expected, _csize, _usize, filename_len, extra_len = header_fields
+    if signature != 0x04034B50:
+        raise RuntimeError(f"{code}: invalid local ZIP header signature")
+    if compression != info.compress_type:
+        raise RuntimeError(f"{code}: ZIP compression mismatch between directory and local header")
+    data_start = info.header_offset + 30 + filename_len + extra_len
+    data_end = data_start + info.compress_size - 1
+    compressed_member = remote.read_range(data_start, data_end)
+    if len(compressed_member) != info.compress_size:
+        raise RuntimeError(f"{code}: compressed member size mismatch")
+    if info.compress_type == zipfile.ZIP_DEFLATED:
+        csv_bytes = zlib.decompress(compressed_member, -15)
+    elif info.compress_type == zipfile.ZIP_STORED:
+        csv_bytes = compressed_member
+    else:
+        raise RuntimeError(f"{code}: unsupported ZIP compression method {info.compress_type}")
+    if len(csv_bytes) != info.file_size:
+        raise RuntimeError(f"{code}: uncompressed member size mismatch")
+    if (zlib.crc32(csv_bytes) & 0xFFFFFFFF) != info.CRC:
+        raise RuntimeError(f"{code}: CRC32 verification failed")
+    print(f"FETCHED_MEMBER {code} compressed={len(compressed_member)} uncompressed={len(csv_bytes)} crc32=ok", flush=True)
+
+    with io.TextIOWrapper(io.BytesIO(csv_bytes), encoding="utf-8-sig", newline="") as text:
         reader = csv.DictReader(text, delimiter=";")
         if not reader.fieldnames:
             raise RuntimeError(f"{code}: CSV headers are missing")
@@ -279,7 +315,7 @@ def main() -> int:
     with zipfile.ZipFile(remote, mode="r") as outer:
         names = outer.namelist()
         for code, title in INDICATORS.items():
-            results.append(extract_indicator_rows(outer, code, title, out_dir))
+            results.append(extract_indicator_rows(outer, remote, code, title, out_dir))
 
     report = {
         "ok": any(item["status"] == "extracted" for item in results),
