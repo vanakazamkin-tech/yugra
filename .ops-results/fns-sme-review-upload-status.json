@@ -1,1 +1,22 @@
-{"status":"upload_failed_or_not_started"}
+{
+  "status": "uploaded_to_review_staging",
+  "snapshot_date": "2026-11-10",
+  "region86_registry_records": 65723,
+  "mapped_records": 65718,
+  "unmapped_records_not_assigned": 5,
+  "municipality_count": 22,
+  "staging_rows": 154,
+  "staging_rows_by_measure": {
+    "sme_entities_count_fns": 22,
+    "sme_legal_entities_count_fns": 22,
+    "sme_individual_entrepreneurs_count_fns": 22,
+    "sme_farm_heads_count_fns": 22,
+    "sme_microenterprise_count_fns": 22,
+    "sme_small_enterprise_count_fns": 22,
+    "sme_medium_enterprise_count_fns": 22
+  },
+  "sum_of_municipality_sme_counts": 65718,
+  "all_pending": true,
+  "no_taxpayer_level_data": true,
+  "source_zip_sha256": "5475528b139a4371b26026dd560425f6cb24c83335225b81719869a35075dce4"
+}
