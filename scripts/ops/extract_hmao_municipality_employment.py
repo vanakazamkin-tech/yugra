@@ -184,7 +184,7 @@ def extract_member(remote: HttpRangeFile, info: zipfile.ZipInfo, source_code: st
         member_rows = 0
         for row in reader:
             clean = {str(k): (v if v is not None else "") for k, v in row.items() if k is not None}
-            oktmo_raw = find_field(clean, {"oktmo", "kodoktmo", "oktmoactual", "oktmoasofdate"})
+            oktmo_raw = find_field(clean, {"oktmo", "kodoktmo", "oktmoactual", "oktmoasofdate", "oktmostable"})
             oktmo = match_oktmo(oktmo_raw)
             if not oktmo: continue
             region = find_field(clean, {"regionid", "region", "kodregiona", "regioncode"})
