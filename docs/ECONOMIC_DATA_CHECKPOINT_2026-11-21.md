@@ -177,3 +177,38 @@ The FNS SME registry geography probe for the 10.11.2026 snapshot completed succe
 - New municipal SME / retail observations: **21 rows** across six municipalities.
 - These two groups are stored in private review staging; all rows remain pending with no promotion.
 - Keep the Stage 3 checkpoint and P3 work log in progress until the remaining municipal SME, SME-turnover and complete retail-turnover coverage is collected and normalized.
+
+
+## Further municipal extensions — Oktyabrsky district and Kogalym retail (21 November 2026)
+
+### Oktyabrsky district
+
+The official 2025 socioeconomic report adds seven observations:
+- At 01.01.2026: 740 SMEs, including 110 legal entities and 630 individual entrepreneurs.
+- Self-employed persons under the professional-income tax regime: 2,374, listed separately and excluded from the SME count.
+- Preliminary 2025 industrial shipments by large and medium organisations: total 423,954.2m RUB; mining 422,648.5m; electricity/gas/steam, water supply and waste activities 964.0m; manufacturing 341.8m.
+- The industrial breakdown is a separate municipal report series and should not automatically be treated as identical to BDPMO 8401008 / 8401011.
+
+Official source: https://oktregion.ru/upload/docs/ekonomika-i-finansy/sotsialno-ekonomicheskoe-azvitie/itogi/Itogi_SER_za_2025.pdf
+
+The same report gives a general “товарооборот” value of 5,897.9m RUB for 2025, but the report wording does not explicitly resolve whether this is a complete retail-turnover definition. It has not been loaded as official retail turnover pending definition confirmation.
+
+### Kogalym retail turnover
+
+A municipal half-year report gives preliminary retail turnover for the full circle of city organisations of **8,329.0m RUB** for January–June 2025. It is now staged as a separate Jan–Jun 2025 observation for Kogalym, not treated as a full-year total and not mixed with BDPMO 8401003 (which excludes SMEs).
+
+Official source: https://admkogalym.ru/upload/medialibrary/16c/xowggy1l5sdmh47l1xo456zqh3efyj3h/8_icx_343_25.pdf
+
+### Reuse of existing MСП per-capita observations
+
+A SQL check found three already-verified Kogalym observations for the number of SMEs per 10,000 residents: 277.7 (2022), 286.6 (2023) and 290.2 (2024), source `ugra_municipal_efficiency_349rp_2024_kogalym`. They were not re-imported. This indicator should only be newly calculated for a municipality when the SME count date and population denominator can be made methodologically compatible.
+
+## Revised Stage 3 staging count
+
+The current Stage 3 import group consists of:
+- 16,690 BDPMO records across 11 codes, all 22 municipalities.
+- 21 SME/retail records from six municipality reports, all pending.
+- 7 additional Oktyabrsky district SME/industry records.
+- 1 additional Kogalym Jan–Jun 2025 full-circle retail-turnover record.
+
+All new rows remain in private review staging, with pending status, no validation errors and no promotion. Annual, cumulative, preliminary and point-in-time records retain their distinct definitions.
