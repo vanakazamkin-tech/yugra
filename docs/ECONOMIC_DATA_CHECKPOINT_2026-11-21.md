@@ -55,3 +55,29 @@ Employment source coverage and open gaps are recorded separately in [EMPLOYMENT_
 - Do not allocate HMAO regional aggregates to municipalities.
 - Do not treat investment-site counts or announced projects as realized capital investment.
 - Preserve estimates, forecasts and secondary-source values separately from official facts.
+
+
+## Latest P3 verification — annual Duma municipal-budget appendix
+
+The official PDF for the annual 2023–2024 municipal-budget analysis was reopened and text-extracted from the Duma Yugra website:
+https://www.dumahmao.ru/povest/0745_4/03/50.pdf
+
+Confirmed from the source:
+- 22 municipal rows plus a separate regional control row “ВСЕГО”.
+- Financial years 2023 and 2024.
+- Unit: thousand rubles.
+- Separate columns for total revenue, revenue excluding gratuitous receipts, tax and non-tax revenue, tax revenue, personal income tax, non-tax revenue, transfers, total expenditure, payroll expenditure and capital investment, plus detailed expenditure classifications.
+- Growth rates are distinct percentage columns and must not be loaded as monetary observations.
+- Dashes / blank cells are not zero. “св.100” means above 100 percent and must not be converted to a precise percentage.
+
+The source registry entry was updated with these findings. No observations from this annual PDF have yet been loaded; a controlled column mapping and row-total reconciliation must precede staging.
+
+## Verification of existing budget observations
+
+Direct SQL checks of the verified analytical table found:
+- 176 rows in Duma Appendix 1 (four indicators × 22 municipalities × two 9-month periods); all verified, 22 municipalities per indicator-period, no duplicate logical keys.
+- 44 rows in Duma Appendix 2 (two indicators × 22 municipalities × 9M 2025); all verified, no duplicate logical keys.
+- 19 annual 2025 observations across five separate municipal sources (Khanty-Mansiysky district, Khanty-Mansiysk, Megion, Nefteyugansk and Yugorsk); all verified, no duplicate logical keys.
+- These 9-month observations remain Jan–Sep cumulative values, not full-year totals. The annual 2025 municipal records are distinct and currently cover only five municipal areas.
+
+The next data-acquisition pass will transcribe a carefully selected set of indicators from the annual 2023–2024 PDF, validate all 22 rows against the PDF's “ВСЕГО” control row, and only then load them to review staging.
