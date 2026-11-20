@@ -2,9 +2,9 @@
   "job": "upload",
   "exit_code": 0,
   "status": "submitted_to_review_staging",
-  "submitted_rows": 16558,
+  "submitted_rows": 16690,
   "source_rows_by_section": {
-    "2": 2794,
+    "2": 2926,
     "39": 8791,
     "41": 308,
     "9": 4665
@@ -18,6 +18,7 @@
     "8401008": 3615,
     "8401011": 3325,
     "8401012": 1455,
+    "8801004": 132,
     "9010002": 198,
     "9010003": 198
   },
@@ -30,6 +31,7 @@
     "8401008": 22,
     "8401011": 22,
     "8401012": 22,
+    "8801004": 22,
     "9010002": 22,
     "9010003": 22
   },
@@ -66,6 +68,10 @@
       2017,
       2025
     ],
+    "8801004": [
+      2020,
+      2025
+    ],
     "9010002": [
       2024,
       2026
@@ -79,5 +85,5 @@
   "blank_values_by_indicator_code": {},
   "non_numeric_values_by_indicator_code": {},
   "pending_review": true,
-  "error_log_tail": "{\n  \"status\": \"submitted_to_review_staging\",\n  \"submitted_rows\": 16558,\n  \"source_rows_by_section\": {\n    \"2\": 2794,\n    \"39\": 8791,\n    \"41\": 308,\n    \"9\": 4665\n  },\n  \"source_rows_by_indicator_code\": {\n    \"8009001\": 415,\n    \"8109001\": 3487,\n    \"8109002\": 763,\n    \"8109003\": 308,\n    \"8401003\": 2794,\n    \"8401008\": 3615,\n    \"8401011\": 3325,\n    \"8401012\": 1455,\n    \"9010002\": 198,\n    \"9010003\": 198\n  },\n  \"municipalities_by_indicator_code\": {\n    \"8009001\": 22,\n    \"8109001\": 22,\n    \"8109002\": 22,\n    \"8109003\": 22,\n    \"8401003\": 22,\n    \"8401008\": 22,\n    \"8401011\": 22,\n    \"8401012\": 22,\n    \"9010002\": 22,\n    \"9010003\": 22\n  },\n  \"years_by_indicator_code\": {\n    \"8009001\": [\n      2006,\n      2024\n    ],\n    \"8109001\": [\n      2008,\n      2024\n    ],\n    \"8109002\": [\n      2008,\n      2024\n    ],\n    \"8109003\": [\n      2010,\n      2024\n    ],\n    \"8401003\": [\n      2017,\n      2026\n    ],\n    \"8401008\": [\n      2017,\n      2025\n    ],\n    \"8401011\": [\n      2017,\n      2025\n    ],\n    \"8401012\": [\n      2017,\n      2025\n    ],\n    \"9010002\": [\n      2024,\n      2026\n    ],\n    \"9010003\": [\n      2024,\n      2026\n    ]\n  },\n  \"missing_source_indicators\": [],\n  \"blank_values_by_indicator_code\": {},\n  \"non_numeric_values_by_indicator_code\": {},\n  \"pending_review\": true,\n  \"normalized_indicator_code\": null,\n  \"normalized_unit\": null,\n  \"normalized_period\": null,\n  \"batch_size\": 100,\n  \"workers\": 3,\n  \"retrieved_at\": \"2026-11-20T23:26:11.104567+00:00\",\n  \"note\": \"All Stage 3 economic rows remain pending in review staging. Original dimensions and cumulative periods are preserved; no data was promoted into municipality_indicators.\"\n}\n"
+  "error_log_tail": "{\n  \"status\": \"submitted_to_review_staging\",\n  \"submitted_rows\": 16690,\n  \"source_rows_by_section\": {\n    \"2\": 2926,\n    \"39\": 8791,\n    \"41\": 308,\n    \"9\": 4665\n  },\n  \"source_rows_by_indicator_code\": {\n    \"8009001\": 415,\n    \"8109001\": 3487,\n    \"8109002\": 763,\n    \"8109003\": 308,\n    \"8401003\": 2794,\n    \"8401008\": 3615,\n    \"8401011\": 3325,\n    \"8401012\": 1455,\n    \"8801004\": 132,\n    \"9010002\": 198,\n    \"9010003\": 198\n  },\n  \"municipalities_by_indicator_code\": {\n    \"8009001\": 22,\n    \"8109001\": 22,\n    \"8109002\": 22,\n    \"8109003\": 22,\n    \"8401003\": 22,\n    \"8401008\": 22,\n    \"8401011\": 22,\n    \"8401012\": 22,\n    \"8801004\": 22,\n    \"9010002\": 22,\n    \"9010003\": 22\n  },\n  \"years_by_indicator_code\": {\n    \"8009001\": [\n      2006,\n      2024\n    ],\n    \"8109001\": [\n      2008,\n      2024\n    ],\n    \"8109002\": [\n      2008,\n      2024\n    ],\n    \"8109003\": [\n      2010,\n      2024\n    ],\n    \"8401003\": [\n      2017,\n      2026\n    ],\n    \"8401008\": [\n      2017,\n      2025\n    ],\n    \"8401011\": [\n      2017,\n      2025\n    ],\n    \"8401012\": [\n      2017,\n      2025\n    ],\n    \"8801004\": [\n      2020,\n      2025\n    ],\n    \"9010002\": [\n      2024,\n      2026\n    ],\n    \"9010003\": [\n      2024,\n      2026\n    ]\n  },\n  \"missing_source_indicators\": [],\n  \"blank_values_by_indicator_code\": {},\n  \"non_numeric_values_by_indicator_code\": {},\n  \"pending_review\": true,\n  \"normalized_indicator_code\": null,\n  \"normalized_unit\": null,\n  \"normalized_period\": null,\n  \"batch_size\": 100,\n  \"workers\": 3,\n  \"retrieved_at\": \"2026-11-20T23:31:45.098486+00:00\",\n  \"note\": \"All Stage 3 economic rows remain pending in review staging. Original dimensions and cumulative periods are preserved; no data was promoted into municipality_indicators.\"\n}\n"
 }
