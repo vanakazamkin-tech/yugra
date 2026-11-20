@@ -104,8 +104,7 @@ def run_one(code: str, meta: dict, out_dir: Path) -> dict:
     request = Request(meta["url"], headers={"User-Agent": "Yugra18-demography-extract/1.0"})
     with urlopen(request, timeout=180) as response:
         archive_bytes = response.read()
-    zip_path = out_dir / f"{code}_region71_source.zip"
-    zip_path.write_bytes(archive_bytes)
+    archive_sha256 = hashlib.sha256(archive_bytes).hexdigest()
 
     output_path = out_dir / f"{code}_hmao_rows.jsonl.gz"
     header_map: list[str] = []
@@ -175,10 +174,16 @@ def run_one(code: str, meta: dict, out_dir: Path) -> dict:
         "title": meta["title"],
         "url": meta["url"],
         "archive_bytes": len(archive_bytes),
+        "archive_sha256": archive_sha256,
         "csv_file": csv_name,
         "csv_headers": header_map,
         "matched_rows": row_count,
         "municipalities_matched": len(by_municipality),
+        "missing_municipalities": [
+            {"oktmo": oktmo, "municipality_id": muni_id, "name": name}
+            for oktmo, (muni_id, name) in MUNICIPALITIES.items()
+            if muni_id not in by_municipality
+        ],
         "rows_by_municipality": dict(sorted(by_municipality.items())),
         "rows_by_year": dict(sorted(by_year.items())),
         "dimension_fields": {
@@ -196,10 +201,8 @@ def main() -> int:
     for code, meta in INDICATORS.items():
         print(f"Downloading and filtering {code}...", flush=True)
         summary = run_one(code, meta, out_dir)
-        if summary["municipalities_matched"] != 22:
-            raise RuntimeError(
-                f"{code}: expected 22 municipalities, got {summary['municipalities_matched']}"
-            )
+        if summary["municipalities_matched"] == 0:
+            raise RuntimeError(f"{code}: no HMAO municipality rows matched; check OKTMO field and archive")
         summaries.append(summary)
         print(
             f"{code}: {summary['matched_rows']} rows / "
@@ -214,7 +217,7 @@ def main() -> int:
         "expected_municipalities": 22,
         "indicators": summaries,
         "total_rows": sum(x["matched_rows"] for x in summaries),
-        "note": "Extraction only. Rows are not yet staged or verified. All dimension attributes are preserved.",
+        "note": "Extraction only. Rows are not yet staged or verified. All dimension attributes are preserved. Missing municipality rows are reported, not filled with synthetic zeroes; absence may mean no value or no applicable urban/rural category.",
     }
     (out_dir / "summary.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
