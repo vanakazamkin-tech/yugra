@@ -1161,5 +1161,8 @@ Supabase project ref: `dmbikidqikjupkghywbz`
 - В `scripts/test-municipality-passport-gates.mjs` добавлены контракты происхождения, географии, периодов и уникальности для населения, инвестиций и бюджета. В `README.md` актуализировано описание паспорта.
 - Проверка бюджетных трансфертов 2025-Q3: 22 строки; расхождений между суммой «доходы всего минус доходы без безвозмездных поступлений» и прямым показателем трансфертов не обнаружено.
 - Архив пользователя (372 МБ) содержит внутренние своды ВПО-1/ВПО-2 за 2020–2025 годы. Файлы ХМАО являются региональными сводами, а не муниципальными строками. Числа из архива не распределялись по муниципалитетам и не импортировались.
-- Для кодового HEAD `c396ab67c6d0469daf6d73df4c49c4dcb138cbee` GitHub Actions build и data-migrations-integration завершились success. Vercel Preview готов: https://yugra18-8kz6ox751-napishtu.vercel.app .
-- PR #30 остаётся открытым. Production Supabase, основная ветка и production deployment не изменялись. Следующий шаг: проверить CI после последующих документационных коммитов; после просмотра Preview — решить вопрос о merge.
+- Для кодового HEAD `c396ab67c6d0469daf6d73df4c49c4dcb138cbee` GitHub Actions build и data-migrations-integration завершились success; Preview готов. Последующие документационные коммиты добавили README и эту контрольную точку.
+- PR #30 объединён 20.11.2026 squash-коммитом `f7ec3cce3ba6885b961a05cebeebd0b70e76fa68`. Merge commit прошёл GitHub Actions run 44778356737: build и data-migrations-integration — success.
+- Production deployment `dpl_HfjChmqxh4NnXsTqhnpMdBGoi6Wr` перешёл в READY; aliases включают https://yugra18.vercel.app . Проверка production URL: HTTP 200. Главный JS-бандл содержит строки четырёх новых информационных блоков паспорта.
+- Production Supabase не изменялся: не выполнялись SQL-записи, миграции или импорты. Новые блоки читают уже существующие verified observations и внешний городской рейтинг с разрешённым SELECT.
+- PR #30 закрыт после merge; визуальный стиль, карта и CSS не переделывались.
