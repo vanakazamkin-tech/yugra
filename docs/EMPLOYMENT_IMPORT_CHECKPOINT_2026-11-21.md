@@ -286,3 +286,54 @@ The district's official website confirms the head-of-district annual report for 
 A separate Audit Chamber conclusion No.94 dated 09.12.2025 on the 2026–2028 budget forecast (PDF) contains an estimate of 0.260 thousand registered unemployed for 2025 and 0.350 thousand for 2024, while the accompanying sentence says the 2025 value is 8 people higher than 2024. That statement conflicts with the numbers shown (260 vs 350), and both are forecast/report estimates rather than a fully reconciled annual series. These values were deliberately not entered into staging. Do not use them as actual observations.
 
 This research did not change the current staging total: **121 rows across 28 source IDs**, all pending, unique, error-free and mapped; the extra Kondinsky source is catalogue-only until the official DOCX can be read.
+
+
+## M. Langepas November 2026 and Kondinsky 2023 additions (21 November 2026)
+
+### Langepas — November 2026 secondary snapshot
+
+Three observations were added from the local publication “Звезда Лангепаса”, published 19.11.2026. The article attributes the figures to the HMAO Department of Labour and Employment and reports:
+- registered unemployment rate: **0.13%**;
+- officially registered unemployed residents: **32 people**;
+- labour-market offers: **231** (the article says the reported number fell from 343 to 231).
+
+Source: [article dated 19.11.2026](https://zvezda-langepasa.ru/2026/11/19/уровень-безработицы-в-лангепасе-за-год-подрос-но-остается-одним-из-самых-низких-в-городах-хмао/).
+
+The article does not disclose the exact reference date of the figures. In staging the period is therefore written as “at the time of publication 19.11.2026; exact snapshot date not specified”; 19 November is recorded as the publication date, not asserted as the observation date. The 231 measure is labelled separately as secondary “labour-market offers”; it is not equated with employer-declared demand, employment-centre vacancies, or active listings on the federal “Работа России” portal. The prior comparison value 343 was not imported because its reference date and full definition are not sufficiently clear.
+
+Source ID: `langepas_labour_2026_11_secondary`; **3 staging rows**, all `pending`.
+
+### Kondinsky district — 2023 reported number of registered unemployed
+
+One historical observation was added from the official Audit Chamber conclusion No.167 dated 07.12.2024 on the draft 2025–2027 district budget: [PDF](https://admkonda.ru/tinybrowser/files/budzhet/Proekty/2024/zaklyuchenie-kontrolno-schetnoy-palaty-ot-07.12.2024-167-na-proekt-b-ta-rayona-2025-2027gg.pdf).
+
+The text states that the 2024 estimate was 0.350 thousand people, equal to the **reported 2023 data of 0.350 thousand people**. Only the reported 2023 observation was staged. The original text calls this a “level” of registered unemployment while giving the unit “thousand people”; therefore the row preserves the exact source value **0.350** and unit **тыс. чел.**, and uses a cautious raw indicator code for the registered-unemployed count. No conversion to 350 persons and no percentage normalization has been made. The 2024 estimate and 2025–2027 forecasts were excluded. This is an official municipal audit document reproducing the administration's reported data, not the underlying primary statistical table; primary confirmation is still required.
+
+Source ID: `kondinsky_labour_2023_ksp167`; **1 staging row**, `pending`, period 2023. This adds one post-2022 observation for Kondinsky district but does not resolve the need for newer actual data.
+
+### Further source-access checks and exclusions
+
+- Pyt-Yakh: located the official Administration page “Итоги социально-экономического развития”, which lists an archive for 2025: https://adm.py86.ru/deyatelnost/ekonomika/sotsialno-ekonomicheskoe-razvitie/itogi-sotsialno-ekonomicheskogo-razvitiya/. The link to the 2025 archive's child page could not be retrieved in this session. The three 01.07.2025 observations (36 people, 0.13%, employer demand 668) remain explicitly secondary, sourced to appraisal report No.24-2025, and have not been duplicated or promoted.
+- Nizhnevartovsk district: a document at https://www.nvraion.ru/upload/iblock/e51/1947%20Прогноз.pdf was inspected. It is Administration Resolution No.1974 of 04.10.2019, a forecast for 2020 and 2021–2022, with 2018 reported and 2019 estimated values; it is not a 2023–2026 actual source. It was excluded.
+- A Department of Labour and Employment HMAO explanatory note dated 15.07.2025 contains regional aggregate labour-market figures at 01.07.2025 (1,913 registered unemployed and 23,055 employer-declared vacancies), but no verified municipality-specific disaggregation in the inspected material. Those regional values were not assigned to Nizhnevartovsk district or any other municipality.
+- No new numbers were added from the 2025 head-of-district report for Kondinsky because the DOCX attachment to decision No.1339 remains inaccessible. The catalogue-only source `kondinsky_labour_2025_head_report` remains `identified`.
+
+### Latest direct Supabase control after sections M
+
+The employment-category query (joining staging to `data_sources` by source ID) confirms:
+- **125 employment staging rows** and **125 unique (source_id, source_record_key) pairs**.
+- **125 pending**; **0 validation errors**; **0 unmapped municipality IDs**.
+- **0 promoted rows** (`imported_indicator_id` remains null).
+- **30 source IDs with staged observations**; a separate Kondinsky 2025 report source remains catalogue-only with no rows.
+- All **22 municipality IDs** are represented in the combined employment-source set because of the 2022 Decree No.422-п baseline.
+
+No analytical table, `main`, production deployment, or website interface was changed. All current labour observations remain isolated in review staging.
+
+## Next acquisition priorities after section M
+
+1. Obtain the primary attachment to Kondinsky district Duma decision No.1339 (2025 head-of-district report) and verify the 2023 count against the source administration report.
+2. Find post-2022 actuals for Nizhnevartovsk district; continue to exclude city-level and HMAO-wide numbers where the municipal scope is not explicitly district-specific.
+3. Retrieve the official Pyt-Yakh 2025 result archive and the HMAO Department primary tables to corroborate Pyt-Yakh and Langepas secondary snapshots.
+4. Check the full Beryozovsky district head-of-district report for the number of registered unemployed alongside its already staged 0.54% rate.
+5. Continue investigating the “Работа России” API only after verifying a live response and unambiguous municipality address field.
+6. Continue keeping all rows pending until the joint Stage 1/2 review and normalization. Do not change `main`, production, or the site design.
