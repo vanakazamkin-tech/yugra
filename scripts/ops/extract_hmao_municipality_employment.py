@@ -203,6 +203,8 @@ def extract_member(remote: HttpRangeFile, info: zipfile.ZipInfo, source_code: st
             ).hexdigest()
             if digest in state["seen"]: continue
             state["seen"].add(digest)
+            member_match = re.search(r"Y4(8423\\d{3})", info.filename)
+            bdmo_indicator_code = member_match.group(1) if member_match else None
             record = {
                 "source": "rosstat_bdmo_processed_by_tochno",
                 "source_page": SOURCE_PAGE,
@@ -212,6 +214,8 @@ def extract_member(remote: HttpRangeFile, info: zipfile.ZipInfo, source_code: st
                 "source_indicator_code": source_code,
                 "source_indicator_name": series["title"],
                 "candidate_bdmo_indicator_codes": series["bdmo_codes"],
+                "bdmo_indicator_code_from_member": bdmo_indicator_code,
+                "rosstat_form_code": source_code,
                 "oktmo": oktmo,
                 "municipality_id": municipality_id,
                 "municipality_name": municipality_name,
@@ -249,18 +253,33 @@ def main() -> int:
         filenames = [x.filename for x in csv_members]
         (out_dir / "archive_csv_members.txt").write_text("\n".join(filenames), encoding="utf-8")
         for source_code, series in SERIES.items():
-            search_tokens = [source_code, *series["bdmo_codes"]]
+            # The archive member IDs are BDPMO display IDs with a Y4 prefix,
+            # e.g. 8423001 is stored as Y48423001. Statistical form IDs are
+            # metadata, not the filename keys.
+            search_tokens = [f"Y4{code}" for code in series["bdmo_codes"]]
             matches = [
                 item for item in csv_members
-                if any(re.search(rf"(?<!\d){re.escape(token)}(?!\d)", item.filename) for token in search_tokens)
+                if any(token in item.filename for token in search_tokens)
             ]
+            # Large datasets may be split by region under a *_parts/ directory.
+            # Prefer HMAO-only parts when present; otherwise use the complete
+            # member or the year-partitioned files.
+            hmao_parts = [
+                item for item in matches
+                if re.search(r"_region71(?:_|\\.)", item.filename)
+            ]
+            if hmao_parts:
+                selected_matches = hmao_parts
+            else:
+                whole_members = [item for item in matches if "parts/" not in item.filename.lower()]
+                selected_matches = whole_members if whole_members else matches
             state = {
                 "rows": 0, "seen": set(), "municipalities": Counter(),
                 "years": Counter(), "dimensions": defaultdict(Counter),
                 "members": [], "samples": [],
             }
             out_file = out_dir / f"{source_code}_region71_rows.jsonl.gz"
-            if not matches:
+            if not selected_matches:
                 results.append({
                     "source_indicator_code": source_code,
                     "title": series["title"],
@@ -272,7 +291,7 @@ def main() -> int:
                 })
                 continue
             with gzip.open(out_file, "wt", encoding="utf-8", newline="", compresslevel=6) as output:
-                for info in matches:
+                for info in selected_matches:
                     extract_member(remote, info, source_code, series, output, state)
             results.append({
                 "source_indicator_code": source_code,
@@ -280,6 +299,7 @@ def main() -> int:
                 "candidate_bdmo_codes": series["bdmo_codes"],
                 "status": "extracted" if state["rows"] else "no_region71_yugra_rows",
                 "matched_members": [x["filename"] for x in state["members"]],
+                "matched_member_selection": "region71_parts" if hmao_parts else ("whole_member" if selected_matches == whole_members else "year_or_other_parts"),
                 "matched_rows": state["rows"],
                 "municipalities_matched": len(state["municipalities"]),
                 "missing_municipalities": [
