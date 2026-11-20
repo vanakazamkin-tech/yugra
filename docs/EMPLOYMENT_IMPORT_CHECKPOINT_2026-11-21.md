@@ -429,3 +429,21 @@ Evidence:
 
 This closes the technical extraction question for 8423002–8423004 in the 2026-09-28 archive: the source members exist, have valid integrity checks, but contain no region-71 municipal rows. Alternative official municipal series are still required if the project needs those three indicators.
 
+
+
+## P. Controlled transition to Stage 3 (21 November 2026)
+
+At the user's direction, work proceeds to Stage 3 while the remaining Stage 2 evidence gaps stay explicitly open. This is a sequencing decision, not a claim that all employment indicators are complete or analytically verified.
+
+Current Stage 2 facts retained:
+- Rosstat/BDPMO section 32 extraction/upload: 48,396 source rows across codes 8423001, 8423005–8423007 and 8423015–8423017.
+- Code 8423001: 30 staged observations across 10 municipalities (21 archive rows + 9 explicit municipal-report zero observations).
+- Registered-unemployment / vacancies / employer-demand category: 134 staged observations across 39 source IDs; all remain pending.
+- Codes 8423002–8423004: all source CSV members were extracted and CRC-checked; no HMAO region-71 municipal rows in archive release 2026-09-28. Absence is not a measured zero.
+- No employment-stage row has been promoted into `municipality_indicators`.
+
+Remaining Stage 2 gaps remain: permitted access to the historical INID/RCNI panel or another primary extract for 8423002–8423004; primary-source verification for selected secondary or ambiguous municipal values; broader and newer wage-arrears municipal coverage; and joint review/normalization of pending Stage 1/2 records. Continue these when primary data becomes available, without blocking Stage 3.
+
+The latest all-staging SQL snapshot is 278,657 rows, 278,657 unique source keys, all pending, 22 canonical municipality IDs represented, 0 promoted; 8 validation errors are blank-value demographic rows for 2021 (codes 8112014/8112015), not employment rows. These eight blank records are retained as errors and must not be interpreted as zeros.
+
+No production, `main`, public website or interface changes were made.
