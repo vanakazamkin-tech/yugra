@@ -39,6 +39,8 @@ jobs:
         env:
           SUPABASE_URL: https://dmbikidqikjupkghywbz.supabase.co
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_BATCH_SIZE: "100"
+          STAGING_UPLOAD_WORKERS: "3"
         run: python scripts/ops/upload_hmao_demography_staging.py
 
       - name: Upload staging report
