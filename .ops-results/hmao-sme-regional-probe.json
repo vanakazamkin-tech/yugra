@@ -1,0 +1,26 @@
+{
+  "source": "Если быть точным / FNS SME dataset",
+  "archive_url": "https://storage.yandexcloud.net/tochno-st-catalog/FNS/data_sme_153_v20260605/regions_xlsx/data_sme_153_region_%D0%A5%D0%B0%D0%BD%D1%82%D1%8B-%D0%9C%D0%B0%D0%BD%D1%81%D0%B8%D0%B8%CC%86%D1%81%D0%BA%D0%B8%D0%B8%CC%86_%D0%B0%D0%B2%D1%82%D0%BE%D0%BD%D0%BE%D0%BC%D0%BD%D1%8B%D0%B8%CC%86_%D0%BE%D0%BA%D1%80%D1%83%D0%B3_-_%D0%AE%D0%B3%D1%80%D0%B0_v20260605_xlsx.zip",
+  "version": "20260605",
+  "archive_size_bytes": 85049211,
+  "content_type": "application/zip",
+  "range_requests_for_directory": 3,
+  "range_bytes_for_directory": 384,
+  "members": [
+    {
+      "name": "entire/data_sme_153_entire_region_Ханты-Мансийский_автономный_округ_-_Югра_v20260605.xlsx",
+      "compressed_bytes": 64508586,
+      "uncompressed_bytes": 64508586,
+      "compression": 0,
+      "crc32": "41092efd"
+    },
+    {
+      "name": "filtered/data_sme_153_filtered_region_Ханты-Мансийский_автономный_округ_-_Югра_v20260605.xlsx",
+      "compressed_bytes": 20539951,
+      "uncompressed_bytes": 20539951,
+      "compression": 0,
+      "crc32": "4c534ec7"
+    }
+  ],
+  "total_uncompressed_bytes": 85048537
+}
