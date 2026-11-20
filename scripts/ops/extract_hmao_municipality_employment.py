@@ -23,26 +23,16 @@ PUBLISHED_AT = "2026-09-28"
 REGION_CODE = "71"
 
 SERIES = {
-    "1134431020014": {
-        "title": "Просроченная задолженность по заработной плате — всего",
-        "bdmo_codes": ["8423001"],
-    },
-    "1134431020016": {
-        "title": "Просроченная задолженность по заработной плате по причинам недостаточного финансирования",
-        "bdmo_codes": ["8423002", "8423003", "8423004"],
-    },
-    "1121100010003": {
-        "title": "Среднесписочная численность работников организаций",
-        "bdmo_codes": ["8423005", "8423015"],
-    },
-    "2152320020022": {
-        "title": "Фонд заработной платы работников организаций",
-        "bdmo_codes": ["8423006", "8423016"],
-    },
-    "2211110020001": {
-        "title": "Среднемесячная заработная плата работников организаций",
-        "bdmo_codes": ["8423007", "8423017"],
-    },
+    "8423001": {"rosstat_form_code": "1134431020014", "title": "Просроченная задолженность по заработной плате — всего"},
+    "8423002": {"rosstat_form_code": "1134431020016", "title": "Просроченная задолженность из-за несвоевременного получения средств из федерального бюджета"},
+    "8423003": {"rosstat_form_code": "1134431020016", "title": "Просроченная задолженность из-за несвоевременного получения средств из бюджета субъекта РФ"},
+    "8423004": {"rosstat_form_code": "1134431020016", "title": "Просроченная задолженность из-за несвоевременного получения средств из местных бюджетов"},
+    "8423005": {"rosstat_form_code": "1121100010003", "title": "Среднесписочная численность работников организаций (без субъектов малого предпринимательства)"},
+    "8423006": {"rosstat_form_code": "2152320020022", "title": "Фонд заработной платы работников организаций (без субъектов малого предпринимательства)"},
+    "8423007": {"rosstat_form_code": "2211110020001", "title": "Среднемесячная заработная плата работников организаций (без субъектов малого предпринимательства)"},
+    "8423015": {"rosstat_form_code": "1121100010003", "title": "Среднесписочная численность работников организаций муниципальной формы собственности"},
+    "8423016": {"rosstat_form_code": "2152320020022", "title": "Фонд заработной платы работников организаций муниципальной формы собственности"},
+    "8423017": {"rosstat_form_code": "2211110020001", "title": "Среднемесячная заработная плата работников организаций муниципальной формы собственности"},
 }
 
 MUNICIPALITIES = {
@@ -213,9 +203,9 @@ def extract_member(remote: HttpRangeFile, info: zipfile.ZipInfo, source_code: st
                 "source_published_at": PUBLISHED_AT,
                 "source_indicator_code": source_code,
                 "source_indicator_name": series["title"],
-                "candidate_bdmo_indicator_codes": series["bdmo_codes"],
+                "candidate_bdmo_indicator_codes": [source_code],
                 "bdmo_indicator_code_from_member": bdmo_indicator_code,
-                "rosstat_form_code": source_code,
+                "rosstat_form_code": series["rosstat_form_code"],
                 "oktmo": oktmo,
                 "municipality_id": municipality_id,
                 "municipality_name": municipality_name,
@@ -253,14 +243,10 @@ def main() -> int:
         filenames = [x.filename for x in csv_members]
         (out_dir / "archive_csv_members.txt").write_text("\n".join(filenames), encoding="utf-8")
         for source_code, series in SERIES.items():
-            # The archive member IDs are BDPMO display IDs with a Y4 prefix,
-            # e.g. 8423001 is stored as Y48423001. Statistical form IDs are
-            # metadata, not the filename keys.
-            search_tokens = [f"Y4{code}" for code in series["bdmo_codes"]]
-            matches = [
-                item for item in csv_members
-                if any(token in item.filename for token in search_tokens)
-            ]
+            # Process each display indicator independently. Municipal-owned
+            # series 8423015-8423017 are separate files from 8423005-8423007.
+            token = f"Y4{source_code}"
+            matches = [item for item in csv_members if token in item.filename]
             # Large datasets may be split by region under a *_parts/ directory.
             # Prefer HMAO-only parts when present; otherwise use the complete
             # member or the year-partitioned files.
@@ -335,9 +321,9 @@ def main() -> int:
         "archive_bytes_downloaded_via_ranges": remote.bytes_downloaded,
         "indicators": results,
         "note": (
-            "Rows are grouped by unique underlying Rosstat form code. Candidate BDPMO IDs "
-            "are preserved in raw records; paired IDs are not duplicated. All original dimensions retained. "
-            "Only HMAO project municipality rows were range-extracted."
+            "Each BDPMO display indicator is extracted independently, including municipal-owned series "
+            "8423015-8423017. Underlying Rosstat form codes are kept as provenance. Original dimensions "
+            "are preserved; only HMAO project municipalities are retained."
         ),
     }
     (out_dir / "summary.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
