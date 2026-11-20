@@ -1,0 +1,77 @@
+{
+  "job": "extract",
+  "exit_code": 1,
+  "ok": false,
+  "all_source_series_found": false,
+  "total_rows": 0,
+  "range_requests": 4,
+  "archive_bytes_downloaded_via_ranges": 488363,
+  "source_archive": "https://storage.yandexcloud.net/tochno-st-catalog/Rosstat/data_bdmo_118_v20260928/by_indicator/data_section32_112_v20260928.zip",
+  "indicators": [
+    {
+      "source_indicator_code": "1134431020014",
+      "candidate_bdmo_codes": [
+        "8423001"
+      ],
+      "status": "no_member_found",
+      "matched_members": [],
+      "matched_rows": 0,
+      "municipalities_matched": 0,
+      "missing_municipalities": [],
+      "rows_by_year": {}
+    },
+    {
+      "source_indicator_code": "1134431020016",
+      "candidate_bdmo_codes": [
+        "8423002",
+        "8423003",
+        "8423004"
+      ],
+      "status": "no_member_found",
+      "matched_members": [],
+      "matched_rows": 0,
+      "municipalities_matched": 0,
+      "missing_municipalities": [],
+      "rows_by_year": {}
+    },
+    {
+      "source_indicator_code": "1121100010003",
+      "candidate_bdmo_codes": [
+        "8423005",
+        "8423015"
+      ],
+      "status": "no_member_found",
+      "matched_members": [],
+      "matched_rows": 0,
+      "municipalities_matched": 0,
+      "missing_municipalities": [],
+      "rows_by_year": {}
+    },
+    {
+      "source_indicator_code": "2152320020022",
+      "candidate_bdmo_codes": [
+        "8423006",
+        "8423016"
+      ],
+      "status": "no_member_found",
+      "matched_members": [],
+      "matched_rows": 0,
+      "municipalities_matched": 0,
+      "missing_municipalities": [],
+      "rows_by_year": {}
+    },
+    {
+      "source_indicator_code": "2211110020001",
+      "candidate_bdmo_codes": [
+        "8423007",
+        "8423017"
+      ],
+      "status": "no_member_found",
+      "matched_members": [],
+      "matched_rows": 0,
+      "municipalities_matched": 0,
+      "missing_municipalities": [],
+      "rows_by_year": {}
+    }
+  ]
+}
