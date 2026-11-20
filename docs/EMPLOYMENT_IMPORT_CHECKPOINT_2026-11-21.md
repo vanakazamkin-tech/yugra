@@ -411,3 +411,21 @@ These are coverage/control results, not evidence that every metric is fully popu
 5. Finish joint Stage 1/2 review and normalization (indicator mapping, OKVED2 dimension, units, annual/cumulative periods and fact/estimate/source quality) before any analytical promotion.
 
 No rows were promoted to `municipality_indicators`; no changes were made to `main`, production deployment, or website UI. The work-log status remains `partially_done` rather than falsely marking full statistical closure.
+
+
+## O. Extractor audit of 8423002–8423004 — confirmed archive-level absence for HMAO (21 November 2026)
+
+The employment extraction workflow and its saved status report were inspected directly after the initial coverage review. The ZIP archive **does contain** all three source CSV members:
+- `data_Y48423002_112_v20260928.csv`
+- `data_Y48423003_112_v20260928.csv`
+- `data_Y48423004_112_v20260928.csv`
+
+All three members were discovered by the extractor, fetched using HTTP Range, decompressed and passed the member size / CRC32 checks. The extraction result for each is `status=no_region71_yugra_rows`, `matched_rows=0`, `municipalities_matched=0`. The filter included region `71` and the project's 22 OKTMO codes. Therefore no HMAO municipal observation was skipped because of a missing archive member or extractor-code omission; the zero row count is the result returned by this archive release for region 71. It does **not** mean a measured zero value for any municipality.
+
+Evidence:
+- Successful extraction / upload workflow run: https://github.com/vanakazamkin-tech/yugra/actions/runs/44822162445
+- Extractor source code: https://github.com/vanakazamkin-tech/yugra/blob/ops/extract-hmao-demography-2026-11/scripts/ops/extract_hmao_municipality_employment.py
+- Saved extractor audit result: https://github.com/vanakazamkin-tech/yugra/blob/ops/extract-hmao-demography-2026-11/.ops-results/employment-extract-status.json
+
+This closes the technical extraction question for 8423002–8423004 in the 2026-09-28 archive: the source members exist, have valid integrity checks, but contain no region-71 municipal rows. Alternative official municipal series are still required if the project needs those three indicators.
+
