@@ -1,0 +1,54 @@
+name: Stage HMAO SME historical municipal counts
+
+on:
+  push:
+    branches:
+      - ops/extract-hmao-demography-2026-11
+    paths:
+      - ".github/workflows/stage-hmao-sme-derived-counts.yml"
+      - "scripts/ops/upload_hmao_sme_derived_counts.py"
+  workflow_dispatch:
+
+concurrency:
+  group: hmao-sme-derived-counts-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Upload 2025 FNS-derived municipal SME count series to private staging
+        env:
+          SUPABASE_URL: https://dmbikidqikjupkghywbz.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/ops/upload_hmao_sme_derived_counts.py
+      - name: Publish aggregate-only upload status
+        if: always()
+        shell: bash
+        run: |
+          if [ ! -f .ops-results/hmao-sme-derived-upload-status.json ]; then
+            printf '{"status":"upload_failed_or_not_started"}\n' > .ops-results/hmao-sme-derived-upload-status.json
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .ops-results/hmao-sme-derived-upload-status.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record historical HMAO SME staging result"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hmao-sme-derived-counts-status
+          path: .ops-results/hmao-sme-derived-upload-status.json
+          if-no-files-found: warn
+          retention-days: 7
