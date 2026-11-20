@@ -38,6 +38,20 @@ assert.match(populationTrend, /item\.unit === 'человек'/);
 assert.match(populationTrend, /matches\.length !== 1/);
 assert.doesNotMatch(populationTrend, /population_settlement/);
 
+const investmentStart = source.indexOf('const modalInvestmentSnapshots = useMemo');
+const investmentEnd = source.indexOf('const modalBudgetSnapshots', investmentStart);
+assert.ok(investmentStart >= 0 && investmentEnd > investmentStart, 'municipal investment selector must exist');
+const investment = source.slice(investmentStart, investmentEnd);
+assert.match(investment, /fixed_capital_investment_non_mining/);
+assert.match(investment, /investugra_municipal_rating_report_2023/);
+assert.match(investment, /item\.verification_status === 'verified'/);
+assert.match(investment, /item\.geographic_level === 'municipality'/);
+assert.match(investment, /\[2022, 2023\]/);
+assert.match(investment, /item\.reference_period === 'annual'/);
+assert.match(investment, /item\.unit === 'руб\.'/);
+assert.match(source, /Номинальные суммы приведены в текущих ценах/);
+assert.doesNotMatch(investment, /population_settlement/);
+
 const budgetStart = source.indexOf('const modalBudgetSnapshots = useMemo');
 const budgetEnd = source.indexOf('const modalDataCoverage', budgetStart);
 assert.ok(budgetStart >= 0 && budgetEnd > budgetStart, 'municipal budget selector must exist');
