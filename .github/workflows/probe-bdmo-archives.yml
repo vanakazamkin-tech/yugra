@@ -63,7 +63,7 @@ jobs:
             with urlopen(req,timeout=8) as response:
               tail=response.read()
               print("SECTION31_RANGE",response.status,response.headers.get("Content-Range"),len(tail))
-              pos=tail.rfind(b"PK\\x05\\x06")
+              pos=tail.rfind(b"PK\x05\x06")
               if pos>=0 and len(tail)>=pos+22:
                 entries=struct.unpack_from("<H",tail,pos+10)[0]
                 cd_size=struct.unpack_from("<I",tail,pos+12)[0]
@@ -76,7 +76,7 @@ jobs:
                     found=[]
                     cursor=0
                     while cursor+46 <= len(directory):
-                      if directory[cursor:cursor+4] != b"PK\\x01\\x02":
+                      if directory[cursor:cursor+4] != b"PK\x01\x02":
                         break
                       vals=struct.unpack_from("<4s6H3I5H2I",directory,cursor)
                       nlen,elen,clen=vals[10],vals[11],vals[12]
