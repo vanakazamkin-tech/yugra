@@ -194,7 +194,12 @@ def extract_member(remote: HttpRangeFile, info: zipfile.ZipInfo, source_code: st
             municipality_id, municipality_name = MUNICIPALITIES[oktmo]
             year = parse_year(clean)
             digest = hashlib.sha256(
-                json.dumps(clean, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                json.dumps(
+                    {"source_member": info.filename, "record": clean},
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
             ).hexdigest()
             if digest in state["seen"]: continue
             state["seen"].add(digest)
