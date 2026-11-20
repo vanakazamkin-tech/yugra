@@ -1,0 +1,496 @@
+{
+  "snapshot": "2026-11-10",
+  "archive_size_bytes": 2169961249,
+  "sampled_members": 12,
+  "sampled_member_limit": 100,
+  "range_requests": 203,
+  "range_bytes_downloaded": 29980820,
+  "region86_records_sampled": 955,
+  "field_value_counts": {
+    "Регион": [
+      {
+        "value": "Ханты-Мансийский Автономный округ - Югра",
+        "count": 942
+      },
+      {
+        "value": "ХАНТЫ-МАНСИЙСКИЙ АВТОНОМНЫЙ ОКРУГ - ЮГРА",
+        "count": 13
+      }
+    ],
+    "Район": [
+      {
+        "value": "Сургутский",
+        "count": 20
+      },
+      {
+        "value": "Нижневартовский",
+        "count": 12
+      },
+      {
+        "value": "Нефтеюганский",
+        "count": 6
+      },
+      {
+        "value": "Советский",
+        "count": 3
+      },
+      {
+        "value": "Березовский",
+        "count": 2
+      },
+      {
+        "value": "Кондинский",
+        "count": 2
+      },
+      {
+        "value": "Ханты-Мансийский",
+        "count": 2
+      },
+      {
+        "value": "НИЖНЕВАРТОВСКИЙ",
+        "count": 1
+      },
+      {
+        "value": "Октябрьский",
+        "count": 1
+      }
+    ],
+    "Город": [
+      {
+        "value": "Нижневартовск",
+        "count": 736
+      },
+      {
+        "value": "Сургут",
+        "count": 70
+      },
+      {
+        "value": "Нефтеюганск",
+        "count": 24
+      },
+      {
+        "value": "Ханты-Мансийск",
+        "count": 18
+      },
+      {
+        "value": "Мегион",
+        "count": 15
+      },
+      {
+        "value": "Пыть-Ях",
+        "count": 9
+      },
+      {
+        "value": "НИЖНЕВАРТОВСК",
+        "count": 8
+      },
+      {
+        "value": "Радужный",
+        "count": 4
+      },
+      {
+        "value": "Нягань",
+        "count": 4
+      },
+      {
+        "value": "СУРГУТ",
+        "count": 3
+      },
+      {
+        "value": "Лангепас",
+        "count": 3
+      },
+      {
+        "value": "Белоярский",
+        "count": 3
+      },
+      {
+        "value": "Югорск",
+        "count": 3
+      },
+      {
+        "value": "Урай",
+        "count": 3
+      },
+      {
+        "value": "Лянтор",
+        "count": 2
+      },
+      {
+        "value": "Когалым",
+        "count": 2
+      },
+      {
+        "value": "Советский",
+        "count": 2
+      },
+      {
+        "value": "НЯГАНЬ",
+        "count": 1
+      }
+    ],
+    "НаселПункт": [
+      {
+        "value": "Федоровский",
+        "count": 9
+      },
+      {
+        "value": "Излучинск",
+        "count": 8
+      },
+      {
+        "value": "Солнечный",
+        "count": 5
+      },
+      {
+        "value": "Сингапай",
+        "count": 3
+      },
+      {
+        "value": "Белый Яр",
+        "count": 2
+      },
+      {
+        "value": "Игрим",
+        "count": 2
+      },
+      {
+        "value": "Барсово",
+        "count": 2
+      },
+      {
+        "value": "Былино",
+        "count": 1
+      },
+      {
+        "value": "Алябьевский",
+        "count": 1
+      },
+      {
+        "value": "Каркатеевы",
+        "count": 1
+      },
+      {
+        "value": "Пойковский",
+        "count": 1
+      },
+      {
+        "value": "15-й",
+        "count": 1
+      },
+      {
+        "value": "Андра",
+        "count": 1
+      },
+      {
+        "value": "Болчары",
+        "count": 1
+      },
+      {
+        "value": "Горноправдинск",
+        "count": 1
+      },
+      {
+        "value": "Шапша",
+        "count": 1
+      },
+      {
+        "value": "Междуреченский",
+        "count": 1
+      }
+    ]
+  },
+  "common_geography_tuples": [
+    {
+      "district": "",
+      "city": "Нижневартовск",
+      "settlement": "",
+      "count": 736
+    },
+    {
+      "district": "",
+      "city": "Сургут",
+      "settlement": "",
+      "count": 70
+    },
+    {
+      "district": "",
+      "city": "Нефтеюганск",
+      "settlement": "",
+      "count": 23
+    },
+    {
+      "district": "",
+      "city": "Ханты-Мансийск",
+      "settlement": "",
+      "count": 18
+    },
+    {
+      "district": "",
+      "city": "Мегион",
+      "settlement": "",
+      "count": 15
+    },
+    {
+      "district": "Сургутский",
+      "city": "",
+      "settlement": "Федоровский",
+      "count": 9
+    },
+    {
+      "district": "",
+      "city": "Пыть-Ях",
+      "settlement": "",
+      "count": 9
+    },
+    {
+      "district": "",
+      "city": "НИЖНЕВАРТОВСК",
+      "settlement": "",
+      "count": 8
+    },
+    {
+      "district": "Нижневартовский",
+      "city": "",
+      "settlement": "Излучинск",
+      "count": 8
+    },
+    {
+      "district": "Сургутский",
+      "city": "",
+      "settlement": "Солнечный",
+      "count": 5
+    },
+    {
+      "district": "",
+      "city": "Радужный",
+      "settlement": "",
+      "count": 4
+    },
+    {
+      "district": "",
+      "city": "Нягань",
+      "settlement": "",
+      "count": 4
+    },
+    {
+      "district": "",
+      "city": "СУРГУТ",
+      "settlement": "",
+      "count": 3
+    },
+    {
+      "district": "Нефтеюганский",
+      "city": "",
+      "settlement": "Сингапай",
+      "count": 3
+    },
+    {
+      "district": "Нижневартовский",
+      "city": "",
+      "settlement": "",
+      "count": 3
+    },
+    {
+      "district": "",
+      "city": "Лангепас",
+      "settlement": "",
+      "count": 3
+    },
+    {
+      "district": "",
+      "city": "Белоярский",
+      "settlement": "",
+      "count": 3
+    },
+    {
+      "district": "",
+      "city": "Югорск",
+      "settlement": "",
+      "count": 3
+    },
+    {
+      "district": "",
+      "city": "Урай",
+      "settlement": "",
+      "count": 3
+    },
+    {
+      "district": "Сургутский",
+      "city": "",
+      "settlement": "Белый Яр",
+      "count": 2
+    },
+    {
+      "district": "Сургутский",
+      "city": "Лянтор",
+      "settlement": "",
+      "count": 2
+    },
+    {
+      "district": "Березовский",
+      "city": "",
+      "settlement": "Игрим",
+      "count": 2
+    },
+    {
+      "district": "",
+      "city": "Когалым",
+      "settlement": "",
+      "count": 2
+    },
+    {
+      "district": "Сургутский",
+      "city": "",
+      "settlement": "Барсово",
+      "count": 2
+    },
+    {
+      "district": "Советский",
+      "city": "Советский",
+      "settlement": "",
+      "count": 2
+    },
+    {
+      "district": "",
+      "city": "НЯГАНЬ",
+      "settlement": "",
+      "count": 1
+    },
+    {
+      "district": "Нижневартовский",
+      "city": "",
+      "settlement": "Былино",
+      "count": 1
+    },
+    {
+      "district": "НИЖНЕВАРТОВСКИЙ",
+      "city": "",
+      "settlement": "",
+      "count": 1
+    },
+    {
+      "district": "Советский",
+      "city": "",
+      "settlement": "Алябьевский",
+      "count": 1
+    },
+    {
+      "district": "Нефтеюганский",
+      "city": "",
+      "settlement": "Каркатеевы",
+      "count": 1
+    },
+    {
+      "district": "Нефтеюганский",
+      "city": "",
+      "settlement": "Пойковский",
+      "count": 1
+    },
+    {
+      "district": "",
+      "city": "Нефтеюганск",
+      "settlement": "15-й",
+      "count": 1
+    },
+    {
+      "district": "Октябрьский",
+      "city": "",
+      "settlement": "Андра",
+      "count": 1
+    },
+    {
+      "district": "Кондинский",
+      "city": "",
+      "settlement": "Болчары",
+      "count": 1
+    },
+    {
+      "district": "Ханты-Мансийский",
+      "city": "",
+      "settlement": "Горноправдинск",
+      "count": 1
+    },
+    {
+      "district": "Нефтеюганский",
+      "city": "",
+      "settlement": "",
+      "count": 1
+    },
+    {
+      "district": "Ханты-Мансийский",
+      "city": "",
+      "settlement": "Шапша",
+      "count": 1
+    },
+    {
+      "district": "Кондинский",
+      "city": "",
+      "settlement": "Междуреченский",
+      "count": 1
+    }
+  ],
+  "sample_members": [
+    {
+      "member": "VO_RRMSPSV_0000_9965_20261110_00cd15f8-f62e-4dac-b629-631cc6d18dc1.xml",
+      "region86_records": 0,
+      "crc32": "ok"
+    },
+    {
+      "member": "VO_RRMSPSV_0000_9965_20261110_00d67de6-962a-472c-af32-a10cc3d2e461.xml",
+      "region86_records": 7,
+      "crc32": "ok"
+    },
+    {
+      "member": "VO_RRMSPSV_0000_9965_20261110_00f0bd90-d558-4194-a387-a0b65801bca9.xml",
+      "region86_records": 0,
+      "crc32": "ok"
+    },
+    {
+      "member": "VO_RRMSPSV_0000_9965_20261110_00f150a1-6ac5-4764-8d15-3b5a172e3200.xml",
+      "region86_records": 24,
+      "crc32": "ok"
+    },
+    {
+      "member": "VO_RRMSPSV_0000_9965_20261110_0a0cccb4-e485-4e63-b8af-9e0527e4d99b.xml",
+      "region86_records": 0,
+      "crc32": "ok"
+    },
+    {
+      "member": "VO_RRMSPSV_0000_9965_20261110_0a1c1366-e2b8-4ef4-9f86-37094eff1e30.xml",
+      "region86_records": 0,
+      "crc32": "ok"
+    },
+    {
+      "member": "VO_RRMSPSV_0000_9965_20261110_0a1dd1f7-332f-418e-8a03-b5e22d1f28f6.xml",
+      "region86_records": 3,
+      "crc32": "ok"
+    },
+    {
+      "member": "VO_RRMSPSV_0000_9965_20261110_0a1e6794-60be-41f0-8252-74822239916e.xml",
+      "region86_records": 7,
+      "crc32": "ok"
+    },
+    {
+      "member": "VO_RRMSPSV_0000_9965_20261110_0a1f3c32-7047-42c5-904c-11666d22d66d.xml",
+      "region86_records": 721,
+      "crc32": "ok"
+    },
+    {
+      "member": "VO_RRMSPSV_0000_9965_20261110_0a1fa617-8889-4736-a9fc-d9cfedc1f0d4.xml",
+      "region86_records": 0,
+      "crc32": "ok"
+    },
+    {
+      "member": "VO_RRMSPSV_0000_9965_20261110_0a3b8e0d-0589-4032-816c-b5fe46bb5550.xml",
+      "region86_records": 0,
+      "crc32": "ok"
+    },
+    {
+      "member": "VO_RRMSPSV_0000_9965_20261110_0a4f58fe-c205-42fa-8d56-747c57e7d5e9.xml",
+      "region86_records": 0,
+      "crc32": "ok"
+    }
+  ],
+  "privacy_note": "Only aggregate geography labels/counts. No taxpayer identifiers, enterprise names, personal names, INNs, OGRNs, street or house values are collected."
+}
