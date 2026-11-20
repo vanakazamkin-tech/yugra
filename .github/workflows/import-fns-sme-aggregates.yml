@@ -1,0 +1,78 @@
+name: Aggregate FNS SME registry to Yugra municipalities
+
+on:
+  push:
+    branches:
+      - ops/extract-hmao-demography-2026-11
+    paths:
+      - ".github/workflows/import-fns-sme-aggregates.yml"
+      - "scripts/ops/aggregate_fns_sme_registry.py"
+      - "scripts/ops/upload_fns_sme_municipality_aggregates.py"
+  workflow_dispatch:
+
+concurrency:
+  group: fns-sme-aggregate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  aggregate-and-stage:
+    name: Aggregate full FNS SME snapshot and upload municipal counts
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Aggregate the full FNS XML ZIP by 22 municipalities
+        id: aggregate
+        run: python scripts/ops/aggregate_fns_sme_registry.py
+
+      - name: Upload 7 aggregate measures per municipality to private review staging
+        if: steps.aggregate.outcome == 'success'
+        env:
+          SUPABASE_URL: https://dmbikidqikjupkghywbz.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/ops/upload_fns_sme_municipality_aggregates.py
+
+      - name: Publish aggregate-only reports to dev branch
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p .ops-results fns-sme-full-aggregation
+          if [ -f fns-sme-full-aggregation/fns-sme-aggregates.json ]; then
+            cp fns-sme-full-aggregation/fns-sme-aggregates.json .ops-results/fns-sme-aggregates.json
+          else
+            printf '{"status":"aggregation_failed_before_report"}\n' > .ops-results/fns-sme-aggregates.json
+          fi
+          if [ -f fns-sme-full-aggregation/fns-sme-upload-status.json ]; then
+            cp fns-sme-full-aggregation/fns-sme-upload-status.json .ops-results/fns-sme-upload-status.json
+          else
+            printf '{"status":"upload_not_completed"}\n' > .ops-results/fns-sme-upload-status.json
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .ops-results/fns-sme-aggregates.json .ops-results/fns-sme-upload-status.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record FNS SME municipal aggregate result"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Save aggregate-only artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fns-sme-yugra-municipal-aggregates
+          path: |
+            fns-sme-full-aggregation/fns-sme-aggregates.json
+            fns-sme-full-aggregation/fns-sme-upload-status.json
+          if-no-files-found: warn
+          retention-days: 7
