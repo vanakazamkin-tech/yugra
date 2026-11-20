@@ -1,1 +1,28 @@
-{"status":"upload_failed_or_not_started"}
+{
+  "status": "uploaded_to_review_staging",
+  "dataset_version": "20260605",
+  "registry_snapshot_date": "2025-12-10",
+  "municipality_count": 22,
+  "staging_rows": 132,
+  "staging_rows_by_measure": {
+    "sme_entities_count_fns_derived": 22,
+    "sme_legal_entities_count_fns_derived": 22,
+    "sme_individual_entrepreneurs_count_fns_derived": 22,
+    "sme_microenterprise_count_fns_derived": 22,
+    "sme_small_enterprise_count_fns_derived": 22,
+    "sme_medium_enterprise_count_fns_derived": 22
+  },
+  "mapped_entities_total": 64592,
+  "mapped_entities_by_measure": {
+    "sme_entities_count_fns_derived": 64592,
+    "sme_legal_entities_count_fns_derived": 16582,
+    "sme_individual_entrepreneurs_count_fns_derived": 48010,
+    "sme_microenterprise_count_fns_derived": 62465,
+    "sme_small_enterprise_count_fns_derived": 1902,
+    "sme_medium_enterprise_count_fns_derived": 225
+  },
+  "unmapped_region_wide_okrmo_records_excluded": 192,
+  "all_pending": true,
+  "financial_panel_staged": false,
+  "note": "Annual legal-entity revenue/expenditure/employees panel is retained in the aggregate-only research report but not imported as SME turnover because coverage is incomplete and excludes individual entrepreneurs."
+}
