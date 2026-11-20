@@ -30,7 +30,8 @@ jobs:
           ]
           for base in bases:
             for code in codes:
-              name = f"data_Y4{code}_region71_112_v{base.split('_v')[-1]}.zip"
+              version = base.rsplit("_v", 1)[1].split("/")[0]
+              name = f"data_Y4{code}_region71_112_v{version}.zip"
               url = f"{base}/{name}"
               try:
                 req=Request(url,method="HEAD",headers={"User-Agent":"Yugra18-source-probe/1.0"})
