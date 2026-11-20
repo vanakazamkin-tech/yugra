@@ -1,11 +1,11 @@
 {
   "job": "extract",
-  "exit_code": 1,
-  "ok": false,
+  "exit_code": 0,
+  "ok": true,
   "all_source_series_found": false,
-  "total_rows": 0,
-  "range_requests": 4,
-  "archive_bytes_downloaded_via_ranges": 488363,
+  "total_rows": 43549,
+  "range_requests": 18,
+  "archive_bytes_downloaded_via_ranges": 2855071,
   "source_archive": "https://storage.yandexcloud.net/tochno-st-catalog/Rosstat/data_bdmo_118_v20260928/by_indicator/data_section32_112_v20260928.zip",
   "archive_csv_member_count": 2108,
   "archive_csv_member_names": [
@@ -516,12 +516,94 @@
       "candidate_bdmo_codes": [
         "8423001"
       ],
-      "status": "no_member_found",
-      "matched_members": [],
-      "matched_rows": 0,
-      "municipalities_matched": 0,
-      "missing_municipalities": [],
-      "rows_by_year": {}
+      "status": "extracted",
+      "matched_members": [
+        "data_Y48423001_112_v20260928.csv"
+      ],
+      "matched_rows": 21,
+      "municipalities_matched": 7,
+      "missing_municipalities": [
+        {
+          "oktmo": "71811000",
+          "municipality_id": "beloyarsky-raion",
+          "name": "Белоярский район"
+        },
+        {
+          "oktmo": "71883000",
+          "municipality_id": "kogalym",
+          "name": "Когалым"
+        },
+        {
+          "oktmo": "71816000",
+          "municipality_id": "kondinsky-raion",
+          "name": "Кондинский район"
+        },
+        {
+          "oktmo": "71873000",
+          "municipality_id": "megion",
+          "name": "Мегион"
+        },
+        {
+          "oktmo": "71818000",
+          "municipality_id": "nefteyugansky-raion",
+          "name": "Нефтеюганский район"
+        },
+        {
+          "oktmo": "71875000",
+          "municipality_id": "nizhnevartovsk",
+          "name": "Нижневартовск"
+        },
+        {
+          "oktmo": "71819000",
+          "municipality_id": "nizhnevartovsky-raion",
+          "name": "Нижневартовский район"
+        },
+        {
+          "oktmo": "71821000",
+          "municipality_id": "october-raion",
+          "name": "Октябрьский район"
+        },
+        {
+          "oktmo": "71884000",
+          "municipality_id": "pokachi",
+          "name": "Покачи"
+        },
+        {
+          "oktmo": "71885000",
+          "municipality_id": "pyt-yah",
+          "name": "Пыть-Ях"
+        },
+        {
+          "oktmo": "71824000",
+          "municipality_id": "sovetsky-raion",
+          "name": "Советский район"
+        },
+        {
+          "oktmo": "71876000",
+          "municipality_id": "surgut",
+          "name": "Сургут"
+        },
+        {
+          "oktmo": "71878000",
+          "municipality_id": "uray",
+          "name": "Урай"
+        },
+        {
+          "oktmo": "71871000",
+          "municipality_id": "khanty-mansiysk",
+          "name": "Ханты-Мансийск"
+        },
+        {
+          "oktmo": "71829000",
+          "municipality_id": "khanty-mansiysky-raion",
+          "name": "Ханты-Мансийский район"
+        }
+      ],
+      "rows_by_year": {
+        "2017": 9,
+        "2019": 10,
+        "2020": 2
+      }
     },
     {
       "source_indicator_code": "1134431020016",
@@ -530,11 +612,126 @@
         "8423003",
         "8423004"
       ],
-      "status": "no_member_found",
-      "matched_members": [],
+      "status": "no_region71_yugra_rows",
+      "matched_members": [
+        "data_Y48423002_112_v20260928.csv",
+        "data_Y48423003_112_v20260928.csv",
+        "data_Y48423004_112_v20260928.csv"
+      ],
       "matched_rows": 0,
       "municipalities_matched": 0,
-      "missing_municipalities": [],
+      "missing_municipalities": [
+        {
+          "oktmo": "71811000",
+          "municipality_id": "beloyarsky-raion",
+          "name": "Белоярский район"
+        },
+        {
+          "oktmo": "71812000",
+          "municipality_id": "berezovsky-raion",
+          "name": "Берёзовский район"
+        },
+        {
+          "oktmo": "71883000",
+          "municipality_id": "kogalym",
+          "name": "Когалым"
+        },
+        {
+          "oktmo": "71816000",
+          "municipality_id": "kondinsky-raion",
+          "name": "Кондинский район"
+        },
+        {
+          "oktmo": "71872000",
+          "municipality_id": "langepas",
+          "name": "Лангепас"
+        },
+        {
+          "oktmo": "71873000",
+          "municipality_id": "megion",
+          "name": "Мегион"
+        },
+        {
+          "oktmo": "71874000",
+          "municipality_id": "nefteyugansk",
+          "name": "Нефтеюганск"
+        },
+        {
+          "oktmo": "71818000",
+          "municipality_id": "nefteyugansky-raion",
+          "name": "Нефтеюганский район"
+        },
+        {
+          "oktmo": "71875000",
+          "municipality_id": "nizhnevartovsk",
+          "name": "Нижневартовск"
+        },
+        {
+          "oktmo": "71819000",
+          "municipality_id": "nizhnevartovsky-raion",
+          "name": "Нижневартовский район"
+        },
+        {
+          "oktmo": "71879000",
+          "municipality_id": "nyagan-city",
+          "name": "Нягань"
+        },
+        {
+          "oktmo": "71821000",
+          "municipality_id": "october-raion",
+          "name": "Октябрьский район"
+        },
+        {
+          "oktmo": "71884000",
+          "municipality_id": "pokachi",
+          "name": "Покачи"
+        },
+        {
+          "oktmo": "71885000",
+          "municipality_id": "pyt-yah",
+          "name": "Пыть-Ях"
+        },
+        {
+          "oktmo": "71877000",
+          "municipality_id": "raduzhny",
+          "name": "Радужный"
+        },
+        {
+          "oktmo": "71824000",
+          "municipality_id": "sovetsky-raion",
+          "name": "Советский район"
+        },
+        {
+          "oktmo": "71876000",
+          "municipality_id": "surgut",
+          "name": "Сургут"
+        },
+        {
+          "oktmo": "71826000",
+          "municipality_id": "surgutsky",
+          "name": "Сургутский район"
+        },
+        {
+          "oktmo": "71878000",
+          "municipality_id": "uray",
+          "name": "Урай"
+        },
+        {
+          "oktmo": "71871000",
+          "municipality_id": "khanty-mansiysk",
+          "name": "Ханты-Мансийск"
+        },
+        {
+          "oktmo": "71829000",
+          "municipality_id": "khanty-mansiysky-raion",
+          "name": "Ханты-Мансийский район"
+        },
+        {
+          "oktmo": "71887000",
+          "municipality_id": "ugorsk",
+          "name": "Югорск"
+        }
+      ],
       "rows_by_year": {}
     },
     {
@@ -543,12 +740,25 @@
         "8423005",
         "8423015"
       ],
-      "status": "no_member_found",
-      "matched_members": [],
-      "matched_rows": 0,
-      "municipalities_matched": 0,
+      "status": "extracted",
+      "matched_members": [
+        "data_Y48423005_parts/data_Y48423005_region71_112_v20260928.csv"
+      ],
+      "matched_rows": 14031,
+      "municipalities_matched": 22,
       "missing_municipalities": [],
-      "rows_by_year": {}
+      "rows_by_year": {
+        "2017": 1405,
+        "2018": 1549,
+        "2019": 1529,
+        "2020": 1554,
+        "2021": 1535,
+        "2022": 1531,
+        "2023": 1528,
+        "2024": 1526,
+        "2025": 1494,
+        "2026": 380
+      }
     },
     {
       "source_indicator_code": "2152320020022",
@@ -556,12 +766,25 @@
         "8423006",
         "8423016"
       ],
-      "status": "no_member_found",
-      "matched_members": [],
-      "matched_rows": 0,
-      "municipalities_matched": 0,
+      "status": "extracted",
+      "matched_members": [
+        "data_Y48423006_parts/data_Y48423006_region71_112_v20260928.csv"
+      ],
+      "matched_rows": 14127,
+      "municipalities_matched": 22,
       "missing_municipalities": [],
-      "rows_by_year": {}
+      "rows_by_year": {
+        "2017": 1406,
+        "2018": 1569,
+        "2019": 1547,
+        "2020": 1564,
+        "2021": 1541,
+        "2022": 1535,
+        "2023": 1540,
+        "2024": 1540,
+        "2025": 1503,
+        "2026": 382
+      }
     },
     {
       "source_indicator_code": "2211110020001",
@@ -569,12 +792,25 @@
         "8423007",
         "8423017"
       ],
-      "status": "no_member_found",
-      "matched_members": [],
-      "matched_rows": 0,
-      "municipalities_matched": 0,
+      "status": "extracted",
+      "matched_members": [
+        "data_Y48423007_parts/data_Y48423007_region71_112_v20260928.csv"
+      ],
+      "matched_rows": 15370,
+      "municipalities_matched": 22,
       "missing_municipalities": [],
-      "rows_by_year": {}
+      "rows_by_year": {
+        "2017": 1666,
+        "2018": 1730,
+        "2019": 1726,
+        "2020": 1719,
+        "2021": 1709,
+        "2022": 1700,
+        "2023": 1704,
+        "2024": 1532,
+        "2025": 1503,
+        "2026": 381
+      }
     }
   ]
 }
