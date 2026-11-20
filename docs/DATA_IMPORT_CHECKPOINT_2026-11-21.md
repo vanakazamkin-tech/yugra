@@ -124,3 +124,19 @@ Important interpretation:
 5. Only after review, accept selected staging rows into `public.municipality_indicators`.
 
 Do not merge the operational branch into `main` or alter the public site as part of this staging task.
+
+
+## Additional official regional source identified — Demographic yearbook 2021–2025
+
+- Source ID: `rosstat_hmao_demographic_yearbook_2021_2025`
+- Source PDF: https://72.rosstat.gov.ru/storage/mediabank/18129.pdf
+- Official regional statistical office catalogue description says the edition covers HMAO urban okrugs and municipal districts and includes births, deaths, migration flows, population composition and demographic coefficients.
+- The catalogue card lists a price of **2,659 RUB** for the issue.
+- A Supabase `data_sources` catalogue record has been added with status `identified`.
+- **No PDF tables have been extracted and no rows from this source have been uploaded.** The source description alone is not evidence of observed values.
+- The PDF could not be retrieved/rendered through the available automated download path during this run; no unsafe TLS bypass was used.
+- This is the priority source candidate for refreshing municipal-level 8112001/8112003/8112004/8112007/8112008/8112009 and potentially updating 8112021/8112022/8112023 for 2021–2025, after obtaining the full edition and inspecting its tables.
+
+Official metadata references located during research:
+- Tochno current BDMO catalogue page describes 603 indicators in 33 sections, including Population section 31, with per-indicator downloads; sections 31 and 32 are available only by indicator because of their size.
+- Rosstat indicator definitions identify 8112001/8112003/8112004/8112007/8112008/8112009 as annual demographic indicators, with births/deaths and rates calculated from EGR ZAGS data; migration codes 8112021/8112022/8112023 are derived from annual migration tables/forms.
