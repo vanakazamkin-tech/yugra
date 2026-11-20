@@ -46,13 +46,15 @@ jobs:
           for item in summary.get("indicators", []):
               indicators.append({
                   "source_indicator_code": item.get("source_indicator_code"),
-                  "candidate_bdmo_codes": item.get("candidate_bdmo_codes"),
+                  "rosstat_form_code": item.get("rosstat_form_code"),
                   "status": item.get("status"),
                   "matched_members": item.get("matched_members", []),
                   "matched_rows": item.get("matched_rows", 0),
                   "municipalities_matched": item.get("municipalities_matched", 0),
                   "missing_municipalities": item.get("missing_municipalities", []),
                   "rows_by_year": item.get("rows_by_year", {}),
+                  "dimension_fields": item.get("dimension_fields", {}),
+                  "members": item.get("members", []),
               })
           result = {
               "job": "extract",
