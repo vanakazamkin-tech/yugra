@@ -1,0 +1,53 @@
+name: Upload current HMAO core demographic indicators to Supabase staging
+
+on:
+  push:
+    branches:
+      - ops/extract-hmao-demography-2026-11
+    paths:
+      - ".github/workflows/upload-hmao-core-demography.yml"
+      - "scripts/ops/upload_hmao_core_demography_staging.py"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  upload:
+    name: Upload six current source indicators to review staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download verified six-indicator extract
+        uses: actions/download-artifact@v4
+        with:
+          name: hmao-core-demography-2026-extract
+          path: demography-core-2026-extract
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: 44810471027
+
+      - name: Upload pending review rows to Supabase
+        env:
+          SUPABASE_URL: https://dmbikidqikjupkghywbz.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_BATCH_SIZE: "100"
+          STAGING_UPLOAD_WORKERS: "3"
+        run: python scripts/ops/upload_hmao_core_demography_staging.py
+
+      - name: Upload core staging report
+        uses: actions/upload-artifact@v4
+        with:
+          name: hmao-core-demography-staging-report
+          path: demography-core-2026-extract/staging-upload-core-report.json
+          if-no-files-found: error
+          retention-days: 7
