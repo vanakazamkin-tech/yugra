@@ -102,12 +102,19 @@ def geo_element_value(node: ET.Element) -> str:
     text = " ".join(" ".join(node.itertext()).split())
     return text[:180]
 
+def normalized_date(value: str) -> str:
+    value = str(value or "").strip()
+    if re.fullmatch(r"\\d{2}\\.\\d{2}\\.\\d{4}", value):
+        day, month, year = value.split(".")
+        return f"{year}-{month}-{day}"
+    return value
+
 def municipality_for(doc: ET.Element):
     region_code = ""
     district = ""
     city = ""
     settlement = ""
-    snapshot_date = str(doc.attrib.get("ДатаСост", "")).strip()
+    snapshot_date = normalized_date(doc.attrib.get("ДатаСост", ""))
     for node in doc.iter():
         tag = local(node.tag).lower()
         if tag == "район":
@@ -121,11 +128,11 @@ def municipality_for(doc: ET.Element):
             if key_local == "кодрегион":
                 region_code = str(value).strip()
             elif key_local == "датасост" and not snapshot_date:
-                snapshot_date = str(value).strip()
+                snapshot_date = normalized_date(value)
         if tag == "кодрегион" and (node.text or "").strip():
             region_code = node.text.strip()
         if tag == "датасост" and (node.text or "").strip() and not snapshot_date:
-            snapshot_date = node.text.strip()
+            snapshot_date = normalized_date(node.text)
 
     if region_code != EXPECTED_REGION:
         return None, False, snapshot_date
@@ -239,6 +246,10 @@ def process_archive():
                 print(f"Processed {index:,}/{len(members):,} XML members; docs={documents_total:,}; region86={region_records:,}; unmatched={sum(unmatched.values()):,}", flush=True)
 
     total_mapped = sum(sum(x.values()) for x in entity_counts.values())
+    zip_hash = hashlib.sha256()
+    with DOWNLOAD_PATH.open("rb") as archive_file:
+        for block in iter(lambda: archive_file.read(8 * 1024 * 1024), b""):
+            zip_hash.update(block)
     mapped_municipalities = sorted(entity_counts.keys())
     missing_municipalities = sorted(set(MUNICIPALITIES) - set(mapped_municipalities))
     report = {
@@ -246,7 +257,7 @@ def process_archive():
         "source_url": PASSPORT_URL,
         "zip_url": ZIP_URL,
         "snapshot_date": SNAPSHOT,
-        "zip_sha256": hashlib.sha256(DOWNLOAD_PATH.read_bytes()).hexdigest(),
+        "zip_sha256": zip_hash.hexdigest(),
         "zip_size_bytes": DOWNLOAD_PATH.stat().st_size,
         "xml_member_count": xml_member_count,
         "documents_total": documents_total,
