@@ -10,9 +10,17 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 SOURCE_ID = "tochno_bdmo_hmao_20260928"
-SOURCE_CODES = {
-    "1134431020014", "1134431020016",
-    "1121100010003", "2152320020022", "2211110020001",
+SOURCE_FORM_BY_BDMO = {
+    "8423001": "1134431020014",
+    "8423002": "1134431020016",
+    "8423003": "1134431020016",
+    "8423004": "1134431020016",
+    "8423005": "1121100010003",
+    "8423006": "2152320020022",
+    "8423007": "2211110020001",
+    "8423015": "1121100010003",
+    "8423016": "2152320020022",
+    "8423017": "2211110020001",
 }
 BDMO_CODES = {
     "8423001", "8423002", "8423003", "8423004",
@@ -59,12 +67,14 @@ def to_numeric(raw_value: str):
     return float(value) if value.is_finite() else None
 
 def make_payload(record: dict, retrieved_at: str) -> dict:
-    source_code = str(record.get("source_indicator_code", "")).strip()
-    if source_code not in SOURCE_CODES:
-        raise RuntimeError(f"Unexpected Rosstat form code {source_code!r}")
-    bdmo_code = str(record.get("bdmo_indicator_code_from_member") or "").strip()
+    bdmo_code = str(record.get("source_indicator_code", "")).strip()
     if bdmo_code not in BDMO_CODES:
-        raise RuntimeError(f"Could not resolve BDMO indicator code from member {record.get('source_member')!r}")
+        raise RuntimeError(f"Unexpected BDPMO indicator code {bdmo_code!r}")
+    source_code = str(record.get("rosstat_form_code", "")).strip()
+    if source_code != SOURCE_FORM_BY_BDMO[bdmo_code]:
+        raise RuntimeError(f"Unexpected Rosstat form code for {bdmo_code}: {source_code!r}")
+    if str(record.get("bdmo_indicator_code_from_member") or "").strip() != bdmo_code:
+        raise RuntimeError(f"BDPMO code/member mismatch for {bdmo_code}: {record.get('source_member')!r}")
     attrs = record.get("attributes") or {}
     oktmo = str(record.get("oktmo", "")).strip()
     municipality_id = str(record.get("municipality_id", "")).strip()
@@ -95,7 +105,6 @@ def make_payload(record: dict, retrieved_at: str) -> dict:
     raw_record["_source_row_sha256"] = digest
     raw_record["_source_statistical_form_code"] = source_code
     raw_record["_bdmo_indicator_code"] = bdmo_code
-    raw_record["_candidate_bdmo_indicator_codes"] = record.get("candidate_bdmo_indicator_codes", [])
 
     return {
         "source_id": SOURCE_ID,
@@ -156,18 +165,17 @@ def main() -> int:
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
     if summary.get("ok") is not True: raise RuntimeError("No HMAO employment data extracted")
     items = {str(x.get("source_indicator_code")): x for x in summary.get("indicators", [])}
-    if set(items) != SOURCE_CODES: raise RuntimeError(f"Source series manifest mismatch: {sorted(items)}")
+    if set(items) != BDMO_CODES: raise RuntimeError(f"BDPMO indicator manifest mismatch: {sorted(items)}")
 
     retrieved_at = datetime.now(timezone.utc).isoformat()
     prepared_dir = Path(tempfile.mkdtemp(prefix="yugra-employment-staging-"))
     totals = Counter()
-    municipalities = {c: set() for c in SOURCE_CODES}
-    years = {c: [] for c in SOURCE_CODES}
-    bdmo_totals = Counter()
-    bdmo_municipalities = {c: set() for c in BDMO_CODES}
+    municipalities = {c: set() for c in BDMO_CODES}
+    years = {c: [] for c in BDMO_CODES}
+    rosstat_totals = Counter()
     blanks, non_numeric = Counter(), Counter()
     prepared = []
-    for code in sorted(SOURCE_CODES):
+    for code in sorted(BDMO_CODES):
         source_file = data_dir / f"{code}_region71_rows.jsonl.gz"
         expected = int(items[code].get("matched_rows", 0))
         if not expected or not source_file.exists(): continue
@@ -182,9 +190,7 @@ def main() -> int:
                 totals[code] += 1
                 municipalities[code].add(payload["mapped_municipality_id"])
                 years[code].append(payload["raw_year"])
-                bdmo_code = payload["raw_indicator_code"]
-                bdmo_totals[bdmo_code] += 1
-                bdmo_municipalities[bdmo_code].add(payload["mapped_municipality_id"])
+                rosstat_totals[SOURCE_FORM_BY_BDMO[code]] += 1
                 if not payload["raw_value"]: blanks[code] += 1
                 if "source_value_not_numeric" in payload["validation_errors"]: non_numeric[code] += 1
         if totals[code] != expected: raise RuntimeError(f"{code}: summary {expected}, prepared {totals[code]}")
@@ -238,17 +244,17 @@ def main() -> int:
         "status": "submitted_to_review_staging",
         "source_id": SOURCE_ID,
         "submitted_rows": submitted,
-        "source_rows_by_rosstat_code": dict(sorted(totals.items())),
-        "source_rows_by_bdmo_indicator_code": dict(sorted(bdmo_totals.items())),
+        "source_rows_by_rosstat_code": dict(sorted(rosstat_totals.items())),
+        "source_rows_by_bdmo_indicator_code": dict(sorted(totals.items())),
         "municipalities_by_bdmo_indicator_code": {
-            code: len(bdmo_municipalities[code]) for code in sorted(bdmo_totals)
+            code: len(municipalities[code]) for code in sorted(BDMO_CODES) if totals[code]
         },
-        "missing_source_series": [c for c in sorted(SOURCE_CODES) if not totals[c]],
+        "missing_source_series": [c for c in sorted(BDMO_CODES) if not totals[c]],
         "municipalities_by_source_code": {
-            code: len(municipalities[code]) for code in sorted(SOURCE_CODES) if totals[code]
+            code: len(municipalities[code]) for code in sorted(BDMO_CODES) if totals[code]
         },
         "years_by_source_code": {
-            code: [min(years[code]), max(years[code])] for code in sorted(SOURCE_CODES) if years[code]
+            code: [min(years[code]), max(years[code])] for code in sorted(BDMO_CODES) if years[code]
         },
         "blank_values_by_source_code": dict(sorted(blanks.items())),
         "non_numeric_values_by_source_code": dict(sorted(non_numeric.items())),
@@ -260,9 +266,9 @@ def main() -> int:
         "workers": WORKERS,
         "retrieved_at": retrieved_at,
         "note": (
-            "The raw P-4/3-F source series are staged once per source code. "
-            "BDPMO display-indicator classification remains pending so paired indicators are not double-counted. "
-            "No analytical table was modified."
+            "Each BDPMO display indicator is stored separately with its original Rosstat form code. "
+            "Municipal-owned indicators 8423015-8423017 are kept distinct. "
+            "All rows remain pending; no analytical table was modified."
         ),
     }
     (data_dir / "staging-upload-employment-report.json").write_text(
