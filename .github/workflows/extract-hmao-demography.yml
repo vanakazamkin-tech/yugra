@@ -1,0 +1,38 @@
+name: Extract HMAO demographic indicators
+
+on:
+  push:
+    branches:
+      - ops/extract-hmao-demography-2026-11
+    paths:
+      - ".github/workflows/extract-hmao-demography.yml"
+      - "scripts/ops/extract_hmao_demography.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    name: Download and filter HMAO municipality rows
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Extract only the 22 Yugra municipalities
+        run: python scripts/ops/extract_hmao_demography.py
+
+      - name: Upload filtered rows and audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: hmao-demography-extract
+          path: demography-extract/
+          if-no-files-found: error
+          retention-days: 7
