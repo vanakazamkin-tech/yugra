@@ -69,11 +69,11 @@ def make_payload(record: dict, retrieved_at: str) -> dict:
     oktmo = str(record.get("oktmo", "")).strip()
     municipality_id = str(record.get("municipality_id", "")).strip()
     if not oktmo or municipality_id not in EXPECTED_MUNICIPALITIES:
-        raise RuntimeError(f"Invalid OKTMO/municipality for {code}: {oktmo}/{municipality_id}")
+        raise RuntimeError(f"Invalid OKTMO/municipality for {source_code}: {oktmo}/{municipality_id}")
     year_text = str(record.get("year", "")).strip()
     year = int(year_text) if year_text.isdigit() else None
     if year is None or not 1900 <= year <= 2200:
-        raise RuntimeError(f"Invalid/missing year in {code}: {year_text!r}")
+        raise RuntimeError(f"Invalid/missing year in {source_code}: {year_text!r}")
     digest = str(record.get("row_sha256", "")).strip()
     if len(digest) != 64: raise RuntimeError("Invalid source row hash")
     raw_value = find_value(attrs, {
