@@ -277,3 +277,12 @@ Direct SQL verification across the 28 source IDs confirms:
 - **0** rows with `imported_indicator_id`; no analytical promotion or production/site change.
 
 Post-2022 municipal coverage has now expanded for Beryozovsky district through 2025, Langepas through the secondary 2026 snapshot, and Pyt-Yakh through the secondary 2025 report. The two remaining areas without later-than-2022 observations in the current staging set are **Kondinsky district and Nizhnevartovsk district**. The Pyt-Yakh and recent Langepas observations remain secondary and require primary-source corroboration before promotion.
+
+
+## L. Kondinsky district — primary 2025 report located, but file extraction failed
+
+The district's official website confirms the head-of-district annual report for 2025 was adopted by the district Duma on 25.02.2026, decision No.1339: [official document page](https://admkonda.ru/documents/25511.html). The page links an attached DOCX file `rdkr-2026-02-1339.docx`, but retrieval attempts through both the web document link and direct download failed. No numerical values from the DOCX were extracted or imported. The source registry contains `kondinsky_labour_2025_head_report` with status `identified`.
+
+A separate Audit Chamber conclusion No.94 dated 09.12.2025 on the 2026–2028 budget forecast (PDF) contains an estimate of 0.260 thousand registered unemployed for 2025 and 0.350 thousand for 2024, while the accompanying sentence says the 2025 value is 8 people higher than 2024. That statement conflicts with the numbers shown (260 vs 350), and both are forecast/report estimates rather than a fully reconciled annual series. These values were deliberately not entered into staging. Do not use them as actual observations.
+
+This research did not change the current staging total: **121 rows across 28 source IDs**, all pending, unique, error-free and mapped; the extra Kondinsky source is catalogue-only until the official DOCX can be read.
