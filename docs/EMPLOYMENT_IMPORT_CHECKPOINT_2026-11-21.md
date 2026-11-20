@@ -337,3 +337,77 @@ No analytical table, `main`, production deployment, or website interface was cha
 4. Check the full Beryozovsky district head-of-district report for the number of registered unemployed alongside its already staged 0.54% rate.
 5. Continue investigating the “Работа России” API only after verifying a live response and unambiguous municipality address field.
 6. Continue keeping all rows pending until the joint Stage 1/2 review and normalization. Do not change `main`, production, or the site design.
+
+
+## N. Wage-arrears municipal evidence and Stage 2 coverage control (21 November 2026)
+
+### 1. Explicit municipal observations for indicator 8423001
+
+Nine additional dated/period-specific records were added to private review staging. They are all explicitly reported as no overdue wage arrears, are stored as raw value `0` in thousand rubles, and are kept separate from the Rosstat archive observations:
+
+| Source ID | Municipality | Observation period | Evidence |
+|---|---|---|---|
+| `hmrn_wage_arrears_zero_2020` | Khanty-Mansiysky district | 31.12.2020 | District annual report, citing the territorial Rosstat office |
+| `hmrn_wage_arrears_zero_2022` | Khanty-Mansiysky district | 01.01.2022 | Duma resolution No.81 and 2021 annual report |
+| `hmrn_wage_arrears_zero_2023` | Khanty-Mansiysky district | 01.01.2023 | Duma resolution No.253 and 2022 annual report |
+| `nefteyugansky_wage_arrears_zero_2018_secondary` | Nefteyugansky district | 2018 annual results; exact day not stated | Secondary project document reproducing district administration order No.156-р dated 18.03.2019 |
+| `oktregion_wage_arrears_zero_2017` | Oktyabrsky district | End of 2017; exact day not stated | Head-of-district annual report |
+| `oktregion_wage_arrears_zero_2019` | Oktyabrsky district | 01.01.2019 | Head-of-district report for 2018 |
+| `oktregion_wage_arrears_zero_2020` | Oktyabrsky district | 01.01.2020 | Head-of-district report for 2019 |
+| `oktregion_wage_arrears_zero_2021` | Oktyabrsky district | 01.01.2021 | Head-of-district report for 2020 |
+| `oktregion_wage_arrears_zero_2022` | Oktyabrsky district | 01.01.2022 | Head-of-district report for 2021 |
+
+All nine rows were checked in Supabase: canonical municipality mapping, `review_status='pending'`, no validation errors. No zero was inferred from a blank archive row. The Nefteyugansky 2018 observation remains a secondary reproduction and needs a primary copy of the administration order/report before final analytical acceptance.
+
+Official/municipal source links:
+- HMR district annual report 2020: https://gazeta-hmrn.ru/images/PDF2021/07.pdf
+- HMR Duma resolution No.81 / 2021 report: https://www.gazeta-hmrn.ru/images/PDF2022/81rd2022.pdf
+- HMR Duma resolution No.253 / 2022 report: https://www.gazeta-hmrn.ru/images/PDF2023/253rd2023.pdf
+- Nefteyugansky district 2018 quoted report: https://ovos.ecom.su/bitstream/handle/123456789/382/%D0%A0%D0%B0%D0%B7%D0%B4%D0%B5%D0%BB%20%D0%9F%D0%94%20%E2%84%968%20%D0%9A%D0%BD%D0%B8%D0%B3%D0%B0%20%E2%84%961.pdf?isAllowed=y&sequence=4
+- Oktyabrsky reports 2017–2021: https://oktregion.ru/upload/docs/ekonomika-i-finansy/sotsialno-ekonomicheskoe-razvitie/doklady-glavy-administratsii-i-glavy-oktyabrskogo-rayona/Doklad_glavy_za_2017.pdf ; `Doklad_glavy_za_2018.pdf`, `Doklad_glavy_za_2019.pdf`, `Doklad_glavy_za_2020.pdf`, `Doklad_glavy_za_2021.pdf` in the same official directory.
+
+### 2. Final raw source coverage for the Stage 2 wage/employment codes
+
+| Code | Meaning | Rows in BDPMO section 32 | Municipal coverage | Period coverage |
+|---|---|---:|---:|---|
+| 8423001 | Total overdue wage arrears | 21 | 7 | 2017–2020 |
+| 8423002 | Due to late federal budget funding | 0 | 0 | Not present in this regional extract |
+| 8423003 | Due to late regional budget funding | 0 | 0 | Not present in this regional extract |
+| 8423004 | Due to late local budget funding | 0 | 0 | Not present in this regional extract |
+| 8423005 | Mean list employees (organisations excluding small enterprises) | 14,031 | 22 | 2017–2025 annual complete; 2026 Jan–Mar only |
+| 8423006 | Payroll fund (organisations excluding small enterprises) | 14,127 | 22 | 2017–2025 annual complete; 2026 Jan–Mar only |
+| 8423007 | Average monthly wage (organisations excluding small enterprises) | 15,370 | 22 | 2017–2025 annual complete; 2026 Jan–Mar only |
+| 8423015 | Mean list employees (municipal-owned organisations) | 1,272 | 22 | 2017–2025 Jan–Dec |
+| 8423016 | Payroll fund (municipal-owned organisations) | 1,302 | 22 | 2017–2025 Jan–Dec |
+| 8423017 | Average monthly wage (municipal-owned organisations) | 2,273 | 22 | 2017–2025 Jan–Dec |
+
+The 8423005–8423007 values for 2017–2025 appear in four cumulative periods each year: January–March, January–June, January–September and January–December. For 2026 the archive contains January–March only. **The latest complete annual value is 2025, not 2026.** Cumulative periods must not be added together. The sector dimension `okved2` is retained in the raw records; no duplicate sector table was imported.
+
+Indicator 8423001 now has **30 staged observations across 10 municipalities**: 21 original BDPMO rows plus nine explicit municipal report observations. The three causal indicators 8423002–8423004 remain unavailable in this HMAO archive. Rosstat's municipal catalogue confirms they are separate monthly indicators for arrears caused by late receipt of federal, regional and local budget funds respectively; they must not be inferred from the total 8423001 or treated as zero just because this extract has no rows.
+
+A historical national panel in the RCSI/INID catalogue (“База данных показателей муниципальных образований России за 2006–2020 гг.”) also lists codes 8423002–8423004 and supports municipal-level analysis, but the download interaction currently presents login/registration as a prerequisite. No attempt was made to bypass that access condition and no values were copied from this gated download. The official HMAO Rosstat labour page provides a regional wage-arrears workbook, but it is an Okrug-level series and cannot be assigned to individual municipalities.
+
+### 3. Supabase final control after section N
+
+The direct SQL control of the `Труд и занятость` source category confirms:
+- **134 staging rows**, 134 unique `(source_id, source_record_key)` pairs.
+- **134 pending** rows; **0 validation errors**.
+- **0 unmapped municipality IDs**; all mapped values resolve to the canonical `public.municipalities` dictionary.
+- **0 promoted rows** (`imported_indicator_id IS NULL`).
+- **39 source IDs with staged observations**.
+- All **22 canonical project municipality IDs** are represented in the combined labour source set (the 2022 Decree No.422-п base covers all 22).
+
+The previous temporary HMR alias `hmr-raion` was corrected to the canonical ID `khanty-mansiysky-raion` for three new observations. A subsequent unmatched-ID query returned no rows. The source registry description for `tochno_bdmo_hmao_20260928` was corrected to describe both section 31 (demography) and section 32 (employment/wages), and its notes now explicitly record the 2026 partial-period limit and the missing 8423002–8423004 indicators.
+
+These are coverage/control results, not evidence that every metric is fully populated for every municipality. All labour data remains isolated in review staging and has not been normalized or promoted.
+
+### 4. Stage 2 closure assessment
+
+**Data acquisition and import for the currently accessible official section 32 source are complete for the codes/records present in the archive. Stage 2 is not yet fully closed as a validated analytical dataset.** Open gaps remain:
+1. Obtain a legitimate download/access path to the RCSI/INID historic municipal panel or a fresh Rosstat/Tyumenstat municipal extract for 8423002–8423004, then inspect HMAO rows.
+2. Obtain a primary source for Nefteyugansky district 2018 and verify the ambiguous 2023 Kondinsky count (0.350 thousand people) against the primary administration report.
+3. Confirm the secondary Pyt-Yakh and Langepas reports with primary municipal / HMAO Department tables.
+4. Extend 8423001 observations to more municipalities and recent months/years; the current combined series remains sparse and should not be presented as full municipal coverage.
+5. Finish joint Stage 1/2 review and normalization (indicator mapping, OKVED2 dimension, units, annual/cumulative periods and fact/estimate/source quality) before any analytical promotion.
+
+No rows were promoted to `municipality_indicators`; no changes were made to `main`, production deployment, or website UI. The work-log status remains `partially_done` rather than falsely marking full statistical closure.
