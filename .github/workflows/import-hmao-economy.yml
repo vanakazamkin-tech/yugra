@@ -99,7 +99,8 @@ jobs:
           git add .ops-results/economy-extract-status.json
           if ! git diff --cached --quiet; then
             git commit -m "Record Stage 3 economy extraction result"
-            git push
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
 
       - name: Save extraction artifact
@@ -189,7 +190,8 @@ jobs:
           git add .ops-results/economy-upload-status.json
           if ! git diff --cached --quiet; then
             git commit -m "Record Stage 3 economy staging upload result"
-            git push
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
 
       - name: Save staging upload report
