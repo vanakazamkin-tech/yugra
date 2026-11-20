@@ -137,3 +137,43 @@ Updated Stage 3 staging total: **16,690 rows** (the previous 16,558 plus 132 row
 These series have different definitions and periods. Do not add them together. 8401003 excludes small businesses; 8801004 is a broad measure of food goods sales but is not the full turnover of all retail goods.
 
 The overall Stage 3 BDPMO staging total is now 16,690 (11 separate indicator codes): 4,665 in section 9; 2,926 in section 2; 8,791 in section 39; 308 in section 41. The 11 codes are 8009001, 8109001, 8109002, 8109003, 8401003, 8801004, 8401008, 8401011, 8401012, 9010002 and 9010003.
+
+
+## Municipal SME and retail reporting — additional official observations (21 November 2026)
+
+A follow-up acquisition pass added 21 observations from six municipal official reports to the same private review staging table. All remain pending; none was promoted to the analytical table.
+
+| Municipality | SME / entrepreneur observations | Turnover observations | Source |
+|---|---|---|---|
+| Khanty-Mansiysky district | 442 SMEs as of 01.01.2026, including 367 IP, 73 micro and 2 small enterprises | 2025 small-business turnover 2,590.6m RUB, preliminary | District administration SME page |
+| Nefteyugansk | 4,559 SMEs as of 01.01.2026, including 1,052 micro, 135 small, 23 medium and 3,349 IP | 2025 retail turnover across all forms of trade: 36,182.96m RUB | Administration resolution No.490-п, 27.05.2026 |
+| Kogalym | 1,894 SMEs at end-2025: 458 legal entities and 1,436 IP | No turnover added from this source | City Duma annual report No.619, 18.02.2026 |
+| Surgut | 20.9 thousand SMEs in 2025 (rounded official value) | Small-business turnover 283.3bn RUB in 2025; retain the source's “small business” label | City investment portal |
+| Yugorsk | 1,242 SMEs at end-2025 | No turnover observation in this source | City head's investment message |
+| Nyagan | 2,480 SMEs as of 01.01.2025: 1,880 IP, 591 small enterprises, 9 medium enterprises | No turnover added from this source | City infrastructure development programme, citing the Unified SME Register |
+
+Source URLs:
+- Khanty-Mansiysky district: https://hmrn.ru/raion/ekonomika/ip/index.php
+- Nefteyugansk: https://base.garant.ru/414301420/1b93c134b90c6071b4dc3f495464b753/
+- Kogalym: https://admkogalym.ru/upload/iblock/e5e/uy9nv5ut0xhw5y4zyjoge55634m2oi2j/619_GD-ot-18.02.2026.pdf
+- Surgut: https://invest.admsurgut.ru/pages/Obshchaya-harakteristika-municipalnogo-obrazovaniya
+- Yugorsk: https://www.adm.ugorsk.ru/about/statistics/ekonomika/investitsionnaya-deyatelnost/investitsionnoe-poslanie-glavy-goroda-.php
+- Nyagan: https://base.garant.ru/414881362/da0ca740e319b67eff630b4065586e13/
+
+### Comparability and data-quality notes
+
+- Self-employed persons registered under the professional income tax regime are excluded from the SME counts. For Khanty-Mansiysky district, the source lists 1,416 self-employed persons separately; they were not imported as SMEs.
+- The Khanty-Mansiysky district 2025 small-business turnover (2,590.6m RUB) is explicitly a preliminary estimate.
+- Surgut's 20.9 thousand count is rounded. Its turnover of 283.3bn RUB is described as “small business turnover”, not necessarily total turnover of every SME category.
+- Nyagan's source does not separately specify micro-enterprises; the 591 figure retains the report's term “small enterprises” rather than being split or re-labelled.
+- For Nefteyugansk, the 4,559 total is exactly the source's sum of 1,052 micro, 135 small, 23 medium and 3,349 IP. Legal entities were not added as a separate derived observation.
+- Nefteyugansk retail turnover includes all forms of trade and is distinct from BDPMO 8401003, which excludes small businesses. Keep both measures separate.
+
+The FNS SME registry geography probe for the 10.11.2026 snapshot completed successfully. Its XSD includes Region, District, City, Settlement, regional-code, SME-category, SME-kind and registry-date fields. A sample of 12 XML members contained 955 region-86 records, with addresses naming municipal districts, cities and settlements. This confirms the fields needed for a municipality crosswalk exist, but the sample is not a full count and does not yet support 22-municipality totals. No taxpayer identifiers or personal data were written to the probe report. The FNS full bulk archive has not yet been ingested.
+
+## Latest combined Stage 3 staging control
+
+- BDPMO investment, trade, organisation and industrial series: **16,690 rows** (11 indicator codes) across all 22 municipalities.
+- New municipal SME / retail observations: **21 rows** across six municipalities.
+- These two groups are stored in private review staging; all rows remain pending with no promotion.
+- Keep the Stage 3 checkpoint and P3 work log in progress until the remaining municipal SME, SME-turnover and complete retail-turnover coverage is collected and normalized.
