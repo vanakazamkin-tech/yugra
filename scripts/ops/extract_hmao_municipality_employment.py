@@ -274,7 +274,7 @@ def main() -> int:
                 results.append({
                     "source_indicator_code": source_code,
                     "title": series["title"],
-                    "candidate_bdmo_codes": series["bdmo_codes"],
+                    "rosstat_form_code": series["rosstat_form_code"],
                     "status": "no_member_found",
                     "matched_members": [],
                     "matched_rows": 0,
@@ -287,7 +287,7 @@ def main() -> int:
             results.append({
                 "source_indicator_code": source_code,
                 "title": series["title"],
-                "candidate_bdmo_codes": series["bdmo_codes"],
+                "rosstat_form_code": series["rosstat_form_code"],
                 "status": "extracted" if state["rows"] else "no_region71_yugra_rows",
                 "matched_members": [x["filename"] for x in state["members"]],
                 "matched_member_selection": selection_mode,
