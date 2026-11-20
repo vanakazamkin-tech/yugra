@@ -1,0 +1,482 @@
+{
+  "status": "aggregated",
+  "source_url": "https://www.nalog.gov.ru/opendata/7707329152-rsmp/",
+  "zip_url": "https://file.nalog.ru/opendata/7707329152-rsmp/data-10112026-structure-12052026.zip",
+  "snapshot_date": "2026-11-10",
+  "zip_sha256": "5475528b139a4371b26026dd560425f6cb24c83335225b81719869a35075dce4",
+  "zip_size_bytes": 2169961249,
+  "xml_member_count": 7661,
+  "documents_total": 6895493,
+  "region86_records": 65723,
+  "mapped_records": 65718,
+  "unmapped_region86_records": 5,
+  "mapped_municipality_count": 22,
+  "mapped_municipality_ids": [
+    "beloyarsky-raion",
+    "berezovsky-raion",
+    "khanty-mansiysk",
+    "khanty-mansiysky-raion",
+    "kogalym",
+    "kondinsky-raion",
+    "langepas",
+    "megion",
+    "nefteyugansk",
+    "nefteyugansky-raion",
+    "nizhnevartovsk",
+    "nizhnevartovsky-raion",
+    "nyagan-city",
+    "october-raion",
+    "pokachi",
+    "pyt-yah",
+    "raduzhny",
+    "sovetsky-raion",
+    "surgut",
+    "surgutsky",
+    "ugorsk",
+    "uray"
+  ],
+  "municipality_names": {
+    "beloyarsky-raion": "Белоярский район",
+    "berezovsky-raion": "Берёзовский район",
+    "kogalym": "Когалым",
+    "kondinsky-raion": "Кондинский район",
+    "langepas": "Лангепас",
+    "megion": "Мегион",
+    "nefteyugansk": "Нефтеюганск",
+    "nefteyugansky-raion": "Нефтеюганский район",
+    "nizhnevartovsk": "Нижневартовск",
+    "nizhnevartovsky-raion": "Нижневартовский район",
+    "nyagan-city": "Нягань",
+    "october-raion": "Октябрьский район",
+    "pokachi": "Покачи",
+    "pyt-yah": "Пыть-Ях",
+    "raduzhny": "Радужный",
+    "sovetsky-raion": "Советский район",
+    "surgut": "Сургут",
+    "surgutsky": "Сургутский район",
+    "uray": "Урай",
+    "khanty-mansiysk": "Ханты-Мансийск",
+    "khanty-mansiysky-raion": "Ханты-Мансийский район",
+    "ugorsk": "Югорск"
+  },
+  "missing_municipality_ids": [],
+  "snapshot_dates": {
+    "10.11.2026": 65723
+  },
+  "entity_type_definitions": {
+    "1": "legal_entity",
+    "2": "individual_entrepreneur",
+    "3": "farm_head"
+  },
+  "category_definitions": {
+    "1": "micro",
+    "2": "small",
+    "3": "medium"
+  },
+  "entity_type_counts_by_municipality": {
+    "beloyarsky-raion": {
+      "2": 547,
+      "1": 71,
+      "3": 5
+    },
+    "berezovsky-raion": {
+      "2": 423,
+      "1": 86,
+      "3": 2
+    },
+    "khanty-mansiysk": {
+      "2": 3220,
+      "1": 1117,
+      "3": 11
+    },
+    "khanty-mansiysky-raion": {
+      "2": 354,
+      "1": 71,
+      "3": 19
+    },
+    "kogalym": {
+      "2": 1498,
+      "1": 428,
+      "3": 6
+    },
+    "kondinsky-raion": {
+      "2": 600,
+      "1": 120,
+      "3": 6
+    },
+    "langepas": {
+      "2": 908,
+      "1": 144
+    },
+    "megion": {
+      "2": 1312,
+      "1": 340,
+      "3": 3
+    },
+    "nefteyugansk": {
+      "2": 3474,
+      "1": 1112,
+      "3": 3
+    },
+    "nefteyugansky-raion": {
+      "2": 853,
+      "1": 189,
+      "3": 10
+    },
+    "nizhnevartovsk": {
+      "2": 9299,
+      "1": 3750,
+      "3": 11
+    },
+    "nizhnevartovsky-raion": {
+      "2": 608,
+      "1": 212,
+      "3": 9
+    },
+    "nyagan-city": {
+      "2": 1956,
+      "1": 548,
+      "3": 5
+    },
+    "october-raion": {
+      "2": 624,
+      "3": 17,
+      "1": 106
+    },
+    "pokachi": {
+      "2": 337,
+      "1": 59
+    },
+    "pyt-yah": {
+      "2": 1319,
+      "1": 274,
+      "3": 4
+    },
+    "raduzhny": {
+      "2": 906,
+      "1": 225,
+      "3": 1
+    },
+    "sovetsky-raion": {
+      "2": 1244,
+      "1": 306,
+      "3": 6
+    },
+    "surgut": {
+      "2": 16029,
+      "1": 5260,
+      "3": 22
+    },
+    "surgutsky": {
+      "2": 2714,
+      "1": 384,
+      "3": 7
+    },
+    "ugorsk": {
+      "2": 987,
+      "1": 274,
+      "3": 5
+    },
+    "uray": {
+      "2": 1093,
+      "1": 182,
+      "3": 3
+    }
+  },
+  "category_counts_by_municipality": {
+    "beloyarsky-raion": {
+      "1": 614,
+      "2": 9
+    },
+    "berezovsky-raion": {
+      "1": 507,
+      "2": 4
+    },
+    "khanty-mansiysk": {
+      "1": 4237,
+      "2": 106,
+      "3": 5
+    },
+    "khanty-mansiysky-raion": {
+      "1": 437,
+      "2": 7
+    },
+    "kogalym": {
+      "1": 1871,
+      "2": 55,
+      "3": 6
+    },
+    "kondinsky-raion": {
+      "1": 717,
+      "3": 1,
+      "2": 8
+    },
+    "langepas": {
+      "1": 1031,
+      "2": 19,
+      "3": 2
+    },
+    "megion": {
+      "1": 1592,
+      "3": 12,
+      "2": 51
+    },
+    "nefteyugansk": {
+      "1": 4406,
+      "2": 163,
+      "3": 20
+    },
+    "nefteyugansky-raion": {
+      "1": 1003,
+      "2": 43,
+      "3": 6
+    },
+    "nizhnevartovsk": {
+      "1": 12544,
+      "2": 456,
+      "3": 60
+    },
+    "nizhnevartovsky-raion": {
+      "1": 801,
+      "3": 3,
+      "2": 25
+    },
+    "nyagan-city": {
+      "1": 2420,
+      "2": 79,
+      "3": 10
+    },
+    "october-raion": {
+      "1": 733,
+      "2": 13,
+      "3": 1
+    },
+    "pokachi": {
+      "1": 386,
+      "2": 10
+    },
+    "pyt-yah": {
+      "1": 1554,
+      "2": 38,
+      "3": 5
+    },
+    "raduzhny": {
+      "1": 1101,
+      "2": 25,
+      "3": 6
+    },
+    "sovetsky-raion": {
+      "1": 1521,
+      "2": 33,
+      "3": 2
+    },
+    "surgut": {
+      "1": 20553,
+      "3": 77,
+      "2": 681
+    },
+    "surgutsky": {
+      "1": 3054,
+      "2": 44,
+      "3": 7
+    },
+    "ugorsk": {
+      "1": 1242,
+      "2": 23,
+      "3": 1
+    },
+    "uray": {
+      "1": 1251,
+      "2": 25,
+      "3": 2
+    }
+  },
+  "type_category_counts_by_municipality": {
+    "beloyarsky-raion": {
+      "1:1": 62,
+      "1:2": 9,
+      "2:1": 547,
+      "3:1": 5
+    },
+    "berezovsky-raion": {
+      "1:1": 82,
+      "1:2": 4,
+      "2:1": 423,
+      "3:1": 2
+    },
+    "khanty-mansiysk": {
+      "1:1": 1021,
+      "1:2": 91,
+      "1:3": 5,
+      "2:1": 3205,
+      "2:2": 15,
+      "3:1": 11
+    },
+    "khanty-mansiysky-raion": {
+      "1:1": 69,
+      "1:2": 2,
+      "2:1": 351,
+      "2:2": 3,
+      "3:1": 17,
+      "3:2": 2
+    },
+    "kogalym": {
+      "1:1": 376,
+      "1:2": 46,
+      "1:3": 6,
+      "2:1": 1489,
+      "2:2": 9,
+      "3:1": 6
+    },
+    "kondinsky-raion": {
+      "1:1": 114,
+      "1:2": 5,
+      "1:3": 1,
+      "2:1": 598,
+      "2:2": 2,
+      "3:1": 5,
+      "3:2": 1
+    },
+    "langepas": {
+      "1:1": 126,
+      "1:2": 16,
+      "1:3": 2,
+      "2:1": 905,
+      "2:2": 3
+    },
+    "megion": {
+      "1:1": 282,
+      "1:2": 46,
+      "1:3": 12,
+      "2:1": 1307,
+      "2:2": 5,
+      "3:1": 3
+    },
+    "nefteyugansk": {
+      "1:1": 960,
+      "1:2": 133,
+      "1:3": 19,
+      "2:1": 3443,
+      "2:2": 30,
+      "2:3": 1,
+      "3:1": 3
+    },
+    "nefteyugansky-raion": {
+      "1:1": 158,
+      "1:2": 26,
+      "1:3": 5,
+      "2:1": 835,
+      "2:2": 17,
+      "2:3": 1,
+      "3:1": 10
+    },
+    "nizhnevartovsk": {
+      "1:1": 3302,
+      "1:2": 390,
+      "1:3": 58,
+      "2:1": 9231,
+      "2:2": 66,
+      "2:3": 2,
+      "3:1": 11
+    },
+    "nizhnevartovsky-raion": {
+      "1:1": 187,
+      "1:2": 22,
+      "1:3": 3,
+      "2:1": 605,
+      "2:2": 3,
+      "3:1": 9
+    },
+    "nyagan-city": {
+      "1:1": 484,
+      "1:2": 54,
+      "1:3": 10,
+      "2:1": 1931,
+      "2:2": 25,
+      "3:1": 5
+    },
+    "october-raion": {
+      "1:1": 93,
+      "1:2": 12,
+      "1:3": 1,
+      "2:1": 623,
+      "2:2": 1,
+      "3:1": 17
+    },
+    "pokachi": {
+      "1:1": 49,
+      "1:2": 10,
+      "2:1": 337
+    },
+    "pyt-yah": {
+      "1:1": 239,
+      "1:2": 31,
+      "1:3": 4,
+      "2:1": 1311,
+      "2:2": 7,
+      "2:3": 1,
+      "3:1": 4
+    },
+    "raduzhny": {
+      "1:1": 195,
+      "1:2": 24,
+      "1:3": 6,
+      "2:1": 905,
+      "2:2": 1,
+      "3:1": 1
+    },
+    "sovetsky-raion": {
+      "1:1": 282,
+      "1:2": 22,
+      "1:3": 2,
+      "2:1": 1233,
+      "2:2": 11,
+      "3:1": 6
+    },
+    "surgut": {
+      "1:1": 4606,
+      "1:2": 578,
+      "1:3": 76,
+      "2:1": 15925,
+      "2:2": 103,
+      "2:3": 1,
+      "3:1": 22
+    },
+    "surgutsky": {
+      "1:1": 338,
+      "1:2": 39,
+      "1:3": 7,
+      "2:1": 2709,
+      "2:2": 5,
+      "3:1": 7
+    },
+    "ugorsk": {
+      "1:1": 253,
+      "1:2": 20,
+      "1:3": 1,
+      "2:1": 984,
+      "2:2": 3,
+      "3:1": 5
+    },
+    "uray": {
+      "1:1": 162,
+      "1:2": 18,
+      "1:3": 2,
+      "2:1": 1086,
+      "2:2": 7,
+      "3:1": 3
+    }
+  },
+  "invalid_type_codes": {},
+  "invalid_category_codes": {},
+  "unmatched_geography_tuples": [
+    {
+      "district": "",
+      "city": "",
+      "settlement": "",
+      "count": 5
+    }
+  ],
+  "privacy_note": "Only municipal aggregates and geographic diagnostic labels. No taxpayer identifiers, entity names, personal names, or street/house details are stored.",
+  "snapshot_date_warning": "Not all records have the expected FNS snapshot date."
+}
