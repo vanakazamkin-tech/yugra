@@ -148,7 +148,7 @@ A later Surgut city strategy monitoring page (published 26.02.2026 for 2024–20
 
 ## Updated expanded-staging verification
 
-The final 2026-11-21 check across the eleven unemployment/vacancy sources found:
+The final 2026-11-21 check across the thirteen unemployment/vacancy sources found:
 - **95 total staging rows; 95 distinct source keys.**
 - **95 pending; 0 validation errors; 0 unmapped municipality IDs.**
 - All **22** project municipalities appear in the combined source set (the full 2022 table covers all 22).
