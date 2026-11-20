@@ -1,0 +1,744 @@
+{
+  "status": "aggregated",
+  "source_page": "https://tochno.st/datasets/sme",
+  "source_archive_url": "https://storage.yandexcloud.net/tochno-st-catalog/FNS/data_sme_153_v20260605/regions_xlsx/data_sme_153_region_%D0%A5%D0%B0%D0%BD%D1%82%D1%8B-%D0%9C%D0%B0%D0%BD%D1%81%D0%B8%D0%B8%CC%86%D1%81%D0%BA%D0%B8%D0%B8%CC%86_%D0%B0%D0%B2%D1%82%D0%BE%D0%BD%D0%BE%D0%BC%D0%BD%D1%8B%D0%B8%CC%86_%D0%BE%D0%BA%D1%80%D1%83%D0%B3_-_%D0%AE%D0%B3%D1%80%D0%B0_v20260605_xlsx.zip",
+  "dataset_version": "20260605",
+  "registry_snapshot_date": "2025-12-10",
+  "financial_year": 2025,
+  "archive_sha256": "beae759599f45f26217b9568cd189d36047111dd73353a2208de5020cec98d49",
+  "archive_size_bytes": 85049211,
+  "source_rows_2025": 80941,
+  "financial_rows_read": 80941,
+  "unique_active_register_entities": 64592,
+  "unique_legal_entities_in_financial_panel": 18374,
+  "municipality_count": 22,
+  "municipalities": {
+    "beloyarsky-raion": {
+      "name": "Белоярский район",
+      "sme_total": 595,
+      "categories": {
+        "1": 588,
+        "2": 7
+      },
+      "entity_types": {
+        "1": 518,
+        "0": 77
+      },
+      "farm_head_flag": 6,
+      "area_names": {
+        "Белоярский район": 93
+      },
+      "financial": {
+        "entities_with_financial_record": 71,
+        "revenue_records": 66,
+        "expenditure_records": 66,
+        "employee_records": 71,
+        "revenue_sum_rub": "1795443984",
+        "expenditure_sum_rub": "1687907984",
+        "employees_sum": "417",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 0,
+        "category_revenue_rub": {
+          "1": "1142365992",
+          "2": "653077992"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "berezovsky-raion": {
+      "name": "Берёзовский район",
+      "sme_total": 509,
+      "categories": {
+        "1": 504,
+        "2": 5
+      },
+      "entity_types": {
+        "1": 422,
+        "0": 87
+      },
+      "farm_head_flag": 3,
+      "area_names": {
+        "Березовский район": 509
+      },
+      "financial": {
+        "entities_with_financial_record": 84,
+        "revenue_records": 77,
+        "expenditure_records": 77,
+        "employee_records": 84,
+        "revenue_sum_rub": "1576968984",
+        "expenditure_sum_rub": "1122387000",
+        "employees_sum": "357",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 0,
+        "category_revenue_rub": {
+          "1": "897955000",
+          "2": "679013984"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "khanty-mansiysk": {
+      "name": "Ханты-Мансийск",
+      "sme_total": 4266,
+      "categories": {
+        "1": 4169,
+        "2": 93,
+        "3": 4
+      },
+      "entity_types": {
+        "1": 3041,
+        "0": 1225
+      },
+      "farm_head_flag": 11,
+      "area_names": {},
+      "financial": {
+        "entities_with_financial_record": 1124,
+        "revenue_records": 1039,
+        "expenditure_records": 1039,
+        "employee_records": 1105,
+        "revenue_sum_rub": "44710766856",
+        "expenditure_sum_rub": "41170383864",
+        "employees_sum": "5815",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 7,
+        "category_revenue_rub": {
+          "1": "21218108968",
+          "2": "19648704920",
+          "3": "3843952968"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "khanty-mansiysky-raion": {
+      "name": "Ханты-Мансийский район",
+      "sme_total": 405,
+      "categories": {
+        "1": 401,
+        "2": 4
+      },
+      "entity_types": {
+        "1": 339,
+        "0": 66
+      },
+      "farm_head_flag": 25,
+      "area_names": {
+        "Ханты-Мансийский район": 405
+      },
+      "financial": {
+        "entities_with_financial_record": 58,
+        "revenue_records": 53,
+        "expenditure_records": 53,
+        "employee_records": 57,
+        "revenue_sum_rub": "511642992",
+        "expenditure_sum_rub": "432117000",
+        "employees_sum": "90",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 0,
+        "category_revenue_rub": {
+          "1": "511642992"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "kogalym": {
+      "name": "Когалым",
+      "sme_total": 1877,
+      "categories": {
+        "1": 1812,
+        "2": 59,
+        "3": 6
+      },
+      "entity_types": {
+        "1": 1422,
+        "0": 455
+      },
+      "farm_head_flag": 6,
+      "area_names": {},
+      "financial": {
+        "entities_with_financial_record": 416,
+        "revenue_records": 379,
+        "expenditure_records": 379,
+        "employee_records": 412,
+        "revenue_sum_rub": "68699958264",
+        "expenditure_sum_rub": "84506851456",
+        "employees_sum": "10167",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 4,
+        "category_revenue_rub": {
+          "1": "53070240288",
+          "2": "10883181048",
+          "3": "4746536928"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "kondinsky-raion": {
+      "name": "Кондинский район",
+      "sme_total": 733,
+      "categories": {
+        "1": 719,
+        "2": 13,
+        "3": 1
+      },
+      "entity_types": {
+        "1": 601,
+        "0": 132
+      },
+      "farm_head_flag": 7,
+      "area_names": {
+        "Кондинский район": 733
+      },
+      "financial": {
+        "entities_with_financial_record": 126,
+        "revenue_records": 120,
+        "expenditure_records": 120,
+        "employee_records": 124,
+        "revenue_sum_rub": "2682407024",
+        "expenditure_sum_rub": "2543718992",
+        "employees_sum": "502",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 0,
+        "category_revenue_rub": {
+          "1": "1714326008",
+          "3": "368395008",
+          "2": "599686008"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "langepas": {
+      "name": "Лангепас",
+      "sme_total": 1043,
+      "categories": {
+        "1": 1024,
+        "2": 15,
+        "3": 4
+      },
+      "entity_types": {
+        "1": 874,
+        "0": 169
+      },
+      "farm_head_flag": 0,
+      "area_names": {},
+      "financial": {
+        "entities_with_financial_record": 130,
+        "revenue_records": 121,
+        "expenditure_records": 121,
+        "employee_records": 127,
+        "revenue_sum_rub": "6912195024",
+        "expenditure_sum_rub": "8457730000",
+        "employees_sum": "1389",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 1,
+        "category_revenue_rub": {
+          "1": "1939617000",
+          "3": "2847164000",
+          "2": "2125414024"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "megion": {
+      "name": "Мегион",
+      "sme_total": 1672,
+      "categories": {
+        "1": 1610,
+        "2": 51,
+        "3": 11
+      },
+      "entity_types": {
+        "1": 1302,
+        "0": 370
+      },
+      "farm_head_flag": 3,
+      "area_names": {},
+      "financial": {
+        "entities_with_financial_record": 312,
+        "revenue_records": 291,
+        "expenditure_records": 291,
+        "employee_records": 312,
+        "revenue_sum_rub": "26581972040",
+        "expenditure_sum_rub": "25152915912",
+        "employees_sum": "4607",
+        "negative_revenue_records": 1,
+        "negative_expenditure_records": 1,
+        "category_revenue_rub": {
+          "1": "11119299912",
+          "2": "9635907040",
+          "3": "5826765088"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "nefteyugansk": {
+      "name": "Нефтеюганск",
+      "sme_total": 4521,
+      "categories": {
+        "1": 4335,
+        "2": 162,
+        "3": 24
+      },
+      "entity_types": {
+        "1": 3310,
+        "0": 1211
+      },
+      "farm_head_flag": 3,
+      "area_names": {},
+      "financial": {
+        "entities_with_financial_record": 1047,
+        "revenue_records": 963,
+        "expenditure_records": 963,
+        "employee_records": 1038,
+        "revenue_sum_rub": "66448213056",
+        "expenditure_sum_rub": "60980957864",
+        "employees_sum": "9194",
+        "negative_revenue_records": 2,
+        "negative_expenditure_records": 9,
+        "category_revenue_rub": {
+          "1": "24503454016",
+          "3": "18009464944",
+          "2": "23935294096"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "nefteyugansky-raion": {
+      "name": "Нефтеюганский район",
+      "sme_total": 1018,
+      "categories": {
+        "1": 972,
+        "2": 40,
+        "3": 6
+      },
+      "entity_types": {
+        "1": 815,
+        "0": 203
+      },
+      "farm_head_flag": 14,
+      "area_names": {
+        "Нефтеюганский район": 1018
+      },
+      "financial": {
+        "entities_with_financial_record": 155,
+        "revenue_records": 138,
+        "expenditure_records": 138,
+        "employee_records": 154,
+        "revenue_sum_rub": "8331380920",
+        "expenditure_sum_rub": "8064920984",
+        "employees_sum": "1985",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 1,
+        "category_revenue_rub": {
+          "1": "1640341992",
+          "3": "2086047960",
+          "2": "4604990968"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "nizhnevartovsk": {
+      "name": "Нижневартовск",
+      "sme_total": 13051,
+      "categories": {
+        "1": 12526,
+        "2": 458,
+        "3": 67
+      },
+      "entity_types": {
+        "1": 9001,
+        "0": 4050
+      },
+      "farm_head_flag": 12,
+      "area_names": {},
+      "financial": {
+        "entities_with_financial_record": 3718,
+        "revenue_records": 3455,
+        "expenditure_records": 3455,
+        "employee_records": 3679,
+        "revenue_sum_rub": "321994338688",
+        "expenditure_sum_rub": "296997384608",
+        "employees_sum": "30209",
+        "negative_revenue_records": 3,
+        "negative_expenditure_records": 20,
+        "category_revenue_rub": {
+          "1": "186061081416",
+          "2": "76980586072",
+          "3": "58952671200"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "nizhnevartovsky-raion": {
+      "name": "Нижневартовский район",
+      "sme_total": 858,
+      "categories": {
+        "1": 826,
+        "2": 29,
+        "3": 3
+      },
+      "entity_types": {
+        "1": 624,
+        "0": 234
+      },
+      "farm_head_flag": 9,
+      "area_names": {
+        "Нижневартовский район": 858
+      },
+      "financial": {
+        "entities_with_financial_record": 184,
+        "revenue_records": 165,
+        "expenditure_records": 165,
+        "employee_records": 182,
+        "revenue_sum_rub": "8710481968",
+        "expenditure_sum_rub": "7949382920",
+        "employees_sum": "1510",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 1,
+        "category_revenue_rub": {
+          "1": "1891849000",
+          "2": "3220263016",
+          "3": "3598369952"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "nyagan-city": {
+      "name": "Нягань",
+      "sme_total": 2477,
+      "categories": {
+        "1": 2393,
+        "2": 74,
+        "3": 10
+      },
+      "entity_types": {
+        "1": 1894,
+        "0": 583
+      },
+      "farm_head_flag": 5,
+      "area_names": {},
+      "financial": {
+        "entities_with_financial_record": 523,
+        "revenue_records": 474,
+        "expenditure_records": 474,
+        "employee_records": 518,
+        "revenue_sum_rub": "26354098928",
+        "expenditure_sum_rub": "24376519088",
+        "employees_sum": "4210",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 1,
+        "category_revenue_rub": {
+          "1": "7500918984",
+          "3": "7956481960",
+          "2": "10896697984"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "october-raion": {
+      "name": "Октябрьский район",
+      "sme_total": 735,
+      "categories": {
+        "1": 720,
+        "2": 14,
+        "3": 1
+      },
+      "entity_types": {
+        "1": 625,
+        "0": 110
+      },
+      "farm_head_flag": 19,
+      "area_names": {
+        "Октябрьский район": 735
+      },
+      "financial": {
+        "entities_with_financial_record": 100,
+        "revenue_records": 93,
+        "expenditure_records": 93,
+        "employee_records": 100,
+        "revenue_sum_rub": "4710672008",
+        "expenditure_sum_rub": "4266466992",
+        "employees_sum": "669",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 0,
+        "category_revenue_rub": {
+          "1": "1152518992",
+          "2": "2547926008",
+          "3": "1010227008"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "pokachi": {
+      "name": "Покачи",
+      "sme_total": 403,
+      "categories": {
+        "1": 393,
+        "3": 1,
+        "2": 9
+      },
+      "entity_types": {
+        "1": 344,
+        "0": 59
+      },
+      "farm_head_flag": 0,
+      "area_names": {},
+      "financial": {
+        "entities_with_financial_record": 53,
+        "revenue_records": 50,
+        "expenditure_records": 50,
+        "employee_records": 53,
+        "revenue_sum_rub": "2237165992",
+        "expenditure_sum_rub": "2085647984",
+        "employees_sum": "354",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 0,
+        "category_revenue_rub": {
+          "1": "963679992",
+          "3": "64560000",
+          "2": "1208926000"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "pyt-yah": {
+      "name": "Пыть-Ях",
+      "sme_total": 1574,
+      "categories": {
+        "1": 1525,
+        "2": 46,
+        "3": 3
+      },
+      "entity_types": {
+        "1": 1276,
+        "0": 298
+      },
+      "farm_head_flag": 3,
+      "area_names": {},
+      "financial": {
+        "entities_with_financial_record": 255,
+        "revenue_records": 239,
+        "expenditure_records": 239,
+        "employee_records": 251,
+        "revenue_sum_rub": "17732575088",
+        "expenditure_sum_rub": "16052531184",
+        "employees_sum": "2219",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 2,
+        "category_revenue_rub": {
+          "1": "5209104032",
+          "2": "11861489064",
+          "3": "661981992"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "raduzhny": {
+      "name": "Радужный",
+      "sme_total": 1184,
+      "categories": {
+        "1": 1154,
+        "2": 23,
+        "3": 7
+      },
+      "entity_types": {
+        "1": 931,
+        "0": 253
+      },
+      "farm_head_flag": 1,
+      "area_names": {},
+      "financial": {
+        "entities_with_financial_record": 228,
+        "revenue_records": 196,
+        "expenditure_records": 196,
+        "employee_records": 226,
+        "revenue_sum_rub": "19894602928",
+        "expenditure_sum_rub": "18889884040",
+        "employees_sum": "3280",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 0,
+        "category_revenue_rub": {
+          "1": "9523384992",
+          "2": "3049161008",
+          "3": "7322056928"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "sovetsky-raion": {
+      "name": "Советский район",
+      "sme_total": 1493,
+      "categories": {
+        "1": 1458,
+        "2": 34,
+        "3": 1
+      },
+      "entity_types": {
+        "1": 1172,
+        "0": 321
+      },
+      "farm_head_flag": 7,
+      "area_names": {
+        "Советский район": 1493
+      },
+      "financial": {
+        "entities_with_financial_record": 299,
+        "revenue_records": 277,
+        "expenditure_records": 277,
+        "employee_records": 297,
+        "revenue_sum_rub": "20423174248",
+        "expenditure_sum_rub": "15912984968",
+        "employees_sum": "1454",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 0,
+        "category_revenue_rub": {
+          "1": "8649806256",
+          "2": "8489765944",
+          "3": "3283602048"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "surgut": {
+      "name": "Сургут",
+      "sme_total": 20776,
+      "categories": {
+        "1": 20045,
+        "2": 665,
+        "3": 66
+      },
+      "entity_types": {
+        "1": 14997,
+        "0": 5779
+      },
+      "farm_head_flag": 23,
+      "area_names": {},
+      "financial": {
+        "entities_with_financial_record": 5302,
+        "revenue_records": 4890,
+        "expenditure_records": 4890,
+        "employee_records": 5251,
+        "revenue_sum_rub": "291044153136",
+        "expenditure_sum_rub": "306658762184",
+        "employees_sum": "35236",
+        "negative_revenue_records": 1,
+        "negative_expenditure_records": 22,
+        "category_revenue_rub": {
+          "1": "110221336872",
+          "2": "114994902136",
+          "3": "65827914128"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "surgutsky": {
+      "name": "Сургутский район",
+      "sme_total": 2903,
+      "categories": {
+        "1": 2851,
+        "3": 9,
+        "2": 43
+      },
+      "entity_types": {
+        "1": 2489,
+        "0": 414
+      },
+      "farm_head_flag": 8,
+      "area_names": {
+        "Сургутский район": 2903
+      },
+      "financial": {
+        "entities_with_financial_record": 343,
+        "revenue_records": 310,
+        "expenditure_records": 310,
+        "employee_records": 339,
+        "revenue_sum_rub": "20622933248",
+        "expenditure_sum_rub": "19958525040",
+        "employees_sum": "2738",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 1,
+        "category_revenue_rub": {
+          "3": "9295199216",
+          "2": "4847661976",
+          "1": "6480072056"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "ugorsk": {
+      "name": "Югорск",
+      "sme_total": 1237,
+      "categories": {
+        "1": 1210,
+        "2": 26,
+        "3": 1
+      },
+      "entity_types": {
+        "1": 945,
+        "0": 292
+      },
+      "farm_head_flag": 6,
+      "area_names": {},
+      "financial": {
+        "entities_with_financial_record": 266,
+        "revenue_records": 247,
+        "expenditure_records": 247,
+        "employee_records": 265,
+        "revenue_sum_rub": "7278738008",
+        "expenditure_sum_rub": "6462482032",
+        "employees_sum": "1234",
+        "negative_revenue_records": 0,
+        "negative_expenditure_records": 1,
+        "category_revenue_rub": {
+          "1": "3542935000",
+          "2": "2884444992",
+          "3": "851358016"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    },
+    "uray": {
+      "name": "Урай",
+      "sme_total": 1262,
+      "categories": {
+        "1": 1230,
+        "2": 32
+      },
+      "entity_types": {
+        "1": 1068,
+        "0": 194
+      },
+      "farm_head_flag": 3,
+      "area_names": {},
+      "financial": {
+        "entities_with_financial_record": 179,
+        "revenue_records": 158,
+        "expenditure_records": 158,
+        "employee_records": 177,
+        "revenue_sum_rub": "5751795000",
+        "expenditure_sum_rub": "5223576048",
+        "employees_sum": "1097",
+        "negative_revenue_records": 1,
+        "negative_expenditure_records": 2,
+        "category_revenue_rub": {
+          "1": "2033671000",
+          "2": "3718124000"
+        },
+        "scope": "legal entities with reported accounting data only; incomplete; not total SME turnover"
+      }
+    }
+  },
+  "unknown_2025_okrmo_code_counts": {
+    "71800000": 192
+  },
+  "unknown_financial_okrmo_code_counts": {
+    "71800000": 36
+  },
+  "privacy_note": "Taxpayer identifiers and business names are processed only in memory for deduplication and are not written to report or database.",
+  "limitations": [
+    "Municipality crosswalk uses the first five digits of settlement-level OKTMO to map to the 22 canonical municipal prefixes; region-level/unmapped codes are excluded and reported separately.",
+    "SME revenue/expenditure/employees fields cover legal entities only and are incomplete; they must not be presented as full SME turnover.",
+    "Registered address is not necessarily the place of business.",
+    "Revenue may contain negative or implausible values; negative record counts are retained for quality review.",
+    "This derived dataset version is 05.06.2026; it is not the newer official FNS snapshot of 10.11.2026."
+  ]
+}
