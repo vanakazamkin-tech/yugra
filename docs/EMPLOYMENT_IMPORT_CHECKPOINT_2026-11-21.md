@@ -84,15 +84,16 @@ On 2026-11-21, an additional 34 rows were added from eight municipal official so
 | `megion_municipal_labour_2024` | Megion | 4 | 01.01.2024 and 01.01.2025 |
 | **Additional total** | | **34** | **8 municipal areas** |
 
-Together with the 44 pre-existing 2022 observations, the unemployment/vacancy source set now contains 78 observations across 9 sources. Of these, 74 are registered-unemployment rate/count observations and 4 represent separate local vacancy/worker-demand definitions.
+After the subsequent imports, together with the 44 pre-existing 2022 observations, the unemployment/vacancy source set contains **84 observations across 11 sources**. Of these, 79 are registered-unemployment rate/count observations and 5 represent separate local vacancy/worker-demand definitions.
 
 ### Distinguish vacancy measures
 
-The four vacancy-related observations must remain semantically separate:
+The five vacancy-related observations must remain semantically separate:
 - Oktyabrsky district: employer-reported demand for workers to fill vacant posts, 3,694 at 01.01.2026.
 - Surgut: employer-reported need reported to the employment service, 1,864 at 31.12.2024.
 - Kogalym: preliminary employer-reported demand, 1,281 at 01.07.2025.
 - Yugorsk: 210 open positions in the city employment centre at the end of 2024.
+- Surgut: 4,539 employer-declared vacancies/worker demand at 01.06.2024.
 
 These are not interchangeable with the number of active vacancy advertisements on the federal “Работа России” portal. Preserve each original metric definition and observation date.
 
@@ -100,19 +101,19 @@ These are not interchangeable with the number of active vacancy advertisements o
 
 Direct SQL verification after the additional imports confirmed:
 
-- Total rows across the nine sources above: **78**.
-- Distinct source keys: **78**.
-- Review status: **78 pending**.
+- Total rows across the eleven sources above: **84**.
+- Distinct source keys: **84**.
+- Review status: **84 pending**.
 - Validation errors: **0**.
 - Unmapped municipalities: **0**.
 - Municipalities represented across the combined base and local sources: **22**.
-- Sources: **9**.
+- Sources: **11**.
 - Rows with `imported_indicator_id` set: **0**.
 - No rows have been promoted into the analytical table.
 
 All 44 rows from Decree No. 422-п remain one observation set for 2022 across all 22 municipalities. New municipality observations begin in the years or point-in-time dates stated in their source documents. Do not treat missing years or municipalities as zero.
 
-The source registry has been updated with the eight additional source records and their URLs, owners, temporal coverage, formats and usage notes. Each is marked `partially_imported`.
+The source registry has been updated with ten additional source records and their URLs, owners, temporal coverage, formats and usage notes. Each is marked `partially_imported`.
 
 ## D. Remaining Stage 2 work
 
@@ -125,3 +126,33 @@ The source registry has been updated with the eight additional source records an
 ## Next action
 
 Continue official municipal-source acquisition for unemployment and demand for workers; in parallel, validate whether the federal vacancy API exposes an unambiguous municipal address for HMAO records. Then complete the controlled review and normalization. All current rows remain isolated in private review staging.
+
+
+## E. Two further municipal source additions (2026-11-21)
+
+A further six observations were added from two additional official sources:
+
+| Source ID | Municipal area | Rows | Coverage / date |
+|---|---|---:|---|
+| `khanty_mansyisk_labour_snapshot_2024` | Khanty-Mansiysk | 3 | 2023 annual rate; comparable 01.07.2023 and 01.07.2024 rates |
+| `surgut_labour_snapshot_2024_06` | Surgut | 3 | 01.06.2024: rate, registered unemployed count, employer-declared demand |
+
+Khanty-Mansiysk values are from the city administration's forecast approved by order dated 14.11.2024 No. 100-р. Only historical reported values were imported: 0.17% for 2023, 0.18% on 01.07.2023 and 0.11% on 01.07.2024. The 2024 full-year estimate (0.12%) was deliberately excluded from fact observations.
+
+Surgut values are from the official city administration market-labour snapshot published 07.06.2024: registered unemployment rate 0.12%, 209 registered unemployed, and employer-reported demand 4,539 at 01.06.2024. The source also publishes demand by economic activity, but only its total was staged in this pass.
+
+### Data-quality conflict requiring resolution
+
+A later Surgut city strategy monitoring page (published 26.02.2026 for 2024–2025) reports end-of-year registered unemployment falling from 0.15% to 0.12%. This potentially conflicts with the 2024 socioeconomic report already staged for Surgut, which gives 0.09% at 31.12.2024. Do not overwrite either value or load the contested 0.12% as a 2025 observation until the period definitions and source table have been reconciled. The 0.12% for 01.06.2024 above is a separate mid-year snapshot and is not that disputed annual figure.
+
+## Updated expanded-staging verification
+
+The final 2026-11-21 check across the eleven unemployment/vacancy sources found:
+- **84 total staging rows; 84 distinct source keys.**
+- **84 pending; 0 validation errors; 0 unmapped municipality IDs.**
+- All **22** project municipalities appear in the combined source set (the full 2022 table covers all 22).
+- **11 source IDs** represented in staging.
+- **0** rows with `imported_indicator_id`; no promotion or production/site change.
+- 79 registered-unemployment observations and 5 vacancy / employer-demand / employment-centre-openings observations.
+
+The Supabase project work-log record `P2-LABOUR-20261121` has been updated. The operational branch checkpoint is the current handover record.
