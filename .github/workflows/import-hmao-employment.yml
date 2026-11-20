@@ -135,6 +135,8 @@ jobs:
           rc = int(sys.argv[1])
           report_path = pathlib.Path("employment-2026-extract/staging-upload-employment-report.json")
           report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.exists() else {}
+          log_path = pathlib.Path("/tmp/employment-upload.log")
+          log_tail = log_path.read_text(encoding="utf-8", errors="replace")[-10000:] if log_path.exists() else ""
           result = {
               "job": "upload",
               "exit_code": rc,
@@ -149,6 +151,7 @@ jobs:
               "blank_values_by_source_code": report.get("blank_values_by_source_code", {}),
               "non_numeric_values_by_source_code": report.get("non_numeric_values_by_source_code", {}),
               "pending_review": report.get("pending_review", True),
+              "error_log_tail": log_tail,
           }
           pathlib.Path("employment-upload-status.json").write_text(
               json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
