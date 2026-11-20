@@ -84,7 +84,7 @@ On 2026-11-21, an additional 34 rows were added from eight municipal official so
 | `megion_municipal_labour_2024` | Megion | 4 | 01.01.2024 and 01.01.2025 |
 | **Additional total** | | **34** | **8 municipal areas** |
 
-After the subsequent imports, together with the 44 pre-existing 2022 observations, the unemployment/vacancy source set contains **95 observations across 13 sources**. Of these, 89 are registered-unemployment rate/count observations and 6 represent separate local vacancy/worker-demand definitions.
+After the subsequent imports, together with the 44 pre-existing 2022 observations, the unemployment/vacancy source set contains **102 observations across 19 sources**. Of these, 96 are registered-unemployment rate/count observations and 6 represent separate local vacancy/worker-demand definitions.
 
 ### Distinguish vacancy measures
 
@@ -102,19 +102,19 @@ These are not interchangeable with the number of active vacancy advertisements o
 
 Direct SQL verification after the additional imports confirmed:
 
-- Total rows across the thirteen sources above: **95**.
-- Distinct source keys: **95**.
-- Review status: **95 pending**.
+- Total rows across the nineteen sources above: **102**.
+- Distinct source keys: **102**.
+- Review status: **102 pending**.
 - Validation errors: **0**.
 - Unmapped municipalities: **0**.
 - Municipalities represented across the combined base and local sources: **22**.
-- Sources: **13**.
+- Sources: **19**.
 - Rows with `imported_indicator_id` set: **0**.
 - No rows have been promoted into the analytical table.
 
 All 44 rows from Decree No. 422-п remain one observation set for 2022 across all 22 municipalities. New municipality observations begin in the years or point-in-time dates stated in their source documents. Do not treat missing years or municipalities as zero.
 
-The source registry has been updated with twelve additional source records and their URLs, owners, temporal coverage, formats and usage notes. Each is marked `partially_imported`.
+The source registry has been updated with eighteen additional source records and their URLs, owners, temporal coverage, formats and usage notes. Each is marked `partially_imported`.
 
 ## D. Remaining Stage 2 work
 
@@ -148,13 +148,13 @@ A later Surgut city strategy monitoring page (published 26.02.2026 for 2024–20
 
 ## Updated expanded-staging verification
 
-The final 2026-11-21 check across the thirteen unemployment/vacancy sources found:
-- **95 total staging rows; 95 distinct source keys.**
-- **95 pending; 0 validation errors; 0 unmapped municipality IDs.**
+The final 2026-11-21 check across the nineteen unemployment/vacancy sources found:
+- **102 total staging rows; 102 distinct source keys.**
+- **102 pending; 0 validation errors; 0 unmapped municipality IDs.**
 - All **22** project municipalities appear in the combined source set (the full 2022 table covers all 22).
-- **13 source IDs** represented in staging.
+- **19 source IDs** represented in staging.
 - **0** rows with `imported_indicator_id`; no promotion or production/site change.
-- 89 registered-unemployment observations and 6 vacancy / employer-demand / employment-centre-openings observations.
+- 96 registered-unemployment observations and 6 vacancy / employer-demand / employment-centre-openings observations.
 
 The Supabase project work-log record `P2-LABOUR-20261121` has been updated. The operational branch checkpoint is the current handover record.
 
@@ -192,3 +192,37 @@ The final expanded unemployment/vacancy source set now contains **95 observation
 ## H. “Работа России” API — integration boundary
 
 The public API documentation confirms a region endpoint `/api/v1/vacancies/region/%region_code%`, JSON GET responses, a 100-record page limit with `limit` / `offset`, and `modifiedFrom` / `modifiedTo` filtering by ISO-8601 timestamps. However, the live HMAO regional JSON endpoint and the linked WADL schema could not be fetched through the current execution environment. Therefore no current listing count, municipality address field, or municipal coverage has been verified, and no API vacancy rows have been imported. Before ingestion, retrieve and inspect live JSON, validate the address/location field against the 22 municipality reference list, deduplicate vacancy IDs, and snapshot retrieval time. Keep unmatched listings at regional level rather than forcing them onto a municipality.
+
+
+## I. Latest municipal-source extension — 21 November 2026
+
+A further seven fact observations were added from six additional municipal documents:
+
+| Source ID | Municipal area | Rows | Observation |
+|---|---|---:|---|
+| `raduzhny_labour_2024` | Raduzhny | 1 | Registered unemployment rate 0.46% at 31.12.2024 |
+| `nyagan_labour_2024` | Nyagan | 1 | Registered unemployment rate 0.39% at 01.01.2025 |
+| `nefteyugansky_labour_2024_11` | Nefteyugansky district | 1 | Registered unemployment rate 0.02% at 25.11.2024 |
+| `surgutsky_labour_2024_10` | Surgutsky district | 1 | Historical registered unemployment rate 0.11% at 01.01.2024 |
+| `surgutsky_labour_2025_10` | Surgutsky district | 1 | Registered unemployment rate 0.06% for the completed 2025 period |
+| `nizhnevartovsk_labour_2025` | Nizhnevartovsk | 2 | 194 registered unemployed and 0.12% registered unemployment for 2025 |
+
+Source documents:
+- Raduzhny: official administration act, adopted 30.06.2025 No.598, [publication in GARANT](https://base.garant.ru/412345626/53f89421bbdaf741eb2d1ecc4ddb4c33/).
+- Nyagan: administration resolution 07.04.2026 No.910, [publication in GARANT](https://base.garant.ru/414881362/da0ca740e319b67eff630b4065586e13/). The reported 0.39% is explicitly as at 01.01.2025; the previous-year value was not back-calculated from the stated 0.22 percentage-point decrease.
+- Nefteyugansky district: head of district's report to the Duma of KhMAO-Yugra, December 2024, [official PDF on the Duma website](https://www.dumahmao.ru/povest/0741_4/19/04.pdf). The report states the unemployment rate at 25.11.2024 was 0.02%.
+- Surgutsky district: administration resolution 22.10.2024 No.2381, [publication in GARANT](https://base.garant.ru/410589626/510567bc799b499f450a4638e59966a6/), provides a historical fact of 0.11% on 01.01.2024. The forecast value 0.08% for end-2024 was excluded. A later strategy amendment adopted by the district Duma 25.09.2026 No.1231, [publication in GARANT](https://base.garant.ru/414967804/53f89421bbdaf741eb2d1ecc4ddb4c33/), explicitly states the achieved 2025 year-end rate of 0.06%.
+- Nizhnevartovsk: administration order 29.10.2026 No.582-р, [publication in GARANT](https://base.garant.ru/415213799/53f89421bbdaf741eb2d1ecc4ddb4c33/), reports actual 2025 results: 194 people with official unemployed status and a registered unemployment rate of 0.12%. The separate 2026 expected values (255 people / 0.16%) are estimates and were excluded from fact observations.
+
+### Latest Supabase verification after this extension
+
+Direct SQL check over the 19 unemployment/vacancy source IDs confirms:
+- **102 rows total and 102 distinct source keys**.
+- **102 pending**, 0 validation errors, 0 unmapped municipality IDs.
+- All 22 project municipalities are represented by the combined series, including the all-municipality 2022 base table.
+- **19 source IDs** represented in staging.
+- **0** rows with `imported_indicator_id`; no promotion to `municipality_indicators`.
+
+The 102 rows consist of 96 registered-unemployment rate/count observations and 6 separately defined local vacancy / employer-demand / employment-centre openings.
+
+The following municipalities still have only the all-municipality 2022 baseline for registered unemployment in the currently staged sources: **Beryozovsky district, Kondinsky district, Langepas, Nizhnevartovsk district, Pokachi, Pyt-Yakh, Sovetsky district and Urai**. Continue acquisition for these areas first. Do not extrapolate missing years or replace municipal values with the HMAO regional aggregate.
