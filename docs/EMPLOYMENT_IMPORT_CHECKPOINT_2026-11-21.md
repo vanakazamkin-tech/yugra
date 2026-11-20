@@ -84,7 +84,7 @@ On 2026-11-21, an additional 34 rows were added from eight municipal official so
 | `megion_municipal_labour_2024` | Megion | 4 | 01.01.2024 and 01.01.2025 |
 | **Additional total** | | **34** | **8 municipal areas** |
 
-After the subsequent imports, together with the 44 pre-existing 2022 observations, the unemployment/vacancy source set contains **84 observations across 11 sources**. Of these, 79 are registered-unemployment rate/count observations and 5 represent separate local vacancy/worker-demand definitions.
+After the subsequent imports, together with the 44 pre-existing 2022 observations, the unemployment/vacancy source set contains **90 observations across 12 sources**. Of these, 85 are registered-unemployment rate/count observations and 5 represent separate local vacancy/worker-demand definitions.
 
 ### Distinguish vacancy measures
 
@@ -101,19 +101,19 @@ These are not interchangeable with the number of active vacancy advertisements o
 
 Direct SQL verification after the additional imports confirmed:
 
-- Total rows across the eleven sources above: **84**.
-- Distinct source keys: **84**.
-- Review status: **84 pending**.
+- Total rows across the twelve sources above: **90**.
+- Distinct source keys: **90**.
+- Review status: **90 pending**.
 - Validation errors: **0**.
 - Unmapped municipalities: **0**.
 - Municipalities represented across the combined base and local sources: **22**.
-- Sources: **11**.
+- Sources: **12**.
 - Rows with `imported_indicator_id` set: **0**.
 - No rows have been promoted into the analytical table.
 
 All 44 rows from Decree No. 422-п remain one observation set for 2022 across all 22 municipalities. New municipality observations begin in the years or point-in-time dates stated in their source documents. Do not treat missing years or municipalities as zero.
 
-The source registry has been updated with ten additional source records and their URLs, owners, temporal coverage, formats and usage notes. Each is marked `partially_imported`.
+The source registry has been updated with eleven additional source records and their URLs, owners, temporal coverage, formats and usage notes. Each is marked `partially_imported`.
 
 ## D. Remaining Stage 2 work
 
@@ -148,11 +148,28 @@ A later Surgut city strategy monitoring page (published 26.02.2026 for 2024–20
 ## Updated expanded-staging verification
 
 The final 2026-11-21 check across the eleven unemployment/vacancy sources found:
-- **84 total staging rows; 84 distinct source keys.**
-- **84 pending; 0 validation errors; 0 unmapped municipality IDs.**
+- **90 total staging rows; 90 distinct source keys.**
+- **90 pending; 0 validation errors; 0 unmapped municipality IDs.**
 - All **22** project municipalities appear in the combined source set (the full 2022 table covers all 22).
-- **11 source IDs** represented in staging.
+- **12 source IDs** represented in staging.
 - **0** rows with `imported_indicator_id`; no promotion or production/site change.
-- 79 registered-unemployment observations and 5 vacancy / employer-demand / employment-centre-openings observations.
+- 85 registered-unemployment observations and 5 vacancy / employer-demand / employment-centre-openings observations.
 
 The Supabase project work-log record `P2-LABOUR-20261121` has been updated. The operational branch checkpoint is the current handover record.
+
+
+## F. Monthly Hанты-Мансийский район employment-centre bulletin
+
+A further six unemployment observations were imported from the district administration's official 10.10.2024 bulletin, [labour-market indicators as of 01.10.2024](https://hmrn.ru/about/info/messages/95709/):
+
+| Reference date | Registered unemployed | Registered unemployment rate |
+|---|---:|---:|
+| 01.10.2023 | 61 | 0.23% |
+| 01.09.2024 | 90 | 0.34% |
+| 01.10.2024 | 89 | 0.34% |
+
+The same post lists an archive of monthly employment-centre bulletins through 01.09.2025, but the linked 2025 DOCX file was not retrievable through the current browser/file path. No uninspected DOCX values were imported.
+
+Data-quality exclusions from the 01.10.2024 bulletin:
+- Its “beginning of year” column shows 70 registered unemployed / 0.26%, conflicting with the district administration's separate annual page, which reports 68 / 0.25% on 01.01.2024. Those contested columns were not imported.
+- The summary mentions 55 units of employer need, while its dynamic table lists 96 free workplaces at the beginning of the month. No vacancy value from this document was imported pending reconciliation.
