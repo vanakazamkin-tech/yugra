@@ -23,4 +23,48 @@ assert.match(population, /\['population_municipality', 'population_municipality_
 assert.doesNotMatch(population, /population_settlement/);
 assert.doesNotMatch(population, /item\.geographic_level\s*\|\|\s*'municipality'/);
 assert.match(source, /item\.source_url \? <a href=\{item\.source_url\}/);
+
+const populationTrendStart = source.indexOf('const modalPopulationTrend = useMemo');
+const populationTrendEnd = source.indexOf('const modalBudgetSnapshots', populationTrendStart);
+assert.ok(populationTrendStart >= 0 && populationTrendEnd > populationTrendStart, 'municipal population trend selector must exist');
+const populationTrend = source.slice(populationTrendStart, populationTrendEnd);
+assert.match(populationTrend, /item\.indicator_code === 'population_municipality'/);
+assert.match(populationTrend, /rosstat_hmao_municipal_population_2022_2025/);
+assert.match(populationTrend, /item\.verification_status === 'verified'/);
+assert.match(populationTrend, /item\.geographic_level === 'municipality'/);
+assert.match(populationTrend, /\[2022, 2023, 2024, 2025\]/);
+assert.match(populationTrend, /item\.reference_period === period/);
+assert.match(populationTrend, /item\.unit === 'человек'/);
+assert.match(populationTrend, /matches\.length !== 1/);
+assert.doesNotMatch(populationTrend, /population_settlement/);
+
+const investmentStart = source.indexOf('const modalInvestmentSnapshots = useMemo');
+const investmentEnd = source.indexOf('const modalBudgetSnapshots', investmentStart);
+assert.ok(investmentStart >= 0 && investmentEnd > investmentStart, 'municipal investment selector must exist');
+const investment = source.slice(investmentStart, investmentEnd);
+assert.match(investment, /fixed_capital_investment_non_mining/);
+assert.match(investment, /investugra_municipal_rating_report_2023/);
+assert.match(investment, /item\.verification_status === 'verified'/);
+assert.match(investment, /item\.geographic_level === 'municipality'/);
+assert.match(investment, /\[2022, 2023\]/);
+assert.match(investment, /item\.reference_period === 'annual'/);
+assert.match(investment, /item\.unit === 'руб\.'/);
+assert.match(source, /Номинальные суммы приведены в текущих ценах/);
+assert.doesNotMatch(investment, /population_settlement/);
+
+const budgetStart = source.indexOf('const modalBudgetSnapshots = useMemo');
+const budgetEnd = source.indexOf('const modalDataCoverage', budgetStart);
+assert.ok(budgetStart >= 0 && budgetEnd > budgetStart, 'municipal budget selector must exist');
+const budget = source.slice(budgetStart, budgetEnd);
+assert.match(budget, /item\.verification_status === 'verified'/);
+assert.match(budget, /item\.geographic_level === 'municipality'/);
+assert.match(budget, /item\.unit === 'тыс\. руб\.'/);
+assert.match(budget, /\['2024-Q3', '2025-Q3'\]/);
+assert.match(budget, /duma_hmao_municipal_budget_9m_2025/);
+assert.match(budget, /matches\.length === 1/);
+assert.match(budget, /Math\.abs\(derivedTransfers - transferValue\) <= 0\.1/);
+assert.doesNotMatch(budget, /geographic_level\s*\|\|\s*'municipality'/);
+assert.doesNotMatch(budget, /reference_period\s*===\s*'annual'/);
+assert.match(source, /Все суммы — накопительное исполнение за январь–сентябрь/);
+
 console.log('Municipality passport data-integrity gates passed.');

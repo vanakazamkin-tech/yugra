@@ -615,12 +615,29 @@ async function fetchAllRows(buildQuery, pageSize = 500) {
 
 export async function fetchOfficialData(client) {
   if (!client) {
-    return { sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [], programExecution: [], fuelPrices: [], facilities: [] };
+    return {
+      sources: FALLBACK_DATA_SOURCES,
+      indicators: [],
+      investmentSites: [],
+      programExecution: [],
+      fuelPrices: [],
+      facilities: [],
+      externalRatings: [],
+    };
   }
 
   // Supabase/PostgREST may cap each response (commonly at 1,000 rows).
   // Fetch deterministic pages so a growing official-data catalogue is never silently truncated.
-  const [sources, indicators, investmentSites, programExecution, fuelPrices, facilities] = await Promise.all([
+  const [
+    sources,
+    indicators,
+    investmentSites,
+    programExecution,
+    fuelPrices,
+    facilities,
+    externalRatingResults,
+    externalRatingCatalog,
+  ] = await Promise.all([
     fetchAllRows(() => client.from('data_sources')
       .select('id,name,category,url,description,format,coverage,update_frequency,import_status,last_checked_at,notes')
       .order('category', { ascending: true })
@@ -653,9 +670,31 @@ export async function fetchOfficialData(client) {
       .order('facility_category', { ascending: true })
       .order('name_short', { ascending: true })
       .order('id', { ascending: true })),
+    fetchAllRows(() => client.from('external_rating_results')
+      .select('id,rating_id,geographic_level,geography_name,region_name,national_rank,rating_score,previous_year_rank,previous_year_score,metrics,reference_year,source_url,verification_status,notes,retrieved_at')
+      .eq('rating_id', 'ria_city_salary_2026')
+      .eq('geographic_level', 'city')
+      .eq('verification_status', 'verified')
+      .order('geography_name', { ascending: true })
+      .order('id', { ascending: true })),
+    fetchAllRows(() => client.from('external_rating_catalog')
+      .select('rating_id,title,category,edition_year,reference_period,geographic_level,geography_scope,source_url,description,methodology_summary')
+      .eq('rating_id', 'ria_city_salary_2026')
+      .order('edition_year', { ascending: false })
+      .order('rating_id', { ascending: true })),
   ]);
 
   const operationalRecords = validateOfficialOperationalRecords({ investmentSites, programExecution, facilities });
+  const salaryRating = externalRatingCatalog[0] || null;
+  const externalRatings = externalRatingResults.map((result) => ({
+    ...(salaryRating || {}),
+    ...result,
+    title: salaryRating?.title || result.rating_id,
+    category: salaryRating?.category || 'wages',
+    edition_year: salaryRating?.edition_year ?? result.reference_year,
+    reference_period: salaryRating?.reference_period || '',
+  }));
+
   return {
     sources: sources.length ? sources : FALLBACK_DATA_SOURCES,
     indicators,
@@ -663,9 +702,9 @@ export async function fetchOfficialData(client) {
     programExecution: operationalRecords.programExecution,
     fuelPrices,
     facilities: operationalRecords.facilities,
+    externalRatings,
   };
 }
-
 export const DATA_CATEGORY_LABELS = {
   official_statistics: 'ОФИЦИАЛЬНАЯ СТАТИСТИКА',
   municipal_programs: 'МУНИЦИПАЛЬНЫЕ ПРОГРАММЫ',
