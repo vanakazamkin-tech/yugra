@@ -10,6 +10,10 @@ on:
       - "scripts/ops/upload_hmao_economy_staging.py"
   workflow_dispatch:
 
+concurrency:
+  group: stage3-economy-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   actions: read
   contents: write
