@@ -84,13 +84,14 @@ On 2026-11-21, an additional 34 rows were added from eight municipal official so
 | `megion_municipal_labour_2024` | Megion | 4 | 01.01.2024 and 01.01.2025 |
 | **Additional total** | | **34** | **8 municipal areas** |
 
-After the subsequent imports, together with the 44 pre-existing 2022 observations, the unemployment/vacancy source set contains **90 observations across 12 sources**. Of these, 85 are registered-unemployment rate/count observations and 5 represent separate local vacancy/worker-demand definitions.
+After the subsequent imports, together with the 44 pre-existing 2022 observations, the unemployment/vacancy source set contains **95 observations across 13 sources**. Of these, 89 are registered-unemployment rate/count observations and 6 represent separate local vacancy/worker-demand definitions.
 
 ### Distinguish vacancy measures
 
-The five vacancy-related observations must remain semantically separate:
+The six vacancy-related observations must remain semantically separate:
 - Oktyabrsky district: employer-reported demand for workers to fill vacant posts, 3,694 at 01.01.2026.
 - Surgut: employer-reported need reported to the employment service, 1,864 at 31.12.2024.
+- Oktyabrsky district: employer-reported demand of 2,527 at 01.07.2025, including 1,947 jobs in working occupations.
 - Kogalym: preliminary employer-reported demand, 1,281 at 01.07.2025.
 - Yugorsk: 210 open positions in the city employment centre at the end of 2024.
 - Surgut: 4,539 employer-declared vacancies/worker demand at 01.06.2024.
@@ -101,19 +102,19 @@ These are not interchangeable with the number of active vacancy advertisements o
 
 Direct SQL verification after the additional imports confirmed:
 
-- Total rows across the twelve sources above: **90**.
-- Distinct source keys: **90**.
-- Review status: **90 pending**.
+- Total rows across the thirteen sources above: **95**.
+- Distinct source keys: **95**.
+- Review status: **95 pending**.
 - Validation errors: **0**.
 - Unmapped municipalities: **0**.
 - Municipalities represented across the combined base and local sources: **22**.
-- Sources: **12**.
+- Sources: **13**.
 - Rows with `imported_indicator_id` set: **0**.
 - No rows have been promoted into the analytical table.
 
 All 44 rows from Decree No. 422-п remain one observation set for 2022 across all 22 municipalities. New municipality observations begin in the years or point-in-time dates stated in their source documents. Do not treat missing years or municipalities as zero.
 
-The source registry has been updated with eleven additional source records and their URLs, owners, temporal coverage, formats and usage notes. Each is marked `partially_imported`.
+The source registry has been updated with twelve additional source records and their URLs, owners, temporal coverage, formats and usage notes. Each is marked `partially_imported`.
 
 ## D. Remaining Stage 2 work
 
@@ -148,12 +149,12 @@ A later Surgut city strategy monitoring page (published 26.02.2026 for 2024–20
 ## Updated expanded-staging verification
 
 The final 2026-11-21 check across the eleven unemployment/vacancy sources found:
-- **90 total staging rows; 90 distinct source keys.**
-- **90 pending; 0 validation errors; 0 unmapped municipality IDs.**
+- **95 total staging rows; 95 distinct source keys.**
+- **95 pending; 0 validation errors; 0 unmapped municipality IDs.**
 - All **22** project municipalities appear in the combined source set (the full 2022 table covers all 22).
-- **12 source IDs** represented in staging.
+- **13 source IDs** represented in staging.
 - **0** rows with `imported_indicator_id`; no promotion or production/site change.
-- 85 registered-unemployment observations and 5 vacancy / employer-demand / employment-centre-openings observations.
+- 89 registered-unemployment observations and 6 vacancy / employer-demand / employment-centre-openings observations.
 
 The Supabase project work-log record `P2-LABOUR-20261121` has been updated. The operational branch checkpoint is the current handover record.
 
@@ -173,3 +174,21 @@ The same post lists an archive of monthly employment-centre bulletins through 01
 Data-quality exclusions from the 01.10.2024 bulletin:
 - Its “beginning of year” column shows 70 registered unemployed / 0.26%, conflicting with the district administration's separate annual page, which reports 68 / 0.25% on 01.01.2024. Those contested columns were not imported.
 - The summary mentions 55 units of employer need, while its dynamic table lists 96 free workplaces at the beginning of the month. No vacancy value from this document was imported pending reconciliation.
+
+
+## G. Further official half-year source for Oktyabrsky district
+
+Five further observations were imported from the district administration's official report for the first half of 2025, [social-economic development results for Q2 2025](https://oktregion.ru/upload/docs/ekonomika-i-finansy/sotsialno-ekonomicheskoe-azvitie/itogi/sotsialno-ekonomicheskoe-razvitieitogiItogi_sots_econ_razvitiya_za_2_kv_2025.pdf):
+
+| Reference date | Registered unemployed | Registered unemployment rate | Employer-reported worker demand |
+|---|---:|---:|---:|
+| 01.07.2024 | 258 | 1.4% | — |
+| 01.07.2025 | 249 | 1.3% | 2,527 vacancies |
+
+Of the 2,527 employer-reported vacancies at 01.07.2025, 1,947 are for working occupations. This measure remains distinct from the portal's currently advertised listings and from other municipal vacancy snapshots.
+
+The final expanded unemployment/vacancy source set now contains **95 observations from 13 source IDs**: 89 unemployment rate/count observations and 6 distinct worker-demand / open-position observations. All are verified in Supabase staging as pending, with unique source keys and no municipality mapping or validation errors; no analytical promotion has taken place.
+
+## H. “Работа России” API — integration boundary
+
+The public API documentation confirms a region endpoint `/api/v1/vacancies/region/%region_code%`, JSON GET responses, a 100-record page limit with `limit` / `offset`, and `modifiedFrom` / `modifiedTo` filtering by ISO-8601 timestamps. However, the live HMAO regional JSON endpoint and the linked WADL schema could not be fetched through the current execution environment. Therefore no current listing count, municipality address field, or municipal coverage has been verified, and no API vacancy rows have been imported. Before ingestion, retrieve and inspect live JSON, validate the address/location field against the 22 municipality reference list, deduplicate vacancy IDs, and snapshot retrieval time. Keep unmatched listings at regional level rather than forcing them onto a municipality.
