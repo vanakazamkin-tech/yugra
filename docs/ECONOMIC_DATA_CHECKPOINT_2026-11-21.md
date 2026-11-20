@@ -212,3 +212,52 @@ The current Stage 3 import group consists of:
 - 1 additional Kogalym Jan–Jun 2025 full-circle retail-turnover record.
 
 All new rows remain in private review staging, with pending status, no validation errors and no promotion. Annual, cumulative, preliminary and point-in-time records retain their distinct definitions.
+
+
+## Municipal extensions — Surgut, Nizhnevartovsk and Beloyarsky (21 November 2026)
+
+### Surgut — official investment message, 9 months 2026
+
+The current official city investment message reports preliminary Jan–Sep 2026 values:
+- 21 thousand SMEs (rounded count).
+- SME turnover: 217bn RUB.
+- Shipped industrial products, work and services by large and medium industrial organisations: 413.5bn RUB.
+- Fixed capital investment by large and medium organisations from all funding sources: 45.2bn RUB.
+
+These are cumulative nine-month figures, not annual values. Investment coverage is explicitly “large and medium organisations / all sources”; it is not automatically identical to BDPMO 8109001 (excludes SMEs) or 8009001 (local-budget sources).
+
+Source: https://invest.admsurgut.ru/pages/investitsionnoe-poslanie-glavy-goroda-surguta
+
+### Nizhnevartovsk — official 2025 socioeconomic actuals
+
+The city's official 2027 forecast attachment, administration order No.582-р dated 29.10.2026, includes actual 2025 data:
+- About 4 thousand small and medium enterprises (rounded).
+- 9.1 thousand individual entrepreneurs (rounded).
+- SME turnover: 203,241.7m RUB.
+
+The count values are retained as approximate because the source itself rounds them. The 4 thousand “small and medium enterprises” and 9.1 thousand individual entrepreneurs are not merged into an exact derived count. The turnover is the source's 2025 fact, not a forecast.
+
+Source: https://base.garant.ru/415213799/53f89421bbdaf741eb2d1ecc4ddb4c33/
+
+### Beloyarsky district — official preliminary 2024 results
+
+The archived official administration page reports:
+- SMEs as of 01.01.2025: 577 (502 IP and 75 legal entities).
+- Industrial production by large and medium enterprises in 2024: 44,202.8m RUB.
+- Own-produced shipments/work/services in the oil-extraction industry by large and medium enterprises in 2024: 42,005.4m RUB.
+
+The same source reports 1,844 self-employed separately; they are not part of the 577 SME count. It also states total investments in district development of 10.083bn RUB and 355.3 thousand RUB per resident, but these labels are not explicitly aligned to BDPMO 8109001 / 8109003; those two values have not been added to standardized investment series pending methodological verification.
+
+Source: https://star.admbel.ru/area/common/
+
+All new observations were inserted into private Supabase review staging with pending status, no validation errors and no analytical promotion.
+
+## Latest FNS registry aggregation attempt
+
+The official 10.11.2026 FNS Unified SME Register XSD confirms the codes:
+- ВидСубМСП: 1 legal entity, 2 individual entrepreneur, 3 head of a peasant (farm) enterprise.
+- КатСубМСП: 1 micro, 2 small, 3 medium.
+
+The 100-XML-member probe contained 90,004 documents and 955 region-86 documents. All 955 region-86 addresses in that sample mapped to 21 different Yugra municipalities with no unmatched address tuple; the sample simply did not include Pokachi. This sample is a crosswalk validation only, not an SME count.
+
+A full-archive aggregate job has been started. It streams the 10.11.2026 ZIP and will write only municipal totals (not taxpayer IDs, organisation names or personal information). Upload is blocked automatically unless every region-86 record can be placed unambiguously across all 22 municipal IDs and all type/category codes validate.
