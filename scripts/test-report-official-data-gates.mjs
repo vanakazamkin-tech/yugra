@@ -20,4 +20,33 @@ for (const label of ['Средний демо-балл', 'Демо-объём и
 }
 assert.match(source, /сумма только по доступным значениям/);
 
+const filterStart = source.indexOf('const reportFilteredOfficialIndicators = useMemo');
+const filterEnd = source.indexOf('const comparisonMetricDef', filterStart);
+assert.ok(filterStart >= 0 && filterEnd > filterStart, 'report official filters must be memoized');
+const filters = source.slice(filterStart, filterEnd);
+assert.match(filters, /reportOfficialYear === 'all'/);
+assert.match(filters, /reportOfficialGeography === 'all'/);
+assert.match(filters, /searchableText\.includes\(search\)/);
+assert.match(filters, /item\.indicator_code/);
+assert.match(filters, /item\.geographic_name/);
+
+const exporterStart = source.indexOf('const exportReportOfficialCsv = () =>');
+const exporterEnd = source.indexOf('const renderTableRows', exporterStart);
+assert.ok(exporterStart >= 0 && exporterEnd > exporterStart, 'official report CSV exporter must exist separately');
+const exporter = source.slice(exporterStart, exporterEnd);
+assert.match(exporter, /reportFilteredOfficialIndicators\.map/);
+assert.match(exporter, /'URL источника'/);
+assert.match(exporter, /'Статус проверки'/);
+assert.match(exporter, /'\\\\uFEFF'/);
+assert.match(exporter, /replaceAll\('\"', '\"\"'\)/);
+assert.match(exporter, /disabled/ === null ? /$^/ : /reportOfficialYear/); // keep the year-specific export name explicit
+assert.doesNotMatch(exporter, /downloadCsv\(reportItems/);
+
+assert.match(source, /reportOfficialSearch, reportOfficialYear, reportOfficialGeography/);
+assert.match(source, /reportFilteredOfficialIndicators\.map\(\(item\)/);
+assert.match(source, /Экспорт официальных данных CSV/);
+assert.match(source, /Год наблюдения/);
+assert.match(source, /Уровень географии/);
+assert.match(source, /Фильтры действуют только на отдельный официальный слой/);
+
 console.log('Analytical report official-data gates passed.');
