@@ -339,3 +339,42 @@ The same report gives 2025 fixed-capital investment by large and medium organisa
 ## Latest combined Stage 3 control — 21 November 2026
 
 A direct Supabase SQL control over the defined Stage 3 source group now reports **17,096 rows**, 17,096 unique source keys, all pending, 0 validation errors, 0 promoted rows and all 22 canonical municipalities represented. This supersedes the earlier interim subtotal of 16,755 shown in the preceding checkpoint text. The newest batch is the 19-row Surgut annual-report extension. The 2025 FNS / Rosstat density-derived series remains labelled an estimate; no new values have been moved to the analytical table.
+
+
+## Additional municipal report acquisitions — Kogalym, Yugorsk, Surgutsky district (21 November 2026)
+
+### Kogalym — annual report No. 619-GD (18.02.2026)
+
+Official source: https://admkogalym.ru/upload/iblock/e5e/uy9nv5ut0xhw5y4zyjoge55634m2oi2j/619_GD-ot-18.02.2026.pdf
+
+The staging batch for `kogalym_economy_2025_duma_report` contains 16 new observations:
+- Full-circle retail turnover: 15,256.8m RUB in 2024 (reported) and 20,319.3m RUB in 2025 (preliminary).
+- Fixed-capital investment: 26,823m RUB in 2024 (reported) and 27,769m RUB in 2025 (preliminary).
+- Own-produced shipments: 135,025m RUB in 2024 (reported) and 148,976m RUB in 2025 (preliminary).
+- Industrial production index: 98.3% in 2024 and 107.3% in 2025 (preliminary).
+- Sector shipments 2024 / 2025, m RUB: manufacturing 80,637 / 89,023; mining 41,957 / 47,495; electricity/gas/steam 12,054 / 12,066; water/waste 377 / 392.
+
+The four industrial sector values reconcile exactly to total own-produced industrial shipments in each year (135,025m and 148,976m respectively). All 16 observations remain pending.
+
+The existing Kogalym SME source was supplemented with 2024 count observations: 1,864 total SMEs, including 464 legal entities and 1,400 IP. The 2025 figures remain 1,894 (458 legal entities, 1,436 IP). The report separately lists 5,232 self-employed persons, who are not added to SME totals.
+
+### Yugorsk — investment message 2025
+
+Official source: https://adm.ugorsk.ru/about/statistics/ekonomika/investitsionnaya-deyatelnost/investitsionnoe-poslanie-glavy-goroda-.php
+
+A more detailed official investment message gives a preliminary 2025 fixed-capital investment estimate of **3,899.9m RUB**. This supersedes the earlier rounded phrase “3bn RUB” in the mayor's public report. The earlier 3,000m observation was removed from staging and replaced by the 3,899.9m value under source `ugorsk_investment_message_2025`. The 1,242 SME count at year-end 2025 and 203.1m RUB in tax receipts from aggregate-income tax remain distinct observations; tax receipts are not SME turnover.
+
+### Surgutsky district — forecast No. 1836 (26.10.2026)
+
+Source: https://base.garant.ru/415158419/da0ca740e319b67eff630b4065586e13/
+
+Ten observations were added from the official 2027–2029 forecast table:
+- Fixed-capital investment 2025: 361,669.5m RUB (reported); 2026: 324,393.9m RUB (estimate).
+- Industrial production index 2025: 98.1%, with sector indices mining 97.9%, manufacturing 103.4%, electricity/gas/steam 100.9%, water/waste 97.6%.
+- Retail turnover index 2025: 99.5%; 2026 estimate: 100.5%.
+
+The document gives an index, not an absolute retail turnover amount. No ruble turnover is inferred from the index without the base amount. All ten rows remain pending.
+
+## Updated Stage 3 Supabase control — 21 November 2026
+
+Direct SQL control for the selected Stage 3 source group now reports **17,126 staging rows**, 17,126 unique `(source_id, source_record_key)` keys, all pending, zero validation errors, zero promoted rows and all 22 canonical municipalities represented. The latest additions are 16 Kogalym economic observations, 3 2024 Kogalym SME observations, 1 precise Yugorsk investment estimate (replacing the earlier rounded estimate without changing total row count), and 10 Surgutsky district observations. Nothing has been promoted into `public.municipality_indicators`.
