@@ -610,3 +610,40 @@ Read-only запрос к `public.municipalities` Supabase подтвердил 
 - `https://storage.yandexcloud.net/tochno-st-catalog/Rosstat/data_bdmo_118_v20250918/by_indicator/data_section13_112_v20250918.zip`
 
 Web viewer отказался открыть оба архива как application/zip, а downloader вернул download failure. Поэтому состав архива, коды, периоды, уровни бюджета и значения ещё не проверены; источник остаётся identified, retrieved_at не ставить, строки не импортировать до получения и анализа оригинального архива.
+
+
+## 21.11.2026 — staging дополнительных функциональных расходов
+Дополнительно загружены из review CSV в закрытый Supabase staging (не в public observations) следующие наборы по 22 МО за 2023–2024:
+- `duma_budget_page3_payroll_manual_transcription.csv` — 44;
+- `duma_budget_page3_capital_investment_manual_transcription.csv` — 44;
+- `duma_budget_page4_housing_utility_manual_transcription.csv` — 44;
+- `duma_budget_page5_environment_education_culture_health_manual_transcription.csv` — 176;
+- `duma_budget_page6_social_sports_manual_transcription.csv` — 88;
+- `duma_budget_page6_municipal_debt_service_manual_transcription.csv` — 44.
+Всего 440 строк. Временные коды `candidate_*` не сопоставлены с production dictionary, все review_status=`needs_mapping`, mapped_indicator_code=NULL. В 10 пустых ячейках обслуживания долга normalized_value=NULL; не интерпретировать как 0. Источники GitHub file SHA и page metadata сохранены в raw_record. Все строки остаются review-only.
+
+Не смешивать:
+- расходы на обслуживание долга (поток) с муниципальным долгом (остаток на дату);
+- «Иные расходы» по экономической группировке с функциональными расходами страниц 4–6;
+- расходы на национальную экономику с расходами на дорожное хозяйство;
+- образование/здравоохранение/ЖКХ/социальную политику с результатами/качеством соответствующих услуг.
+
+## Показатели 42–54: статус покрытия
+
+| № | Показатель | Текущее состояние |
+|---:|---|---|
+| 42 | Годовые доходы местных бюджетов | 2023–2024: 44 review rows, pending visual QA |
+| 43 | Налоговые доходы | 44 values in staging, no approved code; separate from combined tax+non-tax |
+| 44 | Неналоговые доходы | annual municipal split not yet mapped/transcribed |
+| 45 | Безвозмездные поступления | 22 verified values for 2025-Q3 only; annual missing |
+| 46 | Расходы местных бюджетов | 44 review rows; 2023/2024 cross-check by separate official appendix; visual QA outstanding |
+| 47 | Дефицит / профицит | municipal annual rows not yet staged |
+| 48 | Муниципальный долг | debt stock aggregate available; municipal detail not staged. Debt service is a separate flow |
+| 49 | Расходы на образование | 44 review rows, candidate code |
+| 50 | Расходы на здравоохранение | 44 review rows, candidate code |
+| 51 | Расходы на ЖКХ | 44 review rows, candidate code |
+| 52 | Расходы на дорожное хозяйство | not yet separated from broad national economy category |
+| 53 | Социальная поддержка | 44 review rows for functional category «Социальная политика» |
+| 54 | Исполнение муниципальных программ | source and methodology not yet established |
+
+Не запускать import procedure для candidate codes до dictionary approval, visual review и принятия записей.
