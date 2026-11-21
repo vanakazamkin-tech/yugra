@@ -37,9 +37,12 @@ const exporter = source.slice(exporterStart, exporterEnd);
 assert.match(exporter, /reportFilteredOfficialIndicators\.map/);
 assert.match(exporter, /'URL источника'/);
 assert.match(exporter, /'Статус проверки'/);
-assert.match(exporter, /'\\\\uFEFF'/);
-assert.match(exporter, /replaceAll\('\"', '\"\"'\)/);
-assert.match(exporter, /disabled/ === null ? /$^/ : /reportOfficialYear/); // keep the year-specific export name explicit
+assert.ok(exporter.includes(String.raw`const csv = '\\uFEFF'`), 'official CSV must include a UTF-8 BOM');
+assert.ok(exporter.includes(String.raw`.join('\\r\\n')`), 'official CSV must use CRLF rows');
+assert.ok(exporter.includes(String.raw`['=', '+', '-', '@', '\\t', '\\r']`), 'official CSV must mitigate spreadsheet formula injection');
+assert.ok(exporter.includes(`replaceAll('"', '""')`), 'official CSV must escape quoted cells');
+assert.match(exporter, /anchor\.download = 'yugra-official-observations-'/);
+assert.doesNotMatch(exporter, /downloadCsv\\(reportItems/);
 assert.doesNotMatch(exporter, /downloadCsv\(reportItems/);
 
 assert.match(source, /reportOfficialSearch, reportOfficialYear, reportOfficialGeography/);
