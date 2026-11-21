@@ -42,7 +42,6 @@ assert.ok(exporter.includes(String.raw`.join('\r\n')`), 'official CSV must use C
 assert.ok(exporter.includes(String.raw`['=', '+', '-', '@', '\t', '\r']`), 'official CSV must mitigate spreadsheet formula injection');
 assert.ok(exporter.includes(`replaceAll('"', '""')`), 'official CSV must escape quoted cells');
 assert.match(exporter, /anchor\.download = 'yugra-official-observations-'/);
-assert.doesNotMatch(exporter, /downloadCsv\\(reportItems/);
 assert.doesNotMatch(exporter, /downloadCsv\(reportItems/);
 
 assert.ok(source.includes(String.raw`/^\d{4}$/`), 'saved report year must be validated when loading templates');
