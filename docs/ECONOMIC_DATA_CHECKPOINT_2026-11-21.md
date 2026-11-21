@@ -419,3 +419,24 @@ The retail percentages are indices, not absolute retail turnover. No ruble value
 ## Latest combined Stage 3 control — 21 November 2026
 
 A direct Supabase SQL check for the Stage 3 source group reports **17,136 rows**, 17,136 unique source keys, all pending, zero validation errors, zero promoted rows and all 22 canonical municipalities represented. This includes 10 Sovietsky district observations, 10 Surgutsky district observations, the refined Yugorsk investment observation and previous acquisitions. No rows have been moved into `public.municipality_indicators`.
+
+
+## Surgutsky district — Chapter 4 absolute 2026 estimates and SME turnover (21 November 2026)
+
+The complete Chapter 4 text of the official 2027–2029 forecast (Decision No.1836, 26.10.2026) was inspected through the published Garant text. The following 13 additional observations were staged separately:
+
+- Retail turnover across all forms of trade: **34,648m RUB** for 2026, estimate. This is an absolute amount, not the previously staged retail index of 100.5%.
+- Turnover of small and medium enterprises, including microenterprises: **24.0bn RUB** for 2026, estimate.
+- Number of small and medium enterprises including microenterprises: **3,052** at the beginning of 2026 (source-reported); estimated **3,100** by year-end 2026. The report uses “предприятия”; keep this source wording and do not silently re-label it as a full FNS entity/sole-trader count.
+- Self-employed under the professional income tax regime are separate: **12,064** at the beginning of 2026; **12,300** estimated by year-end. Do not add them to SMEs.
+- Employment in SMEs: **18,617** at the beginning of 2026. A separate estimate of **18,800** at year-end explicitly includes self-employed people, so it is not directly comparable to the first figure.
+- Industrial shipments in the full circle of industrial product manufacturers: **1,568,811.5m RUB** for 2026, estimate.
+- 2026 industrial components, m RUB: oil extraction and related services 1,482,585.3; manufacturing 59,957.6; electricity/gas/steam and air conditioning 24,905.9; water/waste 1,362.8.
+
+The four sector components sum to 1,568,811.6m RUB, 0.1m above the reported total. The source values have been retained without manual adjustment; the small difference is noted as rounding.
+
+Official source: https://base.garant.ru/415158419/510567bc799b499f450a4638e59966a6/
+
+## Latest combined Stage 3 control — 21 November 2026
+
+The earlier checkpoint subtotal of 17,136 rows has been superseded. After adding the 13 new Surgutsky district observations, direct Supabase SQL reports **17,149 rows**, 17,149 unique source keys, all pending, zero validation errors, zero promoted rows, and all 22 canonical municipalities represented within the selected Stage 3 source group. Nothing has been moved to `public.municipality_indicators`.
