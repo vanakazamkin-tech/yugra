@@ -302,3 +302,40 @@ Direct SQL checks as of this update:
 - All 22 canonical municipal IDs appear in the BDPMO series.
 
 The full FNS SME snapshot aggregation is still running and is not included in the 16,755-row subtotal.
+
+
+## Surgut annual report extension — 2025 SME, retail, and industrial indicators (21 November 2026)
+
+Official source: City Duma decision/report No. 963-VII DG dated 03.03.2026. PDF:
+https://dumasurgut.ru/upload/iblock/80f/xzxknp8dh16e3mftqxj3zm870d0xc7ut/963-VII%20%D0%94%D0%93%20%D0%BE%D1%82%2003.03.2026.pdf
+
+Nineteen new observations were added to the private review staging table; all remain pending, with no validation errors and no promotion.
+
+### SME turnover and retail trade
+
+- The report's municipal SME-programme KPI states **323.4bn RUB** for 2025 as the turnover of SME subjects (against a plan of 321.7bn). This is kept as a separate indicator from the tabled small-business turnover; the two published values are not forced to reconcile.
+- The report's table 5.1 gives small-business turnover of **257,232.8m RUB** for 2024 and **283,335.8m RUB** for 2025. The 2025 rounded equivalent (283.3bn) already existed in an earlier municipal source and was not duplicated.
+- Table 6.1 gives retail turnover by large and medium organisations of **121,339.8m RUB** in 2024 and **128,749.8m RUB** in 2025. This is not the full market turnover.
+- The report estimates the 2025 consumer market at **258.6bn RUB** and says retail turnover accounts for 76.3% of the market. A derived estimate of full retail turnover is therefore **about 197.31bn RUB** (258.6 × 0.763). This is explicitly staged as a derived estimate from two rounded source values, not a directly published absolute figure.
+- The report lists 20.9 thousand active small-business entities for 2025. The source calls these “субъекты малого бизнеса”; the prior staging label has been corrected so it is not presented as the total register of all SME categories.
+
+### Industrial shipments and sectors
+
+The same report distinguishes total shipments by large and medium organisations from shipments of industrial-product manufacturers:
+- All large and medium organisations, own-produced goods/work/services: **1,168,784.6m RUB** (2024) and **1,129,957.2m RUB** (2025).
+- Industrial-product manufacturers, large and medium: **936,848.3m RUB** (2024) and **876,888.7m RUB** (2025). Industrial physical-volume index in 2025: **101.0%** year-on-year.
+- Sector detail (large and medium industrial producers), 2024 / 2025, million RUB:
+  - Mining: 23,318.7 / 27,609.3
+  - Manufacturing: 808,740.0 / 734,868.4
+  - Electricity, gas, steam and air conditioning: 98,087.3 / 107,209.4
+  - Water supply, wastewater, waste collection/treatment and remediation: 6,702.3 / 7,201.6
+
+The four sectors sum exactly to the reported industrial-manufacturer shipment total for each year. This is a useful municipality-level sector cross-check alongside the BDPMO OKVED2 detail; do not combine the two series until their reporting populations and coverage are reconciled.
+
+### Investment data not duplicated
+
+The same report gives 2025 fixed-capital investment by large and medium organisations of 98,365.1m RUB, up 5.6% in comparable prices. This figure is already present in the verified analytical table under the municipal 2025 report and was deliberately not staged again. The earlier report also contains the 2024 value of 85,552.7m RUB, which is already present in the verified series.
+
+## Latest combined Stage 3 control — 21 November 2026
+
+A direct Supabase SQL control over the defined Stage 3 source group now reports **17,096 rows**, 17,096 unique source keys, all pending, 0 validation errors, 0 promoted rows and all 22 canonical municipalities represented. This supersedes the earlier interim subtotal of 16,755 shown in the preceding checkpoint text. The newest batch is the 19-row Surgut annual-report extension. The 2025 FNS / Rosstat density-derived series remains labelled an estimate; no new values have been moved to the analytical table.
