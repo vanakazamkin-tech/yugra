@@ -142,7 +142,7 @@ const csvEscape = (value) => {
   let text = String(value ?? '');
   // Prefix risky text values so spreadsheet applications do not execute them as formulas.
   const first = text.trimStart()[0];
-  if (typeof value === 'string' && ['=', '+', '-', '@', '\t', '\r'].includes(first)) text = "'" + text;
+      if (typeof value === 'string' && ['=', '+', '-', '@', '\t', '\r'].includes(first)) text = "'" + text;
   return `"${text.replaceAll('"', '""')}"`;
 };
 const downloadCsv = (items, fields, filename) => {
@@ -1413,7 +1413,7 @@ export const InvestmentDetails = () => {
       if (typeof template.reportIncludeMethodology === 'boolean') setReportIncludeMethodology(template.reportIncludeMethodology);
       if (typeof template.reportIncludeOfficialData === 'boolean') setReportIncludeOfficialData(template.reportIncludeOfficialData);
        if (typeof template.reportOfficialSearch === 'string') setReportOfficialSearch(template.reportOfficialSearch);
-       if (template.reportOfficialYear === 'all' || /^\\d{4}$/.test(String(template.reportOfficialYear || ''))) setReportOfficialYear(String(template.reportOfficialYear));
+       if (template.reportOfficialYear === 'all' || /^\d{4}$/.test(String(template.reportOfficialYear || ''))) setReportOfficialYear(String(template.reportOfficialYear));
        if (['all', 'municipality', 'settlement', 'region'].includes(template.reportOfficialGeography)) setReportOfficialGeography(template.reportOfficialGeography);
       if (template.reportChartMetric && METRIC_BY_KEY[template.reportChartMetric]) setReportChartMetric(template.reportChartMetric);
       setReportTemplateSaved(true);
