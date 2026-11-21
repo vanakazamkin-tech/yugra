@@ -340,6 +340,9 @@ export const InvestmentDetails = () => {
   const [reportIncludeTable, setReportIncludeTable] = useState(true);
   const [reportIncludeMethodology, setReportIncludeMethodology] = useState(true);
   const [reportIncludeOfficialData, setReportIncludeOfficialData] = useState(false);
+  const [reportOfficialSearch, setReportOfficialSearch] = useState('');
+  const [reportOfficialYear, setReportOfficialYear] = useState('all');
+  const [reportOfficialGeography, setReportOfficialGeography] = useState('all');
   const [reportChartMetric, setReportChartMetric] = useState('investments');
   const [reportTemplateSaved, setReportTemplateSaved] = useState(false);
   
@@ -1213,6 +1216,22 @@ export const InvestmentDetails = () => {
         || String(a.geographic_level || '').localeCompare(String(b.geographic_level || ''))
         || String(a.indicator_name || '').localeCompare(String(b.indicator_name || ''), 'ru-RU'));
   }, [reportItems, officialIndicators]);
+  const reportOfficialYearOptions = useMemo(() => Array.from(new Set(
+    reportOfficialIndicators.map((item) => String(item.reference_year))
+  )).sort((a, b) => Number(b) - Number(a)), [reportOfficialIndicators]);
+  const reportFilteredOfficialIndicators = useMemo(() => {
+    const search = reportOfficialSearch.trim().toLocaleLowerCase('ru-RU');
+    return reportOfficialIndicators.filter((item) => {
+      const matchesYear = reportOfficialYear === 'all' || String(item.reference_year) === reportOfficialYear;
+      const matchesGeography = reportOfficialGeography === 'all' || item.geographic_level === reportOfficialGeography;
+      const municipalityName = municipalities.find((entry) => entry.id === item.municipality_id)?.name;
+      const searchableText = [
+        item.indicator_name, item.indicator_code, item.geographic_name || municipalityName,
+        item.source_id, item.source_url, item.notes, item.reference_period, item.reference_year,
+      ].filter(Boolean).join(' ').toLocaleLowerCase('ru-RU');
+      return matchesYear && matchesGeography && (!search || searchableText.includes(search));
+    });
+  }, [reportOfficialIndicators, reportOfficialSearch, reportOfficialYear, reportOfficialGeography, municipalities]);
   const comparisonMetricDef = METRIC_BY_KEY[comparisonMetric] || METRICS[0];
   const reportChartMetricDef = METRIC_BY_KEY[reportChartMetric] || METRICS[0];
   const reportPrintFields = reportFields.filter((key) => METRIC_BY_KEY[key]);
@@ -1375,7 +1394,7 @@ export const InvestmentDetails = () => {
   const toggleReportSelection = (id) => { setReportTemplateSaved(false); setReportSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]); };
   const toggleReportField = (key) => { setReportTemplateSaved(false); setReportFields((current) => current.includes(key) ? current.filter((field) => field !== key) : [...current, key]); };
   const saveReportTemplate = () => {
-    const template = { reportTitle, reportScope, reportSelectedIds, reportFields, reportIncludeSummary, reportIncludeChart, reportIncludeTable, reportIncludeMethodology, reportIncludeOfficialData, reportChartMetric };
+    const template = { reportTitle, reportScope, reportSelectedIds, reportFields, reportIncludeSummary, reportIncludeChart, reportIncludeTable, reportIncludeMethodology, reportIncludeOfficialData, reportOfficialSearch, reportOfficialYear, reportOfficialGeography, reportChartMetric };
     try { localStorage.setItem('yugra-report-template-v1', JSON.stringify(template)); setReportTemplateSaved(true); }
     catch { setReportTemplateSaved(false); }
   };
@@ -1393,11 +1412,50 @@ export const InvestmentDetails = () => {
       if (typeof template.reportIncludeTable === 'boolean') setReportIncludeTable(template.reportIncludeTable);
       if (typeof template.reportIncludeMethodology === 'boolean') setReportIncludeMethodology(template.reportIncludeMethodology);
       if (typeof template.reportIncludeOfficialData === 'boolean') setReportIncludeOfficialData(template.reportIncludeOfficialData);
+       if (typeof template.reportOfficialSearch === 'string') setReportOfficialSearch(template.reportOfficialSearch);
+       if (template.reportOfficialYear === 'all' || /^\\d{4}$/.test(String(template.reportOfficialYear || ''))) setReportOfficialYear(String(template.reportOfficialYear));
+       if (['all', 'municipality', 'settlement', 'region'].includes(template.reportOfficialGeography)) setReportOfficialGeography(template.reportOfficialGeography);
       if (template.reportChartMetric && METRIC_BY_KEY[template.reportChartMetric]) setReportChartMetric(template.reportChartMetric);
       setReportTemplateSaved(true);
     } catch { setReportTemplateSaved(false); }
   };
   const exportReportCsv = () => downloadCsv(reportItems, reportPrintFields, 'yugra-analytical-report');
+  const exportReportOfficialCsv = () => {
+    if (!reportFilteredOfficialIndicators.length) return;
+    const headers = [
+      'Территория', 'Уровень географии', 'Код показателя', 'Показатель', 'Значение',
+      'Единица измерения', 'Год', 'Период', 'Источник данных', 'URL источника',
+      'Статус проверки', 'Примечание',
+    ];
+    const rows = reportFilteredOfficialIndicators.map((item) => {
+      const municipality = municipalities.find((entry) => entry.id === item.municipality_id);
+      const geography = item.geographic_level === 'settlement'
+        ? 'Населённый пункт'
+        : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
+      return [
+        item.geographic_name || municipality?.name || item.municipality_id,
+        geography, item.indicator_code, item.indicator_name, item.value, item.unit,
+        item.reference_year, formatReferencePeriod(item), item.source_id, item.source_url,
+        item.verification_status, item.notes || '',
+      ];
+    });
+    const escape = (value) => {
+      let text = String(value == null ? '' : value);
+      const first = text.trimStart()[0];
+      if (typeof value === 'string' && ['=', '+', '-', '@', '\\t', '\\r'].includes(first)) text = "'" + text;
+      return '"' + text.replaceAll('"', '""') + '"';
+    };
+    const csv = '\\uFEFF' + [headers, ...rows].map((row) => row.map(escape).join(';')).join('\\r\\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    const yearLabel = reportOfficialYear === 'all' ? 'all-years' : reportOfficialYear;
+    anchor.download = 'yugra-official-observations-' + yearLabel + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
 
   const renderTableRows = (items) => items.map((m, index) => {
     const population = populationByMunicipality.get(m.id);
@@ -1464,16 +1522,16 @@ export const InvestmentDetails = () => {
         <div className="print-report-kicker">ЮГРА · АНАЛИТИЧЕСКАЯ ПЛАТФОРМА</div>
         <h1>{reportTitle || 'Аналитический отчёт по муниципалитетам Югры'}</h1>
         <p>Демонстрационные поля рейтинга · Сформировано: {reportDate()} · В выборке: {reportSummary.count} муниципалитетов</p>
-        <p className="print-methodology"><strong>Важно:</strong> сводные оценки, баллы и расчётные показатели основаны на концептуальном наборе проекта и не являются официальной статистикой. Новые официальные статистические ряды пока не загружены. Подтверждённые официальные наблюдения, если они включены, приведены отдельно с источником, периодом и территориальным уровнем.</p>
+        <p className="print-methodology"><strong>Важно:</strong> сводные оценки, баллы и расчётные показатели основаны на концептуальном наборе проекта и не являются официальной статистикой. Полнота подтверждённых наблюдений зависит от показателя, территории и периода. Подтверждённые официальные наблюдения, если они включены, приведены отдельно с источником, периодом и территориальным уровнем.</p>
         {reportIncludeSummary && <><h2>Сводка</h2>{renderReportSummary()}</>}
         {reportIncludeChart && <><h2>Сравнение показателя: {reportChartMetricDef.label}</h2>{reportItems.some((m) => reportChartMetricDef.get(m) != null) ? renderReportChart() : <p>Нет заполненных значений выбранного показателя в этой выборке; диаграмма не построена.</p>}</>}
         {reportIncludeTable && <><h2>Детализация показателей</h2>{reportPrintFields.length === 0 ? <p>Показатели для детализации не выбраны.</p> : renderReportTable()}</>}
         {reportIncludeOfficialData && <section className="print-official-data">
-          <h2>Проверенные официальные наблюдения ({reportOfficialIndicators.length})</h2>
+          <h2>Проверенные официальные наблюдения ({reportFilteredOfficialIndicators.length})</h2>
           <p>Отдельный слой фактических данных: только проверенные наблюдения с явным территориальным уровнем, корректным годом и числовым значением. Муниципальные, поселковые и региональные записи не объединяются в один территориальный итог; единица измерения и период указаны отдельно.</p>
-          {reportOfficialIndicators.length ? <table className="report-official-data-table">
+          {reportFilteredOfficialIndicators.length ? <table className="report-official-data-table">
             <thead><tr><th scope="col">Территория / уровень</th><th scope="col">Показатель</th><th scope="col">Значение</th><th scope="col">Период</th><th scope="col">Примечание / источник</th></tr></thead>
-            <tbody>{reportOfficialIndicators.map((item) => {
+            <tbody>{reportFilteredOfficialIndicators.map((item) => {
               const municipality = municipalities.find((entry) => entry.id === item.municipality_id);
               const geography = item.geographic_level === 'settlement' ? 'Населённый пункт' : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
               return <tr key={item.id}>
@@ -1610,7 +1668,7 @@ export const InvestmentDetails = () => {
                 <small>из {extendedInsights.growthCoverage} с доступным показателем</small>
               </article>
             </section>
-            <p className="data-quality-note">Все сводные карточки выше — демонстрационные расчёты из концептуального набора и не являются официальной статистикой. Новые карточки рассчитываются на основе существующего набора данных проекта; новые официальные статистические ряды пока не загружены. Проверенные значения и охват источников показаны отдельно ниже.</p>
+            <p className="data-quality-note">Все сводные карточки выше — демонстрационные расчёты из концептуального набора и не являются официальной статистикой. Новые карточки рассчитываются на основе существующего набора данных проекта; полнота подтверждённых наблюдений зависит от показателя, территории и периода. Проверенные значения и охват источников показаны отдельно ниже.</p>
             <section className="official-coverage-teaser panel" aria-labelledby="home-official-coverage-title">
               <div className="official-coverage-copy">
                 <span className="eyebrow"><span className="eyebrow-diamond"/> ФАКТИЧЕСКИЙ СЛОЙ ДАННЫХ</span>
@@ -2127,9 +2185,17 @@ export const InvestmentDetails = () => {
                   {reportIncludeChart && <label className="form-field chart-metric-select"><span>Показатель диаграммы</span><select value={reportChartMetric} onChange={(e) => { setReportChartMetric(e.target.value); setReportTemplateSaved(false); }}>{METRICS.map((metric) => <option key={metric.key} value={metric.key}>{metric.label}</option>)}</select></label>}
                   <label className="switch-row"><span><strong>Детальная таблица</strong><small>Строки по территориям и выбранные колонки</small></span><input type="checkbox" checked={reportIncludeTable} onChange={(e) => { setReportIncludeTable(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
                   <label className="switch-row"><span><strong>Методика и оговорки</strong><small>Указать происхождение и необходимость проверки данных</small></span><input type="checkbox" checked={reportIncludeMethodology} onChange={(e) => { setReportIncludeMethodology(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
-                  <label className="switch-row"><span><strong>Официальные наблюдения</strong><small>Отдельная таблица с источником, географическим уровнем и периодом · {reportOfficialIndicators.length} значений в текущей выборке</small></span><input type="checkbox" checked={reportIncludeOfficialData} onChange={(e) => { setReportIncludeOfficialData(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
+                  <label className="switch-row"><span><strong>Официальные наблюдения</strong><small>Отдельная таблица с источником, географическим уровнем и периодом · {reportFilteredOfficialIndicators.length} значений в текущей выборке</small></span><input type="checkbox" checked={reportIncludeOfficialData} onChange={(e) => { setReportIncludeOfficialData(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
+                   {reportIncludeOfficialData && <div className="report-official-filters">
+                     <label className="form-field"><span>Поиск по показателю, территории или источнику</span><input aria-label="Поиск официальных наблюдений в отчёте" value={reportOfficialSearch} onChange={(e) => { setReportOfficialSearch(e.target.value); setReportTemplateSaved(false); }} placeholder="Например, дороги, бюджет, Росстат…"/></label>
+                     <div className="report-official-filter-grid">
+                       <label className="form-field"><span>Год наблюдения</span><select aria-label="Год официальных наблюдений в отчёте" value={reportOfficialYear} onChange={(e) => { setReportOfficialYear(e.target.value); setReportTemplateSaved(false); }}><option value="all">Все годы</option>{reportOfficialYearOptions.map((year) => <option key={year} value={year}>{year}</option>)}</select></label>
+                       <label className="form-field"><span>Уровень географии</span><select aria-label="Уровень географии официальных наблюдений в отчёте" value={reportOfficialGeography} onChange={(e) => { setReportOfficialGeography(e.target.value); setReportTemplateSaved(false); }}><option value="all">Все уровни</option><option value="municipality">Муниципальный</option><option value="settlement">Населённые пункты</option><option value="region">Региональный</option></select></label>
+                     </div>
+                     <p className="report-official-filter-note">Фильтры действуют только на отдельный официальный слой. Демонстрационные поля и их CSV-экспорт не смешиваются с этими наблюдениями.</p>
+                   </div>
                 </div>
-                <div className="report-actions"><button type="button" className="primary-button" onClick={handleExportPDF}><Icon name="download"/>Сохранить / печатать PDF</button><button type="button" className="outline-button" onClick={exportReportCsv}><Icon name="table"/>Экспорт CSV</button></div>
+                <div className="report-actions"><button type="button" className="primary-button" onClick={handleExportPDF}><Icon name="download"/>Сохранить / печатать PDF</button><button type="button" className="outline-button" onClick={exportReportCsv}><Icon name="table"/>Экспорт CSV · демо</button>{reportIncludeOfficialData && <button type="button" className="outline-button" onClick={exportReportOfficialCsv} disabled={reportFilteredOfficialIndicators.length === 0}><Icon name="table"/>Экспорт официальных данных CSV</button>}</div>
               </aside>
 
               <div className="report-preview-column">
@@ -2137,16 +2203,16 @@ export const InvestmentDetails = () => {
                 <article className="report-document-preview">
                   <div className="report-document-brand"><span className="report-doc-emblem"><img src="/images/khanty-prosperity-seal.svg" alt=""/></span><div><strong>ЮГРА</strong><small>аналитическая платформа муниципалитетов</small></div><span className="document-year">КОНЦЕПТ</span></div>
                   <div className="report-doc-rule" aria-hidden="true"/>
-                  <span className="report-doc-kicker">АНАЛИТИЧЕСКИЙ ОТЧЁТ · {reportDate().toLocaleUpperCase('ru-RU')}</span><h2>{reportTitle || 'Название отчёта не задано'}</h2><p className="report-doc-subtitle">Отчёт собран в демонстрационной аналитической платформе Югры. В выборке: <strong>{reportSummary.count}</strong> муниципалитетов. Сводные оценки и расчётные показатели основаны на концептуальном наборе проекта и не являются официальной статистикой; новые официальные статистические ряды пока не загружены. Подтверждённые официальные наблюдения, если они включены, показаны отдельным слоем.</p>
+                  <span className="report-doc-kicker">АНАЛИТИЧЕСКИЙ ОТЧЁТ · {reportDate().toLocaleUpperCase('ru-RU')}</span><h2>{reportTitle || 'Название отчёта не задано'}</h2><p className="report-doc-subtitle">Отчёт собран в демонстрационной аналитической платформе Югры. В выборке: <strong>{reportSummary.count}</strong> муниципалитетов. Сводные оценки и расчётные показатели основаны на концептуальном наборе проекта и не являются официальной статистикой; полнота подтверждённых наблюдений зависит от показателя, территории и периода. Подтверждённые официальные наблюдения, если они включены, показаны отдельным слоем.</p>
                   {reportIncludeSummary && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>Ключевые показатели выборки</h4><span>01 / СВОДКА</span></div>{renderReportSummary()}</section>}
                   {reportIncludeChart && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>{reportChartMetricDef.label}</h4><span>02 / СРАВНЕНИЕ</span></div><p className="chart-unit-note">{reportChartMetricDef.unit === 'место' ? 'Для места в рейтинге более длинная полоса означает более высокую позицию.' : `Значение показателя в ${reportChartMetricDef.unit}.`}</p>{reportItems.some((m) => reportChartMetricDef.get(m) != null) ? renderReportChart() : <p className="report-empty-note">Нет заполненных значений этого показателя в выбранной выборке.</p>}</section>}
                   {reportIncludeTable && <section className="report-preview-section"><div className="report-preview-section-heading"><h4>Детализация</h4><span>03 / ТАБЛИЦА</span></div>{reportPrintFields.length === 0 ? <p className="report-empty-note">Выберите хотя бы один показатель для таблицы.</p> : renderReportTable()}</section>}
                   {reportIncludeOfficialData && <section className="report-preview-section report-official-section">
                     <div className="report-preview-section-heading"><h4>Проверенные официальные наблюдения</h4><span>ОТДЕЛЬНЫЙ СТАТИСТИЧЕСКИЙ СЛОЙ</span></div>
-                    <p className="report-official-intro">{reportOfficialIndicators.length} наблюдений по выбранным территориям. Эти значения не смешиваются с демонстрационными баллами, инвестиционными объёмами и оценками из локального набора. Уровень географии указан в каждой строке.</p>
-                    {reportOfficialIndicators.length ? <div className="report-official-data-table-wrap" role="region" tabIndex={0} aria-label="Таблица официальных наблюдений. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="report-official-data-table">
+                    <p className="report-official-intro">{reportFilteredOfficialIndicators.length} из {reportOfficialIndicators.length} проверенных наблюдений по выбранным территориям соответствуют фильтрам. Эти значения не смешиваются с демонстрационными баллами, инвестиционными объёмами и оценками из локального набора. Уровень географии указан в каждой строке.</p>
+                    {reportFilteredOfficialIndicators.length ? <div className="report-official-data-table-wrap" role="region" tabIndex={0} aria-label="Таблица официальных наблюдений. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="report-official-data-table">
                       <thead><tr><th scope="col">Территория / уровень</th><th scope="col">Показатель</th><th scope="col">Значение</th><th scope="col">Период</th><th scope="col">Примечание / источник</th></tr></thead>
-                      <tbody>{reportOfficialIndicators.map((item) => {
+                      <tbody>{reportFilteredOfficialIndicators.map((item) => {
                         const municipality = municipalities.find((entry) => entry.id === item.municipality_id);
                         const geography = item.geographic_level === 'settlement' ? 'Населённый пункт' : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
                         return <tr key={item.id}>
@@ -2199,7 +2265,7 @@ export const InvestmentDetails = () => {
             <section className="about-section panel">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Что умеет прототип</h2><p>Функции, которые готовятся к работе с проверенной статистикой</p></div></div></div>
               <div className="about-capability-grid">
-                <article><span>01</span><strong>Единая база</strong><p>Пять групп показателей: занятость, доходы, местный бюджет, миграция и инвестиции. Импорт расширяется по мере доступности источников.</p></article>
+                <article><span>01</span><strong>Единая база</strong><p>Каталог постепенно расширяется: демография, занятость, доходы, экономика и инвестиции, местные финансы, инфраструктура и жильё. Полнота каждого ряда и его допуск к аналитическим расчётам проверяются отдельно.</p></article>
                 <article><span>02</span><strong>Карта и светофор</strong><p>Округ и 22 муниципалитета на одной панели; концепт настраиваемых зелёной, жёлтой и красной зон.</p></article>
                 <article><span>03</span><strong>Сценарии на 1–3 года</strong><p>Базовый, сдержанный, ускоренный и санкционный стресс-сценарии с редактируемыми допущениями.</p></article>
                 <article><span>04</span><strong>Оценка мер поддержки</strong><p>Демонстрация сравнения «до и после» и подготовка аналитической справки для руководства.</p></article>
