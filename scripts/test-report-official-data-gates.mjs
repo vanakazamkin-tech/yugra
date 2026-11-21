@@ -20,4 +20,36 @@ for (const label of ['Средний демо-балл', 'Демо-объём и
 }
 assert.match(source, /сумма только по доступным значениям/);
 
+const filterStart = source.indexOf('const reportFilteredOfficialIndicators = useMemo');
+const filterEnd = source.indexOf('const comparisonMetricDef', filterStart);
+assert.ok(filterStart >= 0 && filterEnd > filterStart, 'report official filters must be memoized');
+const filters = source.slice(filterStart, filterEnd);
+assert.match(filters, /reportOfficialYear === 'all'/);
+assert.match(filters, /reportOfficialGeography === 'all'/);
+assert.match(filters, /searchableText\.includes\(search\)/);
+assert.match(filters, /item\.indicator_code/);
+assert.match(filters, /item\.geographic_name/);
+
+const exporterStart = source.indexOf('const exportReportOfficialCsv = () =>');
+const exporterEnd = source.indexOf('const renderTableRows', exporterStart);
+assert.ok(exporterStart >= 0 && exporterEnd > exporterStart, 'official report CSV exporter must exist separately');
+const exporter = source.slice(exporterStart, exporterEnd);
+assert.match(exporter, /reportFilteredOfficialIndicators\.map/);
+assert.match(exporter, /'URL источника'/);
+assert.match(exporter, /'Статус проверки'/);
+assert.ok(exporter.includes(String.raw`'\uFEFF' + [headers, ...rows]`), 'official CSV must include a UTF-8 BOM');
+assert.ok(exporter.includes(String.raw`.join('\r\n')`), 'official CSV must use CRLF rows');
+assert.ok(exporter.includes(String.raw`['=', '+', '-', '@', '\t', '\r']`), 'official CSV must mitigate spreadsheet formula injection');
+assert.ok(exporter.includes(`replaceAll('"', '""')`), 'official CSV must escape quoted cells');
+assert.match(exporter, /anchor\.download = 'yugra-official-observations-'/);
+assert.doesNotMatch(exporter, /downloadCsv\(reportItems/);
+
+assert.ok(source.includes(String.raw`/^\d{4}$/`), 'saved report year must be validated when loading templates');
+assert.match(source, /reportOfficialSearch, reportOfficialYear, reportOfficialGeography/);
+assert.match(source, /reportFilteredOfficialIndicators\.map\(\(item\)/);
+assert.match(source, /Экспорт официальных данных CSV/);
+assert.match(source, /Год наблюдения/);
+assert.match(source, /Уровень географии/);
+assert.match(source, /Фильтры действуют только на отдельный официальный слой/);
+
 console.log('Analytical report official-data gates passed.');
