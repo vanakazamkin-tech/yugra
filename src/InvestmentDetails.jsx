@@ -2193,7 +2193,7 @@ export const InvestmentDetails = () => {
                        <label className="form-field"><span>Уровень географии</span><select aria-label="Уровень географии официальных наблюдений в отчёте" value={reportOfficialGeography} onChange={(e) => { setReportOfficialGeography(e.target.value); setReportTemplateSaved(false); }}><option value="all">Все уровни</option><option value="municipality">Муниципальный</option><option value="settlement">Населённые пункты</option><option value="region">Региональный</option></select></label>
                      </div>
                      <p className="report-official-filter-note">Фильтры действуют только на отдельный официальный слой. Демонстрационные поля и их CSV-экспорт не смешиваются с этими наблюдениями.</p>
-                   </div>
+                   </div>}
                 </div>
                 <div className="report-actions"><button type="button" className="primary-button" onClick={handleExportPDF}><Icon name="download"/>Сохранить / печатать PDF</button><button type="button" className="outline-button" onClick={exportReportCsv}><Icon name="table"/>Экспорт CSV · демо</button>{reportIncludeOfficialData && <button type="button" className="outline-button" onClick={exportReportOfficialCsv} disabled={reportFilteredOfficialIndicators.length === 0}><Icon name="table"/>Экспорт официальных данных CSV</button>}</div>
               </aside>
