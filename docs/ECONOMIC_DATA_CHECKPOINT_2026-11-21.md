@@ -440,3 +440,19 @@ Official source: https://base.garant.ru/415158419/510567bc799b499f450a4638e59966
 ## Latest combined Stage 3 control — 21 November 2026
 
 The earlier checkpoint subtotal of 17,136 rows has been superseded. After adding the 13 new Surgutsky district observations, direct Supabase SQL reports **17,149 rows**, 17,149 unique source keys, all pending, zero validation errors, zero promoted rows, and all 22 canonical municipalities represented within the selected Stage 3 source group. Nothing has been moved to `public.municipality_indicators`.
+
+
+## Surgutsky district — municipal SME programme KPI, 2025 actual and 2026–2028 plans (21 November 2026)
+
+Official source: Administration order No. 1046-r dated 02.11.2026, appendix:
+https://base.garant.ru/415212273/53f89421bbdaf741eb2d1ecc4ddb4c33/
+
+Ten additional observations were staged under `surgutsky_sme_performance_2025_2028_order1046`:
+- The programme's small-business count **including IP and self-employed persons** per 10,000 residents: 2025 plan 944.32; 2025 actual 1,148.9; 2026 plan 1,171.99; 2027 plan 1,200.00; 2028 plan 1,224.00.
+- The programme's combined number of SMEs **including self-employed persons**: 2025 plan 12,694; 2025 actual 15,116; 2026 plan 15,450; 2027 plan 15,605; 2028 plan 15,761.
+
+These are municipal programme KPIs and include self-employed people; they must not be substituted for the clean FNS Unified SME Register count (3,105 in Surgutsky district on 10.11.2026) or the standard SME-only per-10,000 measure. All ten records remain pending.
+
+A 25.09.2026 revision to the district socioeconomic strategy also restates the official SME-per-10,000 measure: 226.1 for 2024; target values 233.2 by 2030 and 235.0 by 2036. The verified analytical table already has 226.0 for 2024, so this near-identical revision value was not duplicated; the 0.1 difference is retained as a source-version/rounding discrepancy for reconciliation.
+
+Latest source-control total for the selected Stage 3 set: **17,159 rows**, 17,159 unique source keys, all pending, zero validation errors, zero promoted rows and 22 canonical municipalities represented.
