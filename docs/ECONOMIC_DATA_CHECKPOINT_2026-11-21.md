@@ -378,3 +378,44 @@ The document gives an index, not an absolute retail turnover amount. No ruble tu
 ## Updated Stage 3 Supabase control — 21 November 2026
 
 Direct SQL control for the selected Stage 3 source group now reports **17,126 staging rows**, 17,126 unique `(source_id, source_record_key)` keys, all pending, zero validation errors, zero promoted rows and all 22 canonical municipalities represented. The latest additions are 16 Kogalym economic observations, 3 2024 Kogalym SME observations, 1 precise Yugorsk investment estimate (replacing the earlier rounded estimate without changing total row count), and 10 Surgutsky district observations. Nothing has been promoted into `public.municipality_indicators`.
+
+
+## Further municipal data — Sovietsky district, Yugorsk and Surgutsky district (21 November 2026)
+
+### Sovietsky district — investment passport with 2024 content
+
+Official source: https://econ.sovrnhmao.ru/upload/iblock/130/xh7wd3ftdptm4jv49ophmi19fcktw31h/Investitsionnyy-pasport-Sovetskogo-rayona-2023-261223.pdf
+
+The file name contains “2023”, but the actual document text gives 2024 results and register observations at the beginning of 2025. Ten observations were added to private staging:
+- Retail turnover in 2024: **16,408.2m RUB**.
+- Own-produced shipments / works / services by organisations excluding SMEs: **126,990.9m RUB**.
+- Industry sectors, 2024, m RUB: mining 116,414.2; manufacturing 8,431.3; electricity/gas/steam 1,980.1; water/waste 165.3. These four values reconcile exactly to the reported 126,990.9m total.
+- At the beginning of 2025: 336 “small enterprises” and 1,149 IP; 3,274 self-employed persons are separately listed and are not added to SME counts.
+- Small-business employment share including self-employed persons: 30%. This is not the standard SME employment share because its definition includes self-employed people.
+
+Two values were deliberately not imported:
+- 2024 fixed-capital investment of 10,873.8m RUB in this passport conflicts with another municipal investment-message estimate of 12,287.4m RUB and Rosstat's non-SME organisation investment series of 9,571.592m RUB. The definitions / populations require reconciliation before selection.
+- Retail turnover per capita 305.1k RUB does not match the simple ratio of reported retail turnover 16,408.2m RUB to population 46,803. Its denominator / method requires clarification.
+
+### Yugorsk — refined 2025 investment estimate
+
+The earlier rounded 3bn RUB investment figure from the mayor's public speech was superseded by the more precise preliminary amount in the city's investment message: **3,899.9m RUB** for 2025. The 3,000m observation was removed from staging and replaced with the precise amount under `ugorsk_investment_message_2025`.
+
+Official source: https://adm.ugorsk.ru/about/statistics/ekonomika/investitsionnaya-deyatelnost/investitsionnoe-poslanie-glavy-goroda-.php
+
+The same message gives 1,242 SMEs at year-end 2025 and 203.1m RUB in taxes from aggregate-income tax. The tax amount is not SME turnover.
+
+### Surgutsky district — report No.1836
+
+Official source: https://base.garant.ru/415158419/da0ca740e319b67eff630b4065586e13/
+
+Ten observations were staged from the district's 2027–2029 forecast, which provides 2025 report values and 2026 estimates:
+- 2025 fixed-capital investment: 361,669.5m RUB; 2026 estimate: 324,393.9m RUB.
+- Industrial production index 2025: 98.1%, broken down by mining 97.9%, manufacturing 103.4%, energy 100.9%, water/waste 97.6%.
+- Retail turnover index 2025: 99.5%; 2026 estimate: 100.5%.
+
+The retail percentages are indices, not absolute retail turnover. No ruble value was inferred.
+
+## Latest combined Stage 3 control — 21 November 2026
+
+A direct Supabase SQL check for the Stage 3 source group reports **17,136 rows**, 17,136 unique source keys, all pending, zero validation errors, zero promoted rows and all 22 canonical municipalities represented. This includes 10 Sovietsky district observations, 10 Surgutsky district observations, the refined Yugorsk investment observation and previous acquisitions. No rows have been moved into `public.municipality_indicators`.
