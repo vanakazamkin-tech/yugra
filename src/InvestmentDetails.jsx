@@ -332,7 +332,7 @@ export const InvestmentDetails = () => {
   const syncTimeLabel = lastSyncedAt
     ? new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(lastSyncedAt)
     : null;
-  const [activeTab, setActiveTab] = useState('about');
+  const [activeTab, setActiveTab] = useState('catalog');
   const navigateToTab = (tab) => {
     setActiveTab(tab);
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -346,7 +346,7 @@ export const InvestmentDetails = () => {
   const [activeModalItem, setActiveModalItem] = useState(null);
   const municipalityDialogRef = useRef(null);
   const [hoveredRegionId, setHoveredRegionId] = useState(null);
-  const [isMapListOpen, setIsMapListOpen] = useState(true);
+  const [isMapListOpen, setIsMapListOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'desc' });
 
   // Сравнение: до четырёх территорий и один главный показатель для диаграммы.
@@ -1659,7 +1659,6 @@ export const InvestmentDetails = () => {
           </button>
           <nav className="main-nav" aria-label="Основная навигация">
             <button type="button" aria-current={activeTab === 'catalog' ? 'page' : undefined} className={activeTab === 'catalog' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('catalog')}><Icon name="home"/>Главная</button>
-            <button type="button" aria-current={activeTab === 'map' ? 'page' : undefined} className={activeTab === 'map' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('map')}><Icon name="map"/>Карта</button>
             <button type="button" aria-current={activeTab === 'rating' ? 'page' : undefined} className={activeTab === 'rating' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('rating')}><Icon name="chart"/>Рейтинг</button>
             <button type="button" aria-current={activeTab === 'risk' ? 'page' : undefined} className={activeTab === 'risk' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('risk')}><Icon name="chart"/>Риски</button>
             <button type="button" aria-current={activeTab === 'forecast' ? 'page' : undefined} className={activeTab === 'forecast' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('forecast')}><Icon name="chart"/>Прогнозирование</button>
@@ -1733,7 +1732,8 @@ export const InvestmentDetails = () => {
                 <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="pin"/></span><div><h2>Карта Югры</h2><p>Нажмите на территорию для подробностей</p></div></div><span className="section-tag">ИНТЕРАКТИВНАЯ</span></div>
                 <div className="map-stage"><UgraMap municipalities={municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/><div className="map-watermark" aria-hidden="true"><img src="/images/khanty-prosperity-seal.svg" alt=""/></div></div>
                 <div className="map-legend"><span><i className="legend-dot high"/>Группа A</span><span><i className="legend-dot mid"/>Группа B</span><span className="legend-hint">Выберите район на карте</span></div>
-                <div className="map-card-footer"><span><Icon name="leaf"/> Территория тайги и рек</span><button type="button" onClick={() => navigateToTab('map')}>Открыть карту <Icon name="arrow"/></button></div>
+                {isMapListOpen && <div className="map-list home-map-list"><UgraMapList municipalities={municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/></div>}
+                <div className="map-card-footer"><span><Icon name="leaf"/> Территория тайги и рек</span><button type="button" aria-expanded={isMapListOpen} onClick={() => setIsMapListOpen((open) => !open)}>{isMapListOpen ? 'Скрыть список' : 'Все территории'} <Icon name="chevron"/></button></div>
               </section>
 
               <section className="ranking-panel panel">
@@ -2307,11 +2307,6 @@ export const InvestmentDetails = () => {
 
           </section>}
 
-          {activeTab === 'map' && <section className="panel full-panel">
-            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="map"/></span><div><h2>Муниципальная карта Югры</h2><p>Выберите территорию на карте или в списке</p></div></div><button type="button" className="outline-button" aria-expanded={isMapListOpen} onClick={() => setIsMapListOpen(!isMapListOpen)}>{isMapListOpen ? 'Скрыть список' : 'Показать список'}</button></div>
-            <div className={`map-layout ${isMapListOpen ? '' : 'map-only'}`}><div className="map-stage large-map"><UgraMap municipalities={municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/></div>{isMapListOpen && <div className="map-list"><UgraMapList municipalities={municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/></div>}</div>
-          </section>}
-
           {activeTab === 'rating' && <section className="panel full-panel ranking-page">
             <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Рейтинг муниципалитетов</h2><p>Полный рейтинг с поиском, срезами и сортировкой</p></div></div><div className="toolbar-actions"><button type="button" className="outline-button" onClick={() => navigateToTab('risk')}><Icon name="chart"/>Мониторинг рисков</button><button type="button" className="outline-button" onClick={() => navigateToTab('data')}><Icon name="table"/>Источники</button><button type="button" className="outline-button" onClick={() => downloadCsv(sortedMunicipalities, DEFAULT_REPORT_FIELDS, 'yugra-rating')}><Icon name="download"/>CSV</button><button type="button" className="primary-button" onClick={() => { setReportScope('filtered'); navigateToTab('reports'); }}><Icon name="file"/>Собрать отчёт</button></div></div>
             <div className="rating-filters"><label className="search-box"><Icon name="search"/><input aria-label="Поиск в рейтинге" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Найти муниципалитет…"/></label><div className="filter-row" role="group" aria-label="Фильтр рейтинга по группе муниципалитета">{[['ALL', 'Все группы'], ['A', 'Группа A'], ['B', 'Группа B']].map(([value, label]) => <button type="button" key={value} className={`filter-pill ${selectedGroup === value ? 'selected' : ''}`} aria-pressed={selectedGroup === value} onClick={() => setSelectedGroup(value)}>{label}</button>)}</div><button type="button" className="text-action" onClick={resetFilters}><Icon name="refresh"/>Сбросить фильтры</button></div>
@@ -2465,7 +2460,7 @@ export const InvestmentDetails = () => {
                 <p><strong>Ханты · Манси · Югра</strong> — культурный и территориальный контекст проекта. Платформа остаётся концептом: демонстрационные оценки и сценарные предположения не выдаются за официальную статистику или подтверждённый прогноз.</p>
               </div>
               <div className="about-capability-grid">
-                <article><span>01 / ОБЗОР</span><strong>Территории на карте</strong><p>Муниципальная карта, паспорта территорий и переход от округа к отдельному муниципалитету.</p><button type="button" className="outline-button" onClick={() => navigateToTab('map')}>Открыть карту <Icon name="arrow"/></button></article>
+                <article><span>01 / ОБЗОР</span><strong>Территории на карте</strong><p>Муниципальная карта, паспорта территорий и переход от округа к отдельному муниципалитету.</p><button type="button" className="outline-button" onClick={() => { setIsMapListOpen(true); navigateToTab('catalog'); }}>Перейти к карте <Icon name="arrow"/></button></article>
                 <article><span>02 / АНАЛИЗ</span><strong>Сравнение потенциала</strong><p>Сопоставление выбранных муниципалитетов и доступных показателей за сопоставимые периоды.</p><button type="button" className="outline-button" onClick={() => navigateToTab('compare')}>Сравнить территории <Icon name="arrow"/></button></article>
                 <article><span>03 / МОНИТОРИНГ</span><strong>Риски и сигналы</strong><p>Индикаторы внимания, контроль качества и прозрачные основания для проверки гипотез.</p><button type="button" className="outline-button" onClick={() => navigateToTab('risk')}>Открыть мониторинг <Icon name="arrow"/></button></article>
                 <article><span>04 / ПРОГНОЗ</span><strong>Сценарии на 1–3 года</strong><p>Базовый, сдержанный, ускоренный и стресс-сценарии с настраиваемыми предположениями.</p><button type="button" className="outline-button" onClick={() => navigateToTab('forecast')}>Открыть прогнозирование <Icon name="arrow"/></button></article>
