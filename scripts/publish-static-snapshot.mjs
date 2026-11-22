@@ -174,6 +174,21 @@ async function writePartition(dataset, part, rows, knownKeys) {
   return shards;
 }
 
+function sameDatasetReferences(next, previous) {
+  if (!previous?.datasets) return false;
+  return DATASETS.every((key) => {
+    const left = next.datasets[key];
+    const right = previous.datasets[key];
+    if (!left || !right || Number(left.rows) !== Number(right.rows)) return false;
+    if (left.shards.length !== right.shards.length) return false;
+    return left.shards.every((shard, index) => {
+      const old = right.shards[index];
+      return old && shard.key === old.key && shard.sha256 === old.sha256
+        && Number(shard.rows) === Number(old.rows);
+    });
+  });
+}
+
 function validateManifest(manifest) {
   if (!manifest?.version || !manifest.datasets || typeof manifest.datasets !== 'object') {
     throw new Error('Snapshot manifest is incomplete');
@@ -334,6 +349,13 @@ async function main() {
 
   const incoming = { ...fetched, municipalities };
   const prepared = await prepareDatasets(incoming, currentManifest, full);
+  if (!full && sameDatasetReferences(prepared, currentManifest)) {
+    console.log('No dataset changes detected; keeping the existing immutable snapshot version.');
+    await writeOutput('ready', 'true');
+    await writeOutput('changed', 'false');
+    return;
+  }
+
   const municipalityRows = prepared.datasets.municipalities.rows;
   const municipalityManifestShards = prepared.datasets.municipalities.shards;
   const municipalityValues = await readPartition(municipalityManifestShards);
@@ -377,7 +399,9 @@ async function main() {
   await mkdir(manifestDir, { recursive: true });
   const manifestPath = `snapshots/manifests/${version}.json`;
   const manifestFile = path.join(STORE_ROOT, manifestPath);
-  await writeFile(manifestFile, JSON.stringify(manifest, null, 2) + '\n', { flag: 'wx' });
+  const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2) + '\n');
+  const manifestSha256 = sha256(manifestBytes);
+  await writeFile(manifestFile, manifestBytes, { flag: 'wx' });
 
   // Publish the old current pointer as previous before switching current.
   if (currentPointer?.manifestPath && previousManifest) {
@@ -386,6 +410,7 @@ async function main() {
   await writeFile(path.join(SNAPSHOT_ROOT, 'current.json'), JSON.stringify({
     version,
     manifestPath,
+    manifestSha256,
     publishedAt: now,
   }, null, 2) + '\n');
   await writeFile(path.join(SNAPSHOT_ROOT, 'health', 'latest.json'), JSON.stringify({
