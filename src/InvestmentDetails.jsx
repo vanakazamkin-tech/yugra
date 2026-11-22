@@ -2334,7 +2334,7 @@ export const InvestmentDetails = () => {
               onSelectionChange={setSelectedCompareIds}
               onCreateReport={(ids) => { setReportScope('selected'); setReportSelectedIds(ids); navigateToTab('reports'); }}
               onOpenMunicipality={setActiveModalItem}
-            />}
+            />
             <section className="support-simulation panel" aria-labelledby="support-sim-title">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2 id="support-sim-title">Сценарий «до и после» мер поддержки</h2><p>Интерактивная иллюстрация будущей оценки эффекта программ</p></div></div><span className="concept-corner">ДЕМО</span></div>
               <div className="support-sim-warning">Изменения ниже — условные пользовательские допущения. Это не измеренный эффект субсидий и не причинно-следственная оценка.</div>
