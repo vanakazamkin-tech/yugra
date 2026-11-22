@@ -2360,7 +2360,6 @@ export const InvestmentDetails = () => {
               })()}
               <p className="source-panel-note">Для реального анализа «до/после» потребуются даты и объём меры поддержки, сопоставимые показатели до и после, а также контроль внешних факторов. Сейчас блок демонстрирует только интерфейс будущей функции.</p>
             </section>
-          </section>
           </>}
 
           {activeTab === 'reports' && <section className="panel full-panel reports-page">
