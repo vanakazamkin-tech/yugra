@@ -7,6 +7,7 @@ const Forecasting = lazy(() => import('./components/Forecasting'));
 import { FALLBACK_DATA_SOURCES, DATA_CATEGORY_LABELS, DATA_STATUS_LABELS } from './lib/officialData';
 import { fetchSharedSnapshot } from './lib/sharedSnapshot';
 import RatingWorkspace from './components/RatingWorkspace';
+import ComparisonWorkspace from './components/ComparisonWorkspace';
 
 const Icon = ({ name, className = '' }) => {
   const paths = {
@@ -351,9 +352,7 @@ export const InvestmentDetails = () => {
   const [sortConfig, setSortConfig] = useState({ key: 'score', direction: 'desc' });
 
   // Сравнение: до четырёх территорий и один главный показатель для диаграммы.
-  const [comparisonSearch, setComparisonSearch] = useState('');
   const [selectedCompareIds, setSelectedCompareIds] = useState(() => DEFAULT_COMPARE_IDS.filter((id) => municipalities.some((m) => m.id === id)));
-  const [comparisonMetric, setComparisonMetric] = useState('score');
   const [selectedTrendSeries, setSelectedTrendSeries] = useState('average_employees_h1');
   const [selectedSectorMunicipalityId, setSelectedSectorMunicipalityId] = useState('surgut');
   const [selectedSectorYear, setSelectedSectorYear] = useState('2026');
@@ -1330,8 +1329,6 @@ export const InvestmentDetails = () => {
     })).sort((a,b) => b.numericValue-a.numericValue);
   }, [officialIndicators, effectiveOfficialComparisonCode, effectiveOfficialComparisonPeriod, officialComparisonConfig, municipalities]);
 
-  const comparisonItems = useMemo(() => municipalities.filter((m) => selectedCompareIds.includes(m.id)), [municipalities, selectedCompareIds]);
-  const comparisonCandidates = useMemo(() => municipalities.filter((m) => m.name.toLocaleLowerCase('ru-RU').includes(comparisonSearch.trim().toLocaleLowerCase('ru-RU'))), [municipalities, comparisonSearch]);
   const reportItems = useMemo(() => {
     if (reportScope === 'all') return [...municipalities].sort((a, b) => a.name.localeCompare(b.name, 'ru-RU'));
     if (reportScope === 'selected') return municipalities.filter((m) => reportSelectedIds.includes(m.id));
@@ -1375,7 +1372,6 @@ export const InvestmentDetails = () => {
         || String(a.geographic_level || '').localeCompare(String(b.geographic_level || ''))
         || String(a.indicator_name || '').localeCompare(String(b.indicator_name || ''), 'ru-RU'));
   }, [reportItems, officialIndicators]);
-  const comparisonMetricDef = METRIC_BY_KEY[comparisonMetric] || METRICS[0];
   const reportChartMetricDef = METRIC_BY_KEY[reportChartMetric] || METRICS[0];
   const reportPrintFields = reportFields.filter((key) => METRIC_BY_KEY[key]);
 
@@ -2329,54 +2325,16 @@ export const InvestmentDetails = () => {
 
           {activeTab === 'forecast' && <Suspense fallback={<section className="panel full-panel" role="status"><p>Загружаем сценарную модель прогнозирования…</p></section>}><Forecasting municipalities={municipalities} forecastScenarios={forecastScenarios} officialIndicators={officialIndicators} programExecution={programExecution} officialDataStatus={officialDataStatus} officialDataSyncedAt={officialDataSyncedAt} /></Suspense>}
 
-          {activeTab === 'compare' && <section className="panel full-panel compare-page">
-            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2>Сравнение муниципалитетов</h2><p>Выберите от двух до четырёх территорий и сравните показатели бок о бок</p></div></div><div className="toolbar-actions"><button type="button" className="outline-button" onClick={() => setSelectedCompareIds(DEFAULT_COMPARE_IDS.filter((id) => municipalities.some((m) => m.id === id)))}><Icon name="refresh"/>Сбросить выбор</button><button type="button" className="primary-button" onClick={() => { setReportScope('selected'); setReportSelectedIds(selectedCompareIds); navigateToTab('reports'); }}><Icon name="file"/>Отчёт по сравнению</button></div></div>
-            <div className="compare-workspace">
-              <aside className="compare-picker">
-                <div className="picker-title"><div><strong>Территории для сравнения</strong><span>Выбрано {selectedCompareIds.length} из 4</span></div><span className="picker-counter" role="status" aria-live="polite" aria-atomic="true">{selectedCompareIds.length}/4</span></div>
-                <label className="search-box picker-search"><Icon name="search"/><input aria-label="Поиск территории для сравнения" value={comparisonSearch} onChange={(e) => setComparisonSearch(e.target.value)} placeholder="Найти муниципалитет…"/></label>
-                <p className="picker-note" role="status" aria-live="polite" aria-atomic="true">Найдено муниципалитетов: {comparisonCandidates.length}</p>
-                <div className="compare-options">{comparisonCandidates.map((m) => {
-                  const checked = selectedCompareIds.includes(m.id);
-                  const disabled = !checked && selectedCompareIds.length >= 4;
-                  return <label key={m.id} className={`compare-option ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}`}><input type="checkbox" checked={checked} disabled={disabled} onChange={() => toggleCompare(m.id)}/><span className="compare-checkmark"><Icon name="check"/></span><span className="compare-option-copy"><strong>{m.name}</strong><small>Группа {m.group2024} · место {m.rank2024}</small></span><span className="compare-option-score">{formatNumber(m.score)}</span></label>;
-                })}</div>
-                {comparisonCandidates.length === 0 && <p className="empty-state" role="status">Муниципалитеты по запросу не найдены. Проверьте написание или измените поисковый запрос.</p>}
-                <p className="picker-note"><Icon name="info"/> Можно сравнить до четырёх территорий. Используется текущий набор данных; пропущенные показатели обозначены прочерком.</p>
-              </aside>
-              <div className="compare-analysis">
-                <div className="analysis-toolbar"><div><span className="micro-label">ОСНОВНОЙ СРЕЗ</span><h3>Сравнить по показателю</h3></div><label className="select-field"><span>Показатель диаграммы</span><select value={comparisonMetric} onChange={(e) => setComparisonMetric(e.target.value)}>{METRICS.map((metric) => <option key={metric.key} value={metric.key}>{metric.label}</option>)}</select></label></div>
-                {comparisonItems.length < 2 ? <div className="empty-state comparison-empty"><span>Нужно выбрать минимум две территории</span><p>Отметьте муниципалитеты в списке слева, чтобы увидеть сравнение.</p></div> : <>
-                  <div className="comparison-chart-card" role="group" aria-label={`Диаграмма сравнения: ${comparisonMetricDef.label}`}><div className="chart-card-heading"><div><strong>{comparisonMetricDef.label}</strong><span>{comparisonMetricDef.unit === 'место' ? 'Меньший номер означает более высокую позицию' : `Единица измерения: ${comparisonMetricDef.unit}`}</span></div><span className="chart-chip">{comparisonItems.length} территории</span></div>
-                    {(() => {
-                      const values = comparisonItems.map((m) => comparisonMetricDef.get(m));
-                      const availableValues = values.filter((value) => value != null && Number.isFinite(Number(value)));
-                      const maxVal = comparisonMetric === 'rank2024' ? Math.max(...municipalities.map((m) => Number(m.rank2024 || 0)), 1) : Math.max(...availableValues, 1);
-                      return <>
-                        {availableValues.length === 0
-                          ? <p className="empty-state" role="status">По выбранному показателю нет доступных значений для сравнения. Выберите другой показатель или проверьте исходные данные.</p>
-                          : availableValues.length < comparisonItems.length
-                            ? <p className="source-panel-note" role="status">Значения доступны для {availableValues.length} из {comparisonItems.length} территорий. Для остальных муниципалитетов данные не представлены; пустые значения не интерпретируются как ноль.</p>
-                            : null}
-                        {comparisonItems.map((m, index) => {
-                        const val = comparisonMetricDef.get(m);
-                        const barVal = val == null ? 0 : comparisonMetric === 'rank2024' ? maxVal + 1 - val : val;
-                        const denom = comparisonMetric === 'rank2024' ? maxVal : Math.max(...values, 1);
-                        const width = val == null ? 0 : Math.max(3, Math.min(100, (barVal / denom) * 100));
-                        const paletteClass = ['bar-forest', 'bar-ochre', 'bar-moss', 'bar-russet'][index % 4];
-                        return <div className="comparison-bar-row" key={m.id}><div className="comparison-bar-label"><span className="comparison-number">0{index + 1}</span><strong>{m.name}</strong></div><div className="comparison-bar-track" aria-hidden="true"><i className={paletteClass} style={{ width: `${width}%` }}/></div><strong className="comparison-bar-value">{comparisonMetricDef.format(m)}</strong></div>;
-                        })}
-                      </>;
-                    })()}
-                  </div>
-                  <div className="compare-value-grid">{comparisonItems.map((m, index) => <article className="compare-value-card" key={m.id}><span className={`compare-color-mark mark-${index + 1}`}/><span className="compare-value-name">{m.name}</span><strong>{comparisonMetricDef.format(m)}</strong><small>Группа {m.group2024} · место {m.rank2024}</small></article>)}</div>
-                  <div className="compare-details-card"><div className="section-heading inner-section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="table"/></span><div><h3>Все показатели рядом</h3><p>Разница видна в одном срезе без переключения страниц</p></div></div><button type="button" className="outline-button" onClick={() => downloadCsv(comparisonItems, DEFAULT_REPORT_FIELDS, 'yugra-municipality-comparison')}><Icon name="download"/>Выгрузить CSV</button></div>
-                    <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table comparison-data-table"><thead><tr><th scope="col">Показатель</th>{comparisonItems.map((m) => <th scope="col" key={m.id}>{m.name}</th>)}</tr></thead><tbody>{METRICS.map((metric) => <tr key={metric.key}><td className="metric-name-cell">{metric.label}</td>{comparisonItems.map((m) => <td key={m.id} className={metric.key === comparisonMetric ? 'highlight-metric-cell' : ''}>{metric.format(m)}</td>)}</tr>)}</tbody></table></div>
-                  </div>
-                </>}
-              </div>
-            </div>
-
+          {activeTab === 'compare' && <>
+            <ComparisonWorkspace
+              municipalities={municipalities}
+              officialIndicators={officialIndicators}
+              selectedMunicipalityIds={selectedCompareIds}
+              defaultMunicipalityIds={DEFAULT_COMPARE_IDS}
+              onSelectionChange={setSelectedCompareIds}
+              onCreateReport={(ids) => { setReportScope('selected'); setReportSelectedIds(ids); navigateToTab('reports'); }}
+              onOpenMunicipality={setActiveModalItem}
+            />}
             <section className="support-simulation panel" aria-labelledby="support-sim-title">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2 id="support-sim-title">Сценарий «до и после» мер поддержки</h2><p>Интерактивная иллюстрация будущей оценки эффекта программ</p></div></div><span className="concept-corner">ДЕМО</span></div>
               <div className="support-sim-warning">Изменения ниже — условные пользовательские допущения. Это не измеренный эффект субсидий и не причинно-следственная оценка.</div>
@@ -2402,7 +2360,8 @@ export const InvestmentDetails = () => {
               })()}
               <p className="source-panel-note">Для реального анализа «до/после» потребуются даты и объём меры поддержки, сопоставимые показатели до и после, а также контроль внешних факторов. Сейчас блок демонстрирует только интерфейс будущей функции.</p>
             </section>
-          </section>}
+          </section>
+          </>}
 
           {activeTab === 'reports' && <section className="panel full-panel reports-page">
             <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2>Конструктор аналитических отчётов</h2><p>Настройте выборку, показатели и состав документа до экспорта</p></div></div><div className="toolbar-actions"><button type="button" className="outline-button" onClick={() => navigateToTab('forecast')}><Icon name="chart"/>Прогнозирование</button><button type="button" className="outline-button" onClick={loadReportTemplate}><Icon name="refresh"/>Загрузить шаблон</button><button type="button" className="outline-button" onClick={saveReportTemplate}><Icon name="save"/>{reportTemplateSaved ? 'Сохранено на устройстве' : 'Сохранить шаблон на устройстве'}</button></div></div>
