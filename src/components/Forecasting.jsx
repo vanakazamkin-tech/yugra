@@ -18,7 +18,7 @@ const n = (value) => numericValue(value) ?? 0;
 const fmt = (value, digits) => value == null || value === '' ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: digits == null ? 1 : digits, minimumFractionDigits: 0 }).format(value);
 const pct = (value) => (value > 0 ? '+' : '') + fmt(value, 1) + '%';
 
-export default function Forecasting({ municipalities, supabase, isSupabaseConfigured, officialIndicators = [], programExecution = [], officialDataStatus = 'offline', officialDataSyncedAt = null, scoreSource = 'conceptual-score', indexResults = null, indexContract = null }) {
+export default function Forecasting({ municipalities, forecastScenarios = [], officialIndicators = [], programExecution = [], officialDataStatus = 'offline', officialDataSyncedAt = null, scoreSource = 'conceptual-score', indexResults = null, indexContract = null }) {
   const [scenarios, setScenarios] = useState(FALLBACK_SCENARIOS);
   const [scenarioKey, setScenarioKey] = useState('base');
   const [horizon, setHorizon] = useState(3);
@@ -36,54 +36,28 @@ export default function Forecasting({ municipalities, supabase, isSupabaseConfig
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    let cancelled = false;
-    async function loadScenarios() {
-      if (!isSupabaseConfigured || !supabase) return;
-      try {
-        // Load the stable scenario contract first. This keeps the screen compatible
-        // with databases that have not yet received the optional factor migration.
-        const result = await supabase.from('forecast_scenarios')
-          .select('id,key,title,summary,investment_growth_rate,sme_growth_rate,score_growth_rate,uncertainty_rate,display_order')
-          .eq('is_active', true).order('display_order', { ascending: true });
-        if (result.error) throw result.error;
-        if (cancelled || !Array.isArray(result.data) || !result.data.length) return;
-
-        let factorRows = [];
-        let hasFactorColumns = false;
-        try {
-          const factors = await supabase.from('forecast_scenarios')
-            .select('id,key,export_shock_pct,cost_pressure_pct,labor_shortage_pct')
-            .eq('is_active', true);
-          if (!factors.error && Array.isArray(factors.data)) {
-            factorRows = factors.data;
-            hasFactorColumns = true;
-          }
-        } catch {
-          // Older schema: use documented expert fallback assumptions for factors.
-        }
-        if (cancelled) return;
-
-        const normalized = normalizeScenarioRows(result.data, factorRows, hasFactorColumns, FALLBACK_SCENARIOS);
-        setScenarios(normalized);
-        setScenarioStatus(hasFactorColumns ? 'database' : 'database-legacy');
-        const initial = normalized.find((s) => s.key === 'base') || normalized[0];
-        setScenarioKey(initial.key);
-        setParams({
-          investment_growth_rate: initial.investment_growth_rate,
-          sme_growth_rate: initial.sme_growth_rate,
-          score_growth_rate: initial.score_growth_rate,
-          uncertainty_rate: initial.uncertainty_rate,
-          export_shock_pct: initial.export_shock_pct,
-          cost_pressure_pct: initial.cost_pressure_pct,
-          labor_shortage_pct: initial.labor_shortage_pct,
-        });
-      } catch {
-        if (!cancelled) setScenarioStatus('fallback');
-      }
+    const sourceRows = Array.isArray(forecastScenarios) ? forecastScenarios : [];
+    if (!sourceRows.length) {
+      setScenarios(FALLBACK_SCENARIOS);
+      setScenarioStatus('fallback');
+      return;
     }
-    loadScenarios();
-    return () => { cancelled = true; };
-  }, [isSupabaseConfigured, supabase]);
+
+    const normalized = normalizeScenarioRows(sourceRows, sourceRows, true, FALLBACK_SCENARIOS);
+    setScenarios(normalized);
+    setScenarioStatus('database');
+    const initial = normalized.find((scenario) => scenario.key === 'base') || normalized[0];
+    setScenarioKey(initial.key);
+    setParams({
+      investment_growth_rate: initial.investment_growth_rate,
+      sme_growth_rate: initial.sme_growth_rate,
+      score_growth_rate: initial.score_growth_rate,
+      uncertainty_rate: initial.uncertainty_rate,
+      export_shock_pct: initial.export_shock_pct,
+      cost_pressure_pct: initial.cost_pressure_pct,
+      labor_shortage_pct: initial.labor_shortage_pct,
+    });
+  }, [forecastScenarios]);
 
   const activeScenario = scenarios.find((item) => item.key === scenarioKey) || scenarios[0];
   const indexModeRequested = scoreSource === 'resilience-index';

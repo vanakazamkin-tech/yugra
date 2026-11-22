@@ -715,6 +715,7 @@ export function mergeOfficialDataSnapshots(previous = {}, updates = {}) {
   const mergedPrograms = mergeRowsById(previous.programExecution || [], updates.programExecution || [])
   return {
     sources: mergeSourceCatalog(previous.sources || [], updates.sources || []),
+    forecastScenarios: merge('forecastScenarios'),
     indicators: mergeIndicatorRows(mergedIndicators, []),
     investmentSites: merge('investmentSites'),
     investmentProjects: merge('investmentProjects'),
@@ -739,7 +740,7 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
   const cursorCandidates = {}
   const readRows = (client, queryFactory, label) => safeRows(client, queryFactory, label, sinceByTable, errors, cursorCandidates)
   const empty = {
-    sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [],
+    sources: FALLBACK_DATA_SOURCES, forecastScenarios: [], indicators: [], investmentSites: [],
     investmentProjects: [], industrialEnterprises: [], infrastructureObjects: [],
     landParcels: [], programExecution: [], fuelPrices: [], facilities: [], externalRatings: [],
   }
@@ -748,7 +749,7 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
   const [
     coreSources, statisticsSources,
     coreIndicators, statisticsIndicators,
-    corePrograms, statisticsPrograms,
+    corePrograms, statisticsPrograms, coreForecastScenarios,
   ] = await Promise.all([
     readRows(coreClient, () => coreClient.from('data_sources').select('*')
       .order('category', { ascending: true }).order('name', { ascending: true }).order('id', { ascending: true }), 'каталог источников DB1'),
@@ -766,6 +767,8 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
     readRows(statisticsClient, () => statisticsClient.from('municipal_program_execution').select('*')
       .eq('verification_status', 'verified')
       .order('report_date', { ascending: false }).order('id', { ascending: true }), 'муниципальные программы DB2'),
+    readRows(coreClient, () => coreClient.from('forecast_scenarios').select('*')
+      .eq('is_active', true).order('display_order', { ascending: true }).order('id', { ascending: true }), 'сценарии прогнозирования DB1'),
   ])
 
   // DB1 — паспортные реестры и рейтинги. Они не дублируются в DB2.
@@ -814,6 +817,7 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
 
   return {
     sources: sources.length ? sources : (sinceByTable ? [] : FALLBACK_DATA_SOURCES),
+    forecastScenarios: coreForecastScenarios,
     indicators,
     investmentSites: operationalRecords.investmentSites,
     investmentProjects, industrialEnterprises, infrastructureObjects, landParcels,

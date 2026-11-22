@@ -37,7 +37,7 @@ const directionText = (s) => s.direction === 'higher' ? 'снижение — н
 const sourceUrlsFor = (row) => [...new Set((Array.isArray(row?.source_urls) ? row.source_urls : row?.source_url ? [row.source_url] : []).filter((url) => typeof url === 'string' && url.trim()))];
 const sourceIdsFor = (row) => [...new Set((Array.isArray(row?.source_ids) ? row.source_ids : row?.source_id ? [row.source_id] : []).filter((id) => typeof id === 'string' && id.trim()))];
 
-export default function UnifiedRiskForecast({ municipalities = [], officialIndicators = [], programExecution = [], supabase, isSupabaseConfigured, officialDataStatus = 'offline', officialDataSyncedAt = null }) {
+export default function UnifiedRiskForecast({ municipalities = [], forecastScenarios = [], officialIndicators = [], programExecution = [], officialDataStatus = 'offline', officialDataSyncedAt = null }) {
   const [tab, setTab] = useState('overview');
   const [municipalityId, setMunicipalityId] = useState('ALL');
   const [search, setSearch] = useState('');
@@ -51,24 +51,24 @@ export default function UnifiedRiskForecast({ municipalities = [], officialIndic
   const [riskThresholds, setRiskThresholds] = useState(DEFAULT_RISK_THRESHOLDS);
 
   useEffect(() => {
-    let cancelled = false;
-    async function loadScenarios() {
-      if (!supabase || !isSupabaseConfigured) return;
-      try {
-        const { data, error } = await supabase.from('forecast_scenarios').select('key,title,summary,investment_growth_rate,sme_growth_rate,uncertainty_rate,display_order').eq('is_active', true).order('display_order', { ascending: true });
-        if (cancelled) return;
-        if (error) throw error;
-        if (Array.isArray(data) && data.length) {
-          setScenarios(data);
-          setScenarioSource('Supabase');
-        }
-      } catch (error) {
-        if (!cancelled) setScenarioError(error?.message || 'Не удалось загрузить параметры сценариев');
-      }
+    const rows = Array.isArray(forecastScenarios) ? forecastScenarios : [];
+    if (rows.length) {
+      setScenarios(rows.map((row) => ({
+        key: row.key,
+        title: row.title,
+        summary: row.summary,
+        investment_growth_rate: row.investment_growth_rate,
+        sme_growth_rate: row.sme_growth_rate,
+        uncertainty_rate: row.uncertainty_rate,
+        display_order: row.display_order,
+      })));
+      setScenarioSource('общий снимок');
+      setScenarioError('');
+    } else {
+      setScenarios(DEFAULT_SCENARIOS);
+      setScenarioSource('встроенные шаблоны');
     }
-    loadScenarios();
-    return () => { cancelled = true; };
-  }, [supabase, isSupabaseConfigured]);
+  }, [forecastScenarios]);
 
   const rows = useMemo(() => {
     const base = [
