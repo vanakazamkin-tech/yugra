@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { del, get, put } from '@vercel/blob';
+import { del, get, head, put } from '@vercel/blob';
 import { createHash, randomUUID } from 'node:crypto';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { fetchOfficialData, mergeOfficialDataSnapshots } from '../src/lib/officialData.js';
@@ -28,15 +28,84 @@ function clients(){
  const opts={auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}};
  return {core:createClient(cu,ck,opts),data:createClient(du,dk,opts)};
 }
-async function readJson(path){const b=await get(path,{access:'private'});if(!b||b.statusCode!==200)return null;return JSON.parse(await new Response(b.stream).text());}
+async function readJson(path,{fresh=false}={}){const b=await get(path,{access:'private',useCache:!fresh});if(!b||b.statusCode!==200)return null;return JSON.parse(await new Response(b.stream).text());}
 async function readRows(path){const b=await get(path,{access:'private'});if(!b||b.statusCode!==200)throw new Error('Не удалось прочитать часть снимка: '+path);const z=Buffer.from(await new Response(b.stream).arrayBuffer());return JSON.parse(gunzipSync(z).toString('utf8'));}
 async function writeJson(path,value,immutable=false){return put(path,JSON.stringify(value),{access:'private',addRandomSuffix:false,allowOverwrite:!immutable,contentType:'application/json; charset=utf-8',cacheControlMaxAge:immutable?31536000:0});}
+async function writeLock(value, etag = null) {
+ const options={
+  access:'private',
+  addRandomSuffix:false,
+  allowOverwrite:Boolean(etag),
+  contentType:'application/json; charset=utf-8',
+  cacheControlMaxAge:0
+ };
+ if(etag)options.ifMatch=etag;
+ return put(LOCK,JSON.stringify(value),options);
+}
+
 async function lock(){
  const value={token:randomUUID(),createdAt:new Date().toISOString(),expiresAt:Date.now()+LEASE_MS};
- try{await writeJson(LOCK,value,true);return value;}
- catch(error){const old=await readJson(LOCK);if(old?.expiresAt&&old.expiresAt<=Date.now()){await del(LOCK,{access:'private'});try{await writeJson(LOCK,value,true);return value;}catch{return null;}}if(!old)throw error;return null;}
+ try{
+  await writeLock(value);
+  console.log('Yugra18 snapshot lock acquired',{expiresAt:value.expiresAt});
+  return value;
+ }catch(error){
+  const old=await readJson(LOCK,{fresh:true});
+  if(old?.expiresAt&&old.expiresAt<=Date.now()){
+   const metadata=await head(LOCK);
+   if(!metadata?.etag)return null;
+   try{
+    await writeLock(value,metadata.etag);
+    console.log('Yugra18 expired snapshot lock reclaimed with ETag compare-and-swap',{expiresAt:value.expiresAt});
+    return value;
+   }catch(reclaimError){
+    console.log('Yugra18 snapshot lock reclaim lost a compare-and-swap race:',reclaimError?.message||reclaimError);
+    return null;
+   }
+  }
+  if(!old)throw error;
+  console.log('Yugra18 snapshot refresh skipped because lock is active',{expiresAt:old.expiresAt});
+  return null;
+ }
 }
-async function unlock(value){try{const old=await readJson(LOCK);if(old?.token===value.token)await del(LOCK,{access:'private'});}catch(e){console.warn('Lock release failed:',e?.message||e);}}
+
+async function unlock(value){
+ try{
+  const old=await readJson(LOCK,{fresh:true});
+  if(old?.token!==value.token){
+   console.warn('Yugra18 snapshot lock owner changed before release');
+   return;
+  }
+  const metadata=await head(LOCK);
+  if(!metadata?.etag)throw new Error('Snapshot lock metadata is unavailable during release');
+  await del(LOCK,{ifMatch:metadata.etag});
+  const remaining=await readJson(LOCK,{fresh:true});
+  if(remaining?.token===value.token){
+   const remainingMetadata=await head(LOCK);
+   if(remainingMetadata?.etag){
+    await writeLock({...remaining,expiresAt:0,releasedAt:new Date().toISOString()},remainingMetadata.etag);
+    console.warn('Yugra18 snapshot lock delete retained the same lease; marked it expired with ETag compare-and-swap');
+   }
+  }else{
+   console.log('Yugra18 snapshot lock released');
+  }
+ }catch(error){
+  console.warn('Snapshot lock release failed:',error?.message||error);
+  try{
+   const latest=await readJson(LOCK,{fresh:true});
+   if(latest?.token===value.token){
+    const metadata=await head(LOCK);
+    if(metadata?.etag){
+     await writeLock({...latest,expiresAt:0,releasedAt:new Date().toISOString()},metadata.etag);
+     console.warn('Yugra18 snapshot lock marked expired using conditional write');
+    }
+   }
+  }catch(fallbackError){
+   console.error('Could not conditionally expire snapshot lock:',fallbackError?.message||fallbackError);
+  }
+ }
+}
+
 function partition(row){return String(row?.municipality_id??row?.id_municipality??'__shared__');}
 function group(rows){const m=new Map();for(const row of rows||[]){const k=partition(row);if(!m.has(k))m.set(k,[]);m.get(k).push(row);}return m;}
 async function writePartition(dataset,part,rows,previousPaths){
