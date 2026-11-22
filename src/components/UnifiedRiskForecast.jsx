@@ -11,9 +11,9 @@ const pct = (v) => v == null ? '—' : (v > 0 ? '+' : '') + fmt(v, 1) + '%';
 const safeText = (v) => String(v ?? '').trim();
 
 const RISK = {
-  critical: { label: 'Несколько ухудшений', short: 'Высокое внимание', color: 'red' },
-  watch: { label: 'Есть ухудшения', short: 'Наблюдение', color: 'yellow' },
-  stable: { label: 'Негативных сигналов нет', short: 'Без сигналов', color: 'green' },
+  critical: { label: 'Повышенное внимание', short: 'Высокое внимание', color: 'red' },
+  watch: { label: 'Есть негативные сигналы', short: 'Наблюдение', color: 'yellow' },
+  stable: { label: 'Без выявленных ухудшений', short: 'Без ухудшений', color: 'green' },
   insufficient: { label: 'Недостаточно данных', short: 'Нет оценки', color: 'neutral' },
 };
 const DEFAULT_SCENARIOS = [
@@ -139,19 +139,6 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
       const priority = { critical: 0, watch: 1, stable: 2, insufficient: 3 };
       return priority[a.level] - priority[b.level] || b.bad.length - a.bad.length || String(a.name || a.id).localeCompare(String(b.name || b.id), 'ru-RU');
     });
-  const pillarSummary = PILLARS.map((p) => {
-    const group = series.filter((s) => s.pillar.key === p.key);
-    return { ...p, count: group.length, territories: new Set(group.map((s) => s.municipalityId)).size, deteriorating: group.filter((s) => s.adverse === true).length };
-  });
-  const coreCoverage = useMemo(() => {
-    const core = ['employment','income','budget','migration','investment'];
-    return core.map((key) => {
-      const pillar = PILLARS.find((p) => p.key === key);
-      const items = series.filter((s) => s.pillar.key === key);
-      const territories = new Set(items.map((s) => s.municipalityId));
-      return { ...pillar, territories: territories.size, rows: items.length, missing: municipalities.filter((m) => !territories.has(m.id)).map((m) => m.name) };
-    });
-  }, [series, municipalities]);
   const selectedId = selectedMunicipality || (municipalityId !== 'ALL' ? municipalityId : '');
   const selected = municipalityAnalysis.find((m) => String(m.id) === String(selectedId)) || municipalityAnalysis[0];
   const forecastOptions = useMemo(() => series.filter((s) => parseRiskPeriod(s.latest)?.frequency === 'annual' && isEligibleAnnualForecastSeries(s)), [series]);
@@ -176,14 +163,15 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
   }) : [];
   const lastYear = forecastSeries?.latest?.reference_year || '—';
   const syncLabel = officialDataSyncedAt ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(officialDataSyncedAt)) : null;
-  const verifiedObservationCount = rows.filter((row) => row.verification_status === 'verified' && row.geographic_level === 'municipality' && row.source_id !== 'derived_from_verified_municipal_indicators').length;
-  const sourceCoveredSeries = series.filter((item) => item.latestSourcePresent).length;
-  const sourceCoveragePercent = series.length ? Math.round(sourceCoveredSeries / series.length * 100) : 0;
+  const territorySeries = series.filter((item) => municipalityId === 'ALL' || String(item.municipalityId) === String(municipalityId));
+  const verifiedObservationCount = rows.filter((row) => row.verification_status === 'verified' && row.geographic_level === 'municipality' && row.source_id !== 'derived_from_verified_municipal_indicators' && (municipalityId === 'ALL' || String(row.municipality_id) === String(municipalityId))).length;
+  const sourceCoveredSeries = territorySeries.filter((item) => item.latestSourcePresent).length;
+  const sourceCoveragePercent = territorySeries.length ? Math.round(sourceCoveredSeries / territorySeries.length * 100) : 0;
   const averagePillarCoverage = territoryMunicipalities.length
     ? Math.round(territoryMunicipalities.reduce((sum, item) => sum + item.availablePillars, 0) / (territoryMunicipalities.length * MODEL_PILLARS.length) * 100)
     : 0;
   const riskCoverageSummary = MODEL_PILLARS.map((pillar) => {
-    const items = series.filter((item) => pillar.series.includes(item.pillar.key));
+    const items = territorySeries.filter((item) => pillar.series.includes(item.pillar.key));
     return {
       ...pillar,
       rows: items.length,
@@ -316,10 +304,10 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
 
       <section className="risk-distribution" aria-label="Распределение статусов муниципалитетов">
         <div className="risk-distribution-track">
-          <i className="is-critical" style={{width: (municipalityAnalysis.length ? counts.critical / municipalityAnalysis.length * 100 : 0) + '%'}}/>
-          <i className="is-watch" style={{width: (municipalityAnalysis.length ? counts.watch / municipalityAnalysis.length * 100 : 0) + '%'}}/>
-          <i className="is-stable" style={{width: (municipalityAnalysis.length ? counts.stable / municipalityAnalysis.length * 100 : 0) + '%'}}/>
-          <i className="is-insufficient" style={{width: (municipalityAnalysis.length ? counts.insufficient / municipalityAnalysis.length * 100 : 0) + '%'}}/>
+          <i className="is-critical" style={{width: (territoryMunicipalities.length ? counts.critical / territoryMunicipalities.length * 100 : 0) + '%'}}/>
+          <i className="is-watch" style={{width: (territoryMunicipalities.length ? counts.watch / territoryMunicipalities.length * 100 : 0) + '%'}}/>
+          <i className="is-stable" style={{width: (territoryMunicipalities.length ? counts.stable / territoryMunicipalities.length * 100 : 0) + '%'}}/>
+          <i className="is-insufficient" style={{width: (territoryMunicipalities.length ? counts.insufficient / territoryMunicipalities.length * 100 : 0) + '%'}}/>
         </div>
         <div><span><i className="dot is-critical"/> Повышенное внимание · {counts.critical}</span><span><i className="dot is-watch"/> Наблюдение · {counts.watch}</span><span><i className="dot is-stable"/> Без сигналов · {counts.stable}</span><span><i className="dot is-insufficient"/> Нет оценки · {counts.insufficient}</span></div>
       </section>
