@@ -602,14 +602,36 @@ export function validateOfficialOperationalRecords({ investmentSites = [], progr
   return { investmentSites: sites, programExecution: programs, facilities: validFacilities };
 }
 
-async function fetchAllRows(buildQuery, pageSize = 1000) {
+async function fetchAllRows(buildQuery, pageSize = 1000, options = {}) {
   const rows = [];
-  for (let offset = 0; ; offset += pageSize) {
-    const { data, error } = await buildQuery().range(offset, offset + pageSize - 1);
+  const useKeyset = options.keyset !== false;
+  let lastId = null;
+  let offset = 0;
+
+  for (;;) {
+    let query = buildQuery();
+    if (useKeyset) {
+      if (lastId !== null) query = query.gt('id', lastId);
+      query = query.order('id', { ascending: true }).limit(pageSize);
+    } else {
+      query = query.range(offset, offset + pageSize - 1);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     const page = Array.isArray(data) ? data : [];
     rows.push(...page);
     if (page.length < pageSize) return rows;
+
+    if (useKeyset) {
+      const nextId = page[page.length - 1]?.id;
+      if (nextId == null || String(nextId) === String(lastId)) {
+        throw new Error('Keyset pagination stopped because the page has no advancing id');
+      }
+      lastId = nextId;
+    } else {
+      offset += pageSize;
+    }
   }
 }
 
@@ -700,7 +722,7 @@ async function safeRows(client, queryFactory, label, sinceByTable = null, errors
     const rows = await fetchAllRows(() => {
       const query = queryFactory()
       return overlapCursor ? query.gt(cursorColumn, overlapCursor) : query
-    })
+    }, 1000, { keyset: label !== 'каталог внешних рейтингов DB1' })
     const latest = rows.reduce((max, row) => {
       const value = Date.parse(row?.[cursorColumn] || row?.updated_at || row?.created_at || '')
       return Number.isFinite(value) && value > max ? value : max
@@ -781,23 +803,23 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
     corePrograms, statisticsPrograms, coreForecastScenarios,
   ] = await Promise.all([
     readRows(coreClient, () => coreClient.from('data_sources').select('*')
-      .order('category', { ascending: true }).order('name', { ascending: true }).order('id', { ascending: true }), 'каталог источников DB1'),
+      , 'каталог источников DB1'),
     readRows(statisticsClient, () => statisticsClient.from('data_sources').select('*')
-      .order('category', { ascending: true }).order('name', { ascending: true }).order('id', { ascending: true }), 'каталог источников DB2'),
+      , 'каталог источников DB2'),
     readRows(coreClient, () => coreClient.from('municipality_indicators').select('*')
       .eq('verification_status', 'verified')
-      .order('reference_year', { ascending: false }).order('id', { ascending: true }), 'показатели DB1'),
+      , 'показатели DB1'),
     readRows(statisticsClient, () => statisticsClient.from('municipality_indicators').select('*')
       .eq('verification_status', 'verified')
-      .order('reference_year', { ascending: false }).order('id', { ascending: true }), 'показатели DB2'),
+      , 'показатели DB2'),
     readRows(coreClient, () => coreClient.from('municipal_program_execution').select('*')
       .eq('verification_status', 'verified')
-      .order('report_date', { ascending: false }).order('id', { ascending: true }), 'муниципальные программы DB1'),
+      , 'муниципальные программы DB1'),
     readRows(statisticsClient, () => statisticsClient.from('municipal_program_execution').select('*')
       .eq('verification_status', 'verified')
-      .order('report_date', { ascending: false }).order('id', { ascending: true }), 'муниципальные программы DB2'),
+      , 'муниципальные программы DB2'),
     readRows(coreClient, () => coreClient.from('forecast_scenarios').select('*')
-      .eq('is_active', true).order('display_order', { ascending: true }).order('id', { ascending: true }), 'сценарии прогнозирования DB1'),
+      .eq('is_active', true), 'сценарии прогнозирования DB1'),
   ])
 
   // DB1 — паспортные реестры и рейтинги. Они не дублируются в DB2.
@@ -806,29 +828,29 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
     landParcels, fuelPrices, facilities, externalRatingResults, externalRatingCatalog,
   ] = await Promise.all([
     readRows(coreClient, () => coreClient.from('investment_sites').select('*')
-      .eq('verification_status', 'verified').order('name', { ascending: true }).order('id', { ascending: true }), 'инвестплощадки DB1'),
+      .eq('verification_status', 'verified'), 'инвестплощадки DB1'),
     readRows(coreClient, () => coreClient.from('municipal_investment_projects').select('*')
-      .eq('verification_status', 'verified').order('project_name', { ascending: true }).order('id', { ascending: true }), 'инвестпроекты DB1'),
+      .eq('verification_status', 'verified'), 'инвестпроекты DB1'),
     readRows(coreClient, () => coreClient.from('municipal_industrial_enterprises').select('*')
-      .eq('verification_status', 'verified').order('enterprise_name', { ascending: true }).order('id', { ascending: true }), 'предприятия DB1'),
+      .eq('verification_status', 'verified'), 'предприятия DB1'),
     readRows(coreClient, () => coreClient.from('municipal_infrastructure_objects').select('*')
-      .eq('verification_status', 'verified').order('name', { ascending: true }).order('id', { ascending: true }), 'инфраструктура DB1'),
+      .eq('verification_status', 'verified'), 'инфраструктура DB1'),
     readRows(coreClient, () => coreClient.from('municipal_land_parcels').select('*')
-      .eq('verification_status', 'verified').order('municipality_id', { ascending: true }).order('id', { ascending: true }), 'земельные участки DB1'),
+      .eq('verification_status', 'verified'), 'земельные участки DB1'),
     readRows(coreClient, () => coreClient.from('fuel_price_observations').select('*')
-      .eq('verification_status', 'verified').order('observed_at', { ascending: false })
-      .order('source_row', { ascending: true }).order('id', { ascending: true }), 'цены на топливо DB1'),
+      .eq('verification_status', 'verified')
+      , 'цены на топливо DB1'),
     readRows(coreClient, () => coreClient.from('municipal_facilities').select('*')
-      .eq('verification_status', 'verified').order('facility_category', { ascending: true })
-      .order('name_short', { ascending: true }).order('id', { ascending: true }), 'учреждения DB1'),
+      .eq('verification_status', 'verified')
+      , 'учреждения DB1'),
     readRows(coreClient, () => coreClient.from('external_rating_results')
       .select('id,rating_id,geographic_level,geography_name,region_name,national_rank,rating_score,previous_year_rank,previous_year_score,metrics,reference_year,source_url,verification_status,notes,retrieved_at,created_at')
       .eq('rating_id', 'ria_city_salary_2026').eq('geographic_level', 'city').eq('verification_status', 'verified')
-      .order('geography_name', { ascending: true }).order('id', { ascending: true }), 'результаты внешнего рейтинга DB1'),
+      , 'результаты внешнего рейтинга DB1'),
     readRows(coreClient, () => coreClient.from('external_rating_catalog')
       .select('rating_id,title,category,edition_year,reference_period,geographic_level,geography_scope,source_url,description,methodology_summary')
       .eq('rating_id', 'ria_city_salary_2026')
-      .order('edition_year', { ascending: false }).order('rating_id', { ascending: true }), 'каталог внешних рейтингов DB1'),
+      , 'каталог внешних рейтингов DB1'),
   ])
 
   const sources = mergeSourceCatalog(coreSources, statisticsSources)

@@ -23,8 +23,7 @@ async function readMunicipalities(client) {
     const { data, error } = await client
       .from('municipalities')
       .select(MUNICIPALITY_COLUMNS)
-      .order('rank_2024', { ascending: true, nullsFirst: false })
-      .order('name', { ascending: true })
+      .limit(50)
     if (error) throw error
     return { rows: Array.isArray(data) ? data : [], error: null }
   } catch (error) {
