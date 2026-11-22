@@ -15,6 +15,8 @@ const DATASETS = [
 ];
 const CHUNK_ROWS = 4000;
 const MAX_COMPRESSED_FILE_BYTES = 90 * 1024 * 1024;
+const MAX_PAGES_SITE_BYTES = 800 * 1024 * 1024;
+const MAX_PAGES_FILES = 5000;
 const EXPECTED_MUNICIPALITIES = 22;
 const STORE_ROOT = path.resolve(process.env.SNAPSHOT_WORKDIR || '../data-store');
 const SNAPSHOT_ROOT = path.join(STORE_ROOT, 'snapshots');
@@ -461,6 +463,12 @@ async function main() {
     }
   }
   await inspect(SNAPSHOT_ROOT);
+  if (trackedBytes > MAX_PAGES_SITE_BYTES) {
+    throw new Error(`Snapshot exceeds safe GitHub Pages budget: ${trackedBytes} bytes (limit ${MAX_PAGES_SITE_BYTES})`);
+  }
+  if (fileCount > MAX_PAGES_FILES) {
+    throw new Error(`Snapshot exceeds safe GitHub Pages file count: ${fileCount} (limit ${MAX_PAGES_FILES})`);
+  }
 
   await writeFile(path.join(SNAPSHOT_ROOT, 'health', 'latest.json'), JSON.stringify({
     status: 'ok',
