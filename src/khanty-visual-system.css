@@ -219,6 +219,7 @@ button, input, select, textarea { font-family: inherit; }
   line-height: 1.8;
 }
 .yugra-app .intro-art {
+  grid-template-columns: minmax(0, 1fr);
   height: clamp(240px, 27vw, 350px);
   padding: 10px;
   border: 1px solid rgba(223,195,148,.64);
