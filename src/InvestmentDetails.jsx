@@ -186,6 +186,7 @@ export const InvestmentDetails = () => {
   const [indicatorYearFilter, setIndicatorYearFilter] = useState('all');
   const [sourceSearch, setSourceSearch] = useState('');
   const [sourceStatusFilter, setSourceStatusFilter] = useState('all');
+  const [dataSearch, setDataSearch] = useState('');
   const [officialDataStatus, setOfficialDataStatus] = useState('loading');
   const [officialDataError, setOfficialDataError] = useState('');
   const [officialDataSyncedAt, setOfficialDataSyncedAt] = useState(null);
@@ -750,6 +751,113 @@ export const InvestmentDetails = () => {
         .filter(Boolean).join(' ').toLocaleLowerCase('ru-RU').includes(query))
       .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ru-RU'));
   }, [officialDataSources, sourceSearch, sourceStatusFilter]);
+
+  const dataSearchIndex = useMemo(() => {
+    const municipalityById = new Map(municipalities.map((item) => [item.id, item.name]));
+    const municipalityName = (id) => municipalityById.get(id) || id || 'Территория не указана';
+    const makeEntry = (category, id, title, subtitle, meta, keywords, href, sourceUrl) => {
+      const safeTitle = String(title || 'Запись без названия');
+      const searchText = [safeTitle, subtitle, meta, ...(keywords || [])]
+        .filter(Boolean).join(' ').toLocaleLowerCase('ru-RU');
+      return {
+        id: category + '-' + String(id == null ? safeTitle : id),
+        category,
+        title: safeTitle,
+        subtitle: subtitle || '',
+        meta: meta || '',
+        href,
+        sourceUrl: sourceUrl || '',
+        searchText,
+      };
+    };
+
+    return [
+      ...officialIndicators.map((item, index) => makeEntry(
+        'statistics', item.id || index, item.indicator_name,
+        item.geographic_name || municipalityName(item.municipality_id),
+        formatReferencePeriod(item) + ' · ' + formatNumber(item.value, 2) + ' ' + (item.unit || ''),
+        [item.indicator_code, item.notes, item.reference_year, item.reference_period, item.geographic_level],
+        '#all-official-indicators-heading', item.source_url
+      )),
+      ...externalRatings.map((item, index) => makeEntry(
+        'statistics', item.id || index, item.title,
+        [item.geography_name, item.reference_period].filter(Boolean).join(' · '),
+        'Внешний рейтинг' + (item.national_rank == null ? '' : ' · место № ' + item.national_rank),
+        [item.source_name, item.description, item.metrics && JSON.stringify(item.metrics)],
+        '#official-data-heading', item.source_url || item.dataset_url || item.url
+      )),
+      ...officialDataSources.map((item, index) => makeEntry(
+        'sources', item.id || index, item.name,
+        item.description || item.coverage,
+        (DATA_CATEGORY_LABELS[item.category] || 'Источник данных') + ' · ' + (DATA_STATUS_LABELS[item.import_status] || 'Статус проверяется'),
+        [item.category, item.coverage, item.format, item.import_status],
+        '#source-panel-title', item.url
+      )),
+      ...investmentSites.map((item, index) => makeEntry(
+        'economy', item.id || index, item.name,
+        municipalityName(item.municipality_id) + ' · ' + (item.location_text || item.permitted_use || ''),
+        (item.site_type || 'Инвестиционная площадка') + ' · ' + (item.area_hectares == null ? 'площадь не указана' : formatNumber(item.area_hectares, 2) + ' га'),
+        [item.permitted_use, item.offer_type, item.description],
+        '#investment-sites-heading', item.source_url
+      )),
+      ...investmentProjects.map((item, index) => makeEntry(
+        'economy', item.id || index, item.project_name,
+        municipalityName(item.municipality_id) + ' · ' + (item.investor || 'Инвестор не указан'),
+        (item.project_status || item.project_stage || 'Статус не указан') + ' · ' + (item.investment_amount_thousand == null ? 'объём не указан' : formatNumber(Number(item.investment_amount_thousand) / 1000, 1) + ' млн ₽'),
+        [item.project_category, item.activity_type, item.location_text, item.description, item.planned_jobs],
+        '#investment-projects-data-title', item.source_url
+      )),
+      ...industrialEnterprises.map((item, index) => makeEntry(
+        'economy', item.id || index, item.enterprise_name,
+        municipalityName(item.municipality_id) + ' · ' + (item.address || item.activity_type || ''),
+        (item.operating_status || 'Статус не указан') + ' · ' + (item.employee_count == null ? 'численность не указана' : formatNumber(item.employee_count) + ' сотрудников'),
+        [item.entity_type, item.activity_type, item.main_products],
+        '#industrial-enterprises-data-title', item.source_url
+      )),
+      ...programExecution.map((item, index) => makeEntry(
+        'economy', item.id || index, item.program_name,
+        municipalityName(item.municipality_id) + ' · отчёт ' + (item.report_date || ''),
+        'Исполнение · ' + formatNumber(item.execution_percent, 1) + '%',
+        [item.report_date, item.revised_budget_thousand, item.executed_budget_thousand],
+        '#program-execution-title', item.source_url
+      )),
+      ...fuelPrices.map((item, index) => makeEntry(
+        'economy', item.id || index, item.station_name,
+        [item.company_name, item.address].filter(Boolean).join(' · '),
+        'АЗС · АИ-92 ' + (item.gasoline_92 == null ? '—' : formatNumber(item.gasoline_92, 2)) + ' · АИ-95 ' + (item.gasoline_95 == null ? '—' : formatNumber(item.gasoline_95, 2)),
+        [item.gasoline_98, item.propane, item.diesel],
+        '#fuel-prices-heading', item.source_url
+      )),
+      ...facilities.map((item, index) => makeEntry(
+        'infrastructure', item.id || index, item.name_short || item.name_full,
+        municipalityName(item.municipality_id) + ' · ' + (item.address || ''),
+        item.facility_category === 'preschool' ? 'Детский сад' : 'Школа',
+        [item.name_full, item.postal_code, item.source_updated_at],
+        '#municipal-facilities-heading', item.source_url
+      )),
+      ...infrastructureObjects.map((item, index) => makeEntry(
+        'infrastructure', item.id || index, item.name,
+        municipalityName(item.municipality_id) + ' · ' + (item.address || item.location_text || ''),
+        (item.object_type || 'Инфраструктурный объект') + ' · ' + (item.status || 'статус не указан'),
+        [item.technical_condition, item.description, item.length_km],
+        '#infrastructure-objects-data-title', item.source_url
+      )),
+      ...landParcels.map((item, index) => makeEntry(
+        'infrastructure', item.id || index, item.cadastral_number || item.address || 'Земельный участок',
+        municipalityName(item.municipality_id) + ' · ' + (item.location_text || item.address || ''),
+        (item.land_category || 'Категория не указана') + ' · ' + (item.area_sqm == null ? 'площадь не указана' : formatNumber(item.area_sqm) + ' м²'),
+        [item.permitted_use, item.legal_status, item.available_to_investors],
+        '#land-parcels-data-title', item.source_url
+      )),
+    ].filter((item) => item.title);
+  }, [officialIndicators, externalRatings, officialDataSources, investmentSites, investmentProjects, industrialEnterprises, programExecution, fuelPrices, facilities, infrastructureObjects, landParcels, municipalities]);
+
+  const filteredDataSearchResults = useMemo(() => {
+    const query = dataSearch.trim().toLocaleLowerCase('ru-RU');
+    if (query.length < 2) return [];
+    return dataSearchIndex.filter((item) => item.searchText.includes(query));
+  }, [dataSearchIndex, dataSearch]);
+
 
   const programExecutionSummary = useMemo(() => {
     const executionValues = programExecution
@@ -1683,7 +1791,7 @@ export const InvestmentDetails = () => {
 
           {activeTab === 'data' && <section className="data-page">
             <section className="data-page-hero panel">
-              <div><span className="eyebrow"><span className="eyebrow-diamond"/> ЦЕНТР ДАННЫХ</span><h1>Источники и проверенные показатели</h1><p>Официальные наблюдения отделены от демонстрационного набора. Здесь видно покрытие, происхождение данных и наборы, подготовленные к импорту.</p></div>
+              <div><span className="eyebrow"><span className="eyebrow-diamond"/> ЦЕНТР ДАННЫХ</span><h1>Центр данных</h1><p>Единое пространство проверенных показателей, реестров и источников. Ищите записи по названию, территории, периоду, адресу или содержанию; официальные наблюдения и демонстрационные расчёты концепта остаются разделены.</p></div>
               <div className="data-page-hero-actions">
                 <span className={`official-status-chip official-status--${officialDataStatus === 'cached' ? 'connected' : officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'cached' ? 'ЛОКАЛЬНЫЙ КЭШ' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
                 {officialDataSyncedAt && <span className="official-data-updated">Обновлено: {new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(officialDataSyncedAt)}</span>}
@@ -1691,6 +1799,65 @@ export const InvestmentDetails = () => {
                 <a className="outline-button data-dictionary-link" href="/data-dictionary.md" download="yugra-data-dictionary.md"><Icon name="download"/>Скачать словарь данных</a>
               </div>
             </section>
+            <section className="data-explorer panel" aria-labelledby="data-explorer-title">
+              <div className="data-explorer-heading">
+                <div>
+                  <span className="eyebrow"><span className="eyebrow-diamond"/> НАВИГАЦИЯ ПО БАЗЕ</span>
+                  <h2 id="data-explorer-title">Найти нужные данные</h2>
+                  <p>Поиск работает по загруженным записям, названиям показателей, муниципалитетам, источникам, адресам и описаниям объектов.</p>
+                </div>
+                <span className="data-explorer-total"><strong>{dataSearchIndex.length}</strong><small>записей в поиске</small></span>
+              </div>
+              <div className="data-explorer-search-row">
+                <label className="search-box data-explorer-search">
+                  <Icon name="search"/>
+                  <input value={dataSearch} onChange={(event) => setDataSearch(event.target.value)} placeholder="Например: население Сургута, школа, инвестиции, земельный участок…" aria-label="Поиск по всем данным"/>
+                  {dataSearch && <button type="button" className="data-search-clear" onClick={() => setDataSearch('')} aria-label="Очистить поиск"><Icon name="close"/></button>}
+                </label>
+                <span className="data-search-hint">Введите минимум 2 символа</span>
+              </div>
+              <div className="data-category-grid" aria-label="Категории данных">
+                <a className="data-category-card" href="#all-official-indicators-heading">
+                  <span className="data-category-icon"><Icon name="chart"/></span><strong>Статистика и показатели</strong>
+                  <small>Официальные наблюдения, временные ряды и сравнения</small>
+                  <b>{officialIndicators.length + externalRatings.length} записей <Icon name="arrow"/></b>
+                </a>
+                <a className="data-category-card" href="#investment-projects-data-title">
+                  <span className="data-category-icon"><Icon name="coins"/></span><strong>Инвестиции и экономика</strong>
+                  <small>Площадки, проекты, предприятия, программы и цены</small>
+                  <b>{investmentSites.length + investmentProjects.length + industrialEnterprises.length + programExecution.length + fuelPrices.length} записей <Icon name="arrow"/></b>
+                </a>
+                <a className="data-category-card" href="#infrastructure-objects-data-title">
+                  <span className="data-category-icon"><Icon name="people"/></span><strong>Инфраструктура и земля</strong>
+                  <small>Учреждения, объекты и земельные участки</small>
+                  <b>{facilities.length + infrastructureObjects.length + landParcels.length} записей <Icon name="arrow"/></b>
+                </a>
+                <a className="data-category-card" href="#source-panel-title">
+                  <span className="data-category-icon"><Icon name="file"/></span><strong>Каталог источников</strong>
+                  <small>Паспорта наборов, форматы, охват и статус импорта</small>
+                  <b>{officialDataSources.length} источников <Icon name="arrow"/></b>
+                </a>
+              </div>
+            </section>
+            {dataSearch.trim().length >= 2 && <section className="data-search-results panel" aria-labelledby="data-search-results-title">
+              <div className="data-search-results-heading">
+                <div><span className="eyebrow"><span className="eyebrow-diamond"/> РЕЗУЛЬТАТЫ ПОИСКА</span><h2 id="data-search-results-title">Найдено: {filteredDataSearchResults.length}</h2><p>Запрос: «{dataSearch.trim()}»</p></div>
+                <button type="button" className="text-action" onClick={() => setDataSearch('')}><Icon name="close"/>Очистить запрос</button>
+              </div>
+              {filteredDataSearchResults.length > 0 ? <div className="data-search-result-list">
+                {filteredDataSearchResults.slice(0, 12).map((result) => <article className="data-search-result" key={result.id}>
+                  <div className="data-search-result-copy">
+                    <span className={'data-result-category data-result-category--' + result.category}>{({ statistics: 'СТАТИСТИКА', economy: 'ЭКОНОМИКА', infrastructure: 'ИНФРАСТРУКТУРА', sources: 'ИСТОЧНИК' })[result.category] || 'ДАННЫЕ'}</span>
+                    <strong>{result.title}</strong><span>{result.subtitle}</span><small>{result.meta}</small>
+                  </div>
+                  <div className="data-search-result-actions">
+                    <a href={result.href}>Открыть раздел <Icon name="arrow"/></a>
+                    {result.sourceUrl && <a href={result.sourceUrl} target="_blank" rel="noreferrer">Первоисточник ↗</a>}
+                  </div>
+                </article>)}
+                {filteredDataSearchResults.length > 12 && <p className="data-search-more">Показаны первые 12 совпадений из {filteredDataSearchResults.length}. Уточните запрос, чтобы сузить результаты.</p>}
+              </div> : <div className="empty-state"><span>Совпадений нет</span><p>Попробуйте другое название, муниципалитет или ключевое слово.</p></div>}
+            </section>}
             {officialDataStatus === 'error' && <div className="data-load-error" role="alert"><div><strong>Не удалось обновить официальный слой</strong><p>{officialDataError || 'Проверьте соединение с базой и повторите попытку.'}</p>{officialDataSyncedAt && <small>На экране остаются данные последней успешной загрузки.</small>}</div><button type="button" className="outline-button" onClick={() => setSyncAttempt((attempt) => attempt + 1)}><Icon name="refresh"/>Повторить загрузку</button></div>}
             <div className="data-page-summary"><article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong></article><article><span>Проверенных наблюдений</span><strong>{officialDataSummary.recordCount}</strong></article><article><span>Инвестиционных площадок</span><strong>{officialDataSummary.investmentSiteCount}</strong></article><article><span>Отчётов по программам</span><strong>{programExecution.length}</strong></article><article><span>Записей цен на топливо</span><strong>{fuelPrices.length}</strong></article><article><span>Школ и детсадов</span><strong>{facilities.length}</strong></article><article><span>Инвестпроектов</span><strong>{investmentProjects.length}</strong></article><article><span>Предприятий</span><strong>{industrialEnterprises.length}</strong></article><article><span>Объектов инфраструктуры</span><strong>{infrastructureObjects.length}</strong></article><article><span>Земельных участков</span><strong>{landParcels.length}</strong></article></div>
             <section className="data-quality-panel panel" aria-labelledby="data-quality-title">
@@ -2054,13 +2221,75 @@ export const InvestmentDetails = () => {
               <p className="source-panel-note">О дошкольных учреждениях импортированы 17 из 18 строк, доступных в поисковом представлении актуального CSV. Реестр школ содержит 7 объектов по версии от 16.12.2024. Дата обновления паспорта набора не заменяет дату фактической версии файла.</p>
             </section>}
 
+            <section className="data-register-panel panel" aria-labelledby="investment-projects-data-title">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="coins"/></span><div><h2 id="investment-projects-data-title">Инвестиционные проекты</h2><p>Реестр проектов, инвесторов, стадий реализации и планируемых результатов</p></div></div><span className="section-tag">{investmentProjects.length} ПРОЕКТОВ</span></div>
+              {investmentProjects.length > 0 ? <div className="data-register-table-wrap"><table className="fuel-prices-table data-register-table">
+                <thead><tr><th scope="col">Проект</th><th scope="col">Территория</th><th scope="col">Инвестор</th><th scope="col">Статус</th><th scope="col">Инвестиции</th><th scope="col">Рабочие места</th><th scope="col">Источник</th></tr></thead>
+                <tbody>{investmentProjects.map((item) => <tr key={item.id}>
+                  <td><strong>{item.project_name || 'Проект без названия'}</strong><small>{item.project_category || item.activity_type || 'Категория не указана'}</small></td>
+                  <td>{municipalities.find((m) => m.id === item.municipality_id)?.name || item.municipality_id || '—'}<small>{item.location_text || 'Местоположение не указано'}</small></td>
+                  <td>{item.investor || '—'}</td><td>{item.project_status || item.project_stage || 'Не указан'}</td>
+                  <td>{item.investment_amount_thousand == null ? '—' : formatNumber(Number(item.investment_amount_thousand) / 1000, 1) + ' млн ₽'}</td>
+                  <td>{item.planned_jobs == null ? '—' : formatNumber(item.planned_jobs)}</td>
+                  <td>{item.source_url ? <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a> : '—'}</td>
+                </tr>)}</tbody>
+              </table></div> : <p className="data-register-empty">Записей пока нет. Это означает, что проекты ещё не загружены в реестр, а не то, что на территории Югры отсутствуют инвестиционные проекты.</p>}
+            </section>
+
+            <section className="data-register-panel panel" aria-labelledby="industrial-enterprises-data-title">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="industrial-enterprises-data-title">Промышленные предприятия</h2><p>Организации, виды деятельности, адреса и доступные сведения о занятости</p></div></div><span className="section-tag">{industrialEnterprises.length} ПРЕДПРИЯТИЙ</span></div>
+              {industrialEnterprises.length > 0 ? <div className="data-register-table-wrap"><table className="fuel-prices-table data-register-table">
+                <thead><tr><th scope="col">Предприятие</th><th scope="col">Деятельность</th><th scope="col">Адрес</th><th scope="col">Статус</th><th scope="col">Сотрудники</th><th scope="col">Основная продукция</th><th scope="col">Источник</th></tr></thead>
+                <tbody>{industrialEnterprises.map((item) => <tr key={item.id}>
+                  <td><strong>{item.enterprise_name || 'Название не указано'}</strong><small>{item.entity_type || 'Организационная форма не указана'}</small></td>
+                  <td>{item.activity_type || '—'}</td><td>{item.address || '—'}</td><td>{item.operating_status || 'Не указан'}</td>
+                  <td>{item.employee_count == null ? '—' : formatNumber(item.employee_count)}</td><td>{item.main_products || '—'}</td>
+                  <td>{item.source_url ? <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a> : '—'}</td>
+                </tr>)}</tbody>
+              </table></div> : <p className="data-register-empty">Реестр пока не содержит записей о предприятиях.</p>}
+            </section>
+
+            <section className="data-register-panel panel" aria-labelledby="infrastructure-objects-data-title">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="map"/></span><div><h2 id="infrastructure-objects-data-title">Инфраструктурные объекты</h2><p>Транспортная, коммунальная и общественная инфраструктура с описаниями состояния</p></div></div><span className="section-tag">{infrastructureObjects.length} ОБЪЕКТОВ</span></div>
+              {infrastructureObjects.length > 0 ? <div className="data-register-table-wrap"><table className="fuel-prices-table data-register-table">
+                <thead><tr><th scope="col">Объект</th><th scope="col">Территория</th><th scope="col">Тип</th><th scope="col">Адрес / местоположение</th><th scope="col">Статус</th><th scope="col">Состояние</th><th scope="col">Длина</th><th scope="col">Источник</th></tr></thead>
+                <tbody>{infrastructureObjects.map((item) => <tr key={item.id}>
+                  <td><strong>{item.name || 'Объект без названия'}</strong></td>
+                  <td>{municipalities.find((m) => m.id === item.municipality_id)?.name || item.municipality_id || '—'}</td>
+                  <td>{({ road: 'Дорога', bridge: 'Мост', sidewalk: 'Тротуар', traffic_calming: 'Организация движения', street_lighting: 'Уличное освещение', water_supply: 'Водоснабжение', wastewater: 'Водоотведение', heat_supply: 'Теплоснабжение', electricity: 'Электроснабжение', gas_supply: 'Газоснабжение', waste_management: 'Обращение с отходами', public_space: 'Общественное пространство', other: 'Прочий объект' })[item.object_type] || item.object_type || 'Не указан'}</td>
+                  <td>{item.address || item.location_text || item.description || '—'}</td><td>{item.status || 'Не указан'}</td><td>{item.technical_condition || '—'}</td>
+                  <td>{item.length_km == null ? '—' : formatNumber(item.length_km, 2) + ' км'}</td>
+                  <td>{item.source_url ? <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a> : '—'}</td>
+                </tr>)}</tbody>
+              </table></div> : <p className="data-register-empty">Реестр инфраструктурных объектов пока пуст.</p>}
+            </section>
+
+            <section className="data-register-panel panel" aria-labelledby="land-parcels-data-title">
+              <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="pin"/></span><div><h2 id="land-parcels-data-title">Земельные участки</h2><p>Кадастровые сведения, разрешённое использование и инвестиционная доступность</p></div></div><span className="section-tag">{landParcels.length} УЧАСТКОВ</span></div>
+              {landParcels.length > 0 ? <div className="data-register-table-wrap"><table className="fuel-prices-table data-register-table">
+                <thead><tr><th scope="col">Кадастровый номер / адрес</th><th scope="col">Территория</th><th scope="col">Категория</th><th scope="col">Разрешённое использование</th><th scope="col">Площадь</th><th scope="col">Правовой статус</th><th scope="col">Доступен инвесторам</th><th scope="col">Источник</th></tr></thead>
+                <tbody>{landParcels.map((item) => <tr key={item.id}>
+                  <td><strong>{item.cadastral_number || item.address || 'Номер не указан'}</strong><small>{item.location_text || item.address || 'Местоположение не указано'}</small></td>
+                  <td>{municipalities.find((m) => m.id === item.municipality_id)?.name || item.municipality_id || '—'}</td>
+                  <td>{item.land_category || '—'}</td><td>{item.permitted_use || '—'}</td>
+                  <td>{item.area_sqm == null ? '—' : formatNumber(item.area_sqm) + ' м²'}</td><td>{item.legal_status || 'Не указан'}</td>
+                  <td>{item.available_to_investors == null ? 'Неизвестно' : item.available_to_investors ? 'Да' : 'Нет'}</td>
+                  <td>{item.source_url ? <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a> : '—'}</td>
+                </tr>)}</tbody>
+              </table></div> : <p className="data-register-empty">Реестр земельных участков пока пуст.</p>}
+            </section>
+
             <section className="source-panel panel" aria-labelledby="source-panel-title">
               <div className="section-heading">
                 <div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2 id="source-panel-title">Источники для расширения аналитики</h2><p>Официальные данные и инвестиционные площадки</p></div></div>
-                <span className="section-tag">ВНЕШНИЕ ИСТОЧНИКИ</span>
+                <span className="section-tag">{filteredDataSources.length} ИЗ {officialDataSources.length} ИСТОЧНИКОВ</span>
+              </div>
+              <div className="data-source-toolbar">
+                <label className="search-box"><Icon name="search"/><input value={sourceSearch} onChange={(event) => setSourceSearch(event.target.value)} placeholder="Поиск по названию, теме или территории…" aria-label="Поиск по каталогу источников"/></label>
+                <label className="select-field"><span>Статус импорта</span><select value={sourceStatusFilter} onChange={(event) => setSourceStatusFilter(event.target.value)}><option value="all">Все статусы</option><option value="imported">Импортирован</option><option value="partially_imported">Частично импортирован</option><option value="ready_for_import">Готов к импорту</option><option value="identified">Выявлен</option><option value="access_issue">Проблема доступа</option></select></label>
               </div>
               <div className="source-grid">
-                {officialDataSources.slice(0, 8).map((source) => <a className="source-item" key={source.id} href={source.url} target="_blank" rel="noreferrer">
+                {filteredDataSources.map((source) => <a className="source-item" key={source.id} href={source.url} target="_blank" rel="noreferrer">
                   <span className="source-item-type">{DATA_CATEGORY_LABELS[source.category] || 'ИСТОЧНИК ДАННЫХ'}</span>
                   <strong>{source.name}</strong>
                   <span>{source.description}</span>
@@ -2068,7 +2297,7 @@ export const InvestmentDetails = () => {
                   <span className="source-item-link">{DATA_STATUS_LABELS[source.import_status] || 'Статус проверяется'} ↗</span>
                 </a>)}
               </div>
-              <p className="source-panel-note">Показаны 8 приоритетных источников из каталога ({officialDataSources.length} всего). В разделе «О проекте» доступен полный реестр. Статус показывает, найден ли источник, подготовлен ли импорт или данные уже загружены.</p>
+              <p className="source-panel-note">Показан полный каталог: {filteredDataSources.length} из {officialDataSources.length} источников. Используйте поиск и фильтр статуса, чтобы быстро найти набор и проверить, загружены ли его данные.</p>
             </section>
 
 
