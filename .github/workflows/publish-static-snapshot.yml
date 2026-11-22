@@ -66,6 +66,10 @@ jobs:
           SUPABASE_DATA_PUBLISHABLE_KEY: sb_publishable_CcAx_D67mZXdYg-MgyzToA_N7x_7tS5
         run: node scripts/publish-static-snapshot.mjs
 
+      - name: Configure GitHub Pages
+        if: steps.build.outputs.ready == 'true' && steps.build.outputs.changed == 'true'
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+
       - name: Commit snapshot version to data branch
         if: steps.build.outputs.ready == 'true' && steps.build.outputs.changed == 'true'
         run: |
@@ -96,10 +100,6 @@ jobs:
               git -C data-store push origin HEAD:data
             fi
           fi
-
-      - name: Configure GitHub Pages
-        if: steps.build.outputs.ready == 'true' && steps.build.outputs.changed == 'true'
-        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
       - name: Upload the verified snapshot as a Pages artifact
         if: steps.build.outputs.ready == 'true' && steps.build.outputs.changed == 'true'
