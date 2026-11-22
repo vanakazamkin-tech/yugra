@@ -911,10 +911,14 @@ export const InvestmentDetails = () => {
       { key: 'budget', label: 'Бюджетные срезы', count: modalBudgetSnapshots.length },
       { key: 'ratings', label: 'Внешние рейтинги', count: modalExternalRatings.length },
       { key: 'sites', label: 'Инвестиционные площадки', count: investmentSites.filter((item) => item.municipality_id === municipalityId).length },
+      { key: 'investment-projects', label: 'Инвестиционные проекты', count: investmentProjects.filter((item) => item.municipality_id === municipalityId).length },
+      { key: 'enterprises', label: 'Промышленные предприятия', count: industrialEnterprises.filter((item) => item.municipality_id === municipalityId).length },
+      { key: 'infrastructure', label: 'Инфраструктурные объекты', count: infrastructureObjects.filter((item) => item.municipality_id === municipalityId).length },
+      { key: 'land', label: 'Земельные участки', count: landParcels.filter((item) => item.municipality_id === municipalityId).length },
       { key: 'facilities', label: 'Образовательные объекты', count: facilities.filter((item) => item.municipality_id === municipalityId).length },
       { key: 'programs', label: 'Отчёты о программах', count: programExecution.filter((item) => item.municipality_id === municipalityId).length },
     ];
-  }, [activeModalItem, modalOfficialIndicators, modalPopulationTrend, modalInvestmentSnapshots, modalBudgetSnapshots, modalExternalRatings, investmentSites, facilities, programExecution]);
+  }, [activeModalItem, modalOfficialIndicators, modalPopulationTrend, modalInvestmentSnapshots, modalBudgetSnapshots, modalExternalRatings, investmentSites, investmentProjects, industrialEnterprises, infrastructureObjects, landParcels, facilities, programExecution]);
 
   const surgutPopulationTrend = useMemo(() => {
     const rows = officialIndicators
@@ -1645,7 +1649,7 @@ export const InvestmentDetails = () => {
               </div>
             </section>
             {officialDataStatus === 'error' && <div className="data-load-error" role="alert"><div><strong>Не удалось обновить официальный слой</strong><p>{officialDataError || 'Проверьте соединение с базой и повторите попытку.'}</p>{officialDataSyncedAt && <small>На экране остаются данные последней успешной загрузки.</small>}</div><button type="button" className="outline-button" onClick={() => setSyncAttempt((attempt) => attempt + 1)}><Icon name="refresh"/>Повторить загрузку</button></div>}
-            <div className="data-page-summary"><article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong></article><article><span>Проверенных наблюдений</span><strong>{officialDataSummary.recordCount}</strong></article><article><span>Инвестиционных площадок</span><strong>{officialDataSummary.investmentSiteCount}</strong></article><article><span>Отчётов по программам</span><strong>{programExecution.length}</strong></article><article><span>Записей цен на топливо</span><strong>{fuelPrices.length}</strong></article><article><span>Школ и детсадов</span><strong>{facilities.length}</strong></article></div>
+            <div className="data-page-summary"><article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong></article><article><span>Проверенных наблюдений</span><strong>{officialDataSummary.recordCount}</strong></article><article><span>Инвестиционных площадок</span><strong>{officialDataSummary.investmentSiteCount}</strong></article><article><span>Отчётов по программам</span><strong>{programExecution.length}</strong></article><article><span>Записей цен на топливо</span><strong>{fuelPrices.length}</strong></article><article><span>Школ и детсадов</span><strong>{facilities.length}</strong></article><article><span>Инвестпроектов</span><strong>{investmentProjects.length}</strong></article><article><span>Предприятий</span><strong>{industrialEnterprises.length}</strong></article><article><span>Объектов инфраструктуры</span><strong>{infrastructureObjects.length}</strong></article><article><span>Земельных участков</span><strong>{landParcels.length}</strong></article></div>
             <section className="data-quality-panel panel" aria-labelledby="data-quality-title">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2 id="data-quality-title">Качество и покрытие данных</h2><p>Фактический охват подключённой базы; демонстрационные поля рейтинга здесь не учитываются</p></div></div><span className="section-tag">ОФИЦИАЛЬНЫЙ СЛОЙ</span></div>
               <div className="data-quality-kpis">
@@ -2358,6 +2362,36 @@ export const InvestmentDetails = () => {
               </article>)}</div>
             </details>
           </> : <p className="modal-no-official">Для этой территории образовательные учреждения пока не представлены в базе. Это не означает, что на территории нет школ или детских садов.</p>}
+        </section>
+        <section className="modal-official-data" aria-labelledby="modal-projects-heading">
+          <div className="modal-official-heading"><h3 id="modal-projects-heading">Крупные инвестиционные проекты</h3><span>{investmentProjects.filter((item) => item.municipality_id === activeModalItem.id).length} проектов</span></div>
+          {investmentProjects.some((item) => item.municipality_id === activeModalItem.id) ? <div className="modal-official-list">{investmentProjects.filter((item) => item.municipality_id === activeModalItem.id).map((item) => <article key={item.id} className="modal-official-row modal-site-row">
+            <div><strong>{item.project_name}</strong><span>{item.investor || 'Инвестор не указан'} · {item.project_category || item.activity_type || 'Категория не указана'}</span><span>{item.location_text || item.description || 'Описание проекта уточняется'}</span><span>Статус: {item.project_status || item.project_stage || 'не указан'} · рабочие места: {item.planned_jobs == null ? '—' : formatNumber(item.planned_jobs)}</span></div>
+            <b>{item.investment_amount_thousand == null ? '—' : formatNumber(item.investment_amount_thousand / 1000, 1) + ' млн ₽'}</b>
+            {item.source_url && <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a>}
+          </article>)}</div> : <p className="modal-no-official">Для этой территории подтверждённые инвестиционные проекты пока не загружены. Это не означает отсутствия проектов.</p>}
+        </section>
+        <section className="modal-official-data" aria-labelledby="modal-enterprises-heading">
+          <div className="modal-official-heading"><h3 id="modal-enterprises-heading">Промышленные предприятия</h3><span>{industrialEnterprises.filter((item) => item.municipality_id === activeModalItem.id).length} предприятий</span></div>
+          {industrialEnterprises.some((item) => item.municipality_id === activeModalItem.id) ? <div className="modal-official-list">{industrialEnterprises.filter((item) => item.municipality_id === activeModalItem.id).map((item) => <article key={item.id} className="modal-official-row modal-site-row">
+            <div><strong>{item.enterprise_name}</strong><span>{item.entity_type || 'Организационная форма не указана'} · {item.activity_type || 'Вид деятельности не указан'}</span><span>{item.address || 'Адрес не указан'} · {item.operating_status || 'Статус работы не указан'}</span><span>Сотрудники: {item.employee_count == null ? '—' : formatNumber(item.employee_count)} · продукция: {item.main_products || 'не указана'}</span></div>
+            {item.source_url && <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a>}
+          </article>)}</div> : <p className="modal-no-official">Для этой территории подтверждённые записи о промышленных предприятиях пока не загружены. Это не означает отсутствия предприятий.</p>}
+        </section>
+        <section className="modal-official-data" aria-labelledby="modal-infrastructure-heading">
+          <div className="modal-official-heading"><h3 id="modal-infrastructure-heading">Инфраструктурные объекты</h3><span>{infrastructureObjects.filter((item) => item.municipality_id === activeModalItem.id).length} объектов</span></div>
+          {infrastructureObjects.some((item) => item.municipality_id === activeModalItem.id) ? <div className="modal-official-list">{infrastructureObjects.filter((item) => item.municipality_id === activeModalItem.id).map((item) => <article key={item.id} className="modal-official-row modal-site-row">
+            <div><strong>{item.name}</strong><span>{({ road: 'Дорога', bridge: 'Мост', sidewalk: 'Тротуар', traffic_calming: 'Организация движения', street_lighting: 'Уличное освещение', water_supply: 'Водоснабжение', wastewater: 'Водоотведение', heat_supply: 'Теплоснабжение', electricity: 'Электроснабжение', gas_supply: 'Газоснабжение', waste_management: 'Обращение с отходами', public_space: 'Общественное пространство', other: 'Прочий объект' })[item.object_type] || item.object_type || 'Тип не указан'} · {item.status || 'статус не указан'}</span><span>{item.address || item.location_text || item.description || 'Местоположение не указано'}</span><span>Состояние: {item.technical_condition || 'не указано'} · протяжённость: {item.length_km == null ? '—' : formatNumber(item.length_km, 2) + ' км'}</span></div>
+            {item.source_url && <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a>}
+          </article>)}</div> : <p className="modal-no-official">Для этой территории подтверждённые инфраструктурные объекты пока не загружены. Это не означает отсутствия объектов.</p>}
+        </section>
+        <section className="modal-official-data" aria-labelledby="modal-land-heading">
+          <div className="modal-official-heading"><h3 id="modal-land-heading">Земельные участки</h3><span>{landParcels.filter((item) => item.municipality_id === activeModalItem.id).length} участков</span></div>
+          {landParcels.some((item) => item.municipality_id === activeModalItem.id) ? <div className="modal-official-list">{landParcels.filter((item) => item.municipality_id === activeModalItem.id).map((item) => <article key={item.id} className="modal-official-row modal-site-row">
+            <div><strong>{item.cadastral_number || item.address || 'Участок без кадастрового номера'}</strong><span>{item.location_text || item.address || 'Местоположение не указано'} · {item.land_category || 'Категория не указана'}</span><span>Разрешённое использование: {item.permitted_use || 'не указано'} · правовой статус: {item.legal_status || 'не указан'}</span><span>Доступен инвесторам: {item.available_to_investors == null ? 'неизвестно' : item.available_to_investors ? 'да' : 'нет'}</span></div>
+            <b>{item.area_sqm == null ? '—' : formatNumber(item.area_sqm, 0) + ' м²'}</b>
+            {item.source_url && <a href={item.source_url} target="_blank" rel="noreferrer">Источник ↗</a>}
+          </article>)}</div> : <p className="modal-no-official">Для этой территории земельные участки пока не представлены в проверенном реестре. Это не означает отсутствия свободной земли.</p>}
         </section>
         <section className="modal-official-data" aria-labelledby="modal-programs-heading">
           <div className="modal-official-heading"><h3 id="modal-programs-heading">Исполнение муниципальных программ</h3><span>{programExecution.filter((item) => item.municipality_id === activeModalItem.id).length} отчёта</span></div>
