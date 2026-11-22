@@ -201,8 +201,11 @@ export default async function handler(req, res) {
       responseStatus = 202;
       responsePayload = { ok: true, skipped: true, reason: 'refresh_already_running' };
     } else {
+      const current = await readJson(CURRENT);
+      const oldManifest = current?.manifestPath ? await readJson(current.manifestPath) : null;
+      const dataModeChanged = !oldManifest || oldManifest.dataAccessMode !== SNAPSHOT_DATA_MODE;
       const previousHealth = await readJson(HEALTH);
-      if (previousHealth?.status === 'error') {
+      if (previousHealth?.status === 'error' && !dataModeChanged) {
         previousFailureCount = Math.max(1, Number(previousHealth.failureCount) || 1);
         const backoffMs = Math.min(
           MAX_RETRY_BACKOFF_MS,
@@ -224,12 +227,8 @@ export default async function handler(req, res) {
       }
 
       if (responseStatus === 200) {
-        const current = await readJson(CURRENT);
-        const oldManifest = current?.manifestPath ? await readJson(current.manifestPath) : null;
         const lastFull = Date.parse(oldManifest?.lastFullReconciliationAt || '') || 0;
-        const full = !oldManifest
-          || oldManifest.dataAccessMode !== SNAPSHOT_DATA_MODE
-          || Date.now() - lastFull >= FULL_SYNC_MS;
+        const full = dataModeChanged || Date.now() - lastFull >= FULL_SYNC_MS;
         const supabase = clients();
 
         const municipalities = full
