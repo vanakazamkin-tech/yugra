@@ -33,6 +33,7 @@ jobs:
         run: |
           node --check scripts/publish-static-snapshot.mjs
           node scripts/test-shared-snapshot-integrity.mjs
+          node scripts/test-official-data-merge-preserves-values.mjs
       - name: Run forecast model unit tests
         run: npm test
       - name: Test data provenance and source catalog contracts
