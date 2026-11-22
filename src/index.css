@@ -1524,3 +1524,89 @@ main { min-width: 0; }
   .app-error-panel { padding: 24px 18px; border-radius: 14px; }
 }
 
+
+
+/* Restored functional controls and analytical blocks in the northern visual theme. */
+.main-nav .nav-item { flex: 0 0 auto; }
+.active-filter-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 11px 0 2px;
+  padding: 10px 13px;
+  border: 1px solid #dfd3bf;
+  border-radius: 3px 10px 3px 10px;
+  background: rgba(255,253,248,.76);
+  color: #6e7869;
+  font-size: 11px;
+}
+.active-filter-summary strong { color: #254a36; font-variant-numeric: tabular-nums; }
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 11px;
+  margin: 16px 0 10px;
+}
+.insight-card {
+  display: flex;
+  min-width: 0;
+  min-height: 126px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 17px;
+  border: 1px solid #ded2be;
+  border-radius: 3px 13px 3px 13px;
+  background: linear-gradient(145deg, #fffdf8, #f4eee1);
+  box-shadow: 0 8px 22px rgba(41,55,40,.045);
+}
+.insight-card-kicker {
+  color: #96794d;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  line-height: 1.45;
+}
+.insight-card > strong {
+  color: #254a36;
+  font: 600 clamp(21px, 2.2vw, 29px)/1.1 'Playfair Display', Georgia, serif;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.insight-card > .insight-card-name { font-size: clamp(16px, 1.7vw, 23px); }
+.insight-card > span:not(.insight-card-kicker) { color: #586858; font-size: 11px; line-height: 1.45; }
+.insight-card > small { margin-top: auto; color: #848575; font-size: 9px; line-height: 1.45; }
+.data-quality-note {
+  margin: 7px 2px 15px;
+  color: #778071;
+  font-size: 10px;
+  line-height: 1.7;
+}
+@media (max-width: 1320px) {
+  .site-header { align-items: center; flex-wrap: wrap; }
+  .header-motto { order: 2; margin-left: auto; }
+  .main-nav {
+    order: 3;
+    flex: 1 0 100%;
+    width: 100%;
+    max-width: 100%;
+    align-self: auto;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 5px;
+    scrollbar-width: thin;
+  }
+  .main-nav .nav-item { min-height: 42px; }
+}
+@media (max-width: 900px) {
+  .insight-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .official-coverage-teaser { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .insight-grid { grid-template-columns: minmax(0, 1fr); }
+  .insight-card { min-height: 104px; }
+  .active-filter-summary { align-items: flex-start; }
+  .main-nav .nav-item { gap: 6px; padding-inline: 10px; font-size: 11px; }
+}
