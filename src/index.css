@@ -267,6 +267,12 @@ main { min-width: 0; }
 .large-map { min-height: 540px; padding: 20px; }
 .large-map > svg { max-height: 570px; }
 .map-list { max-height: 570px; overflow: auto; border-left: 1px solid #e3d7c5; padding-left: 18px; scrollbar-width: thin; scrollbar-color: #cfc2aa transparent; }
+.home-map-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; max-height: 360px; margin-top: 12px; padding: 13px 2px 0; overflow: auto; border-top: 1px solid #e3d7c5; border-left: 0; }
+.home-map-list .map-list-section { min-width: 0; margin-bottom: 0; }
+.home-map-list .map-list-section h3 { font-size: 13px; }
+.home-map-list .map-list-item { gap: 7px; padding: 7px 4px; }
+.home-map-list .map-list-initial { width: 23px; height: 23px; flex-basis: 23px; }
+.home-map-list .map-list-name { font-size: 10px; line-height: 1.25; }
 .map-list-section { margin-bottom: 23px; }
 .map-list-section h3 { margin: 0 0 10px; color: var(--forest); font-family: 'Playfair Display', Georgia, serif; font-size: 18px; font-weight: 600; }
 .map-list-section ul { display: grid; gap: 5px; list-style: none; margin: 0; padding: 0; }
@@ -399,6 +405,8 @@ main { min-width: 0; }
   .map-legend { gap: 9px; padding-top: 10px; font-size: 9px; }
   .legend-hint { width: 100%; margin-left: 0; }
   .map-card-footer { align-items: flex-start; flex-direction: column; gap: 5px; font-size: 9px; }
+  .home-map-list { max-height: 420px; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; padding-left: 0; padding-right: 0; }
+  .home-map-list .map-list-section h3 { font-size: 12px; }
   .ranking-heading { flex-wrap: wrap; align-items: center; }
   .ranking-heading .primary-button { margin-left: auto; min-height: 33px; padding: 7px 9px; font-size: 9px; }
   .ranking-heading .primary-button .ui-icon { width: 13px; height: 13px; }
