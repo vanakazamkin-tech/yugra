@@ -1,11 +1,12 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import data from '../data/municipalities-detailed.json';
 import { UgraMap, UgraMapList } from './components/UgraMap';
-import { coreSupabase, isCoreSupabaseConfigured } from './lib/supabase';
+import { coreSupabase, dataSupabase, isCoreSupabaseConfigured, isDataSupabaseConfigured } from './lib/supabase';
 import { readPersistentCache, writePersistentCache } from './lib/persistentCache';
 const UnifiedRiskForecast = lazy(() => import('./components/UnifiedRiskForecast'));
 const Forecasting = lazy(() => import('./components/Forecasting'));
-import { FALLBACK_DATA_SOURCES, DATA_CATEGORY_LABELS, DATA_STATUS_LABELS } from './lib/officialData';
+import { FALLBACK_DATA_SOURCES, fetchOfficialData, DATA_CATEGORY_LABELS, DATA_STATUS_LABELS } from './lib/officialData';
+import { fetchMunicipalities } from './lib/municipalities';
 import { fetchSharedSnapshot } from './lib/sharedSnapshot';
 
 const Icon = ({ name, className = '' }) => {
@@ -267,10 +268,50 @@ export const InvestmentDetails = () => {
       } catch (error) {
         if (cancelled) return;
         const message = error?.message || 'Не удалось получить общий снимок данных';
+
+        // Until the first shared snapshot is published, preserve the previous
+        // direct-read behavior so a clean browser does not start with empty pages.
+        if (!snapshot && (isCoreSupabaseConfigured || isDataSupabaseConfigured)) {
+          try {
+            const [municipalityRows, officialData] = await Promise.all([
+              fetchMunicipalities(coreSupabase, dataSupabase, Array.isArray(data) ? data : []),
+              fetchOfficialData(coreSupabase, dataSupabase),
+            ]);
+            if (cancelled) return;
+            snapshot = { ...emptySnapshot, ...officialData, municipalities: municipalityRows };
+            applySnapshot(snapshot);
+            const syncedAt = new Date().toISOString();
+            setOfficialDataSyncedAt(new Date(syncedAt));
+            setLastSyncedAt(new Date(syncedAt));
+            setOfficialDataStatus('connected');
+            setSyncStatus('connected');
+            const sourceErrors = officialData?.cacheMeta?.errors || [];
+            setOfficialDataError(sourceErrors.length
+              ? sourceErrors.map((item) => item.message).filter(Boolean).slice(0, 3).join(' · ')
+              : '');
+            setSyncMessage('Общий снимок готовится — временно используется прямая загрузка источников');
+            void writePersistentCache('official-data-v2', {
+              version: 2,
+              data: snapshot,
+              metadata: { version: null, lastRemoteSyncAt: syncedAt, sourceStatus: { mode: 'temporary_direct_fallback' } },
+            });
+            if (Array.isArray(municipalityRows)) {
+              void writePersistentCache('municipalities-v1', { rows: municipalityRows, syncedAt });
+            }
+            console.warn('Общий снимок пока не опубликован; временно использована прямая загрузка Supabase:', message);
+            return;
+          } catch (fallbackError) {
+            if (cancelled) return;
+            console.warn('Временная прямая загрузка Supabase тоже не удалась:', fallbackError?.message || fallbackError);
+          }
+        }
+
         setOfficialDataError(message);
         setOfficialDataStatus(snapshot ? 'cached' : 'error');
         setSyncStatus(snapshot ? 'cached' : 'error');
-        setSyncMessage(snapshot ? 'Используется последний доступный снимок' : message);
+        setSyncMessage(snapshot
+          ? 'Используется последний доступный снимок'
+          : message);
         console.warn('Общий снимок Yugra18 пока недоступен:', message);
       } finally {
         inFlight = false;
