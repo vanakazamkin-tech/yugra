@@ -666,13 +666,62 @@ function mergeProgramRows(coreRows, statisticsRows) {
   ].map((value) => String(value ?? '')).join('|'))
 }
 
-async function safeRows(client, queryFactory, label) {
+async function safeRows(client, queryFactory, label, sinceByTable = null, errors = [], cursorCandidates = {}) {
   if (!client) return []
   try {
-    return await fetchAllRows(queryFactory)
+    const cursor = sinceByTable?.[label]
+    const overlapCursor = cursor
+      ? new Date(Math.max(0, Date.parse(cursor) - 120_000)).toISOString()
+      : null
+    const rows = await fetchAllRows(() => {
+      const query = queryFactory()
+      return overlapCursor ? query.gt('updated_at', overlapCursor) : query
+    })
+    const latest = rows.reduce((max, row) => {
+      const value = Date.parse(row?.updated_at || '')
+      return Number.isFinite(value) && value > max ? value : max
+    }, 0)
+    if (latest) cursorCandidates[label] = new Date(latest).toISOString()
+    else if (!cursor) cursorCandidates[label] = new Date().toISOString()
+    return rows
   } catch (error) {
+    errors.push({ key: label, message: error?.message || String(error) })
     console.warn(`Не удалось получить ${label}:`, error?.message || error)
     return []
+  }
+}
+
+
+function mergeRowsById(baseRows = [], updateRows = []) {
+  const rows = new Map()
+  for (const row of [...baseRows, ...updateRows]) {
+    const key = row?.id != null ? String(row.id) : JSON.stringify(row)
+    if (!key) continue
+    const previous = rows.get(key)
+    const previousDate = Date.parse(previous?.updated_at || previous?.retrieved_at || previous?.created_at || '') || 0
+    const currentDate = Date.parse(row?.updated_at || row?.retrieved_at || row?.created_at || '') || 0
+    if (!previous || currentDate >= previousDate) rows.set(key, row)
+  }
+  return [...rows.values()]
+}
+
+/** Объединяет дельту Supabase с последним локальным снимком без потери старых строк. */
+export function mergeOfficialDataSnapshots(previous = {}, updates = {}) {
+  const merge = (key) => mergeRowsById(previous[key] || [], updates[key] || [])
+  const mergedIndicators = mergeRowsById(previous.indicators || [], updates.indicators || [])
+  const mergedPrograms = mergeRowsById(previous.programExecution || [], updates.programExecution || [])
+  return {
+    sources: mergeSourceCatalog(previous.sources || [], updates.sources || []),
+    indicators: mergeIndicatorRows(mergedIndicators, []),
+    investmentSites: merge('investmentSites'),
+    investmentProjects: merge('investmentProjects'),
+    industrialEnterprises: merge('industrialEnterprises'),
+    infrastructureObjects: merge('infrastructureObjects'),
+    landParcels: merge('landParcels'),
+    programExecution: mergeProgramRows(mergedPrograms, []),
+    fuelPrices: merge('fuelPrices'),
+    facilities: merge('facilities'),
+    externalRatings: merge('externalRatings'),
   }
 }
 
@@ -681,7 +730,11 @@ async function safeRows(client, queryFactory, label) {
  * статистика, источники и программы читаются из обеих баз;
  * дополнительные паспорта, объекты и внешние рейтинги — из DB1.
  */
-export async function fetchOfficialData(coreClient, statisticsClient = null) {
+export async function fetchOfficialData(coreClient, statisticsClient = null, options = {}) {
+  const sinceByTable = options?.sinceByTable || null
+  const errors = []
+  const cursorCandidates = {}
+  const readRows = (client, queryFactory, label) => safeRows(client, queryFactory, label, sinceByTable, errors, cursorCandidates)
   const empty = {
     sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [],
     investmentProjects: [], industrialEnterprises: [], infrastructureObjects: [],
@@ -694,20 +747,20 @@ export async function fetchOfficialData(coreClient, statisticsClient = null) {
     coreIndicators, statisticsIndicators,
     corePrograms, statisticsPrograms,
   ] = await Promise.all([
-    safeRows(coreClient, () => coreClient.from('data_sources').select('*')
+    readRows(coreClient, () => coreClient.from('data_sources').select('*')
       .order('category', { ascending: true }).order('name', { ascending: true }).order('id', { ascending: true }), 'каталог источников DB1'),
-    safeRows(statisticsClient, () => statisticsClient.from('data_sources').select('*')
+    readRows(statisticsClient, () => statisticsClient.from('data_sources').select('*')
       .order('category', { ascending: true }).order('name', { ascending: true }).order('id', { ascending: true }), 'каталог источников DB2'),
-    safeRows(coreClient, () => coreClient.from('municipality_indicators').select('*')
+    readRows(coreClient, () => coreClient.from('municipality_indicators').select('*')
       .eq('verification_status', 'verified')
       .order('reference_year', { ascending: false }).order('id', { ascending: true }), 'показатели DB1'),
-    safeRows(statisticsClient, () => statisticsClient.from('municipality_indicators').select('*')
+    readRows(statisticsClient, () => statisticsClient.from('municipality_indicators').select('*')
       .eq('verification_status', 'verified')
       .order('reference_year', { ascending: false }).order('id', { ascending: true }), 'показатели DB2'),
-    safeRows(coreClient, () => coreClient.from('municipal_program_execution').select('*')
+    readRows(coreClient, () => coreClient.from('municipal_program_execution').select('*')
       .eq('verification_status', 'verified')
       .order('report_date', { ascending: false }).order('id', { ascending: true }), 'муниципальные программы DB1'),
-    safeRows(statisticsClient, () => statisticsClient.from('municipal_program_execution').select('*')
+    readRows(statisticsClient, () => statisticsClient.from('municipal_program_execution').select('*')
       .eq('verification_status', 'verified')
       .order('report_date', { ascending: false }).order('id', { ascending: true }), 'муниципальные программы DB2'),
   ])
@@ -717,27 +770,27 @@ export async function fetchOfficialData(coreClient, statisticsClient = null) {
     investmentSites, investmentProjects, industrialEnterprises, infrastructureObjects,
     landParcels, fuelPrices, facilities, externalRatingResults, externalRatingCatalog,
   ] = await Promise.all([
-    safeRows(coreClient, () => coreClient.from('investment_sites').select('*')
+    readRows(coreClient, () => coreClient.from('investment_sites').select('*')
       .eq('verification_status', 'verified').order('name', { ascending: true }).order('id', { ascending: true }), 'инвестплощадки DB1'),
-    safeRows(coreClient, () => coreClient.from('municipal_investment_projects').select('*')
+    readRows(coreClient, () => coreClient.from('municipal_investment_projects').select('*')
       .eq('verification_status', 'verified').order('project_name', { ascending: true }).order('id', { ascending: true }), 'инвестпроекты DB1'),
-    safeRows(coreClient, () => coreClient.from('municipal_industrial_enterprises').select('*')
+    readRows(coreClient, () => coreClient.from('municipal_industrial_enterprises').select('*')
       .eq('verification_status', 'verified').order('enterprise_name', { ascending: true }).order('id', { ascending: true }), 'предприятия DB1'),
-    safeRows(coreClient, () => coreClient.from('municipal_infrastructure_objects').select('*')
+    readRows(coreClient, () => coreClient.from('municipal_infrastructure_objects').select('*')
       .eq('verification_status', 'verified').order('name', { ascending: true }).order('id', { ascending: true }), 'инфраструктура DB1'),
-    safeRows(coreClient, () => coreClient.from('municipal_land_parcels').select('*')
+    readRows(coreClient, () => coreClient.from('municipal_land_parcels').select('*')
       .eq('verification_status', 'verified').order('municipality_id', { ascending: true }).order('id', { ascending: true }), 'земельные участки DB1'),
-    safeRows(coreClient, () => coreClient.from('fuel_price_observations').select('*')
+    readRows(coreClient, () => coreClient.from('fuel_price_observations').select('*')
       .eq('verification_status', 'verified').order('observed_at', { ascending: false })
       .order('source_row', { ascending: true }).order('id', { ascending: true }), 'цены на топливо DB1'),
-    safeRows(coreClient, () => coreClient.from('municipal_facilities').select('*')
+    readRows(coreClient, () => coreClient.from('municipal_facilities').select('*')
       .eq('verification_status', 'verified').order('facility_category', { ascending: true })
       .order('name_short', { ascending: true }).order('id', { ascending: true }), 'учреждения DB1'),
-    safeRows(coreClient, () => coreClient.from('external_rating_results')
+    readRows(coreClient, () => coreClient.from('external_rating_results')
       .select('id,rating_id,geographic_level,geography_name,region_name,national_rank,rating_score,previous_year_rank,previous_year_score,metrics,reference_year,source_url,verification_status,notes,retrieved_at')
       .eq('rating_id', 'ria_city_salary_2026').eq('geographic_level', 'city').eq('verification_status', 'verified')
       .order('geography_name', { ascending: true }).order('id', { ascending: true }), 'результаты внешнего рейтинга DB1'),
-    safeRows(coreClient, () => coreClient.from('external_rating_catalog')
+    readRows(coreClient, () => coreClient.from('external_rating_catalog')
       .select('rating_id,title,category,edition_year,reference_period,geographic_level,geography_scope,source_url,description,methodology_summary')
       .eq('rating_id', 'ria_city_salary_2026')
       .order('edition_year', { ascending: false }).order('rating_id', { ascending: true }), 'каталог внешних рейтингов DB1'),
@@ -757,12 +810,13 @@ export async function fetchOfficialData(coreClient, statisticsClient = null) {
   }))
 
   return {
-    sources: sources.length ? sources : FALLBACK_DATA_SOURCES,
+    sources: sources.length ? sources : (sinceByTable ? [] : FALLBACK_DATA_SOURCES),
     indicators,
     investmentSites: operationalRecords.investmentSites,
     investmentProjects, industrialEnterprises, infrastructureObjects, landParcels,
     programExecution: operationalRecords.programExecution,
     fuelPrices, facilities: operationalRecords.facilities, externalRatings,
+    cacheMeta: { cursorCandidates, errors, incremental: Boolean(sinceByTable) },
   }
 }
 export const DATA_CATEGORY_LABELS = {
