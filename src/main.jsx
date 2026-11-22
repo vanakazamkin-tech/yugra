@@ -4,6 +4,7 @@ import App from './App.jsx'
 import AppErrorBoundary from './components/AppErrorBoundary.jsx'
 import './index.css'
 import './ui-visualization.css'
+import './khanty-visual-system.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
