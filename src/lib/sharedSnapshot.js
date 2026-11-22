@@ -130,7 +130,8 @@ async function loadSnapshotPointer(pointerName, version) {
     throw new Error('Snapshot ' + pointerName + ' pointer is invalid');
   }
 
-  const manifestResponse = await fetch(SNAPSHOT_BASE + pointer.manifestPath, {
+  const publishedManifestPath = pointer.manifestPath.slice('snapshots/'.length);
+  const manifestResponse = await fetch(SNAPSHOT_BASE + publishedManifestPath, {
     credentials: 'same-origin',
     cache: 'force-cache',
   });
@@ -147,7 +148,7 @@ async function loadSnapshotPointer(pointerName, version) {
   validateSnapshotManifest(manifest);
 
   let health = null;
-  try { health = await fetchJson('snapshots/health/latest.json'); } catch { /* health is optional */ }
+  try { health = await fetchJson('health/latest.json'); } catch { /* health is optional */ }
   const servedFrom = pointerName === 'previous' ? 'previous' : 'current';
   if (version && version === manifest.version) {
     return { unchanged: true, manifest: { ...manifest, servedFrom, health } };
@@ -158,7 +159,8 @@ async function loadSnapshotPointer(pointerName, version) {
     shard,
   })));
   const loaded = await mapLimit(tasks, 8, async ({ dataset, shard }) => {
-    const url = SNAPSHOT_BASE + shard.key.split('/').map(encodeURIComponent).join('/');
+    const publishedChunkPath = shard.key.slice('snapshots/'.length);
+    const url = SNAPSHOT_BASE + publishedChunkPath.split('/').map(encodeURIComponent).join('/');
     const response = await fetch(url, { credentials: 'same-origin', cache: 'force-cache' });
     if (!response.ok) throw new Error('Snapshot chunk unavailable for ' + dataset + ': HTTP ' + response.status);
     return { dataset, rows: await decodeSnapshotChunk(response, shard, dataset) };
