@@ -126,11 +126,15 @@ function validateSnapshotManifest(manifest) {
 
 async function loadSnapshotPointer(pointerName, version) {
   const pointer = await fetchJson(pointerName + '.json');
-  if (!pointer?.manifestPath || !/^snapshots\\/manifests\\/[A-Za-z0-9_-]+\\.json$/.test(pointer.manifestPath)) {
+  const manifestPath = String(pointer?.manifestPath || '');
+  const manifestFileName = manifestPath.startsWith('snapshots/manifests/')
+    ? manifestPath.slice('snapshots/manifests/'.length)
+    : '';
+  if (!/^[A-Za-z0-9_-]+[.]json$/.test(manifestFileName)) {
     throw new Error('Snapshot ' + pointerName + ' pointer is invalid');
   }
 
-  const publishedManifestPath = pointer.manifestPath.slice('snapshots/'.length);
+  const publishedManifestPath = 'manifests/' + manifestFileName;
   const manifestResponse = await fetch(SNAPSHOT_BASE + publishedManifestPath, {
     credentials: 'same-origin',
     cache: 'force-cache',
