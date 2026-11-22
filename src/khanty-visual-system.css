@@ -1,0 +1,621 @@
+/* Khanty-inspired visual system for the Yugra analytics workspace.
+   Decorative geometry references the supplied birch-branch and prosperity motifs.
+   Data logic, navigation behavior and analytical calculations remain untouched. */
+
+@import url('https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Literata:opsz,wght@7..72,500;7..72,600;7..72,700&display=swap');
+
+:root {
+  --kh-forest: #17392e;
+  --kh-forest-deep: #102b23;
+  --kh-forest-soft: #2d5a45;
+  --kh-paper: #f2eee4;
+  --kh-birch: #fbf8ef;
+  --kh-ink: #202c25;
+  --kh-muted: #718075;
+  --kh-line: #ddd4c3;
+  --kh-copper: #bd8d50;
+  --kh-copper-light: #dfc394;
+  --kh-terracotta: #a84f3d;
+  --kh-moss: #829078;
+  color-scheme: light;
+}
+
+html { background: var(--kh-paper); }
+body {
+  background: var(--kh-paper);
+  color: var(--kh-ink);
+  font-family: 'Golos Text', 'DM Sans', Arial, sans-serif;
+}
+button, input, select, textarea { font-family: inherit; }
+::selection { color: #fffaf0; background: var(--kh-forest-soft); }
+
+.yugra-app {
+  color: var(--kh-ink);
+  background:
+    radial-gradient(ellipse at 4% 10%, rgba(189,141,80,.10), transparent 26rem),
+    radial-gradient(ellipse at 96% 52%, rgba(45,90,69,.065), transparent 30rem),
+    linear-gradient(180deg, #f7f3e9 0%, var(--kh-paper) 100%);
+}
+.site-shell { width: min(100% - 64px, 1580px); }
+
+/* Two-level masthead: identity first, tools second. */
+.yugra-app .site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 22px;
+  min-height: 0;
+  padding: 15px 22px 0 27px;
+  overflow: hidden;
+  border: 1px solid rgba(223,195,148,.34);
+  border-radius: 4px 20px 4px 20px;
+  background:
+    linear-gradient(108deg, rgba(16,43,35,.99) 0%, rgba(25,60,46,.98) 62%, rgba(20,49,39,.98) 100%);
+  box-shadow: 0 14px 36px rgba(23,48,36,.16);
+}
+.yugra-app .site-header::before {
+  width: 9px;
+  background: url('/images/khanty-birch-motif-forest.png') center / 54px 100% repeat-y;
+  opacity: .95;
+}
+.yugra-app .site-header::after {
+  right: 0;
+  top: 0;
+  width: min(36%, 440px);
+  height: 100%;
+  background:
+    linear-gradient(90deg, transparent, rgba(16,43,35,.12)),
+    url('/images/khanty-birch-motif-forest.png') right center / auto 190% repeat-x;
+  opacity: .19;
+  mix-blend-mode: screen;
+}
+.yugra-app .brand-lockup { order: 0; gap: 13px; min-height: 56px; }
+.yugra-app .brand-emblem {
+  width: 54px;
+  height: 54px;
+  flex-basis: 54px;
+  padding: 5px;
+  border: 1px solid rgba(223,195,148,.66);
+  border-radius: 50%;
+  background: rgba(255,255,255,.065);
+}
+.yugra-app .brand-title {
+  color: #fff9ed;
+  font-family: 'Literata', Georgia, serif;
+  font-size: 27px;
+  font-weight: 600;
+  letter-spacing: .13em;
+}
+.yugra-app .brand-subtitle {
+  margin-top: 5px;
+  color: var(--kh-copper-light);
+  font-family: 'Golos Text', Arial, sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.yugra-app .header-motto {
+  order: 1;
+  z-index: 1;
+  margin-left: auto;
+  color: #e1c99e;
+  font-size: 8px;
+  letter-spacing: .19em;
+}
+.yugra-app .motto-mark {
+  width: 9px;
+  height: 9px;
+  border-color: var(--kh-copper-light);
+}
+.yugra-app .main-nav {
+  order: 2;
+  flex: 1 0 100%;
+  width: 100%;
+  min-height: 49px;
+  margin-top: 8px;
+  padding-top: 7px;
+  gap: 5px;
+  justify-content: space-between;
+  overflow-x: auto;
+  border-top: 1px solid rgba(223,195,148,.19);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(223,195,148,.48) transparent;
+}
+.yugra-app .nav-item {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 8px 12px 10px;
+  border: 1px solid transparent;
+  border-radius: 3px 9px 3px 9px;
+  color: rgba(250,246,234,.76);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+.yugra-app .nav-item .ui-icon { width: 17px; height: 17px; }
+.yugra-app .nav-item:hover {
+  color: #fffaf0;
+  border-color: rgba(223,195,148,.28);
+  background: rgba(255,255,255,.065);
+}
+.yugra-app .nav-item.active {
+  color: #fffaf0;
+  border-color: rgba(223,195,148,.54);
+  background: rgba(223,195,148,.12);
+  box-shadow: inset 0 -2px var(--kh-terracotta);
+}
+.yugra-app .ornament-divider {
+  height: 19px;
+  margin: 9px 0 18px;
+  border: 0;
+  background-color: var(--kh-forest);
+  background-image:
+    url('/images/khanty-birch-motif.png'),
+    repeating-linear-gradient(90deg, transparent 0 18px, rgba(223,195,148,.08) 18px 19px);
+  background-repeat: repeat-x;
+  background-position: center;
+  background-size: auto 100%, 38px 100%;
+  box-shadow: 0 3px 10px rgba(23,48,36,.10);
+  opacity: .92;
+}
+
+/* The hero is a dark textile-like field with a clear editorial hierarchy. */
+.yugra-app .intro-panel {
+  padding: clamp(28px, 4vw, 58px);
+  border: 1px solid rgba(189,141,80,.48);
+  border-radius: 4px 25px 4px 25px;
+  background:
+    linear-gradient(112deg, rgba(15,41,32,.99) 0%, rgba(24,58,43,.97) 54%, rgba(30,62,46,.91) 100%),
+    url('/images/khanty-birch-motif-forest.png') center / cover;
+  box-shadow: 0 22px 52px rgba(27,48,36,.17);
+}
+.yugra-app .intro-panel::before {
+  background:
+    linear-gradient(90deg, transparent 35%, rgba(15,41,32,.12)),
+    url('/images/khanty-birch-motif-forest.png') right center / auto 145% repeat-x;
+  opacity: .20;
+}
+.yugra-app .intro-panel::after {
+  height: 12px;
+  background: url('/images/khanty-birch-motif.png') center / auto 100% repeat-x;
+  opacity: .98;
+}
+.yugra-app .intro-top {
+  grid-template-columns: minmax(0, 1.08fr) minmax(300px, .92fr);
+  gap: clamp(28px, 4.2vw, 66px);
+}
+.yugra-app .intro-copy .eyebrow {
+  color: var(--kh-copper-light);
+  font-size: 10px;
+  letter-spacing: .22em;
+}
+.yugra-app .eyebrow-diamond {
+  border-color: var(--kh-copper-light);
+  background: var(--kh-copper);
+  box-shadow: 0 0 0 4px rgba(189,141,80,.15);
+}
+.yugra-app .intro-copy h1 {
+  max-width: 760px;
+  margin: 22px 0 17px;
+  color: #fffaf0;
+  font-family: 'Literata', Georgia, serif;
+  font-size: clamp(38px, 5vw, 68px);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -.045em;
+  text-wrap: balance;
+}
+.yugra-app .intro-copy h1 em {
+  color: var(--kh-copper-light);
+  font-style: normal;
+  font-weight: 500;
+}
+.yugra-app .intro-copy > p {
+  max-width: 540px;
+  color: rgba(250,246,234,.79);
+  font-size: 14px;
+  line-height: 1.8;
+}
+.yugra-app .intro-art {
+  height: clamp(240px, 27vw, 350px);
+  padding: 10px;
+  border: 1px solid rgba(223,195,148,.64);
+  border-radius: 2px 19px 2px 19px;
+  background: rgba(242,231,207,.09);
+  box-shadow: 0 19px 48px rgba(0,0,0,.22);
+  transform: rotate(.8deg);
+}
+.yugra-app .intro-art::before {
+  z-index: 2;
+  width: 78px;
+  height: 28px;
+  background: url('/images/khanty-birch-motif-forest.png') left top / 78px 28px no-repeat;
+  opacity: .7;
+}
+.yugra-app .intro-art-image {
+  height: 100%;
+  border: 1px solid rgba(240,222,188,.54);
+  background: #f4eddf;
+}
+.yugra-app .intro-art-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+  filter: grayscale(1) contrast(1.08);
+  mix-blend-mode: multiply;
+}
+.yugra-app .intro-art-caption {
+  position: absolute;
+  z-index: 3;
+  right: 18px;
+  bottom: 18px;
+  left: 18px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 13px;
+  border: 1px solid rgba(223,195,148,.42);
+  background: rgba(16,43,35,.90);
+  color: #f5ead3;
+  font-size: 9px;
+  line-height: 1.35;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  writing-mode: horizontal-tb;
+  backdrop-filter: blur(8px);
+}
+.yugra-app .intro-art-caption img {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  transform: none;
+}
+.yugra-app .intro-art-edge {
+  z-index: 4;
+  border-color: var(--kh-copper-light);
+}
+
+/* Controls on the hero retain strong contrast and predictable focus states. */
+.yugra-app .catalog-toolbar {
+  margin-top: clamp(24px, 3vw, 38px);
+  padding-top: 22px;
+  border-top-color: rgba(223,195,148,.25);
+}
+.yugra-app .catalog-toolbar::before {
+  width: 94px;
+  height: 3px;
+  background: var(--kh-terracotta);
+}
+.yugra-app .search-box {
+  min-height: 48px;
+  border: 1px solid rgba(223,195,148,.34);
+  border-radius: 3px 10px 3px 10px;
+  background: rgba(255,255,255,.075);
+  color: #f5ead3;
+}
+.yugra-app .search-box:focus-within {
+  border-color: var(--kh-copper-light);
+  box-shadow: 0 0 0 3px rgba(223,195,148,.13);
+}
+.yugra-app .search-box > .ui-icon { color: var(--kh-copper-light); }
+.yugra-app .search-box input { color: #fffaf0; }
+.yugra-app .search-box input::placeholder { color: rgba(250,246,234,.52); }
+.yugra-app .filter-caption { color: #d9c59f; }
+.yugra-app .filter-pill,
+.yugra-app .slice-chip {
+  border-color: rgba(223,195,148,.32);
+  border-radius: 3px 8px 3px 8px;
+  background: rgba(255,255,255,.055);
+  color: rgba(250,246,234,.82);
+}
+.yugra-app .filter-pill:hover,
+.yugra-app .slice-chip:hover {
+  border-color: var(--kh-copper-light);
+  background: rgba(223,195,148,.10);
+  color: #fffaf0;
+}
+.yugra-app .filter-pill.selected,
+.yugra-app .slice-chip.active {
+  border-color: var(--kh-copper-light);
+  background: rgba(189,141,80,.22);
+  color: #fffaf0;
+}
+.yugra-app .slice-bar { border-top-color: rgba(223,195,148,.22); }
+.yugra-app .slice-label { color: var(--kh-copper-light); }
+.yugra-app .filter-toggle,
+.yugra-app .text-action { color: #e6c996; }
+.yugra-app .filter-toggle {
+  border-color: rgba(223,195,148,.34);
+  border-radius: 3px 8px 3px 8px;
+  background: rgba(255,255,255,.06);
+}
+.yugra-app .filter-toggle.open {
+  border-color: var(--kh-copper-light);
+  background: rgba(189,141,80,.22);
+  color: #fffaf0;
+}
+.yugra-app .advanced-filter-grid {
+  border-color: rgba(223,195,148,.25);
+  border-radius: 3px 12px 3px 12px;
+  background: rgba(255,255,255,.055);
+}
+.yugra-app .advanced-filter-grid label span { color: #d9c59f; }
+.yugra-app .advanced-filter-grid input {
+  border-color: rgba(223,195,148,.32);
+  border-radius: 3px 8px 3px 8px;
+  background: rgba(255,255,255,.085);
+  color: #fffaf0;
+}
+.yugra-app .active-filter-summary { color: #f1e5ce; }
+
+/* Birch-paper cards, with a restrained stitched edge instead of generic pills. */
+.yugra-app .stats-grid { gap: 12px; margin-top: 17px; }
+.yugra-app .metric-card {
+  min-height: 118px;
+  padding: 19px;
+  overflow: hidden;
+  border: 1px solid var(--kh-line);
+  border-radius: 3px 15px 3px 15px;
+  background: linear-gradient(145deg, #fffdf7, #f0eadc);
+  box-shadow: 0 8px 22px rgba(39,52,40,.055);
+}
+.yugra-app .metric-card::before {
+  width: 4px;
+  background: var(--kh-forest-soft);
+}
+.yugra-app .metric-card:nth-child(2)::before,
+.yugra-app .metric-card:nth-child(4)::before { background: var(--kh-terracotta); }
+.yugra-app .metric-card::after {
+  right: -17px;
+  bottom: -23px;
+  width: 88px;
+  height: 88px;
+  border: 0;
+  background: url('/images/khanty-prosperity-seal.svg') center / contain no-repeat;
+  opacity: .09;
+  transform: rotate(8deg);
+}
+.yugra-app .metric-icon {
+  border: 1px solid #dfd2b9;
+  border-radius: 50%;
+  background: #eee9dc;
+  color: var(--kh-forest);
+}
+.yugra-app .metric-card:nth-child(2) .metric-icon,
+.yugra-app .metric-card:nth-child(4) .metric-icon {
+  border-color: #e4cfc4;
+  background: #f4e8e1;
+  color: var(--kh-terracotta);
+}
+.yugra-app .metric-label {
+  color: #727b6e;
+  font-size: 9px;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+.yugra-app .metric-copy strong {
+  color: var(--kh-forest);
+  font-family: 'Literata', Georgia, serif;
+  font-size: clamp(22px, 1.9vw, 30px);
+  font-weight: 600;
+}
+.yugra-app .metric-copy strong i {
+  color: #7c8273;
+  font-family: 'Golos Text', Arial, sans-serif;
+}
+.yugra-app .metric-index {
+  color: #b8a078;
+  font-family: 'Literata', Georgia, serif;
+  font-size: 12px;
+}
+
+/* Map, ranking and analytical panels. */
+.yugra-app .panel,
+.yugra-app .map-panel,
+.yugra-app .ranking-panel {
+  border-color: #ded4c2;
+  border-radius: 3px 16px 3px 16px;
+  background: rgba(251,248,239,.96);
+  box-shadow: 0 9px 26px rgba(39,52,40,.055);
+}
+.yugra-app .section-heading {
+  border-bottom-color: #e6ddcd;
+}
+.yugra-app .section-heading::after { background: var(--kh-terracotta); }
+.yugra-app .heading-icon {
+  border: 1px solid #ded2b9;
+  border-radius: 50%;
+  background: #f0ecdf;
+  color: var(--kh-forest);
+}
+.yugra-app .heading-label h2,
+.yugra-app .section-heading h2 {
+  color: var(--kh-forest);
+  font-family: 'Literata', Georgia, serif;
+  font-weight: 600;
+}
+.yugra-app .heading-label p { color: #788276; }
+.yugra-app .section-tag {
+  border-color: #dfd3bd;
+  border-radius: 2px 7px 2px 7px;
+  background: #f3eddf;
+  color: #8c754e;
+}
+.yugra-app .map-stage {
+  border-color: #d9d0bd;
+  border-radius: 3px 13px 3px 13px;
+  background:
+    radial-gradient(ellipse at 50% 43%, rgba(255,253,247,.98), rgba(242,237,225,.88) 69%, #e8e0d0 100%);
+}
+.yugra-app .map-stage::after {
+  height: 4px;
+  background: linear-gradient(90deg, var(--kh-forest) 0 68%, var(--kh-terracotta) 68% 82%, var(--kh-copper) 82%);
+}
+.yugra-app .map-watermark { opacity: .12; }
+.yugra-app .map-region.group-a { fill: #315d45; }
+.yugra-app .map-region.group-b { fill: #a3ad91; }
+.yugra-app .map-region:hover,
+.yugra-app .map-region-hover {
+  fill: var(--kh-terracotta) !important;
+}
+.yugra-app .map-city-dot { fill: var(--kh-copper); }
+.yugra-app .map-legend { color: #667568; }
+.yugra-app .legend-dot.high { background: #315d45; }
+.yugra-app .legend-dot.mid { background: #a3ad91; }
+.yugra-app .ranking-table thead {
+  background: #eee8db;
+  background-image:
+    linear-gradient(rgba(238,232,219,.90), rgba(238,232,219,.90)),
+    url('/images/khanty-birch-motif-forest.png');
+  background-size: auto, 84px 36px;
+}
+.yugra-app .ranking-table thead th {
+  border-bottom-color: #d9ceb9;
+  color: #566b5d;
+}
+.yugra-app .ranking-table tbody tr:hover { background: #f4eee2; }
+.yugra-app .primary-button {
+  border-color: var(--kh-forest);
+  border-radius: 3px 9px 3px 9px;
+  background: var(--kh-forest);
+  box-shadow: 0 4px 10px rgba(23,57,46,.13);
+}
+.yugra-app .primary-button:hover {
+  border-color: var(--kh-terracotta);
+  background: #214936;
+}
+.yugra-app .outline-button,
+.yugra-app .filter-toggle {
+  border-radius: 3px 9px 3px 9px;
+}
+.yugra-app :where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(189,141,80,.74);
+  outline-offset: 3px;
+}
+.yugra-app .site-footer {
+  margin-top: 28px;
+  padding: 23px 26px;
+  border: 1px solid rgba(223,195,148,.35);
+  border-radius: 3px 17px 3px 17px;
+  background: linear-gradient(105deg, #142f26, #1c4131);
+  color: #ede3ce;
+}
+.yugra-app .site-footer::after {
+  width: 38%;
+  background: url('/images/khanty-birch-motif-forest.png') right center / auto 180% repeat-x;
+  opacity: .16;
+}
+.yugra-app .site-footer .footer-brand strong {
+  color: #fff9ed;
+  font-family: 'Literata', Georgia, serif;
+  letter-spacing: .13em;
+}
+.yugra-app .site-footer .footer-brand small,
+.yugra-app .site-footer .footer-right { color: var(--kh-copper-light); }
+.yugra-app .site-footer .footer-ornament {
+  background: url('/images/khanty-birch-motif.png') center / auto 100% repeat-x;
+}
+.yugra-app .sync-status {
+  border-color: #ded4c2;
+  border-radius: 2px 9px 2px 9px;
+  background: rgba(251,248,239,.93);
+}
+
+/* Keep analytical sub-pages aligned with the same surface language. */
+.yugra-app :is(.data-page-hero, .data-quality-panel, .municipality-coverage-panel, .compare-page, .reports-page, .forecast-page, .unified-system) {
+  border-color: #ded4c2;
+}
+.yugra-app :is(.data-page-hero, .official-coverage-teaser, .data-quality-panel, .municipality-coverage-panel) {
+  background: rgba(251,248,239,.97);
+}
+.yugra-app .insight-card,
+.yugra-app .data-page-summary > article,
+.yugra-app .data-quality-kpis > article,
+.yugra-app .official-coverage-metrics > article {
+  border-color: #e0d6c5;
+  border-radius: 3px 12px 3px 12px;
+  background: linear-gradient(145deg, #fffdf7, #f1ebde);
+}
+.yugra-app .insight-card-kicker { color: #95764c; }
+.yugra-app .data-quality-footnote { color: #747d70; }
+.yugra-app .compare-picker,
+.yugra-app .advanced-filter-grid,
+.yugra-app .rating-filters {
+  border-color: #e0d6c5;
+  border-radius: 3px 12px 3px 12px;
+  background: #f4efe4;
+}
+.yugra-app .compare-option.checked {
+  border-color: #aebca6;
+  background: #eaf0e6;
+}
+.yugra-app .municipality-modal {
+  border-color: #d9c6a5;
+  border-radius: 3px 17px 3px 17px;
+}
+.yugra-app .modal-ornament {
+  height: 12px;
+  background: var(--kh-forest) url('/images/khanty-birch-motif.png') repeat-x center / auto 100%;
+}
+.yugra-app .municipality-modal h2 {
+  color: var(--kh-forest);
+  font-family: 'Literata', Georgia, serif;
+}
+.yugra-app .group-badge.group-a { background: #315d45; }
+.yugra-app .group-badge.group-b { background: #899878; }
+
+@media (max-width: 1180px) {
+  .yugra-app .site-header { gap: 0 14px; padding-inline: 18px; }
+  .yugra-app .main-nav { justify-content: flex-start; }
+  .yugra-app .nav-item { padding-inline: 10px; }
+  .yugra-app .header-motto { font-size: 7px; letter-spacing: .14em; }
+}
+@media (max-width: 760px) {
+  .site-shell { width: min(100% - 22px, 1580px); }
+  .yugra-app .site-header { padding: 12px 14px 0 19px; border-radius: 3px 14px 3px 14px; }
+  .yugra-app .brand-emblem { width: 46px; height: 46px; flex-basis: 46px; }
+  .yugra-app .brand-title { font-size: 23px; }
+  .yugra-app .brand-subtitle { font-size: 8px; }
+  .yugra-app .header-motto { display: none; }
+  .yugra-app .main-nav {
+    min-height: 46px;
+    margin-top: 7px;
+    gap: 4px;
+    padding-bottom: 3px;
+  }
+  .yugra-app .nav-item { min-height: 34px; padding: 7px 10px 8px; font-size: 10px; }
+  .yugra-app .ornament-divider { height: 14px; margin: 8px 0 14px; }
+  .yugra-app .intro-panel { padding: 25px 18px 28px; border-radius: 3px 17px 3px 17px; }
+  .yugra-app .intro-top { grid-template-columns: minmax(0,1fr); gap: 20px; }
+  .yugra-app .intro-copy h1 { margin: 17px 0 12px; font-size: clamp(36px, 10vw, 52px); }
+  .yugra-app .intro-copy > p { font-size: 13px; }
+  .yugra-app .intro-art { height: 225px; transform: none; }
+  .yugra-app .intro-art-caption { right: 12px; bottom: 12px; left: 12px; padding: 8px 10px; }
+  .yugra-app .stats-grid { gap: 8px; }
+  .yugra-app .metric-card { min-height: 96px; padding: 12px; }
+  .yugra-app .metric-copy strong { font-size: 22px; }
+  .yugra-app .site-footer { padding: 18px; }
+}
+@media (max-width: 420px) {
+  .yugra-app .brand-lockup { gap: 9px; }
+  .yugra-app .brand-emblem { width: 42px; height: 42px; flex-basis: 42px; }
+  .yugra-app .brand-title { font-size: 21px; }
+  .yugra-app .nav-item { gap: 5px; padding-inline: 9px; }
+  .yugra-app .nav-item .ui-icon { width: 15px; height: 15px; }
+  .yugra-app .intro-art { height: 195px; }
+  .yugra-app .metric-label { font-size: 8px; }
+  .yugra-app .metric-card { gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .yugra-app *, .yugra-app *::before, .yugra-app *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
