@@ -30,6 +30,7 @@ The export script uses the existing Yugra18 readers and merge functions.
 - Empty refresh fields cannot erase populated retained fields.
 - Dataset identity and existing source/period/geography/unit fields are preserved by the existing merge keys.
 - Verification statuses are carried as source data; the exporter does not promote or downgrade them.
+- The static snapshot is the public application read model, not a raw backup of every row in both databases. Existing application policy selects `verification_status = 'verified'` records; the current operational quality gates also exclude verified sites, programs, or facilities that fail their established source, date, numeric, coordinate, or category checks. These rules are not changed by the exporter, and excluded rows remain untouched in Supabase. The manifest records the counts of verified operational rows omitted by those existing quality gates in `excludedVerifiedOperationalRows` so the filtering is visible and auditable.
 - Publication is blocked on source read errors, missing datasets, row/checksum mismatches, or anything other than 22 unique municipalities.
 - Every chunk is SHA-256 addressed and gzipped. A chunk over 90 MiB is rejected.
 - The Pages bundle is capped at 800 MiB and 5,000 files, leaving margin below Pages' published-site limits.
