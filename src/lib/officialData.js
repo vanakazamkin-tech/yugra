@@ -641,9 +641,21 @@ function uniqueByKey(rows, getKey) {
     const key = getKey(row)
     if (!key) continue
     const previous = byKey.get(key)
+    if (!previous) {
+      byKey.set(key, row)
+      continue
+    }
+
     const previousDate = Date.parse(previous?.updated_at || previous?.retrieved_at || previous?.created_at || '') || 0
     const currentDate = Date.parse(row?.updated_at || row?.retrieved_at || row?.created_at || '') || 0
-    if (!previous || currentDate >= previousDate) byKey.set(key, row)
+    const latest = currentDate >= previousDate ? row : previous
+    const older = latest === row ? previous : row
+    const merged = { ...older }
+    for (const [field, value] of Object.entries(latest || {})) {
+      // Newer empty cells must not erase populated observations from the other source.
+      if (value !== null && value !== undefined && value !== '') merged[field] = value
+    }
+    byKey.set(key, merged)
   }
   return [...byKey.values()]
 }
