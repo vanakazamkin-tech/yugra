@@ -176,11 +176,11 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
   }) : [];
   const lastYear = forecastSeries?.latest?.reference_year || '—';
   const syncLabel = officialDataSyncedAt ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(officialDataSyncedAt)) : null;
-  const verifiedObservationCount = rows.filter((row) => row.verification_status === 'verified' && row.geographic_level === 'municipality').length;
+  const verifiedObservationCount = rows.filter((row) => row.verification_status === 'verified' && row.geographic_level === 'municipality' && row.source_id !== 'derived_from_verified_municipal_indicators').length;
   const sourceCoveredSeries = series.filter((item) => item.latestSourcePresent).length;
   const sourceCoveragePercent = series.length ? Math.round(sourceCoveredSeries / series.length * 100) : 0;
-  const averagePillarCoverage = municipalityAnalysis.length
-    ? Math.round(municipalityAnalysis.reduce((sum, item) => sum + item.availablePillars, 0) / (municipalityAnalysis.length * MODEL_PILLARS.length) * 100)
+  const averagePillarCoverage = territoryMunicipalities.length
+    ? Math.round(territoryMunicipalities.reduce((sum, item) => sum + item.availablePillars, 0) / (territoryMunicipalities.length * MODEL_PILLARS.length) * 100)
     : 0;
   const riskCoverageSummary = MODEL_PILLARS.map((pillar) => {
     const items = series.filter((item) => pillar.series.includes(item.pillar.key));
@@ -284,40 +284,91 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
     </section>}
 
     {tab === 'overview' && <>
-      <section className="unified-section">
-        <div className="unified-section-head"><div><h2>Настройка порогов светофора</h2><p>Изменения сразу пересчитывают статусы муниципалитетов. Пороги являются настраиваемыми правилами прототипа, а не статистически откалиброванными нормативами.</p></div><button type="button" className="outline-button" onClick={() => setRiskThresholds(DEFAULT_RISK_THRESHOLDS)}>Сбросить пороги</button></div>
-        <div className="unified-forecast-controls risk-threshold-controls" role="group" aria-label="Настройка порогов классификации рисков">
-          <label>Минимум рядов с понятным направлением: {riskThresholds.minimumUsable}<input type="range" min="1" max="5" step="1" value={riskThresholds.minimumUsable} onChange={(e) => setRiskThresholds((current) => ({ ...current, minimumUsable: Number(e.target.value) }))}/></label>
-          <label>Негативных сигналов для красной зоны: {riskThresholds.criticalSignals}<input type="range" min="2" max="10" step="1" value={riskThresholds.criticalSignals} onChange={(e) => setRiskThresholds((current) => ({ ...current, criticalSignals: Number(e.target.value), criticalPillars: Math.min(current.criticalPillars, Number(e.target.value)) }))}/></label>
-          <label>Направлений для красной зоны: {riskThresholds.criticalPillars}<input type="range" min="1" max={Math.min(6, riskThresholds.criticalSignals)} step="1" value={riskThresholds.criticalPillars} onChange={(e) => setRiskThresholds((current) => ({ ...current, criticalPillars: Number(e.target.value) }))}/></label>
-          <label>Резкое ухудшение от: {riskThresholds.sharpChangePercent}%<input type="range" min="1" max="50" step="1" value={riskThresholds.sharpChangePercent} onChange={(e) => setRiskThresholds((current) => ({ ...current, sharpChangePercent: Number(e.target.value) }))}/></label>
+      <section className="unified-section risk-settings-section">
+        <details className="risk-settings-details">
+          <summary><strong>Настроить правила классификации</strong><span>Пороги прототипа · сейчас: {riskThresholds.criticalSignals} негативных сигналов и {riskThresholds.criticalPillars} направлений для повышенного внимания</span></summary>
+          <div className="unified-section-head"><div><h2>Параметры светофора</h2><p>Изменения сразу пересчитывают статусы. Это настраиваемые правила прототипа, а не статистически откалиброванные нормативы.</p></div><button type="button" className="outline-button" onClick={() => setRiskThresholds(DEFAULT_RISK_THRESHOLDS)}>Сбросить пороги</button></div>
+          <div className="unified-forecast-controls risk-threshold-controls" role="group" aria-label="Настройка порогов классификации рисков">
+            <label>Минимум рядов с понятным направлением: {riskThresholds.minimumUsable}<input type="range" min="1" max="5" step="1" value={riskThresholds.minimumUsable} onChange={(e) => setRiskThresholds((current) => ({ ...current, minimumUsable: Number(e.target.value) }))}/></label>
+            <label>Негативных сигналов для повышенного внимания: {riskThresholds.criticalSignals}<input type="range" min="2" max="10" step="1" value={riskThresholds.criticalSignals} onChange={(e) => setRiskThresholds((current) => ({ ...current, criticalSignals: Number(e.target.value), criticalPillars: Math.min(current.criticalPillars, Number(e.target.value)) }))}/></label>
+            <label>Направлений для повышенного внимания: {riskThresholds.criticalPillars}<input type="range" min="1" max={Math.min(6, riskThresholds.criticalSignals)} step="1" value={riskThresholds.criticalPillars} onChange={(e) => setRiskThresholds((current) => ({ ...current, criticalPillars: Number(e.target.value) }))}/></label>
+            <label>Резкое ухудшение от: {riskThresholds.sharpChangePercent}%<input type="range" min="1" max="50" step="1" value={riskThresholds.sharpChangePercent} onChange={(e) => setRiskThresholds((current) => ({ ...current, sharpChangePercent: Number(e.target.value) }))}/></label>
+          </div>
+          <p className="unified-muted">Зелёный статус присваивается только при наличии сопоставимых рядов с однозначным направлением по всем шести направлениям. Отсутствие данных не трактуется как отсутствие риска.</p>
+        </details>
+      </section>
+
+      <section className="risk-overview-strip">
+        <div><span className="eyebrow">СВОДКА ПО ТЕКУЩЕЙ ВЫБОРКЕ</span><h2>Куда направить внимание</h2><p>Статусы отражают обнаруженную динамику и достаточность покрытия. Нажмите на карточку, чтобы отобрать соответствующие территории.</p></div>
+        <div className="risk-overview-meta">
+          <div><span>Среднее покрытие направлений</span><strong>{averagePillarCoverage}%</strong></div>
+          <div><span>Рядов с источником у последнего наблюдения</span><strong>{sourceCoveragePercent}%</strong></div>
+          <div><span>Подтверждённых исходных наблюдений</span><strong>{fmt(verifiedObservationCount,0)}</strong></div>
         </div>
-        <p className="unified-muted">Жёлтая и красная зоны отражают обнаруженное ухудшение даже при неполном покрытии. Зелёный статус присваивается только при наличии сопоставимых рядов с однозначным направлением по всем шести направлениям; если хотя бы одно направление не покрыто, оценка остаётся недостаточной.</p>
       </section>
-      <div className="unified-kpis">
-        <article className="risk-kpi risk-kpi-red"><div><small>НЕСКОЛЬКО УХУДШЕНИЙ</small><strong>{counts.critical}</strong><span>муниципалитетов с {riskThresholds.criticalSignals}+ негативными сигналами по {riskThresholds.criticalPillars}+ направлениям</span></div></article>
-        <article className="risk-kpi risk-kpi-yellow"><div><small>ЕСТЬ УХУДШЕНИЯ</small><strong>{counts.watch}</strong><span>хотя бы один негативный сигнал</span></div></article>
-        <article className="risk-kpi risk-kpi-green"><div><small>БЕЗ НЕГАТИВНЫХ СИГНАЛОВ</small><strong>{counts.stable}</strong><span>проверены все 6 направлений и не менее {riskThresholds.minimumUsable} рядов</span></div></article>
-        <article className="risk-kpi risk-kpi-neutral"><div><small>НЕДОСТАТОЧНО ДАННЫХ</small><strong>{counts.insufficient}</strong><span>нельзя надёжно оценить динамику</span></div></article>
+
+      <div className="unified-kpis risk-kpi-grid">
+        <button type="button" className={'risk-kpi risk-kpi-red ' + (riskLevelFilter === 'critical' ? 'is-selected' : '')} aria-pressed={riskLevelFilter === 'critical'} onClick={() => setRiskLevelFilter((current) => current === 'critical' ? 'ALL' : 'critical')}><div><small>ПОВЫШЕННОЕ ВНИМАНИЕ</small><strong>{counts.critical}</strong><span>территорий достигли обоих критериев красной зоны</span><em>{riskLevelFilter === 'critical' ? 'Фильтр включён' : 'Показать территории'}</em></div></button>
+        <button type="button" className={'risk-kpi risk-kpi-yellow ' + (riskLevelFilter === 'watch' ? 'is-selected' : '')} aria-pressed={riskLevelFilter === 'watch'} onClick={() => setRiskLevelFilter((current) => current === 'watch' ? 'ALL' : 'watch')}><div><small>ЕСТЬ НЕГАТИВНЫЕ СИГНАЛЫ</small><strong>{counts.watch}</strong><span>территорий с наблюдаемыми ухудшениями</span><em>{riskLevelFilter === 'watch' ? 'Фильтр включён' : 'Показать территории'}</em></div></button>
+        <button type="button" className={'risk-kpi risk-kpi-green ' + (riskLevelFilter === 'stable' ? 'is-selected' : '')} aria-pressed={riskLevelFilter === 'stable'} onClick={() => setRiskLevelFilter((current) => current === 'stable' ? 'ALL' : 'stable')}><div><small>БЕЗ НЕГАТИВНЫХ СИГНАЛОВ</small><strong>{counts.stable}</strong><span>покрыты все 6 направлений; это не гарантия отсутствия рисков</span><em>{riskLevelFilter === 'stable' ? 'Фильтр включён' : 'Показать территории'}</em></div></button>
+        <button type="button" className={'risk-kpi risk-kpi-neutral ' + (riskLevelFilter === 'insufficient' ? 'is-selected' : '')} aria-pressed={riskLevelFilter === 'insufficient'} onClick={() => setRiskLevelFilter((current) => current === 'insufficient' ? 'ALL' : 'insufficient')}><div><small>НЕДОСТАТОЧНО ДАННЫХ</small><strong>{counts.insufficient}</strong><span>территорий нельзя оценить по всем направлениям</span><em>{riskLevelFilter === 'insufficient' ? 'Фильтр включён' : 'Показать территории'}</em></div></button>
       </div>
-      <section className="unified-section">
-        <div className="unified-section-head"><div><h2>Где ситуация требует внимания</h2><p>Список отсортирован по числу негативных сигналов; пороги красной зоны учитывают также число затронутых направлений. Нажмите на территорию для подробного разбора.</p></div><button type="button" className="outline-button" onClick={() => exportCsv([['Муниципалитет','Статус','Покрыто направлений','Оцениваемых рядов','Негативных сигналов','Показатели'], ...filteredMunicipalities.map((m) => [m.name,RISK[m.level].label,`${m.availablePillars}/6`,m.usable.length,m.bad.length,m.bad.map((s) => s.name).join(', ')])], 'yugra-risk-overview.csv')}>Экспорт CSV</button></div>
-        <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table risk-table"><thead><tr><th scope="col">Муниципалитет</th><th scope="col">Сигнал системы</th><th scope="col">Покрыто направлений</th><th scope="col">Рядов с направлением</th><th scope="col">Ухудшений</th><th scope="col">Что ухудшается</th><th scope="col"></th></tr></thead><tbody>
-          {filteredMunicipalities.map((m) => <tr key={m.id}><td><strong>{m.name}</strong></td><td><span className={'risk-zone-badge risk-zone-' + (m.level === 'critical' ? 'red' : m.level === 'watch' ? 'yellow' : m.level === 'stable' ? 'green' : 'unknown')}>{RISK[m.level].label}</span></td><td>{m.availablePillars}/6</td><td>{m.usable.length}</td><td>{m.bad.length}</td><td>{m.bad.slice(0,3).map((s) => s.name).join('; ') || 'Нет подтверждённого ухудшения по оцениваемым рядам'}</td><td><button type="button" className="outline-button" onClick={() => { setSelectedMunicipality(m.id); setTab('municipality'); }}>Разобрать</button></td></tr>)}
-        </tbody></table></div>
+
+      <section className="risk-distribution" aria-label="Распределение статусов муниципалитетов">
+        <div className="risk-distribution-track">
+          <i className="is-critical" style={{width: (municipalityAnalysis.length ? counts.critical / municipalityAnalysis.length * 100 : 0) + '%'}}/>
+          <i className="is-watch" style={{width: (municipalityAnalysis.length ? counts.watch / municipalityAnalysis.length * 100 : 0) + '%'}}/>
+          <i className="is-stable" style={{width: (municipalityAnalysis.length ? counts.stable / municipalityAnalysis.length * 100 : 0) + '%'}}/>
+          <i className="is-insufficient" style={{width: (municipalityAnalysis.length ? counts.insufficient / municipalityAnalysis.length * 100 : 0) + '%'}}/>
+        </div>
+        <div><span><i className="dot is-critical"/> Повышенное внимание · {counts.critical}</span><span><i className="dot is-watch"/> Наблюдение · {counts.watch}</span><span><i className="dot is-stable"/> Без сигналов · {counts.stable}</span><span><i className="dot is-insufficient"/> Нет оценки · {counts.insufficient}</span></div>
       </section>
-      <section className="unified-section">
-        <div className="unified-section-head"><div><h2>Покрытие ключевых направлений</h2><p>Показывает, где есть подтверждённые ряды, а где выводы пока ограничены отсутствием данных.</p></div><span>{rows.filter((r) => r.verification_status === 'verified' && r.geographic_level === 'municipality').length.toLocaleString('ru-RU')} подтверждённых наблюдений</span></div>
-        <div className="unified-pillar-grid">{pillarSummary.filter((p) => ['employment','income','budget','migration','investment'].includes(p.key)).map((p) => <article className="unified-pillar" key={p.key}><strong>{p.title}</strong><div className="unified-track"><i style={{width: Math.min(100,p.territories / Math.max(1,municipalities.length) * 100) + '%'}}/></div><p><b>{p.territories}/{municipalities.length}</b> территорий · {p.count} временных рядов</p><small>{p.deteriorating} негативных сигналов · {p.note}</small></article>)}</div>
+
+      <section className="unified-section risk-priority-section">
+        <div className="unified-section-head"><div><h2>Сигналы для первоочередной проверки</h2><p>Вверху — резкие и повторяющиеся ухудшения. Это аналитические поводы для проверки, а не рейтинг вероятности кризиса.</p></div><span>{prioritySignals.length} приоритетных сигналов</span></div>
+        {prioritySignals.length ? <div className="risk-priority-grid">{prioritySignals.map((signal) => <article className="risk-priority-card" key={signal.key}>
+          <div className="risk-priority-card-top"><span>{municipalityNames.get(signal.municipalityId) || signal.municipalityId}</span><span className={signal.sharpChange ? 'risk-priority-tag is-sharp' : 'risk-priority-tag'}>{signal.sharpChange ? 'Резкое изменение' : signal.adverseStreak >= 2 ? 'Повторяется' : 'Негативная динамика'}</span></div>
+          <h3>{signal.name}</h3>
+          <div className="risk-priority-value"><strong>{pct(signal.changePercent)}</strong><span>{signal.pillar.title} · {periodLabel(signal.previous)} → {periodLabel(signal.latest)}</span></div>
+          <p>{directionText(signal)}. Качество основания: {signal.confidenceLabel.toLocaleLowerCase('ru-RU')}.</p>
+          <div className="risk-priority-actions">{sourceUrlsFor(signal.latest).slice(0,1).map((url) => <a key={url} href={url} target="_blank" rel="noreferrer">Первоисточник ↗</a>)}<button type="button" className="outline-button" onClick={() => { setSelectedMunicipality(signal.municipalityId); setMunicipalityId(signal.municipalityId); setTab('municipality'); }}>Открыть паспорт</button></div>
+        </article>)}</div> : <p className="empty-state" role="status">По выбранным фильтрам нет негативных сигналов с сопоставимым направлением. Проверьте полноту данных и ограничения выборки.</p>}
       </section>
-      <section className="unified-section">
-        <div className="unified-section-head"><div><h2>Покрытие ключевых направлений по территориям</h2><p>Показывает реальное наличие подтверждённых рядов, а не оценку благополучия. Нажмите на направление, чтобы отфильтровать реестр.</p></div><span>{municipalities.length} муниципалитетов в справочнике</span></div>
-        <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table"><thead><tr><th scope="col">Направление</th><th scope="col">Территорий с данными</th><th scope="col">Временных рядов</th><th scope="col">Где пока нет данных</th></tr></thead><tbody>{coreCoverage.map((p) => <tr key={p.key}><td><strong>{p.title}</strong></td><td>{p.territories}/{municipalities.length}</td><td>{p.rows}</td><td>{p.missing.length ? p.missing.join(', ') : 'Покрытие по всем территориям'}</td></tr>)}</tbody></table></div>
-        <p className="unified-muted">Наличие хотя бы одного ряда не означает наличие полной временной истории или сопоставимости всех муниципалитетов. Перед сравнением учитывайте единицы, период и методику.</p>
+
+      <section className="unified-section risk-coverage-section">
+        <div className="unified-section-head"><div><h2>Покрытие шести направлений</h2><p>Показывает наличие временных рядов по территориям. Наличие данных само по себе не является положительной оценкой.</p></div><span>{MODEL_PILLARS.length} направлений модели</span></div>
+        <div className="risk-coverage-grid">{riskCoverageSummary.map((pillar) => <article className="risk-coverage-card" key={pillar.key}>
+          <div><strong>{pillar.title}</strong><b>{pillar.territories}/{municipalities.length}</b></div>
+          <div className="unified-track"><i style={{width: (municipalities.length ? pillar.territories / municipalities.length * 100 : 0) + '%'}}/></div>
+          <small>{pillar.rows} рядов · {pillar.comparable} сопоставимых · {pillar.deteriorating} негативных</small>
+        </article>)}</div>
       </section>
+
+      <section className="unified-section">
+        <div className="unified-section-head"><div><h2>Где ситуация требует внимания</h2><p>Список реагирует на фильтры и сортировку выше. Статус учитывает не только ухудшения, но и полноту покрытия. Нажмите на территорию для подробного разбора.</p></div><button type="button" className="outline-button" onClick={() => exportCsv([['Муниципалитет','Статус','Покрыто направлений','Оцениваемых рядов','Негативных сигналов','Показатели'], ...filteredMunicipalities.map((m) => [m.name,RISK[m.level].label,String(m.availablePillars) + '/6',m.usable.length,m.bad.length,m.bad.map((signal) => signal.name).join(', ')])], 'yugra-risk-overview.csv')}>Экспорт CSV</button></div>
+        <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица муниципалитетов с рисковыми сигналами"><table className="ranking-table risk-table"><thead><tr><th scope="col">Муниципалитет</th><th scope="col">Сигнал системы</th><th scope="col">Покрыто направлений</th><th scope="col">Рядов с направлением</th><th scope="col">Ухудшений</th><th scope="col">Что ухудшается</th><th scope="col"></th></tr></thead><tbody>
+          {filteredMunicipalities.map((m) => <tr key={m.id}><td><strong>{m.name}</strong></td><td><span className={'risk-zone-badge risk-zone-' + (m.level === 'critical' ? 'red' : m.level === 'watch' ? 'yellow' : m.level === 'stable' ? 'green' : 'unknown')}>{RISK[m.level].label}</span></td><td>{m.availablePillars}/6</td><td>{m.usable.length}</td><td>{m.bad.length}</td><td>{m.bad.slice(0,3).map((signal) => signal.name).join('; ') || 'Нет подтверждённого ухудшения по оцениваемым рядам'}</td><td><button type="button" className="outline-button" onClick={() => { setSelectedMunicipality(m.id); setTab('municipality'); }}>Разобрать</button></td></tr>)}
+        </tbody></table>{!filteredMunicipalities.length && <p className="empty-state" role="status">По текущим фильтрам муниципалитеты не найдены. Измените критерии или сбросьте фильтры.</p>}</div>
+      </section>
+
+      <section className="unified-section risk-matrix-section">
+        <div className="unified-section-head"><div><h2>Матрица мониторинга муниципалитетов</h2><p>По каждой территории отдельно показано наличие рядов и найденные ухудшения в шести направлениях. «Есть ряды» не означает, что риск отсутствует.</p></div><span>{filteredMunicipalities.length} территорий в текущем срезе</span></div>
+        <div className="table-scroll" role="region" tabIndex={0} aria-label="Матрица наличия данных и рисковых сигналов по муниципалитетам"><table className="ranking-table risk-matrix-table"><thead><tr><th scope="col">Муниципалитет</th>{MODEL_PILLARS.map((pillar) => <th scope="col" key={pillar.key}>{pillar.title}</th>)}<th scope="col">Статус</th></tr></thead><tbody>{filteredMunicipalities.map((municipality) => <tr key={municipality.id}>
+          <td><strong>{municipality.name}</strong></td>
+          {MODEL_PILLARS.map((pillar) => {
+            const item = municipality.model?.pillars?.find((entry) => entry.key === pillar.key);
+            const state = !item || !item.totalSeries ? 'empty' : item.adverse > 0 ? 'warning' : item.indicators > 0 ? 'covered' : 'limited';
+            const label = state === 'empty' ? 'Нет рядов' : state === 'warning' ? 'Есть ухудшение' : state === 'covered' ? 'Есть ряды' : 'Нет пары';
+            return <td key={pillar.key}><span className={'risk-matrix-status is-' + state}>{label}</span><small>{item?.totalSeries || 0} рядов</small></td>;
+          })}
+          <td><span className={'risk-zone-badge risk-zone-' + (municipality.level === 'critical' ? 'red' : municipality.level === 'watch' ? 'yellow' : municipality.level === 'stable' ? 'green' : 'unknown')}>{RISK[municipality.level].short}</span></td>
+        </tr>)}</tbody></table>{!filteredMunicipalities.length && <p className="empty-state" role="status">Нет территорий для отображения.</p>}</div>
+        <p className="unified-muted">Ячейка «Есть ряды» означает наличие направления для наблюдения, но не подтверждает отсутствие ухудшения. «Нет пары» указывает, что ряд есть, но сопоставимый интервал пока не сформирован.</p>
+      </section>
+
       <section className="unified-section">
         <div className="unified-section-head"><div><h2>Сигналы, требующие проверки</h2><p>Показываем изменение только там, где направление показателя можно интерпретировать. Для контекстных рядов изменение не окрашивается как «хорошее» или «плохое».</p></div><span>{visibleSeries.filter((s) => s.adverse === true).length} негативных сигналов</span></div>
-        <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table"><thead><tr><th scope="col">Муниципалитет</th><th scope="col">Направление</th><th scope="col">Показатель</th><th scope="col">Было</th><th scope="col">Стало</th><th scope="col">Изменение</th><th scope="col">Период</th></tr></thead><tbody>{visibleSeries.filter((s) => s.adverse !== null).sort((a,b) => Number(b.adverse)-Number(a.adverse) || Math.abs(b.changePercent || 0)-Math.abs(a.changePercent || 0)).slice(0,60).map((s) => <tr key={s.key}><td>{municipalityNames.get(s.municipalityId) || s.municipalityId}</td><td>{s.pillar.title}</td><td>{s.name}</td><td>{fmt(s.previous?.numericValue,2)} {s.unit}</td><td>{fmt(s.latest.numericValue,2)} {s.unit}</td><td className={s.adverse ? 'trend-negative' : 'trend-positive'}>{pct(s.changePercent)}</td><td>{periodLabel(s.previous)} → {periodLabel(s.latest)}</td></tr>)}</tbody></table>{visibleSeries.every((s) => s.adverse === null) && <p className="empty-state" role="status">Для выбранных фильтров пока нет рядов с однозначным направлением.</p>}</div>
+        <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица сопоставимых изменений показателей"><table className="ranking-table"><thead><tr><th scope="col">Муниципалитет</th><th scope="col">Направление</th><th scope="col">Показатель</th><th scope="col">Было</th><th scope="col">Стало</th><th scope="col">Изменение</th><th scope="col">Период</th></tr></thead><tbody>{visibleSeries.filter((s) => s.adverse !== null).sort((a,b) => Number(b.adverse)-Number(a.adverse) || Math.abs(b.changePercent || 0)-Math.abs(a.changePercent || 0)).slice(0,60).map((s) => <tr key={s.key}><td>{municipalityNames.get(s.municipalityId) || s.municipalityId}</td><td>{s.pillar.title}</td><td>{s.name}</td><td>{fmt(s.previous?.numericValue,2)} {s.unit}</td><td>{fmt(s.latest.numericValue,2)} {s.unit}</td><td className={s.adverse ? 'trend-negative' : 'trend-positive'}>{pct(s.changePercent)}</td><td>{periodLabel(s.previous)} → {periodLabel(s.latest)}</td></tr>)}</tbody></table>{visibleSeries.every((s) => s.adverse === null) && <p className="empty-state" role="status">Для выбранных фильтров пока нет рядов с однозначным направлением.</p>}</div>
       </section>
     </>}
 
