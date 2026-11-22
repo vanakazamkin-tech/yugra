@@ -1,0 +1,101 @@
+name: Publish Yugra18 static data snapshot
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Incremental DB2 refresh or full DB1+DB2 reconciliation"
+        required: true
+        type: choice
+        default: incremental
+        options:
+          - incremental
+          - full
+  schedule:
+    - cron: "23 */6 * * *"
+
+concurrency:
+  group: yugra18-static-snapshot-publisher
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      ready: ${{ steps.build.outputs.ready }}
+    steps:
+      - name: Checkout application source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          path: app
+          persist-credentials: false
+
+      - name: Checkout static data branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: data
+          path: data-store
+          token: ${{ github.token }}
+
+      - name: Configure Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install project dependencies
+        working-directory: app
+        run: npm ci --no-audit --no-fund
+
+      - name: Build and verify an immutable snapshot
+        id: build
+        working-directory: app
+        env:
+          SNAPSHOT_WORKDIR: ../data-store
+          SNAPSHOT_MODE: ${{ inputs.mode || 'incremental' }}
+          SUPABASE_CORE_URL: https://dmbikidqikjupkghywbz.supabase.co
+          SUPABASE_CORE_PUBLISHABLE_KEY: sb_publishable_zqqWIxdMQqR48yGLdiZi5Q_x-RgbKrg
+          SUPABASE_DATA_URL: https://zhywrpguzbtvjnmslwvs.supabase.co
+          SUPABASE_DATA_PUBLISHABLE_KEY: sb_publishable_CcAx_D67mZXdYg-MgyzToA_N7x_7tS5
+        run: node scripts/publish-static-snapshot.mjs
+
+      - name: Commit snapshot version to data branch
+        if: steps.build.outputs.ready == 'true' && steps.build.outputs.changed == 'true'
+        run: |
+          git -C data-store config user.name "github-actions[bot]"
+          git -C data-store config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C data-store add -A snapshots
+          if ! git -C data-store diff --cached --quiet; then
+            git -C data-store commit -m "data: publish Yugra18 snapshot"
+            git -C data-store push origin HEAD:data
+          fi
+
+      - name: Configure GitHub Pages
+        if: steps.build.outputs.ready == 'true'
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+
+      - name: Upload the verified snapshot as a Pages artifact
+        if: steps.build.outputs.ready == 'true'
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: data-store/snapshots
+
+  deploy:
+    needs: snapshot
+    if: needs.snapshot.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy static snapshot to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
