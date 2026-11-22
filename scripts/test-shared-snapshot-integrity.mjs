@@ -23,13 +23,13 @@ const chunkHash = createHash('sha256').update(raw).digest('hex');
 const chunkPath = `snapshots/chunks/municipalities/${chunkHash}.json.gz`;
 const compressed = gzipSync(raw);
 
-function makeManifest(version) {
+function makeManifest(version, key = chunkPath, checksum = chunkHash) {
   const datasets = Object.fromEntries(DATASETS.map((key) => [key, { rows: 0, shards: [] }]));
   datasets.municipalities = {
     rows: municipalities.length,
     shards: [{
-      key: chunkPath,
-      sha256: chunkHash,
+      key,
+      sha256: checksum,
       partition: '__shared__',
       partIndex: 0,
       rows: municipalities.length,
@@ -59,9 +59,14 @@ function jsonResponse(value, status = 200) {
 async function runCase({ currentVersion = 'v1', currentChunk = compressed, previousVersion = null } = {}) {
   const manifests = new Map();
   const pointers = new Map();
+  const chunks = new Map();
   for (const version of [currentVersion, previousVersion].filter(Boolean)) {
-    const manifest = makeManifest(version);
+    const invalidCurrent = version === currentVersion && currentChunk !== compressed;
+    const expectedHash = invalidCurrent ? 'a'.repeat(64) : chunkHash;
+    const key = `snapshots/chunks/municipalities/${expectedHash}.json.gz`;
+    const manifest = makeManifest(version, key, expectedHash);
     manifests.set(version, manifest);
+    chunks.set(key, version === currentVersion ? currentChunk : compressed);
     pointers.set(version, {
       version,
       manifestPath: `snapshots/manifests/${version}.json`,
@@ -82,7 +87,7 @@ async function runCase({ currentVersion = 'v1', currentChunk = compressed, previ
       const manifest = manifests.get(version);
       return manifest ? new Response(manifestBytes(manifest)) : jsonResponse({}, 404);
     }
-    if (url === chunkPath) return new Response(currentChunk);
+    if (chunks.has(url)) return new Response(chunks.get(url));
     return jsonResponse({ error: 'not found' }, 404);
   };
 
