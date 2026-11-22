@@ -111,6 +111,7 @@ const RatingWorkspace = ({
 
   const sortedRanking = useMemo(() => {
     const getValue = (item) => {
+      if (sortConfig.key === 'name') return String(item.name || '');
       if (sortConfig.key === 'investment') return toNumber(item.investments?.volumeBillion);
       if (sortConfig.key === 'sme') return toNumber(item.smeCount);
       if (sortConfig.key === 'assessment') return toNumber(item.assessmentScore);
