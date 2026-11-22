@@ -87,7 +87,7 @@ async function runCase({ currentVersion = 'v1', currentChunk = compressed, previ
       const manifest = manifests.get(version);
       return manifest ? new Response(manifestBytes(manifest)) : jsonResponse({}, 404);
     }
-    if (chunks.has(url)) return new Response(chunks.get(url));
+    if (chunks.has('snapshots/' + url)) return new Response(chunks.get('snapshots/' + url));
     return jsonResponse({ error: 'not found' }, 404);
   };
 
