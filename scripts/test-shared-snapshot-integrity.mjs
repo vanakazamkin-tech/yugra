@@ -77,12 +77,12 @@ async function runCase({ currentVersion = 'v1', currentChunk = compressed, previ
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (input) => {
     const url = String(input).replace('/snapshot-data/', '');
-    if (url === 'snapshots/current.json') return jsonResponse(pointers.get(currentVersion));
-    if (url === 'snapshots/previous.json') {
+    if (url === 'current.json') return jsonResponse(pointers.get(currentVersion));
+    if (url === 'previous.json') {
       return previousVersion ? jsonResponse(pointers.get(previousVersion)) : jsonResponse({ error: 'missing' }, 404);
     }
-    if (url === 'snapshots/health/latest.json') return jsonResponse({ status: 'ok' });
-    if (url.startsWith('snapshots/manifests/')) {
+    if (url === 'health/latest.json') return jsonResponse({ status: 'ok' });
+    if (url.startsWith('manifests/')) {
       const version = url.match(/([^/]+)\.json$/)?.[1];
       const manifest = manifests.get(version);
       return manifest ? new Response(manifestBytes(manifest)) : jsonResponse({}, 404);
@@ -111,9 +111,9 @@ const unchanged = await (async () => {
   const pointer = pointersFor(manifest);
   globalThis.fetch = async (input) => {
     const url = String(input).replace('/snapshot-data/', '');
-    if (url === 'snapshots/current.json') return jsonResponse(pointer);
-    if (url.startsWith('snapshots/manifests/')) return new Response(manifestBytes(manifest));
-    if (url === 'snapshots/health/latest.json') return jsonResponse({ status: 'ok' });
+    if (url === 'current.json') return jsonResponse(pointer);
+    if (url.startsWith('manifests/')) return new Response(manifestBytes(manifest));
+    if (url === 'health/latest.json') return jsonResponse({ status: 'ok' });
     throw new Error('An unchanged snapshot must not fetch chunk files');
   };
   try {
