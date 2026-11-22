@@ -670,15 +670,17 @@ async function safeRows(client, queryFactory, label, sinceByTable = null, errors
   if (!client) return []
   try {
     const cursor = sinceByTable?.[label]
-    const overlapCursor = cursor
-      ? new Date(Math.max(0, Date.parse(cursor) - 120_000)).toISOString()
+    const cursorColumn = label === 'результаты внешнего рейтинга DB1' ? 'created_at' : 'updated_at'
+    const parsedCursor = cursor ? Date.parse(cursor) : NaN
+    const overlapCursor = Number.isFinite(parsedCursor)
+      ? new Date(Math.max(0, parsedCursor - 120_000)).toISOString()
       : null
     const rows = await fetchAllRows(() => {
       const query = queryFactory()
-      return overlapCursor ? query.gt('updated_at', overlapCursor) : query
+      return overlapCursor ? query.gt(cursorColumn, overlapCursor) : query
     })
     const latest = rows.reduce((max, row) => {
-      const value = Date.parse(row?.updated_at || '')
+      const value = Date.parse(row?.[cursorColumn] || row?.updated_at || row?.created_at || '')
       return Number.isFinite(value) && value > max ? value : max
     }, 0)
     if (latest) cursorCandidates[label] = new Date(latest).toISOString()
@@ -787,7 +789,7 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
       .eq('verification_status', 'verified').order('facility_category', { ascending: true })
       .order('name_short', { ascending: true }).order('id', { ascending: true }), 'учреждения DB1'),
     readRows(coreClient, () => coreClient.from('external_rating_results')
-      .select('id,rating_id,geographic_level,geography_name,region_name,national_rank,rating_score,previous_year_rank,previous_year_score,metrics,reference_year,source_url,verification_status,notes,retrieved_at')
+      .select('id,rating_id,geographic_level,geography_name,region_name,national_rank,rating_score,previous_year_rank,previous_year_score,metrics,reference_year,source_url,verification_status,notes,retrieved_at,created_at')
       .eq('rating_id', 'ria_city_salary_2026').eq('geographic_level', 'city').eq('verification_status', 'verified')
       .order('geography_name', { ascending: true }).order('id', { ascending: true }), 'результаты внешнего рейтинга DB1'),
     readRows(coreClient, () => coreClient.from('external_rating_catalog')
