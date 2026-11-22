@@ -3,9 +3,10 @@ import data from '../data/municipalities-detailed.json';
 import { UgraMap, UgraMapList } from './components/UgraMap';
 import { coreSupabase, dataSupabase, isCoreSupabaseConfigured, isDataSupabaseConfigured } from './lib/supabase';
 import { fetchMunicipalities } from './lib/municipalities';
+import { readPersistentCache, writePersistentCache } from './lib/persistentCache';
 const UnifiedRiskForecast = lazy(() => import('./components/UnifiedRiskForecast'));
 const Forecasting = lazy(() => import('./components/Forecasting'));
-import { FALLBACK_DATA_SOURCES, fetchOfficialData, DATA_CATEGORY_LABELS, DATA_STATUS_LABELS } from './lib/officialData';
+import { FALLBACK_DATA_SOURCES, fetchOfficialData, mergeOfficialDataSnapshots, DATA_CATEGORY_LABELS, DATA_STATUS_LABELS } from './lib/officialData';
 
 const Icon = ({ name, className = '' }) => {
   const paths = {
@@ -199,19 +200,36 @@ export const InvestmentDetails = () => {
     let cancelled = false;
     let inFlight = false;
     let hasSyncedSuccessfully = false;
+    let cacheHydrated = false;
 
     const syncMunicipalities = async () => {
       if (inFlight || cancelled) return;
       inFlight = true;
-      if (!cancelled && !hasSyncedSuccessfully) setSyncStatus('loading');
       try {
+        if (!cacheHydrated) {
+          cacheHydrated = true;
+          const cached = await readPersistentCache('municipalities-v1');
+          if (cancelled) return;
+          if (Array.isArray(cached?.value?.rows) && cached.value.rows.length) {
+            setMunicipalities(cached.value.rows);
+            const savedAt = cached.value.syncedAt || cached.savedAt;
+            if (savedAt) setLastSyncedAt(new Date(savedAt));
+            hasSyncedSuccessfully = true;
+            setSyncStatus('cached');
+          }
+        }
+
+        if (cancelled) return;
+        if (!hasSyncedSuccessfully) setSyncStatus('loading');
         const rows = await fetchMunicipalities(coreSupabase, dataSupabase, data.municipalities);
         if (cancelled) return;
         setMunicipalities(rows);
-        setLastSyncedAt(new Date());
+        const syncedAt = new Date();
+        setLastSyncedAt(syncedAt);
         hasSyncedSuccessfully = true;
         setSyncStatus('connected');
         setSyncMessage('');
+        void writePersistentCache('municipalities-v1', { rows, syncedAt: syncedAt.toISOString() });
       } catch (error) {
         if (cancelled) return;
         setSyncStatus('error');
@@ -244,29 +262,77 @@ export const InvestmentDetails = () => {
       return undefined;
     }
 
+    const emptySnapshot = {
+      sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [],
+      investmentProjects: [], industrialEnterprises: [], infrastructureObjects: [],
+      landParcels: [], programExecution: [], fuelPrices: [], facilities: [], externalRatings: [],
+    };
+    const fullRefreshIntervalMs = 6 * 60 * 60 * 1000;
     let cancelled = false;
     let officialRequestInFlight = false;
+    let snapshot = null;
+    let cursors = {};
+    let lastFullSyncAt = 0;
+
+    const applySnapshot = (value) => {
+      setOfficialDataSources(value.sources || FALLBACK_DATA_SOURCES);
+      setOfficialIndicators(value.indicators || []);
+      setInvestmentSites(value.investmentSites || []);
+      setInvestmentProjects(value.investmentProjects || []);
+      setIndustrialEnterprises(value.industrialEnterprises || []);
+      setInfrastructureObjects(value.infrastructureObjects || []);
+      setLandParcels(value.landParcels || []);
+      setProgramExecution(value.programExecution || []);
+      setFuelPrices(value.fuelPrices || []);
+      setFacilities(value.facilities || []);
+      setExternalRatings(value.externalRatings || []);
+    };
+
     const loadOfficialData = async () => {
       if (cancelled || officialRequestInFlight) return;
       officialRequestInFlight = true;
-      setOfficialDataStatus('loading');
+      if (!snapshot) setOfficialDataStatus('loading');
       try {
-        const result = await fetchOfficialData(coreSupabase, dataSupabase);
+        const needsFullRefresh = !snapshot || !Object.keys(cursors).length
+          || !lastFullSyncAt || Date.now() - lastFullSyncAt >= fullRefreshIntervalMs;
+        const result = await fetchOfficialData(coreSupabase, dataSupabase, {
+          sinceByTable: needsFullRefresh ? null : cursors,
+        });
         if (cancelled) return;
-        setOfficialDataSources(result.sources);
-        setOfficialIndicators(result.indicators);
-        setInvestmentSites(result.investmentSites);
-        setInvestmentProjects(result.investmentProjects || []);
-        setIndustrialEnterprises(result.industrialEnterprises || []);
-        setInfrastructureObjects(result.infrastructureObjects || []);
-        setLandParcels(result.landParcels || []);
-        setProgramExecution(result.programExecution || []);
-        setFuelPrices(result.fuelPrices || []);
-        setFacilities(result.facilities || []);
-        setExternalRatings(result.externalRatings || []);
-        setOfficialDataStatus('connected');
-        setOfficialDataSyncedAt(new Date());
-        setOfficialDataError('');
+
+        const meta = result.cacheMeta || { cursorCandidates: {}, errors: [] };
+        const errors = meta.errors || [];
+        if (needsFullRefresh && !errors.length) {
+          snapshot = result;
+          cursors = { ...(meta.cursorCandidates || {}) };
+          lastFullSyncAt = Date.now();
+        } else {
+          snapshot = mergeOfficialDataSnapshots(snapshot || emptySnapshot, result);
+          cursors = { ...cursors, ...(meta.cursorCandidates || {}) };
+        }
+
+        applySnapshot(snapshot);
+        const syncedAt = new Date();
+        setOfficialDataSyncedAt(syncedAt);
+        if (errors.length) {
+          setOfficialDataStatus('error');
+          setOfficialDataError(errors.map((item) => `${item.key}: ${item.message}`).join(' · '));
+        } else {
+          setOfficialDataStatus('connected');
+          setOfficialDataError('');
+        }
+
+        // A failed table keeps its previous cursor, so the next poll retries that segment.
+        // A successful full refresh is the only operation that resets the reconciliation clock.
+        if (snapshot && (Object.keys(snapshot).length > 0)) {
+          void writePersistentCache('official-data-v1', {
+            version: 1,
+            data: snapshot,
+            cursors,
+            lastFullSyncAt,
+            lastRemoteSyncAt: syncedAt.toISOString(),
+          });
+        }
       } catch (error) {
         if (cancelled) return;
         setOfficialDataStatus('error');
@@ -276,10 +342,25 @@ export const InvestmentDetails = () => {
       }
     };
 
+    const initializeAndLoad = async () => {
+      const cached = await readPersistentCache('official-data-v1');
+      if (cancelled) return;
+      if (cached?.value?.version === 1 && cached.value.data) {
+        snapshot = cached.value.data;
+        cursors = cached.value.cursors || {};
+        lastFullSyncAt = Number(cached.value.lastFullSyncAt) || 0;
+        applySnapshot(snapshot);
+        const savedSyncAt = cached.value.lastRemoteSyncAt || cached.savedAt;
+        if (savedSyncAt) setOfficialDataSyncedAt(new Date(savedSyncAt));
+        setOfficialDataStatus('cached');
+      }
+      await loadOfficialData();
+    };
+
+    void initializeAndLoad();
     const refreshOfficialDataWhenActive = () => {
       if (document.visibilityState === 'visible') loadOfficialData();
     };
-    loadOfficialData();
     const intervalId = window.setInterval(loadOfficialData, 300_000);
     document.addEventListener('visibilitychange', refreshOfficialDataWhenActive);
     window.addEventListener('online', loadOfficialData);
@@ -1523,9 +1604,10 @@ export const InvestmentDetails = () => {
           <div className="header-motto"><span className="concept-corner">КОНЦЕПТ</span><span className="motto-mark"/>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</div>
         </header>
         <div className="ornament-divider" aria-hidden="true" />
-        <div className={`sync-status sync-status--${syncStatus}`} role="status" aria-live="polite">
+        <div className={`sync-status sync-status--${syncStatus === 'cached' ? 'connected' : syncStatus}`} role="status" aria-live="polite">
           <span className="sync-status-dot" aria-hidden="true" />
           {syncStatus === 'connected' && syncTimeLabel && <span>Данные подключены · обновлено в {syncTimeLabel}</span>}
+          {syncStatus === 'cached' && <span>{syncTimeLabel ? `Сохранённые данные на ${syncTimeLabel}` : 'Сохранённые данные'} · проверяем обновления</span>}
           {syncStatus === 'loading' && <span>Обновляем данные…</span>}
           {syncStatus === 'unconfigured' && <span>Демонстрационные данные · подключение к базе не настроено</span>}
           {syncStatus === 'error' && <span>{lastSyncedAt && syncTimeLabel ? `Не удалось обновить · последние данные на ${syncTimeLabel}` : 'Не удалось подключиться · показываем резервные данные'}</span>}
@@ -1634,7 +1716,7 @@ export const InvestmentDetails = () => {
                 <article><span>Муниципалитетов с данными своего уровня</span><strong>{officialDataSummary.municipalityCount} / {municipalities.length}</strong><small>городские поселения отдельно</small></article>
                 <article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong><small>включая источники, ожидающие импорта</small></article>
               </div>
-              <div className="official-coverage-footer"><span className={`official-coverage-status official-coverage-status--${officialDataStatus}`}><i/>{officialDataStatus === 'connected' ? 'Официальный слой подключён' : officialDataStatus === 'loading' ? 'Загрузка официального слоя' : officialDataStatus === 'error' ? 'Ошибка чтения официального слоя' : 'Демонстрационный режим'}</span><button type="button" className="primary-button" onClick={() => navigateToTab('data')}>Открыть центр данных <Icon name="arrow"/></button></div>
+              <div className="official-coverage-footer"><span className={`official-coverage-status official-coverage-status--${officialDataStatus === 'cached' ? 'connected' : officialDataStatus}`}><i/>{officialDataStatus === 'connected' ? 'Официальный слой подключён' : officialDataStatus === 'cached' ? 'Локальный снимок · проверяем обновления' : officialDataStatus === 'loading' ? 'Загрузка официального слоя' : officialDataStatus === 'error' ? 'Ошибка чтения официального слоя' : 'Демонстрационный режим'}</span><button type="button" className="primary-button" onClick={() => navigateToTab('data')}>Открыть центр данных <Icon name="arrow"/></button></div>
             </section>
           </>}
 
@@ -1642,7 +1724,7 @@ export const InvestmentDetails = () => {
             <section className="data-page-hero panel">
               <div><span className="eyebrow"><span className="eyebrow-diamond"/> ЦЕНТР ДАННЫХ</span><h1>Источники и проверенные показатели</h1><p>Официальные наблюдения отделены от демонстрационного набора. Здесь видно покрытие, происхождение данных и наборы, подготовленные к импорту.</p></div>
               <div className="data-page-hero-actions">
-                <span className={`official-status-chip official-status--${officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
+                <span className={`official-status-chip official-status--${officialDataStatus === 'cached' ? 'connected' : officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'cached' ? 'ЛОКАЛЬНЫЙ КЭШ' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
                 {officialDataSyncedAt && <span className="official-data-updated">Обновлено: {new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(officialDataSyncedAt)}</span>}
                 <button type="button" className="outline-button" onClick={() => setSyncAttempt((attempt) => attempt + 1)} disabled={officialDataStatus === 'loading'}><Icon name="refresh"/>Обновить данные</button>
                 <a className="outline-button data-dictionary-link" href="/data-dictionary.md" download="yugra-data-dictionary.md"><Icon name="download"/>Скачать словарь данных</a>
@@ -1843,7 +1925,7 @@ export const InvestmentDetails = () => {
             <section className="official-data-panel panel" aria-labelledby="official-data-heading">
               <div className="section-heading">
                 <div className="heading-label"><span className="heading-icon"><Icon name="check"/></span><div><h2 id="official-data-heading">Слой проверенных официальных данных</h2><p>Отдельно от демонстрационных показателей концепта</p></div></div>
-                <span className={`official-status-chip official-status--${officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
+                <span className={`official-status-chip official-status--${officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'cached' ? 'ЛОКАЛЬНЫЙ КЭШ' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
               </div>
               <div className="official-data-kpis">
                 <article><span>Проверенные наблюдения</span><strong>{officialDataSummary.recordCount}</strong><small>значения с зафиксированными источниками</small></article>
