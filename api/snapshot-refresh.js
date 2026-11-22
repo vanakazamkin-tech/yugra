@@ -14,6 +14,8 @@ const HEALTH = `${ROOT}/health/latest.json`;
 const FULL_SYNC_MS = 6 * 60 * 60 * 1000;
 const LEASE_MS = 8 * 60 * 1000;
 const CHUNK_ROWS = 4000;
+const BASE_RETRY_BACKOFF_MS = 5 * 60 * 1000;
+const MAX_RETRY_BACKOFF_MS = 60 * 60 * 1000;
 const KEYS = ['municipalities','sources','indicators','investmentSites','investmentProjects','industrialEnterprises','infrastructureObjects','landParcels','programExecution','fuelPrices','facilities','externalRatings'];
 
 function send(res,status,value){res.statusCode=status;res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(value));}
@@ -79,9 +81,17 @@ export default async function handler(req,res){
  if(req.method!=='POST'){res.setHeader('Allow','POST');return send(res,405,{error:'Method not allowed'});}
  const secret=process.env.YUGRA_SNAPSHOT_CRON_SECRET;
  if(!secret||req.headers.authorization!==`Bearer ${secret}`)return send(res,401,{error:'Unauthorized'});
- const started=Date.now();let activeLock=null;
+ const started=Date.now();let activeLock=null;let previousFailureCount=0;
  try{
   activeLock=await lock();if(!activeLock)return send(res,202,{ok:true,skipped:true,reason:'refresh_already_running'});
+  const previousHealth=await readJson(HEALTH);
+  if(previousHealth?.status==='error'){
+   previousFailureCount=Math.max(1,Number(previousHealth.failureCount)||1);
+   const backoffMs=Math.min(MAX_RETRY_BACKOFF_MS,BASE_RETRY_BACKOFF_MS*Math.pow(2,Math.min(previousFailureCount-1,4)));
+   const attemptedAt=Date.parse(previousHealth.lastAttemptAt||'');
+   const retryIn=backoffMs-(Date.now()-attemptedAt);
+   if(Number.isFinite(retryIn)&&retryIn>0)return send(res,202,{ok:true,skipped:true,reason:'source_retry_backoff',retryAfterMs:retryIn,failureCount:previousFailureCount});
+  }
   const current=await readJson(CURRENT),oldManifest=current?.manifestPath?await readJson(current.manifestPath):null;
   const lastFull=Date.parse(oldManifest?.lastFullReconciliationAt||'')||0;
   const full=!oldManifest||Date.now()-lastFull>=FULL_SYNC_MS;
@@ -92,7 +102,11 @@ export default async function handler(req,res){
   if(errors.length)throw new Error('Публикация отменена: '+errors.map(e=>e.key+': '+e.message).join(' · '));
   const data={...result,municipalities};
   const prepared=await prepare(data,oldManifest,full);
-  if(!full&&oldManifest&&prepared.changedShards===0)return send(res,200,{ok:true,unchanged:true,version:oldManifest.version,durationMs:Date.now()-started});
+  if(!full&&oldManifest&&prepared.changedShards===0){
+   const durationMs=Date.now()-started;
+   await writeJson(HEALTH,{status:'ok',lastAttemptAt:new Date().toISOString(),lastSuccessAt:oldManifest.lastSuccessfulUpdateAt,version:oldManifest.version,durationMs,refreshType:'unchanged',counts:oldManifest.recordCounts,compressedBytes:oldManifest.compressedBytes,uncompressedBytes:oldManifest.uncompressedBytes,shardCount:oldManifest.shardCount,failureCount:0});
+   return send(res,200,{ok:true,unchanged:true,version:oldManifest.version,durationMs});
+  }
   const syncedAt=new Date().toISOString(),version=`${Date.now()}-${randomUUID().slice(0,8)}`;
   const sourceStatus={
    db1:{status:'ok',lastCheckedAt:full?syncedAt:oldManifest?.sourceStatus?.db1?.lastCheckedAt||null,mode:full?'full':'retained_until_full_reconciliation'},
@@ -112,12 +126,12 @@ export default async function handler(req,res){
   if(current?.manifestPath)await writeJson(PREVIOUS,current);
   await writeJson(CURRENT,{version,manifestPath,publishedAt:syncedAt});
   const durationMs=Date.now()-started;
-  await writeJson(HEALTH,{status:'ok',lastAttemptAt:syncedAt,lastSuccessAt:syncedAt,version,durationMs,refreshType:manifest.refreshType,counts:manifest.recordCounts,compressedBytes:manifest.compressedBytes,uncompressedBytes:manifest.uncompressedBytes,shardCount:manifest.shardCount});
+  await writeJson(HEALTH,{status:'ok',lastAttemptAt:syncedAt,lastSuccessAt:syncedAt,version,durationMs,refreshType:manifest.refreshType,counts:manifest.recordCounts,compressedBytes:manifest.compressedBytes,uncompressedBytes:manifest.uncompressedBytes,shardCount:manifest.shardCount,failureCount:0});
   console.log('Yugra18 snapshot published',{version,full,durationMs,counts:manifest.recordCounts,shards:manifest.shardCount});
   return send(res,200,{ok:true,version,refreshType:manifest.refreshType,durationMs,counts:manifest.recordCounts,shardCount:manifest.shardCount});
  }catch(error){
   const message=error?.message||String(error);console.error('Yugra18 snapshot refresh failed:',message);
-  try{await writeJson(HEALTH,{status:'error',lastAttemptAt:new Date().toISOString(),durationMs:Date.now()-started,error:message.slice(0,1200)});}catch(e){console.error('Snapshot health write failed:',e?.message||e);}
+  try{await writeJson(HEALTH,{status:'error',lastAttemptAt:new Date().toISOString(),durationMs:Date.now()-started,error:message.slice(0,1200),failureCount:previousFailureCount+1});}catch(e){console.error('Snapshot health write failed:',e?.message||e);}
   return send(res,500,{ok:false,error:'Snapshot refresh failed',message});
  }finally{if(activeLock)await unlock(activeLock);}
 }
