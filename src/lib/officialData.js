@@ -782,8 +782,9 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
   const sinceByTable = options?.sinceByTable || null
   const errors = []
   const cursorCandidates = {}
-  // DB1 contains heavier passport and rating tables; throttle PostgREST reads to avoid piling scans onto the source project.
-  const coreRead = createReadLimiter(2)
+  // DB1 is currently timing out on overlapping PostgREST scans. Serialize its reads
+  // during full snapshot builds; DB2 remains independently concurrent.
+  const coreRead = createReadLimiter(1)
   const statisticsRead = createReadLimiter(4)
   const readRows = (client, queryFactory, label) => {
     const task = () => safeRows(client, queryFactory, label, sinceByTable, errors, cursorCandidates)
