@@ -405,6 +405,33 @@ async function main() {
   const manifestSha256 = sha256(manifestBytes);
   await writeFile(manifestFile, manifestBytes, { flag: 'wx' });
 
+  // Keep compact publication metadata even when Git data history is checkpointed.
+  const historyFile = path.join(SNAPSHOT_ROOT, 'history.json');
+  const existingHistory = await readJson(historyFile);
+  const historyVersions = Array.isArray(existingHistory?.versions) ? existingHistory.versions : [];
+  const historyEntry = (item, pointer = null) => ({
+    version: item.version,
+    createdAt: item.createdAt || null,
+    refreshType: item.refreshType || null,
+    recordCounts: item.recordCounts || {},
+    compressedBytes: Number(item.compressedBytes || 0),
+    uncompressedBytes: Number(item.uncompressedBytes || 0),
+    shardCount: Number(item.shardCount || 0),
+    manifestSha256: pointer?.manifestSha256 || null,
+  });
+  const historyByVersion = new Map(historyVersions.map((item) => [item.version, item]));
+  if (previousManifest) {
+    historyByVersion.set(previousManifest.version, historyEntry(previousManifest, currentPointer));
+  }
+  historyByVersion.set(version, historyEntry(manifest, { manifestSha256 }));
+  const retainedHistory = [...historyByVersion.values()]
+    .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))
+    .slice(-200);
+  await writeFile(historyFile, JSON.stringify({
+    schemaVersion: 1,
+    versions: retainedHistory,
+  }, null, 2) + '\\n');
+
   // Publish the old current pointer as previous before switching current.
   if (currentPointer?.manifestPath && previousManifest) {
     await writeFile(path.join(SNAPSHOT_ROOT, 'previous.json'), JSON.stringify(currentPointer, null, 2) + '\n');
