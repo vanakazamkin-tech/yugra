@@ -29,6 +29,7 @@ jobs:
     timeout-minutes: 45
     outputs:
       ready: ${{ steps.build.outputs.ready }}
+      changed: ${{ steps.build.outputs.changed }}
     steps:
       - name: Checkout application source
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -68,7 +69,7 @@ jobs:
         run: node scripts/publish-static-snapshot.mjs
 
       - name: Commit snapshot version to data branch
-        if: steps.build.outputs.ready == 'true' && steps.build.outputs.changed == 'true'
+        if: steps.build.outputs.ready == 'true' && steps.build.outputs.changed == 'true' && steps.build.outputs.changed == 'true'
         run: |
           git -C data-store config user.name "github-actions[bot]"
           git -C data-store config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -79,18 +80,18 @@ jobs:
           fi
 
       - name: Configure GitHub Pages
-        if: steps.build.outputs.ready == 'true'
+        if: steps.build.outputs.ready == 'true' && steps.build.outputs.changed == 'true'
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
       - name: Upload the verified snapshot as a Pages artifact
-        if: steps.build.outputs.ready == 'true'
+        if: steps.build.outputs.ready == 'true' && steps.build.outputs.changed == 'true'
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: data-store/snapshots
 
   deploy:
     needs: snapshot
-    if: needs.snapshot.outputs.ready == 'true'
+    if: needs.snapshot.outputs.ready == 'true' && needs.snapshot.outputs.changed == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
