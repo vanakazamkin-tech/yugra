@@ -443,7 +443,7 @@ async function main() {
     if (countedRows !== dataset.rows) throw new Error(`Post-write verification failed for dataset ${key}`);
   }
   await pruneUnreferencedFiles(manifest, previousManifest);
-  await writeFile(path.join(SNAPSHOT_ROOT, '.nojekyll'), '');
+  await writeFile(path.join(STORE_ROOT, '.nojekyll'), '');
 
   let fileCount = 0;
   let largestFileBytes = 0;
