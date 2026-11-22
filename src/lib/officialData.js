@@ -827,14 +827,14 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
     coreIndicators, statisticsIndicators,
     corePrograms, statisticsPrograms, coreForecastScenarios,
   ] = await Promise.all([
-    readRows(coreClient, () => coreClient.from('data_sources').select('*')
+    readRows(coreClient, () => coreClient.from('data_sources').select('id,name,category,url,description,format,coverage,update_frequency,import_status,last_checked_at,notes,created_at,updated_at,data_owner,temporal_coverage,data_type,access_restrictions,retrieved_at')
       , 'каталог источников DB1'),
-    readRows(statisticsClient, () => statisticsClient.from('data_sources').select('*')
+    readRows(statisticsClient, () => statisticsClient.from('data_sources').select('id,name,category,url,description,format,coverage,update_frequency,import_status,last_checked_at,notes,created_at,updated_at,data_owner,temporal_coverage,data_type,access_restrictions,retrieved_at')
       , 'каталог источников DB2'),
-    readRows(coreClient, () => coreClient.from('municipality_indicators').select('*')
+    readRows(coreClient, () => coreClient.from('municipality_indicators').select('id,municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,source_published_at,retrieved_at,verification_status,notes,updated_at,geographic_level,geographic_name')
       .eq('verification_status', 'verified')
       , 'показатели DB1'),
-    readRows(statisticsClient, () => statisticsClient.from('municipality_indicators').select('*')
+    readRows(statisticsClient, () => statisticsClient.from('municipality_indicators').select('id,municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,source_published_at,retrieved_at,verification_status,notes,updated_at,geographic_level,geographic_name')
       .eq('verification_status', 'verified')
       , 'показатели DB2'),
     readRows(coreClient, () => coreClient.from('municipal_program_execution').select('*')
@@ -843,7 +843,7 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
     readRows(statisticsClient, () => statisticsClient.from('municipal_program_execution').select('*')
       .eq('verification_status', 'verified')
       , 'муниципальные программы DB2'),
-    readRows(coreClient, () => coreClient.from('forecast_scenarios').select('*')
+    readRows(coreClient, () => coreClient.from('forecast_scenarios').select('id,key,title,summary,investment_growth_rate,sme_growth_rate,score_growth_rate,uncertainty_rate,display_order,updated_at,export_shock_pct,cost_pressure_pct,labor_shortage_pct')
       .eq('is_active', true), 'сценарии прогнозирования DB1'),
   ])
 
