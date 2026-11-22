@@ -666,6 +666,28 @@ function mergeProgramRows(coreRows, statisticsRows) {
   ].map((value) => String(value ?? '')).join('|'))
 }
 
+function createReadLimiter(maxConcurrent) {
+  let active = 0;
+  const queue = [];
+  const drain = () => {
+    while (active < maxConcurrent && queue.length) {
+      const item = queue.shift();
+      active += 1;
+      Promise.resolve()
+        .then(item.task)
+        .then(item.resolve, item.reject)
+        .finally(() => {
+          active -= 1;
+          drain();
+        });
+    }
+  };
+  return (task) => new Promise((resolve, reject) => {
+    queue.push({ task, resolve, reject });
+    drain();
+  });
+}
+
 async function safeRows(client, queryFactory, label, sinceByTable = null, errors = [], cursorCandidates = {}) {
   if (!client) return []
   try {
@@ -738,7 +760,14 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
   const sinceByTable = options?.sinceByTable || null
   const errors = []
   const cursorCandidates = {}
-  const readRows = (client, queryFactory, label) => safeRows(client, queryFactory, label, sinceByTable, errors, cursorCandidates)
+  // DB1 contains heavier passport and rating tables; throttle PostgREST reads to avoid piling scans onto the source project.
+  const coreRead = createReadLimiter(2)
+  const statisticsRead = createReadLimiter(4)
+  const readRows = (client, queryFactory, label) => {
+    const task = () => safeRows(client, queryFactory, label, sinceByTable, errors, cursorCandidates)
+    if (!client) return task()
+    return client === coreClient ? coreRead(task) : statisticsRead(task)
+  }
   const empty = {
     sources: FALLBACK_DATA_SOURCES, forecastScenarios: [], indicators: [], investmentSites: [],
     investmentProjects: [], industrialEnterprises: [], infrastructureObjects: [],
