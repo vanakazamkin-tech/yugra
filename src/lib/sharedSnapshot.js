@@ -1,4 +1,4 @@
-const DATASETS=['municipalities','sources','indicators','investmentSites','investmentProjects','industrialEnterprises','infrastructureObjects','landParcels','programExecution','fuelPrices','facilities','externalRatings'];
+const DATASETS=['municipalities','sources','forecastScenarios','indicators','investmentSites','investmentProjects','industrialEnterprises','infrastructureObjects','landParcels','programExecution','fuelPrices','facilities','externalRatings'];
 async function mapLimit(items,limit,fn){const out=new Array(items.length);let next=0;await Promise.all(Array.from({length:Math.min(limit,items.length)},async()=>{while(next<items.length){const i=next++;out[i]=await fn(items[i]);}}));return out;}
 export async function fetchSharedSnapshot(version=null){
  const response=await fetch('/api/snapshot-manifest',{credentials:'same-origin',cache:'no-store'});

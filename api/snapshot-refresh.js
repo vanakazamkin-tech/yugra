@@ -16,7 +16,7 @@ const LEASE_MS = 8 * 60 * 1000;
 const CHUNK_ROWS = 4000;
 const BASE_RETRY_BACKOFF_MS = 5 * 60 * 1000;
 const MAX_RETRY_BACKOFF_MS = 60 * 60 * 1000;
-const KEYS = ['municipalities','sources','indicators','investmentSites','investmentProjects','industrialEnterprises','infrastructureObjects','landParcels','programExecution','fuelPrices','facilities','externalRatings'];
+const KEYS = ['municipalities','sources','forecastScenarios','indicators','investmentSites','investmentProjects','industrialEnterprises','infrastructureObjects','landParcels','programExecution','fuelPrices','facilities','externalRatings'];
 
 function send(res,status,value){res.statusCode=status;res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(value));}
 function clients(){
