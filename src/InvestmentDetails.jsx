@@ -1556,6 +1556,78 @@ export const InvestmentDetails = () => {
     } catch { setReportTemplateSaved(false); }
   };
   const exportReportCsv = () => downloadCsv(reportItems, reportPrintFields, 'yugra-analytical-report');
+  const applyReportPreset = (preset) => {
+    if (preset === 'brief') {
+      setReportFields(['score', 'investments', 'smeCount']);
+      setReportIncludeSummary(true);
+      setReportIncludeChart(false);
+      setReportIncludeTable(true);
+      setReportIncludeMethodology(true);
+      setReportIncludeOfficialData(false);
+    } else if (preset === 'official') {
+      setReportFields([]);
+      setReportIncludeSummary(false);
+      setReportIncludeChart(false);
+      setReportIncludeTable(false);
+      setReportIncludeMethodology(true);
+      setReportIncludeOfficialData(true);
+    } else {
+      setReportFields(METRICS.map((metric) => metric.key));
+      setReportIncludeSummary(true);
+      setReportIncludeChart(true);
+      setReportIncludeTable(true);
+      setReportIncludeMethodology(true);
+      setReportIncludeOfficialData(true);
+    }
+    setReportTemplateSaved(false);
+  };
+  const exportReportOfficialCsv = () => {
+    const headers = [
+      'Территория',
+      'Географический уровень',
+      'Показатель',
+      'Значение',
+      'Единица измерения',
+      'Год',
+      'Период',
+      'Источник',
+      'URL источника',
+      'Примечание',
+    ];
+    const rows = reportOfficialIndicators.map((item) => {
+      const municipality = municipalities.find((entry) => entry.id === item.municipality_id);
+      const geography = item.geographic_level === 'settlement'
+        ? 'Населённый пункт'
+        : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
+      return [
+        item.geographic_name || municipality?.name || item.municipality_id,
+        geography,
+        item.indicator_name,
+        item.value,
+        item.unit || '',
+        item.reference_year,
+        formatReferencePeriod(item),
+        item.source_id || '',
+        item.source_url || '',
+        item.notes || '',
+      ];
+    });
+    const escape = (value) => {
+      let text = String(value == null ? '' : value);
+      const first = text.trimStart()[0];
+      if (typeof value === 'string' && ['=', '+', '-', '@', '\\t', '\\r'].includes(first)) text = "'" + text;
+      return '"' + text.replaceAll('"', '""') + '"';
+    };
+    const csv = '\\uFEFF' + [headers, ...rows].map((row) => row.map(escape).join(';')).join('\\r\\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'yugra-report-verified-official-observations.csv';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
 
   const renderTableRows = (items) => items.map((m, index) => {
     const population = populationByMunicipality.get(m.id);
@@ -2362,18 +2434,56 @@ export const InvestmentDetails = () => {
             </section>
           </>}
 
-          {activeTab === 'reports' && <section className="panel full-panel reports-page">
-            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2>Конструктор аналитических отчётов</h2><p>Настройте выборку, показатели и состав документа до экспорта</p></div></div><div className="toolbar-actions"><button type="button" className="outline-button" onClick={() => navigateToTab('forecast')}><Icon name="chart"/>Прогнозирование</button><button type="button" className="outline-button" onClick={loadReportTemplate}><Icon name="refresh"/>Загрузить шаблон</button><button type="button" className="outline-button" onClick={saveReportTemplate}><Icon name="save"/>{reportTemplateSaved ? 'Сохранено на устройстве' : 'Сохранить шаблон на устройстве'}</button></div></div>
+          {activeTab === 'reports' && <section className="panel full-panel reports-page reports-workbench">
+            <div className="reports-hero">
+              <div className="reports-hero-copy">
+                <span className="reports-hero-kicker">АНАЛИТИЧЕСКАЯ ПЛАТФОРМА · РАБОЧАЯ ЗОНА</span>
+                <h1>Отчёты и аналитические материалы</h1>
+                <p>Соберите документ по нужным территориям, выберите показатели и сразу проверьте, как он будет выглядеть перед экспортом.</p>
+                <div className="reports-hero-tags"><span>Муниципалитеты Югры</span><span>Проверенные наблюдения отдельно</span><span>PDF · CSV</span></div>
+              </div>
+              <div className="reports-hero-seal" aria-hidden="true"><img src="/images/khanty-prosperity-seal.svg" alt=""/></div>
+              <div className="reports-hero-ornament" aria-hidden="true"/>
+            </div>
+            <div className="reports-toolbar">
+              <div className="reports-toolbar-caption"><strong>Конструктор документа</strong><span>Настройки сохраняются на этом устройстве</span></div>
+              <div className="toolbar-actions">
+                <button type="button" className="outline-button" onClick={() => navigateToTab('forecast')}><Icon name="chart"/>Прогнозирование</button>
+                <button type="button" className="outline-button" onClick={loadReportTemplate}><Icon name="refresh"/>Загрузить шаблон</button>
+                <button type="button" className="outline-button" onClick={saveReportTemplate}><Icon name="save"/>{reportTemplateSaved ? 'Шаблон сохранён' : 'Сохранить шаблон'}</button>
+              </div>
+            </div>
+            <div className="reports-overview" aria-label="Состояние текущего отчёта">
+              <article><span>Территории в выборке</span><strong>{reportSummary.count}</strong><small>{reportScope === 'all' ? 'Все муниципалитеты' : reportScope === 'selected' ? 'Выбраны вручную' : 'Текущий срез каталога'}</small></article>
+              <article><span>Показатели в таблице</span><strong>{reportPrintFields.length}</strong><small>Из {METRICS.length} доступных полей</small></article>
+              <article><span>Проверенные наблюдения</span><strong>{formatNumber(reportOfficialIndicators.length)}</strong><small>Отдельный слой, не смешивается с демо-оценками</small></article>
+              <article><span>Блоки документа</span><strong>{[reportIncludeSummary, reportIncludeChart, reportIncludeTable, reportIncludeMethodology, reportIncludeOfficialData].filter(Boolean).length}</strong><small>Из 5 возможных разделов</small></article>
+            </div>
+            <div className="reports-presets">
+              <div><span className="reports-presets-label">БЫСТРЫЙ СТАРТ</span><strong>Выберите структуру отчёта</strong></div>
+              <div className="reports-preset-actions">
+                <button type="button" onClick={() => applyReportPreset('brief')}>Краткая сводка</button>
+                <button type="button" onClick={() => applyReportPreset('full')}>Полный аналитический отчёт</button>
+                <button type="button" onClick={() => applyReportPreset('official')}>Только проверенные данные</button>
+              </div>
+            </div>
+            <nav className="report-step-nav" aria-label="Шаги настройки отчёта">
+              <a href="#report-step-01"><span>01</span><strong>Выборка</strong><small>Кого анализируем</small></a>
+              <a href="#report-step-02"><span>02</span><strong>Показатели</strong><small>Что включить</small></a>
+              <a href="#report-step-03"><span>03</span><strong>Состав</strong><small>Как оформить</small></a>
+              <a href="#report-preview"><span>04</span><strong>Предпросмотр</strong><small>Проверка документа</small></a>
+            </nav>
+            {reportItems.length === 0 && <div className="reports-empty-selection" role="status"><Icon name="info"/><div><strong>В выборке пока нет муниципалитетов</strong><p>Вернитесь к шагу 01 и выберите все территории, текущий срез каталога или конкретные муниципалитеты.</p></div></div>}
             <div className="report-workspace">
               <aside className="report-config">
-                <div className="config-section"><div className="config-section-heading"><span className="config-step">01</span><div><strong>Параметры документа</strong><small>Название и источник данных</small></div></div>
+                <div className="config-section" id="report-step-01" tabIndex={-1}><div className="config-section-heading"><span className="config-step">01</span><div><strong>Параметры документа</strong><small>Название и источник данных</small></div></div>
                   <label className="form-field"><span>Название отчёта</span><input value={reportTitle} onChange={(e) => { setReportTitle(e.target.value); setReportTemplateSaved(false); }} placeholder="Введите название отчёта"/></label>
                   <label className="form-field"><span>Источник данных</span><select value={reportScope} onChange={(e) => { setReportScope(e.target.value); setReportTemplateSaved(false); }}><option value="filtered">Текущий срез из каталога ({filteredMunicipalities.length})</option><option value="all">Все муниципалитеты ({municipalities.length})</option><option value="selected">Выбранные вручную ({reportSelectedIds.length})</option></select></label>
                   {reportScope === 'filtered' && <div className="scope-summary"><Icon name="sliders"/><span>Отчёт будет учитывать поиск, группу, быстрый срез и расширенные фильтры на главной.</span></div>}
                   {reportScope === 'selected' && <div className="report-selection-box"><div className="selection-box-heading"><strong>Выбрать муниципалитеты</strong><span role="status" aria-live="polite" aria-atomic="true">{reportSelectedIds.length} выбрано</span></div><label className="search-box"><Icon name="search"/><input aria-label="Поиск муниципалитета в отчёте" value={reportSelectionSearch} onChange={(e) => setReportSelectionSearch(e.target.value)} placeholder="Поиск в списке…"/></label><div className="report-selection-list" role="group" aria-label="Муниципалитеты, включаемые в отчёт">{municipalities.filter((m) => m.name.toLocaleLowerCase('ru-RU').includes(reportSelectionSearch.trim().toLocaleLowerCase('ru-RU'))).map((m) => <label key={m.id} className="report-selection-item"><input type="checkbox" checked={reportSelectedIds.includes(m.id)} onChange={() => toggleReportSelection(m.id)}/><span>{m.name}</span><small>{m.group2024}</small></label>)}{!municipalities.some((m) => m.name.toLocaleLowerCase('ru-RU').includes(reportSelectionSearch.trim().toLocaleLowerCase('ru-RU'))) && <p className="empty-state">Муниципалитеты не найдены. Измените поисковый запрос.</p>}</div></div>}
                 </div>
-                <div className="config-section"><div className="config-section-heading"><span className="config-step">02</span><div><strong>Показатели в таблице</strong><small>Отметьте нужные поля</small></div></div><div className="metric-check-grid" role="group" aria-label="Показатели, включаемые в таблицу отчёта">{METRICS.map((metric) => <label className="metric-check" key={metric.key}><input type="checkbox" checked={reportFields.includes(metric.key)} onChange={() => toggleReportField(metric.key)}/><span className="custom-check"><Icon name="check"/></span><span><strong>{metric.label}</strong><small>{metric.unit}</small></span></label>)}</div><div className="selection-actions"><button type="button" className="text-action" onClick={() => { setReportFields(DEFAULT_REPORT_FIELDS); setReportTemplateSaved(false); }}>Выбрать все</button><button type="button" className="text-action" onClick={() => { setReportFields([]); setReportTemplateSaved(false); }}>Очистить</button></div></div>
-                <div className="config-section"><div className="config-section-heading"><span className="config-step">03</span><div><strong>Состав документа</strong><small>Блоки предпросмотра и PDF</small></div></div>
+                <div className="config-section" id="report-step-02" tabIndex={-1}><div className="config-section-heading"><span className="config-step">02</span><div><strong>Показатели в таблице</strong><small>Отметьте нужные поля</small></div></div><div className="metric-check-grid" role="group" aria-label="Показатели, включаемые в таблицу отчёта">{METRICS.map((metric) => <label className="metric-check" key={metric.key}><input type="checkbox" checked={reportFields.includes(metric.key)} onChange={() => toggleReportField(metric.key)}/><span className="custom-check"><Icon name="check"/></span><span><strong>{metric.label}</strong><small>{metric.unit}</small></span></label>)}</div><div className="selection-actions"><button type="button" className="text-action" onClick={() => { setReportFields(DEFAULT_REPORT_FIELDS); setReportTemplateSaved(false); }}>Выбрать все</button><button type="button" className="text-action" onClick={() => { setReportFields([]); setReportTemplateSaved(false); }}>Очистить</button></div></div>
+                <div className="config-section" id="report-step-03" tabIndex={-1}><div className="config-section-heading"><span className="config-step">03</span><div><strong>Состав документа</strong><small>Блоки предпросмотра и PDF</small></div></div>
                   <label className="switch-row"><span><strong>Сводные показатели</strong><small>Количество территорий, средний балл, инвестиции, МСП</small></span><input type="checkbox" checked={reportIncludeSummary} onChange={(e) => { setReportIncludeSummary(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
                   <label className="switch-row"><span><strong>Диаграмма сравнения</strong><small>Показать выбранный показатель по муниципалитетам</small></span><input type="checkbox" checked={reportIncludeChart} onChange={(e) => { setReportIncludeChart(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
                   {reportIncludeChart && <label className="form-field chart-metric-select"><span>Показатель диаграммы</span><select value={reportChartMetric} onChange={(e) => { setReportChartMetric(e.target.value); setReportTemplateSaved(false); }}>{METRICS.map((metric) => <option key={metric.key} value={metric.key}>{metric.label}</option>)}</select></label>}
@@ -2381,11 +2491,11 @@ export const InvestmentDetails = () => {
                   <label className="switch-row"><span><strong>Методика и оговорки</strong><small>Указать происхождение и необходимость проверки данных</small></span><input type="checkbox" checked={reportIncludeMethodology} onChange={(e) => { setReportIncludeMethodology(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
                   <label className="switch-row"><span><strong>Официальные наблюдения</strong><small>Отдельная таблица с источником, географическим уровнем и периодом · {reportOfficialIndicators.length} значений в текущей выборке</small></span><input type="checkbox" checked={reportIncludeOfficialData} onChange={(e) => { setReportIncludeOfficialData(e.target.checked); setReportTemplateSaved(false); }}/><i/></label>
                 </div>
-                <div className="report-actions"><button type="button" className="primary-button" onClick={handleExportPDF}><Icon name="download"/>Сохранить / печатать PDF</button><button type="button" className="outline-button" onClick={exportReportCsv}><Icon name="table"/>Экспорт CSV</button></div>
+                <div className="report-actions"><button type="button" className="primary-button" onClick={handleExportPDF}><Icon name="download"/>Сохранить / печатать PDF</button><button type="button" className="outline-button" onClick={exportReportCsv}><Icon name="table"/>CSV · демо-показатели</button><button type="button" className="outline-button" onClick={exportReportOfficialCsv} disabled={reportOfficialIndicators.length === 0}><Icon name="table"/>CSV · проверенные данные ({reportOfficialIndicators.length})</button></div>
               </aside>
 
-              <div className="report-preview-column">
-                <div className="preview-topline"><div><span className="micro-label">LIVE PREVIEW</span><h3>Предпросмотр отчёта</h3></div><span className="preview-status"><i/>Обновляется автоматически</span></div>
+              <div className="report-preview-column" id="report-preview" tabIndex={-1}>
+                <div className="preview-topline"><div><span className="micro-label">ШАГ 04 · ДОКУМЕНТ В РЕАЛЬНОМ ВРЕМЕНИ</span><h3>Предпросмотр отчёта</h3></div><span className="preview-status"><i/>Обновляется автоматически</span></div>
                 <article className="report-document-preview">
                   <div className="report-document-brand"><span className="report-doc-emblem"><img src="/images/khanty-prosperity-seal.svg" alt=""/></span><div><strong>ЮГРА</strong><small>аналитическая платформа муниципалитетов</small></div><span className="document-year">КОНЦЕПТ</span></div>
                   <div className="report-doc-rule" aria-hidden="true"/>
