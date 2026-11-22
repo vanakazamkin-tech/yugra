@@ -1448,21 +1448,21 @@ export const InvestmentDetails = () => {
   };
   const exportReportCsv = () => downloadCsv(reportItems, reportPrintFields, 'yugra-analytical-report');
 
-  const renderTableRows = (items, compact = false) => items.map((m, index) => {
+  const renderTableRows = (items) => items.map((m, index) => {
     const population = populationByMunicipality.get(m.id);
     return <tr key={m.id} onMouseEnter={() => setHoveredRegionId(m.id)} onMouseLeave={() => setHoveredRegionId(null)}>
       <td className="row-number">{String(index + 1).padStart(2, '0')}</td>
       <td className="municipality-cell"><button type="button" className="municipality-link" onClick={() => setActiveModalItem(m)}>{m.name}</button></td>
       <td><span className={`group-badge ${m.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i />Группа {m.group2024}</span></td>
-      <td className="score-cell">{formatNumber(m.score, 1)}{!compact && <small className="cell-subnote">демо</small>}</td>
-      <td className="number-cell">{numericValue(m.investments?.volumeBillion) == null ? '—' : formatNumber(m.investments.volumeBillion, 1)}{!compact && numericValue(m.investments?.volumeBillion) != null && <small className="cell-subnote">млрд ₽ · демо</small>}</td>
-      {!compact && <td className="number-cell">{numericValue(m.investments?.growthPercent) == null ? '—' : `${formatNumber(m.investments.growthPercent, 1)}%`}<small className="cell-subnote">демо</small></td>}
-      <td className="number-cell">{formatNumber(m.smeCount)}{!compact && <small className="cell-subnote">демо</small>}</td>
-      {!compact && <td className="number-cell">{numericValue(m.assessmentScore) == null ? '—' : `${formatNumber(m.assessmentScore, 2)} / 5`}<small className="cell-subnote">демо</small></td>}
-      {!compact && <td className="official-population-cell">
+      <td className="score-cell"><span className="demo-value">{formatNumber(m.score, 1)}</span><small className="cell-subnote">демо</small></td>
+      <td className="number-cell"><span className="demo-value">{numericValue(m.investments?.volumeBillion) == null ? '—' : formatNumber(m.investments.volumeBillion, 1)}</span>{numericValue(m.investments?.volumeBillion) != null && <small className="cell-subnote">млрд ₽ · демо</small>}</td>
+      <td className="number-cell"><span className="demo-value">{numericValue(m.investments?.growthPercent) == null ? '—' : `${formatNumber(m.investments.growthPercent, 1)}%`}</span><small className="cell-subnote">демо</small></td>
+      <td className="number-cell"><span className="demo-value">{formatNumber(m.smeCount)}</span><small className="cell-subnote">демо</small></td>
+      <td className="number-cell"><span className="demo-value">{numericValue(m.assessmentScore) == null ? '—' : `${formatNumber(m.assessmentScore, 2)} / 5`}</span><small className="cell-subnote">демо</small></td>
+      <td className="official-population-cell">
         <strong>{formatPopulationIndicator(population)}</strong>
         {population && <small className="cell-subnote">{population.geographic_level === 'settlement' ? (population.geographic_name || 'населённый пункт') : 'муниципальное образование'} · {population.reference_year}</small>}
-      </td>}
+      </td>
       <td><button type="button" className="icon-button" aria-label={`Открыть паспорт: ${m.name}`} onClick={() => setActiveModalItem(m)}><Icon name="arrow"/></button></td>
     </tr>;
   });
@@ -1546,13 +1546,18 @@ export const InvestmentDetails = () => {
             <span className="brand-copy"><span className="brand-title">ЮГРА</span><span className="brand-subtitle">Земля традиций</span></span>
           </button>
           <nav className="main-nav" aria-label="Основная навигация">
-            <button type="button" aria-current={['catalog', 'about'].includes(activeTab) ? 'page' : undefined} className={['catalog', 'about'].includes(activeTab) ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('catalog')}><Icon name="home"/>Главная</button>
-            <button type="button" aria-current={activeTab === 'map' ? 'page' : undefined} className={activeTab === 'map' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('map')}><Icon name="map"/>Карта Югры</button>
-            <button type="button" aria-current={['rating', 'risk', 'data'].includes(activeTab) ? 'page' : undefined} className={['rating', 'risk', 'data'].includes(activeTab) ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('rating')}><Icon name="chart"/>Рейтинг</button>
+            <button type="button" aria-current={activeTab === 'catalog' ? 'page' : undefined} className={activeTab === 'catalog' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('catalog')}><Icon name="home"/>Главная</button>
+            <button type="button" aria-current={activeTab === 'map' ? 'page' : undefined} className={activeTab === 'map' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('map')}><Icon name="map"/>Карта</button>
+            <button type="button" aria-current={activeTab === 'rating' ? 'page' : undefined} className={activeTab === 'rating' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('rating')}><Icon name="chart"/>Рейтинг</button>
+            <button type="button" aria-current={activeTab === 'risk' ? 'page' : undefined} className={activeTab === 'risk' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('risk')}><Icon name="chart"/>Риски</button>
+            <button type="button" aria-current={activeTab === 'forecast' ? 'page' : undefined} className={activeTab === 'forecast' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('forecast')}><Icon name="chart"/>Прогнозирование</button>
             <button type="button" aria-current={activeTab === 'compare' ? 'page' : undefined} className={activeTab === 'compare' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('compare')}><Icon name="compare"/>Сравнение</button>
-            <button type="button" aria-current={['reports', 'forecast'].includes(activeTab) ? 'page' : undefined} className={['reports', 'forecast'].includes(activeTab) ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('reports')}><Icon name="file"/>Отчёты</button>
+            <button type="button" aria-current={activeTab === 'reports' ? 'page' : undefined} className={activeTab === 'reports' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('reports')}><Icon name="file"/>Отчёты</button>
+            
+            <button type="button" aria-current={activeTab === 'data' ? 'page' : undefined} className={activeTab === 'data' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('data')}><Icon name="table"/>Данные</button>
+            <button type="button" aria-current={activeTab === 'about' ? 'page' : undefined} className={activeTab === 'about' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('about')}><Icon name="info"/>Концепция</button>
           </nav>
-          <div className="header-motto"><span className="motto-mark"/>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</div>
+          <div className="header-motto"><span className="concept-corner">КОНЦЕПТ</span><span className="motto-mark"/>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</div>
         </header>
         <div className="ornament-divider" aria-hidden="true" />
         <div className={`sync-status sync-status--${syncStatus === 'cached' ? 'connected' : syncStatus}`} role="status" aria-live="polite">
@@ -1592,6 +1597,7 @@ export const InvestmentDetails = () => {
                 {[['all', 'Все территории'], ['top', 'Топ-5 рейтинга'], ['investment', 'Инвестиции ≥ 50 млрд ₽'], ['growth', 'Рост ≥ 103%'], ['business', 'Оценка бизнеса ≥ 4,5']].map(([value, label]) => <button type="button" key={value} className={`slice-chip ${activeSlice === value ? 'active' : ''}`} aria-pressed={activeSlice === value} onClick={() => setActiveSlice(value)}>{label}</button>)}
               </div><button type="button" className={`filter-toggle ${advancedFiltersOpen ? 'open' : ''}`} aria-expanded={advancedFiltersOpen} aria-controls="advanced-municipality-filters" onClick={() => setAdvancedFiltersOpen((open) => !open)}><Icon name="sliders"/>{advancedFiltersOpen ? 'Скрыть фильтры' : 'Расширенные фильтры'}<Icon name="chevron"/></button></div>
               
+              {(searchTerm.trim() || selectedGroup !== 'ALL' || activeSlice !== 'all' || Object.values(filters).some((value) => value !== '')) && <div className="active-filter-summary" role="status" aria-live="polite" aria-atomic="true"><span>Активные фильтры · найдено <strong>{filteredMunicipalities.length}</strong> из {municipalities.length}</span><button type="button" className="text-action" onClick={resetFilters}><Icon name="refresh"/>Сбросить</button></div>}
               {advancedFiltersOpen && <div className="advanced-filter-grid" id="advanced-municipality-filters">
                 <label><span>Балл от</span><input type="number" value={filters.minScore} onChange={(e) => setFilter('minScore', e.target.value)} placeholder="Например, 250"/></label>
                 <label><span>Балл до</span><input type="number" value={filters.maxScore} onChange={(e) => setFilter('maxScore', e.target.value)} placeholder="Без ограничения"/></label>
@@ -1619,9 +1625,9 @@ export const InvestmentDetails = () => {
               </section>
 
               <section className="ranking-panel panel">
-                <div className="section-heading ranking-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Рейтинг муниципалитетов</h2><p>С учётом текущего набора фильтров</p></div></div><button type="button" className="primary-button" onClick={() => navigateToTab('rating')}>Полный рейтинг <Icon name="arrow"/></button></div>
+                <div className="section-heading ranking-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Сводная таблица муниципалитетов</h2><p>Демо-показатели помечены; население — с годом и географическим уровнем</p></div></div><button type="button" className="primary-button" onClick={() => navigateToTab('rating')}>Полный рейтинг <Icon name="arrow"/></button></div>
                 <div className="table-meta"><span>НАЙДЕНО <strong>{sortedMunicipalities.length}</strong> ИЗ {municipalities.length}</span><span className="table-sort-hint"><Icon name="sort"/> Сортировка · значения «демо» не официальная статистика</span></div>
-                <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table"><thead><tr><th scope="col" className="num-col">№</th><th scope="col" aria-sort={sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Муниципальное образование" column="name"/></th><th scope="col" aria-sort={sortConfig.key === 'group2024' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Группа" column="group2024"/></th><th scope="col" aria-sort={sortConfig.key === 'score' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Балл" column="score"/></th><th scope="col" aria-sort={sortConfig.key === 'investments' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Инвестиции" column="investments"/></th><th scope="col" aria-sort={sortConfig.key === 'smeCount' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="МСП" column="smeCount"/></th><th scope="col"><span className="action-heading">Паспорт</span></th></tr></thead><tbody>{renderTableRows(sortedMunicipalities, true)}</tbody></table>
+                <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table"><thead><tr><th scope="col" className="num-col">№</th><th scope="col" aria-sort={sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Муниципальное образование" column="name"/></th><th scope="col" aria-sort={sortConfig.key === 'group2024' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Группа" column="group2024"/></th><th scope="col" aria-sort={sortConfig.key === 'score' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Балл · демо" column="score"/></th><th scope="col" aria-sort={sortConfig.key === 'investments' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Инвестиции · демо" column="investments"/></th><th scope="col" aria-sort={sortConfig.key === 'growthPercent' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Динамика · демо" column="growthPercent"/></th><th scope="col" aria-sort={sortConfig.key === 'smeCount' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="МСП · демо" column="smeCount"/></th><th scope="col" aria-sort={sortConfig.key === 'assessmentScore' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Оценка бизнеса · демо" column="assessmentScore"/></th><th scope="col"><span className="action-heading">Население · источник</span></th><th scope="col"><span className="action-heading">Паспорт</span></th></tr></thead><tbody>{renderTableRows(sortedMunicipalities)}</tbody></table>
                   {sortedMunicipalities.length === 0 && <div className="empty-state"><span>Ничего не найдено</span><p>Измените фильтры или сбросьте текущий срез.</p><button type="button" className="outline-button" onClick={resetFilters}>Сбросить фильтры</button></div>}
                 </div>
                 <div className="table-footer"><span>Данные муниципальных образований</span><button type="button" className="text-action" onClick={() => downloadCsv(sortedMunicipalities, DEFAULT_REPORT_FIELDS, 'yugra-current-slice')}><Icon name="download"/>Выгрузить срез CSV</button></div>
@@ -1631,6 +1637,48 @@ export const InvestmentDetails = () => {
 
 
             
+
+            <section className="insight-grid" aria-label="Дополнительные аналитические показатели">
+              <article className="insight-card">
+                <span className="insight-card-kicker">ИНВЕСТИЦИОННАЯ ДИНАМИКА</span>
+                <strong>{extendedInsights.avgGrowth == null ? '—' : `${formatNumber(extendedInsights.avgGrowth, 1)}%`}</strong>
+                <span>Среднее изменение инвестиций</span>
+                <small>по {extendedInsights.growthCoverage} из {municipalities.length} территорий</small>
+              </article>
+              <article className="insight-card">
+                <span className="insight-card-kicker">ТЕРРИТОРИЯ-ЛИДЕР</span>
+                <strong className="insight-card-name">{extendedInsights.topInvestment?.name || '—'}</strong>
+                <span>Наибольший указанный объём инвестиций</span>
+                <small>{extendedInsights.topInvestment ? formatBillion(extendedInsights.topInvestment.investments.volumeBillion) : 'Нет данных'} · охват {extendedInsights.investmentCoverage}/{municipalities.length}</small>
+              </article>
+              <article className="insight-card">
+                <span className="insight-card-kicker">ДЕЛОВОЙ КЛИМАТ</span>
+                <strong>{extendedInsights.avgAssessment == null ? '—' : `${formatNumber(extendedInsights.avgAssessment, 2)} / 5`}</strong>
+                <span>Средняя оценка бизнеса</span>
+                <small>по {extendedInsights.assessmentCoverage} из {municipalities.length} территорий</small>
+              </article>
+              <article className="insight-card">
+                <span className="insight-card-kicker">РОСТ ВЫШЕ 100%</span>
+                <strong>{extendedInsights.growthCoverage ? extendedInsights.growthAbove100 : '—'}</strong>
+                <span>Территорий с положительной динамикой</span>
+                <small>из {extendedInsights.growthCoverage} с доступным показателем</small>
+              </article>
+            </section>
+            <p className="data-quality-note">Все сводные карточки выше — демонстрационные расчёты из концептуального набора и не являются официальной статистикой. Новые карточки рассчитываются на основе существующего набора данных проекта; новые официальные статистические ряды пока не загружены. Проверенные значения и охват источников показаны отдельно ниже.</p>
+            <section className="official-coverage-teaser panel" aria-labelledby="home-official-coverage-title">
+              <div className="official-coverage-copy">
+                <span className="eyebrow"><span className="eyebrow-diamond"/> ФАКТИЧЕСКИЙ СЛОЙ ДАННЫХ</span>
+                <h2 id="home-official-coverage-title">Отдельно от демонстрационных показателей</h2>
+                <p>Официальные значения содержат первоисточник, период, единицу измерения и уровень территории. Их покрытие пока неоднородно — недостающие значения не заменяются демо-числами.</p>
+              </div>
+              <div className="official-coverage-metrics">
+                <article><span>Проверенных наблюдений</span><strong>{officialDataSummary.recordCount}</strong><small>в Supabase</small></article>
+                <article><span>Муниципалитетов с данными своего уровня</span><strong>{officialDataSummary.municipalityCount} / {municipalities.length}</strong><small>городские поселения отдельно</small></article>
+                <article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong><small>включая источники, ожидающие импорта</small></article>
+              </div>
+              <div className="official-coverage-footer"><span className={`official-coverage-status official-coverage-status--${officialDataStatus === 'cached' ? 'connected' : officialDataStatus}`}><i/>{officialDataStatus === 'connected' ? 'Официальный слой подключён' : officialDataStatus === 'cached' ? 'Локальный снимок · проверяем обновления' : officialDataStatus === 'loading' ? 'Загрузка официального слоя' : officialDataStatus === 'error' ? 'Ошибка чтения официального слоя' : 'Демонстрационный режим'}</span><button type="button" className="primary-button" onClick={() => navigateToTab('data')}>Открыть центр данных <Icon name="arrow"/></button></div>
+            </section>
+
           </>}
 
           {activeTab === 'data' && <section className="data-page">
