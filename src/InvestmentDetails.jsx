@@ -1614,11 +1614,11 @@ export const InvestmentDetails = () => {
     });
     const escape = (value) => {
       let text = String(value == null ? '' : value);
-      const first = text.trimStart()[0];
+      if (typeof value === 'string' && ['=', '+', '-', '@', '\t', '\r'].includes(first)) text = "'" + text;
       if (typeof value === 'string' && ['=', '+', '-', '@', '\\t', '\\r'].includes(first)) text = "'" + text;
       return '"' + text.replaceAll('"', '""') + '"';
     };
-    const csv = '\\uFEFF' + [headers, ...rows].map((row) => row.map(escape).join(';')).join('\\r\\n');
+    const csv = '\uFEFF' + [headers, ...rows].map((row) => row.map(escape).join(';')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     const anchor = document.createElement('a');
     anchor.href = url;
