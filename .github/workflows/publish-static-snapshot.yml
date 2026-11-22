@@ -11,6 +11,11 @@ on:
         options:
           - incremental
           - full
+      force_pages_deploy:
+        description: "Republish the committed snapshot to Pages without changing data"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: yugra18-static-snapshot-publisher
@@ -67,7 +72,7 @@ jobs:
         run: node scripts/publish-static-snapshot.mjs
 
       - name: Configure GitHub Pages
-        if: steps.build.outputs.ready == 'true' && steps.build.outputs.changed == 'true'
+        if: steps.build.outputs.ready == 'true' && (steps.build.outputs.changed == 'true' || inputs.force_pages_deploy == true)
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
       - name: Commit snapshot version to data branch
@@ -102,14 +107,14 @@ jobs:
           fi
 
       - name: Upload the verified snapshot as a Pages artifact
-        if: steps.build.outputs.ready == 'true' && steps.build.outputs.changed == 'true'
+        if: steps.build.outputs.ready == 'true' && (steps.build.outputs.changed == 'true' || inputs.force_pages_deploy == true)
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: data-store/snapshots
 
   deploy:
     needs: snapshot
-    if: needs.snapshot.outputs.ready == 'true' && needs.snapshot.outputs.changed == 'true'
+    if: needs.snapshot.outputs.ready == 'true' && (needs.snapshot.outputs.changed == 'true' || inputs.force_pages_deploy == true)
     runs-on: ubuntu-latest
     environment:
       name: github-pages
