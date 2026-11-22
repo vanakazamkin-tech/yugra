@@ -126,7 +126,7 @@ function validateSnapshotManifest(manifest) {
 
 async function loadSnapshotPointer(pointerName, version) {
   const pointer = await fetchJson(pointerName + '.json');
-  if (!pointer?.manifestPath || !/^snapshots/manifests/[A-Za-z0-9_-]+\\.json$/.test(pointer.manifestPath)) {
+  if (!pointer?.manifestPath || !/^snapshots\\/manifests\\/[A-Za-z0-9_-]+\\.json$/.test(pointer.manifestPath)) {
     throw new Error('Snapshot ' + pointerName + ' pointer is invalid');
   }
 
