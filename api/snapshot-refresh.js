@@ -28,15 +28,66 @@ function clients(){
  const opts={auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}};
  return {core:createClient(cu,ck,opts),data:createClient(du,dk,opts)};
 }
-async function readJson(path){const b=await get(path,{access:'private'});if(!b||b.statusCode!==200)return null;return JSON.parse(await new Response(b.stream).text());}
+async function readJson(path,{fresh=false}={}){const b=await get(path,{access:'private',useCache:!fresh});if(!b||b.statusCode!==200)return null;return JSON.parse(await new Response(b.stream).text());}
 async function readRows(path){const b=await get(path,{access:'private'});if(!b||b.statusCode!==200)throw new Error('Не удалось прочитать часть снимка: '+path);const z=Buffer.from(await new Response(b.stream).arrayBuffer());return JSON.parse(gunzipSync(z).toString('utf8'));}
 async function writeJson(path,value,immutable=false){return put(path,JSON.stringify(value),{access:'private',addRandomSuffix:false,allowOverwrite:!immutable,contentType:'application/json; charset=utf-8',cacheControlMaxAge:immutable?31536000:0});}
 async function lock(){
  const value={token:randomUUID(),createdAt:new Date().toISOString(),expiresAt:Date.now()+LEASE_MS};
- try{await writeJson(LOCK,value,true);return value;}
- catch(error){const old=await readJson(LOCK);if(old?.expiresAt&&old.expiresAt<=Date.now()){await del(LOCK,{access:'private'});try{await writeJson(LOCK,value,true);return value;}catch{return null;}}if(!old)throw error;return null;}
+ try{
+  await writeJson(LOCK,value,true);
+  console.log('Yugra18 snapshot lock acquired',{expiresAt:value.expiresAt});
+  return value;
+ }catch(error){
+  const old=await readJson(LOCK,{fresh:true});
+  if(old?.expiresAt&&old.expiresAt<=Date.now()){
+   await del(LOCK);
+   const removed=await readJson(LOCK,{fresh:true});
+   if(removed){
+    console.warn('Expired snapshot lock remained after delete; replacing it with an expired lease');
+    await writeJson(LOCK,{...removed,expiresAt:0,releasedAt:new Date().toISOString()},false);
+   }
+   try{
+    await writeJson(LOCK,value,true);
+    console.log('Yugra18 expired snapshot lock reclaimed',{expiresAt:value.expiresAt});
+    return value;
+   }catch(reclaimError){
+    console.warn('Snapshot lock reclaim raced with another invocation:',reclaimError?.message||reclaimError);
+    return null;
+   }
+  }
+  if(!old)throw error;
+  console.log('Yugra18 snapshot refresh skipped because lock is active',{expiresAt:old.expiresAt});
+  return null;
+ }
 }
-async function unlock(value){try{const old=await readJson(LOCK);if(old?.token===value.token)await del(LOCK,{access:'private'});}catch(e){console.warn('Lock release failed:',e?.message||e);}}
+async function unlock(value){
+ try{
+  const old=await readJson(LOCK,{fresh:true});
+  if(old?.token!==value.token){
+   console.warn('Yugra18 snapshot lock owner changed before release');
+   return;
+  }
+  await del(LOCK);
+  const remaining=await readJson(LOCK,{fresh:true});
+  if(remaining?.token===value.token){
+   await writeJson(LOCK,{...remaining,expiresAt:0,releasedAt:new Date().toISOString()},false);
+   console.warn('Yugra18 snapshot lock delete did not remove the lease; expired it explicitly');
+  }else{
+   console.log('Yugra18 snapshot lock released');
+  }
+ }catch(e){
+  console.warn('Lock release failed:',e?.message||e);
+  try{
+   const old=await readJson(LOCK,{fresh:true});
+   if(old?.token===value.token){
+    await writeJson(LOCK,{...old,expiresAt:0,releasedAt:new Date().toISOString()},false);
+    console.warn('Yugra18 snapshot lock marked expired as a fallback');
+   }
+  }catch(fallbackError){
+   console.error('Could not expire the snapshot lock:',fallbackError?.message||fallbackError);
+  }
+ }
+ }
 function partition(row){return String(row?.municipality_id??row?.id_municipality??'__shared__');}
 function group(rows){const m=new Map();for(const row of rows||[]){const k=partition(row);if(!m.has(k))m.set(k,[]);m.get(k).push(row);}return m;}
 async function writePartition(dataset,part,rows,previousPaths){
