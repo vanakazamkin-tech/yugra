@@ -1,0 +1,123 @@
+import { createClient } from '@supabase/supabase-js';
+import { del, get, put } from '@vercel/blob';
+import { createHash, randomUUID } from 'node:crypto';
+import { gzipSync, gunzipSync } from 'node:zlib';
+import { fetchOfficialData, mergeOfficialDataSnapshots } from '../src/lib/officialData.js';
+import { fetchMunicipalities } from '../src/lib/municipalities.js';
+
+export const config = { maxDuration: 300 };
+const ROOT = 'snapshots';
+const CURRENT = `${ROOT}/current.json`;
+const PREVIOUS = `${ROOT}/previous.json`;
+const LOCK = `${ROOT}/refresh-lock.json`;
+const HEALTH = `${ROOT}/health/latest.json`;
+const FULL_SYNC_MS = 6 * 60 * 60 * 1000;
+const LEASE_MS = 8 * 60 * 1000;
+const CHUNK_ROWS = 4000;
+const KEYS = ['municipalities','sources','indicators','investmentSites','investmentProjects','industrialEnterprises','infrastructureObjects','landParcels','programExecution','fuelPrices','facilities','externalRatings'];
+
+function send(res,status,value){res.statusCode=status;res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(value));}
+function clients(){
+ const cu=process.env.SUPABASE_CORE_URL||process.env.VITE_SUPABASE_CORE_URL||process.env.VITE_SUPABASE_URL||'https://dmbikidqikjupkghywbz.supabase.co';
+ const ck=process.env.SUPABASE_CORE_ANON_KEY||process.env.VITE_SUPABASE_CORE_ANON_KEY||process.env.VITE_SUPABASE_ANON_KEY;
+ const du=process.env.SUPABASE_DATA_URL||process.env.VITE_SUPABASE_DATA_URL||'https://zhywrpguzbtvjnmslwvs.supabase.co';
+ const dk=process.env.SUPABASE_DATA_ANON_KEY||process.env.VITE_SUPABASE_DATA_ANON_KEY;
+ if(!ck||!dk)throw new Error('Не настроены публичные ключи чтения обеих баз Supabase');
+ const opts={auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}};
+ return {core:createClient(cu,ck,opts),data:createClient(du,dk,opts)};
+}
+async function readJson(path){const b=await get(path,{access:'private'});if(!b||b.statusCode!==200)return null;return JSON.parse(await new Response(b.stream).text());}
+async function readRows(path){const b=await get(path,{access:'private'});if(!b||b.statusCode!==200)throw new Error('Не удалось прочитать часть снимка: '+path);const z=Buffer.from(await new Response(b.stream).arrayBuffer());return JSON.parse(gunzipSync(z).toString('utf8'));}
+async function writeJson(path,value,immutable=false){return put(path,JSON.stringify(value),{access:'private',addRandomSuffix:false,allowOverwrite:!immutable,contentType:'application/json; charset=utf-8',cacheControlMaxAge:immutable?31536000:0});}
+async function lock(){
+ const value={token:randomUUID(),createdAt:new Date().toISOString(),expiresAt:Date.now()+LEASE_MS};
+ try{await writeJson(LOCK,value,true);return value;}
+ catch(error){const old=await readJson(LOCK);if(old?.expiresAt&&old.expiresAt<=Date.now()){await del(LOCK,{access:'private'});try{await writeJson(LOCK,value,true);return value;}catch{return null;}}if(!old)throw error;return null;}
+}
+async function unlock(value){try{const old=await readJson(LOCK);if(old?.token===value.token)await del(LOCK,{access:'private'});}catch(e){console.warn('Lock release failed:',e?.message||e);}}
+function partition(row){return String(row?.municipality_id??row?.id_municipality??'__shared__');}
+function group(rows){const m=new Map();for(const row of rows||[]){const k=partition(row);if(!m.has(k))m.set(k,[]);m.get(k).push(row);}return m;}
+async function writePartition(dataset,part,rows,previousPaths){
+ const out=[];
+ for(let i=0;i<rows.length;i+=CHUNK_ROWS){
+  const chunk=rows.slice(i,i+CHUNK_ROWS), payload=Buffer.from(JSON.stringify(chunk));
+  const hash=createHash('sha256').update(payload).digest('hex'), key=`${ROOT}/chunks/${dataset}/${hash}.json.gz`;
+  const zipped=gzipSync(payload,{level:6});
+  if(!previousPaths.has(key))await put(key,zipped,{access:'private',addRandomSuffix:false,allowOverwrite:true,contentType:'application/gzip',cacheControlMaxAge:31536000});
+  out.push({key,sha256:hash,partition:part,partIndex:Math.floor(i/CHUNK_ROWS),rows:chunk.length,compressedBytes:zipped.byteLength,uncompressedBytes:payload.byteLength});
+ }
+ return out;
+}
+async function prepare(data,oldManifest,isFull){
+ const prev=oldManifest?.datasets||{}, allOld=new Set(KEYS.flatMap(k=>(prev[k]?.shards||[]).map(s=>s.key)));
+ const datasets={};let changed=0;
+ for(const key of KEYS){
+  const old=prev[key]?.shards||[], oldGroups=new Map();
+  for(const shard of old){if(!oldGroups.has(shard.partition))oldGroups.set(shard.partition,[]);oldGroups.get(shard.partition).push(shard);}
+  const incoming=group(Array.isArray(data[key])?data[key]:[]);
+  const replace=isFull?new Set([...incoming.keys(),...oldGroups.keys()]):new Set(incoming.keys());
+  if(key==='municipalities'&&!isFull)replace.add('__shared__');
+  const shards=[];
+  if(!isFull)for(const [part,items] of oldGroups)if(!replace.has(part))shards.push(...items);
+  for(const part of replace){
+   let rows=incoming.get(part)||[];
+   if(!isFull&&key!=='municipalities'&&oldGroups.has(part)){
+    const oldRows=[];for(const item of oldGroups.get(part).sort((a,b)=>a.partIndex-b.partIndex))oldRows.push(...await readRows(item.key));
+    rows=mergeOfficialDataSnapshots({[key]:oldRows},{[key]:rows})[key]||rows;
+   }
+   const next=await writePartition(key,part,rows,allOld);
+   for(const item of next)if(!allOld.has(item.key))changed++;
+   shards.push(...next);
+  }
+  shards.sort((a,b)=>a.partition.localeCompare(b.partition)||a.partIndex-b.partIndex);
+  datasets[key]={rows:shards.reduce((n,s)=>n+s.rows,0),shards};
+ }
+ const all=KEYS.flatMap(k=>datasets[k].shards);
+ return {datasets,changedShards:changed,shardCount:all.length,compressedBytes:all.reduce((n,s)=>n+s.compressedBytes,0),uncompressedBytes:all.reduce((n,s)=>n+s.uncompressedBytes,0)};
+}
+export default async function handler(req,res){
+ if(req.method!=='POST'){res.setHeader('Allow','POST');return send(res,405,{error:'Method not allowed'});}
+ const secret=process.env.YUGRA_SNAPSHOT_CRON_SECRET;
+ if(!secret||req.headers.authorization!==`Bearer ${secret}`)return send(res,401,{error:'Unauthorized'});
+ const started=Date.now();let activeLock=null;
+ try{
+  activeLock=await lock();if(!activeLock)return send(res,202,{ok:true,skipped:true,reason:'refresh_already_running'});
+  const current=await readJson(CURRENT),oldManifest=current?.manifestPath?await readJson(current.manifestPath):null;
+  const lastFull=Date.parse(oldManifest?.lastFullReconciliationAt||'')||0;
+  const full=!oldManifest||Date.now()-lastFull>=FULL_SYNC_MS;
+  const supabase=clients();
+  const municipalities=await fetchMunicipalities(supabase.core,supabase.data,[],{strict:true});
+  const result=await fetchOfficialData(full?supabase.core:null,supabase.data,full?{}:{sinceByTable:oldManifest.cursors||{}});
+  const errors=result?.cacheMeta?.errors||[];
+  if(errors.length)throw new Error('Публикация отменена: '+errors.map(e=>e.key+': '+e.message).join(' · '));
+  const data={...result,municipalities};
+  const prepared=await prepare(data,oldManifest,full);
+  if(!full&&oldManifest&&prepared.changedShards===0)return send(res,200,{ok:true,unchanged:true,version:oldManifest.version,durationMs:Date.now()-started});
+  const syncedAt=new Date().toISOString(),version=`${Date.now()}-${randomUUID().slice(0,8)}`;
+  const sourceStatus={
+   db1:{status:'ok',lastCheckedAt:full?syncedAt:oldManifest?.sourceStatus?.db1?.lastCheckedAt||null,mode:full?'full':'retained_until_full_reconciliation'},
+   db2:{status:'ok',lastCheckedAt:syncedAt,mode:full?'full':'incremental'}
+  };
+  const manifest={
+   schemaVersion:1,version,createdAt:syncedAt,lastSuccessfulUpdateAt:syncedAt,
+   lastFullReconciliationAt:full?syncedAt:oldManifest.lastFullReconciliationAt,
+   refreshType:full?'full':'incremental',sourceStatus,
+   recordCounts:Object.fromEntries(KEYS.map(k=>[k,prepared.datasets[k].rows])),
+   compressedBytes:prepared.compressedBytes,uncompressedBytes:prepared.uncompressedBytes,
+   shardCount:prepared.shardCount,datasets:prepared.datasets,
+   cursors:{...(oldManifest?.cursors||{}),...(result.cacheMeta?.cursorCandidates||{})}
+  };
+  const manifestPath=`${ROOT}/manifests/${version}.json`;
+  await writeJson(manifestPath,manifest,true);
+  if(current?.manifestPath)await writeJson(PREVIOUS,current);
+  await writeJson(CURRENT,{version,manifestPath,publishedAt:syncedAt});
+  const durationMs=Date.now()-started;
+  await writeJson(HEALTH,{status:'ok',lastAttemptAt:syncedAt,lastSuccessAt:syncedAt,version,durationMs,refreshType:manifest.refreshType,counts:manifest.recordCounts,compressedBytes:manifest.compressedBytes,uncompressedBytes:manifest.uncompressedBytes,shardCount:manifest.shardCount});
+  console.log('Yugra18 snapshot published',{version,full,durationMs,counts:manifest.recordCounts,shards:manifest.shardCount});
+  return send(res,200,{ok:true,version,refreshType:manifest.refreshType,durationMs,counts:manifest.recordCounts,shardCount:manifest.shardCount});
+ }catch(error){
+  const message=error?.message||String(error);console.error('Yugra18 snapshot refresh failed:',message);
+  try{await writeJson(HEALTH,{status:'error',lastAttemptAt:new Date().toISOString(),durationMs:Date.now()-started,error:message.slice(0,1200)});}catch(e){console.error('Snapshot health write failed:',e?.message||e);}
+  return send(res,500,{ok:false,error:'Snapshot refresh failed',message});
+ }finally{if(activeLock)await unlock(activeLock);}
+}

@@ -1,0 +1,22 @@
+{
+  "functions": {
+    "api/snapshot-refresh.js": {
+      "maxDuration": 300,
+      "regions": [
+        "arn1"
+      ]
+    },
+    "api/snapshot-manifest.js": {
+      "maxDuration": 30,
+      "regions": [
+        "arn1"
+      ]
+    },
+    "api/snapshot-chunk.js": {
+      "maxDuration": 30,
+      "regions": [
+        "arn1"
+      ]
+    }
+  }
+}
