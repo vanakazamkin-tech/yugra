@@ -176,63 +176,189 @@ async function prepare(data,oldManifest,isFull){
  const all=KEYS.flatMap(k=>datasets[k].shards);
  return {datasets,changedShards:changed,shardCount:all.length,compressedBytes:all.reduce((n,s)=>n+s.compressedBytes,0),uncompressedBytes:all.reduce((n,s)=>n+s.uncompressedBytes,0)};
 }
-export default async function handler(req,res){
- if(req.method!=='POST'){res.setHeader('Allow','POST');return send(res,405,{error:'Method not allowed'});}
- const secret=process.env.YUGRA_SNAPSHOT_CRON_SECRET;
- if(!secret||req.headers.authorization!==`Bearer ${secret}`)return send(res,401,{error:'Unauthorized'});
- const started=Date.now();let activeLock=null;let previousFailureCount=0;
- try{
-  activeLock=await lock();if(!activeLock)return send(res,202,{ok:true,skipped:true,reason:'refresh_already_running'});
-  const previousHealth=await readJson(HEALTH);
-  if(previousHealth?.status==='error'){
-   previousFailureCount=Math.max(1,Number(previousHealth.failureCount)||1);
-   const backoffMs=Math.min(MAX_RETRY_BACKOFF_MS,BASE_RETRY_BACKOFF_MS*Math.pow(2,Math.min(previousFailureCount-1,4)));
-   const attemptedAt=Date.parse(previousHealth.lastAttemptAt||'');
-   const retryIn=backoffMs-(Date.now()-attemptedAt);
-   if(Number.isFinite(retryIn)&&retryIn>0)return send(res,202,{ok:true,skipped:true,reason:'source_retry_backoff',retryAfterMs:retryIn,failureCount:previousFailureCount});
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return send(res, 405, { error: 'Method not allowed' });
   }
-  const current=await readJson(CURRENT),oldManifest=current?.manifestPath?await readJson(current.manifestPath):null;
-  const lastFull=Date.parse(oldManifest?.lastFullReconciliationAt||'')||0;
-  const full=!oldManifest||Date.now()-lastFull>=FULL_SYNC_MS;
-  const supabase=clients();
-  const municipalities=full
-   ? await fetchMunicipalities(supabase.core,supabase.data,[],{strict:true})
-   : await fetchMunicipalities(null,supabase.data,[],{strict:true});
-  const result=await fetchOfficialData(full?supabase.core:null,supabase.data,full?{}:{sinceByTable:oldManifest.cursors||{}});
-  const errors=result?.cacheMeta?.errors||[];
-  if(errors.length)throw new Error('Публикация отменена: '+errors.map(e=>e.key+': '+e.message).join(' · '));
-  const data={...result,municipalities};
-  const prepared=await prepare(data,oldManifest,full);
-  if(!full&&oldManifest&&prepared.changedShards===0){
-   const durationMs=Date.now()-started;
-   await writeJson(HEALTH,{status:'ok',lastAttemptAt:new Date().toISOString(),lastSuccessAt:oldManifest.lastSuccessfulUpdateAt,version:oldManifest.version,durationMs,refreshType:'unchanged',counts:oldManifest.recordCounts,compressedBytes:oldManifest.compressedBytes,uncompressedBytes:oldManifest.uncompressedBytes,shardCount:oldManifest.shardCount,failureCount:0});
-   return send(res,200,{ok:true,unchanged:true,version:oldManifest.version,durationMs});
+
+  const secret = process.env.YUGRA_SNAPSHOT_CRON_SECRET;
+  if (!secret || req.headers.authorization !== `Bearer ${secret}`) {
+    return send(res, 401, { error: 'Unauthorized' });
   }
-  const syncedAt=new Date().toISOString(),version=`${Date.now()}-${randomUUID().slice(0,8)}`;
-  const sourceStatus={
-   db1:{status:'ok',lastCheckedAt:full?syncedAt:oldManifest?.sourceStatus?.db1?.lastCheckedAt||null,mode:full?'full':'retained_until_full_reconciliation'},
-   db2:{status:'ok',lastCheckedAt:syncedAt,mode:full?'full':'incremental'}
-  };
-  const manifest={
-   schemaVersion:1,version,createdAt:syncedAt,lastSuccessfulUpdateAt:syncedAt,
-   lastFullReconciliationAt:full?syncedAt:oldManifest.lastFullReconciliationAt,
-   refreshType:full?'full':'incremental',sourceStatus,
-   recordCounts:Object.fromEntries(KEYS.map(k=>[k,prepared.datasets[k].rows])),
-   compressedBytes:prepared.compressedBytes,uncompressedBytes:prepared.uncompressedBytes,
-   shardCount:prepared.shardCount,datasets:prepared.datasets,
-   cursors:{...(oldManifest?.cursors||{}),...(result.cacheMeta?.cursorCandidates||{})}
-  };
-  const manifestPath=`${ROOT}/manifests/${version}.json`;
-  await writeJson(manifestPath,manifest,true);
-  if(current?.manifestPath)await writeJson(PREVIOUS,current);
-  await writeJson(CURRENT,{version,manifestPath,publishedAt:syncedAt});
-  const durationMs=Date.now()-started;
-  await writeJson(HEALTH,{status:'ok',lastAttemptAt:syncedAt,lastSuccessAt:syncedAt,version,durationMs,refreshType:manifest.refreshType,counts:manifest.recordCounts,compressedBytes:manifest.compressedBytes,uncompressedBytes:manifest.uncompressedBytes,shardCount:manifest.shardCount,failureCount:0});
-  console.log('Yugra18 snapshot published',{version,full,durationMs,counts:manifest.recordCounts,shards:manifest.shardCount});
-  return send(res,200,{ok:true,version,refreshType:manifest.refreshType,durationMs,counts:manifest.recordCounts,shardCount:manifest.shardCount});
- }catch(error){
-  const message=error?.message||String(error);console.error('Yugra18 snapshot refresh failed:',message);
-  try{await writeJson(HEALTH,{status:'error',lastAttemptAt:new Date().toISOString(),durationMs:Date.now()-started,error:message.slice(0,1200),failureCount:previousFailureCount+1});}catch(e){console.error('Snapshot health write failed:',e?.message||e);}
-  return send(res,500,{ok:false,error:'Snapshot refresh failed',message});
- }finally{if(activeLock)await unlock(activeLock);}
+
+  const started = Date.now();
+  let activeLock = null;
+  let previousFailureCount = 0;
+  let responseStatus = 200;
+  let responsePayload = { ok: true };
+
+  try {
+    activeLock = await lock();
+    if (!activeLock) {
+      responseStatus = 202;
+      responsePayload = { ok: true, skipped: true, reason: 'refresh_already_running' };
+    } else {
+      const previousHealth = await readJson(HEALTH);
+      if (previousHealth?.status === 'error') {
+        previousFailureCount = Math.max(1, Number(previousHealth.failureCount) || 1);
+        const backoffMs = Math.min(
+          MAX_RETRY_BACKOFF_MS,
+          BASE_RETRY_BACKOFF_MS * Math.pow(2, Math.min(previousFailureCount - 1, 4))
+        );
+        const attemptedAt = Date.parse(previousHealth.lastAttemptAt || '');
+        const retryIn = backoffMs - (Date.now() - attemptedAt);
+
+        if (Number.isFinite(retryIn) && retryIn > 0) {
+          responseStatus = 202;
+          responsePayload = {
+            ok: true,
+            skipped: true,
+            reason: 'source_retry_backoff',
+            retryAfterMs: retryIn,
+            failureCount: previousFailureCount,
+          };
+        }
+      }
+
+      if (responseStatus === 200) {
+        const current = await readJson(CURRENT);
+        const oldManifest = current?.manifestPath ? await readJson(current.manifestPath) : null;
+        const lastFull = Date.parse(oldManifest?.lastFullReconciliationAt || '') || 0;
+        const full = !oldManifest || Date.now() - lastFull >= FULL_SYNC_MS;
+        const supabase = clients();
+
+        const municipalities = full
+          ? await fetchMunicipalities(supabase.core, supabase.data, [], { strict: true })
+          : await fetchMunicipalities(null, supabase.data, [], { strict: true });
+
+        const result = await fetchOfficialData(
+          full ? supabase.core : null,
+          supabase.data,
+          full ? {} : { sinceByTable: oldManifest.cursors || {} }
+        );
+        const errors = result?.cacheMeta?.errors || [];
+        if (errors.length) {
+          throw new Error('Публикация отменена: ' + errors.map((error) => error.key + ': ' + error.message).join(' · '));
+        }
+
+        const data = { ...result, municipalities };
+        const prepared = await prepare(data, oldManifest, full);
+
+        if (!full && oldManifest && prepared.changedShards === 0) {
+          const attemptedAt = new Date().toISOString();
+          const durationMs = Date.now() - started;
+          await writeJson(HEALTH, {
+            status: 'ok',
+            lastAttemptAt: attemptedAt,
+            lastSuccessAt: oldManifest.lastSuccessfulUpdateAt,
+            version: oldManifest.version,
+            durationMs,
+            refreshType: 'unchanged',
+            counts: oldManifest.recordCounts,
+            compressedBytes: oldManifest.compressedBytes,
+            uncompressedBytes: oldManifest.uncompressedBytes,
+            shardCount: oldManifest.shardCount,
+            failureCount: 0,
+          });
+          responsePayload = {
+            ok: true,
+            unchanged: true,
+            version: oldManifest.version,
+            durationMs,
+          };
+        } else {
+          const syncedAt = new Date().toISOString();
+          const version = `${Date.now()}-${randomUUID().slice(0, 8)}`;
+          const sourceStatus = {
+            db1: {
+              status: 'ok',
+              lastCheckedAt: full ? syncedAt : oldManifest?.sourceStatus?.db1?.lastCheckedAt || null,
+              mode: full ? 'full' : 'retained_until_full_reconciliation',
+            },
+            db2: {
+              status: 'ok',
+              lastCheckedAt: syncedAt,
+              mode: full ? 'full' : 'incremental',
+            },
+          };
+          const manifest = {
+            schemaVersion: 1,
+            version,
+            createdAt: syncedAt,
+            lastSuccessfulUpdateAt: syncedAt,
+            lastFullReconciliationAt: full ? syncedAt : oldManifest.lastFullReconciliationAt,
+            refreshType: full ? 'full' : 'incremental',
+            sourceStatus,
+            recordCounts: Object.fromEntries(KEYS.map((key) => [key, prepared.datasets[key].rows])),
+            compressedBytes: prepared.compressedBytes,
+            uncompressedBytes: prepared.uncompressedBytes,
+            shardCount: prepared.shardCount,
+            datasets: prepared.datasets,
+            cursors: {
+              ...(oldManifest?.cursors || {}),
+              ...(result.cacheMeta?.cursorCandidates || {}),
+            },
+          };
+
+          const manifestPath = `${ROOT}/manifests/${version}.json`;
+          await writeJson(manifestPath, manifest, true);
+          if (current?.manifestPath) await writeJson(PREVIOUS, current);
+          await writeJson(CURRENT, { version, manifestPath, publishedAt: syncedAt });
+
+          const durationMs = Date.now() - started;
+          await writeJson(HEALTH, {
+            status: 'ok',
+            lastAttemptAt: syncedAt,
+            lastSuccessAt: syncedAt,
+            version,
+            durationMs,
+            refreshType: manifest.refreshType,
+            counts: manifest.recordCounts,
+            compressedBytes: manifest.compressedBytes,
+            uncompressedBytes: manifest.uncompressedBytes,
+            shardCount: manifest.shardCount,
+            failureCount: 0,
+          });
+
+          console.log('Yugra18 snapshot published', {
+            version,
+            full,
+            durationMs,
+            counts: manifest.recordCounts,
+            shards: manifest.shardCount,
+          });
+          responsePayload = {
+            ok: true,
+            version,
+            refreshType: manifest.refreshType,
+            durationMs,
+            counts: manifest.recordCounts,
+            shardCount: manifest.shardCount,
+          };
+        }
+      }
+    }
+  } catch (error) {
+    const message = error?.message || String(error);
+    console.error('Yugra18 snapshot refresh failed:', message);
+    try {
+      await writeJson(HEALTH, {
+        status: 'error',
+        lastAttemptAt: new Date().toISOString(),
+        durationMs: Date.now() - started,
+        error: message.slice(0, 1200),
+        failureCount: previousFailureCount + 1,
+      });
+    } catch (healthError) {
+      console.error('Snapshot health write failed:', healthError?.message || healthError);
+    }
+    responseStatus = 500;
+    responsePayload = { ok: false, error: 'Snapshot refresh failed', message };
+  } finally {
+    if (activeLock) await unlock(activeLock);
+  }
+
+  // Do not end the serverless response until the lock cleanup has completed.
+  return send(res, responseStatus, responsePayload);
 }
