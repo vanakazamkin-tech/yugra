@@ -613,97 +613,88 @@ async function fetchAllRows(buildQuery, pageSize = 500) {
   }
 }
 
-export async function fetchOfficialData(client) {
-  if (!client) {
-    return {
-      sources: FALLBACK_DATA_SOURCES,
-      indicators: [],
-      investmentSites: [],
-      programExecution: [],
-      fuelPrices: [],
-      facilities: [],
-      externalRatings: [],
-    };
+export async function fetchOfficialData(statisticsClient, passportClient = null) {
+  const empty = {
+    sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [],
+    investmentProjects: [], industrialEnterprises: [], infrastructureObjects: [],
+    landParcels: [], programExecution: [], fuelPrices: [], facilities: [], externalRatings: [],
   }
+  if (!statisticsClient) return empty
 
-  // Supabase/PostgREST may cap each response (commonly at 1,000 rows).
-  // Fetch deterministic pages so a growing official-data catalogue is never silently truncated.
-  const [
-    sources,
-    indicators,
-    investmentSites,
-    programExecution,
-    fuelPrices,
-    facilities,
-    externalRatingResults,
-    externalRatingCatalog,
-  ] = await Promise.all([
-    fetchAllRows(() => client.from('data_sources')
+  // DB2 — основной каталог, подтверждённая статистика и муниципальные программы.
+  const [sources, indicators, programExecution] = await Promise.all([
+    fetchAllRows(() => statisticsClient.from('data_sources')
       .select('id,name,category,url,description,format,coverage,update_frequency,import_status,last_checked_at,notes')
-      .order('category', { ascending: true })
-      .order('name', { ascending: true })
-      .order('id', { ascending: true })),
-    fetchAllRows(() => client.from('municipality_indicators')
+      .order('category', { ascending: true }).order('name', { ascending: true }).order('id', { ascending: true })),
+    fetchAllRows(() => statisticsClient.from('municipality_indicators')
       .select('id,municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,source_published_at,retrieved_at,verification_status,notes,geographic_level,geographic_name')
       .eq('verification_status', 'verified')
-      .order('reference_year', { ascending: false })
-      .order('id', { ascending: true })),
-    fetchAllRows(() => client.from('investment_sites')
-      .select('id,municipality_id,source_id,external_id,name,site_type,location_text,area_hectares,land_status,offer_type,permitted_use,source_url,source_updated_at,verification_status,retrieved_at')
+      .order('reference_year', { ascending: false }).order('id', { ascending: true })),
+    fetchAllRows(() => statisticsClient.from('municipal_program_execution')
+      .select('id,municipality_id,source_id,program_code,program_name,report_date,approved_budget_thousand,revised_budget_thousand,executed_budget_thousand,execution_percent,source_url,source_published_at,retrieved_at,verification_status,notes,implementation_start_date,implementation_end_date,objectives,funding_directions,planned_indicators,actual_results,program_status')
       .eq('verification_status', 'verified')
-      .order('name', { ascending: true })
-      .order('id', { ascending: true })),
-    fetchAllRows(() => client.from('municipal_program_execution')
-      .select('id,municipality_id,source_id,program_code,program_name,report_date,approved_budget_thousand,revised_budget_thousand,executed_budget_thousand,execution_percent,source_url,source_published_at,retrieved_at,verification_status,notes')
-      .eq('verification_status', 'verified')
-      .order('report_date', { ascending: false })
-      .order('id', { ascending: true })),
-    fetchAllRows(() => client.from('fuel_price_observations')
-      .select('id,municipality_id,source_id,source_row,observed_at,station_name,company_name,address,latitude,longitude,gasoline_80,gasoline_92,gasoline_95,gasoline_98,gasoline_100,butane,propane,diesel,methane,value_unit,source_url,source_payload,verification_status,retrieved_at')
-      .eq('verification_status', 'verified')
-      .order('observed_at', { ascending: false })
-      .order('source_row', { ascending: true })
-      .order('id', { ascending: true })),
-    fetchAllRows(() => client.from('municipal_facilities')
-      .select('id,municipality_id,source_id,external_id,facility_category,name_full,name_short,address,postal_code,latitude,longitude,phone,working_hours,license_info,ownership,staffing_percent,annual_attendance,source_updated_at,source_url,source_payload,verification_status,retrieved_at')
-      .eq('verification_status', 'verified')
-      .order('facility_category', { ascending: true })
-      .order('name_short', { ascending: true })
-      .order('id', { ascending: true })),
-    fetchAllRows(() => client.from('external_rating_results')
-      .select('id,rating_id,geographic_level,geography_name,region_name,national_rank,rating_score,previous_year_rank,previous_year_score,metrics,reference_year,source_url,verification_status,notes,retrieved_at')
-      .eq('rating_id', 'ria_city_salary_2026')
-      .eq('geographic_level', 'city')
-      .eq('verification_status', 'verified')
-      .order('geography_name', { ascending: true })
-      .order('id', { ascending: true })),
-    fetchAllRows(() => client.from('external_rating_catalog')
-      .select('rating_id,title,category,edition_year,reference_period,geographic_level,geography_scope,source_url,description,methodology_summary')
-      .eq('rating_id', 'ria_city_salary_2026')
-      .order('edition_year', { ascending: false })
-      .order('rating_id', { ascending: true })),
-  ]);
+      .order('report_date', { ascending: false }).order('id', { ascending: true })),
+  ])
 
-  const operationalRecords = validateOfficialOperationalRecords({ investmentSites, programExecution, facilities });
-  const salaryRating = externalRatingCatalog[0] || null;
+  // DB1 — дополнительные паспорта и объектные реестры. Временная недоступность
+  // DB1 не должна скрывать основной статистический слой, уже загруженный из DB2.
+  const optionalRows = (query) => passportClient
+    ? fetchAllRows(query).catch((error) => {
+        console.warn('Не удалось получить дополнительный набор из DB1:', error?.message || error)
+        return []
+      })
+    : Promise.resolve([])
+
+  const [investmentSites, investmentProjects, industrialEnterprises, infrastructureObjects,
+    landParcels, fuelPrices, facilities, externalRatingResults, externalRatingCatalog] = await Promise.all([
+    optionalRows(() => passportClient.from('investment_sites').select('*')
+      .eq('verification_status', 'verified').order('name', { ascending: true }).order('id', { ascending: true })),
+    optionalRows(() => passportClient.from('municipal_investment_projects').select('*')
+      .eq('verification_status', 'verified').order('project_name', { ascending: true }).order('id', { ascending: true })),
+    optionalRows(() => passportClient.from('municipal_industrial_enterprises').select('*')
+      .eq('verification_status', 'verified').order('enterprise_name', { ascending: true }).order('id', { ascending: true })),
+    optionalRows(() => passportClient.from('municipal_infrastructure_objects').select('*')
+      .eq('verification_status', 'verified').order('name', { ascending: true }).order('id', { ascending: true })),
+    optionalRows(() => passportClient.from('municipal_land_parcels').select('*')
+      .eq('verification_status', 'verified').order('municipality_id', { ascending: true }).order('id', { ascending: true })),
+    optionalRows(() => passportClient.from('fuel_price_observations').select('*')
+      .eq('verification_status', 'verified').order('observed_at', { ascending: false })
+      .order('source_row', { ascending: true }).order('id', { ascending: true })),
+    optionalRows(() => passportClient.from('municipal_facilities').select('*')
+      .eq('verification_status', 'verified').order('facility_category', { ascending: true })
+      .order('name_short', { ascending: true }).order('id', { ascending: true })),
+    optionalRows(() => passportClient.from('external_rating_results')
+      .select('id,rating_id,geographic_level,geography_name,region_name,national_rank,rating_score,previous_year_rank,previous_year_score,metrics,reference_year,source_url,verification_status,notes,retrieved_at')
+      .eq('rating_id', 'ria_city_salary_2026').eq('geographic_level', 'city').eq('verification_status', 'verified')
+      .order('geography_name', { ascending: true }).order('id', { ascending: true })),
+    optionalRows(() => passportClient.from('external_rating_catalog')
+      .select('rating_id,title,category,edition_year,reference_period,geographic_level,geography_scope,source_url,description,methodology_summary')
+      .eq('rating_id', 'ria_city_salary_2026').order('edition_year', { ascending: false }).order('rating_id', { ascending: true })),
+  ])
+
+  const operationalRecords = validateOfficialOperationalRecords({ investmentSites, programExecution, facilities })
+  const salaryRating = externalRatingCatalog[0] || null
   const externalRatings = externalRatingResults.map((result) => ({
-    ...(salaryRating || {}),
-    ...result,
+    ...(salaryRating || {}), ...result,
     title: salaryRating?.title || result.rating_id,
     category: salaryRating?.category || 'wages',
     edition_year: salaryRating?.edition_year ?? result.reference_year,
     reference_period: salaryRating?.reference_period || '',
-  }));
+  }))
 
   return {
     sources: sources.length ? sources : FALLBACK_DATA_SOURCES,
     indicators,
     investmentSites: operationalRecords.investmentSites,
+    investmentProjects,
+    industrialEnterprises,
+    infrastructureObjects,
+    landParcels,
     programExecution: operationalRecords.programExecution,
     fuelPrices,
     facilities: operationalRecords.facilities,
     externalRatings,
-  };
+  }
 }
 export const DATA_CATEGORY_LABELS = {
   official_statistics: 'ОФИЦИАЛЬНАЯ СТАТИСТИКА',

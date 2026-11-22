@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import data from '../data/municipalities-detailed.json';
 import { UgraMap, UgraMapList } from './components/UgraMap';
-import { isSupabaseConfigured, supabase } from './lib/supabase';
+import { coreSupabase, dataSupabase, isCoreSupabaseConfigured, isDataSupabaseConfigured } from './lib/supabase';
 import { fetchMunicipalities } from './lib/municipalities';
 const UnifiedRiskForecast = lazy(() => import('./components/UnifiedRiskForecast'));
 const Forecasting = lazy(() => import('./components/Forecasting'));
@@ -164,12 +164,16 @@ export const InvestmentDetails = () => {
   // Локальный JSON остаётся резервом на случай отсутствия ключа/сети/доступа к таблице.
   const [municipalities, setMunicipalities] = useState(data.municipalities);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
-  const [syncStatus, setSyncStatus] = useState(isSupabaseConfigured ? 'loading' : 'unconfigured');
+  const [syncStatus, setSyncStatus] = useState(isDataSupabaseConfigured ? 'loading' : 'unconfigured');
   const [syncMessage, setSyncMessage] = useState('');
   const [syncAttempt, setSyncAttempt] = useState(0);
   const [officialDataSources, setOfficialDataSources] = useState(FALLBACK_DATA_SOURCES);
   const [officialIndicators, setOfficialIndicators] = useState([]);
   const [investmentSites, setInvestmentSites] = useState([]);
+  const [investmentProjects, setInvestmentProjects] = useState([]);
+  const [industrialEnterprises, setIndustrialEnterprises] = useState([]);
+  const [infrastructureObjects, setInfrastructureObjects] = useState([]);
+  const [landParcels, setLandParcels] = useState([]);
   const [programExecution, setProgramExecution] = useState([]);
   const [fuelPrices, setFuelPrices] = useState([]);
   const [facilities, setFacilities] = useState([]);
@@ -181,14 +185,14 @@ export const InvestmentDetails = () => {
   const [indicatorYearFilter, setIndicatorYearFilter] = useState('all');
   const [sourceSearch, setSourceSearch] = useState('');
   const [sourceStatusFilter, setSourceStatusFilter] = useState('all');
-  const [officialDataStatus, setOfficialDataStatus] = useState(isSupabaseConfigured ? 'loading' : 'offline');
+  const [officialDataStatus, setOfficialDataStatus] = useState(isDataSupabaseConfigured ? 'loading' : 'offline');
   const [officialDataError, setOfficialDataError] = useState('');
   const [officialDataSyncedAt, setOfficialDataSyncedAt] = useState(null);
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
+    if (!isDataSupabaseConfigured || !dataSupabase) {
       setSyncStatus('unconfigured');
-      setSyncMessage('Добавьте VITE_SUPABASE_ANON_KEY в .env.local и в Vercel.');
+      setSyncMessage('Добавьте VITE_SUPABASE_DATA_ANON_KEY для второй базы в .env.local и в настройках сайта.');
       return undefined;
     }
 
@@ -201,7 +205,7 @@ export const InvestmentDetails = () => {
       inFlight = true;
       if (!cancelled && !hasSyncedSuccessfully) setSyncStatus('loading');
       try {
-        const rows = await fetchMunicipalities(supabase);
+        const rows = await fetchMunicipalities(dataSupabase, data.municipalities);
         if (cancelled) return;
         setMunicipalities(rows);
         setLastSyncedAt(new Date());
@@ -235,7 +239,7 @@ export const InvestmentDetails = () => {
   }, [syncAttempt]);
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
+    if (!isDataSupabaseConfigured || !dataSupabase) {
       setOfficialDataStatus('offline');
       return undefined;
     }
@@ -247,11 +251,15 @@ export const InvestmentDetails = () => {
       officialRequestInFlight = true;
       setOfficialDataStatus('loading');
       try {
-        const result = await fetchOfficialData(supabase);
+        const result = await fetchOfficialData(dataSupabase, coreSupabase);
         if (cancelled) return;
         setOfficialDataSources(result.sources);
         setOfficialIndicators(result.indicators);
         setInvestmentSites(result.investmentSites);
+        setInvestmentProjects(result.investmentProjects || []);
+        setIndustrialEnterprises(result.industrialEnterprises || []);
+        setInfrastructureObjects(result.infrastructureObjects || []);
+        setLandParcels(result.landParcels || []);
         setProgramExecution(result.programExecution || []);
         setFuelPrices(result.fuelPrices || []);
         setFacilities(result.facilities || []);
@@ -2031,9 +2039,9 @@ export const InvestmentDetails = () => {
             <div className="table-scroll compare-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table compare-table"><thead><tr><th scope="col" className="num-col">№</th><th scope="col" aria-sort={sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Муниципальное образование" column="name"/></th><th scope="col" aria-sort={sortConfig.key === 'group2024' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Группа" column="group2024"/></th><th scope="col" aria-sort={sortConfig.key === 'score' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Балл" column="score"/></th><th scope="col" aria-sort={sortConfig.key === 'investments' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Инвестиции, млрд ₽" column="investments"/></th><th scope="col" aria-sort={sortConfig.key === 'smeCount' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="МСП, ед." column="smeCount"/></th><th scope="col" aria-sort={sortConfig.key === 'assessmentScore' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Оценка бизнеса" column="assessmentScore"/></th><th scope="col">Паспорт</th></tr></thead><tbody>{sortedMunicipalities.map((m, i) => <tr key={m.id} onMouseEnter={() => setHoveredRegionId(m.id)} onMouseLeave={() => setHoveredRegionId(null)}><td className="row-number">{String(i + 1).padStart(2, '0')}</td><td><button type="button" className="municipality-link" onClick={() => setActiveModalItem(m)}>{m.name}</button></td><td><span className={`group-badge ${m.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i/>{`Группа ${m.group2024}`}</span></td><td className="score-cell">{formatNumber(m.score, 1)}</td><td className="number-cell">{formatNumber(m.investments.volumeBillion, 1)}</td><td className="number-cell">{formatNumber(m.smeCount)}</td><td>{formatNumber(m.assessmentScore, 2)} / 5</td><td><button type="button" className="icon-button" onClick={() => setActiveModalItem(m)} aria-label={`Открыть паспорт: ${m.name}`}><Icon name="arrow"/></button></td></tr>)}</tbody></table></div>
           </section>}
 
-          {activeTab === 'risk' && <Suspense fallback={<section className="panel full-panel" role="status"><p>Загружаем систему мониторинга рисков…</p></section>}><UnifiedRiskForecast municipalities={municipalities} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} officialIndicators={officialIndicators} programExecution={programExecution} officialDataStatus={officialDataStatus} officialDataSyncedAt={officialDataSyncedAt} investmentSites={investmentSites} fuelPrices={fuelPrices} facilities={facilities} /></Suspense>}
+          {activeTab === 'risk' && <Suspense fallback={<section className="panel full-panel" role="status"><p>Загружаем систему мониторинга рисков…</p></section>}><UnifiedRiskForecast municipalities={municipalities} supabase={coreSupabase} isSupabaseConfigured={isCoreSupabaseConfigured} officialIndicators={officialIndicators} programExecution={programExecution} officialDataStatus={officialDataStatus} officialDataSyncedAt={officialDataSyncedAt} investmentSites={investmentSites} fuelPrices={fuelPrices} facilities={facilities} /></Suspense>}
 
-          {activeTab === 'forecast' && <Suspense fallback={<section className="panel full-panel" role="status"><p>Загружаем сценарную модель прогнозирования…</p></section>}><Forecasting municipalities={municipalities} supabase={supabase} isSupabaseConfigured={isSupabaseConfigured} officialIndicators={officialIndicators} programExecution={programExecution} officialDataStatus={officialDataStatus} officialDataSyncedAt={officialDataSyncedAt} /></Suspense>}
+          {activeTab === 'forecast' && <Suspense fallback={<section className="panel full-panel" role="status"><p>Загружаем сценарную модель прогнозирования…</p></section>}><Forecasting municipalities={municipalities} supabase={coreSupabase} isSupabaseConfigured={isCoreSupabaseConfigured} officialIndicators={officialIndicators} programExecution={programExecution} officialDataStatus={officialDataStatus} officialDataSyncedAt={officialDataSyncedAt} /></Suspense>}
 
           {activeTab === 'compare' && <section className="panel full-panel compare-page">
             <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="compare"/></span><div><h2>Сравнение муниципалитетов</h2><p>Выберите от двух до четырёх территорий и сравните показатели бок о бок</p></div></div><div className="toolbar-actions"><button type="button" className="outline-button" onClick={() => setSelectedCompareIds(DEFAULT_COMPARE_IDS.filter((id) => municipalities.some((m) => m.id === id)))}><Icon name="refresh"/>Сбросить выбор</button><button type="button" className="primary-button" onClick={() => { setReportScope('selected'); setReportSelectedIds(selectedCompareIds); navigateToTab('reports'); }}><Icon name="file"/>Отчёт по сравнению</button></div></div>
