@@ -11,8 +11,6 @@ on:
         options:
           - incremental
           - full
-  schedule:
-    - cron: "23 */6 * * *"
 
 concurrency:
   group: yugra18-static-snapshot-publisher
