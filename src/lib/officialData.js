@@ -617,7 +617,7 @@ function uniqueByKey(rows, getKey) {
   const byKey = new Map()
   for (const row of rows) {
     const key = getKey(row)
-    if (!key || key.split('|').some((part) => part === '')) continue
+    if (!key) continue
     const previous = byKey.get(key)
     const previousDate = Date.parse(previous?.updated_at || previous?.retrieved_at || previous?.created_at || '') || 0
     const currentDate = Date.parse(row?.updated_at || row?.retrieved_at || row?.created_at || '') || 0
@@ -640,11 +640,24 @@ function mergeSourceCatalog(coreSources, statisticsSources) {
 }
 
 function mergeIndicatorRows(coreRows, statisticsRows) {
-  return uniqueByKey([...coreRows, ...statisticsRows], (row) => [
-    row.municipality_id, row.indicator_code, row.reference_year,
-    row.reference_period || 'annual', row.geographic_level || 'municipality',
-    row.geographic_name || row.municipality_id, row.unit, row.source_id, row.source_url,
-  ].map((value) => String(value ?? '')).join('|'))
+  return uniqueByKey([...coreRows, ...statisticsRows], (row) => {
+    const required = [row.municipality_id, row.indicator_code, row.reference_year]
+    // Incomplete records are retained for inspection rather than silently dropped.
+    if (required.some((value) => value === null || value === undefined || value === '')) {
+      return 'fallback:' + JSON.stringify(row)
+    }
+    return JSON.stringify([
+      row.municipality_id,
+      row.indicator_code,
+      row.reference_year,
+      row.reference_period || 'annual',
+      row.geographic_level || 'municipality',
+      row.geographic_name || row.municipality_id,
+      row.unit || '',
+      row.source_id || '',
+      row.source_url || '',
+    ])
+  })
 }
 
 function mergeProgramRows(coreRows, statisticsRows) {
