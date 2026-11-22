@@ -50,6 +50,34 @@ async function writePartition(dataset,part,rows,previousPaths){
  }
  return out;
 }
+function mergeMunicipalityRows(previousRows=[], updateRows=[]) {
+ const rows=new Map((previousRows||[]).map(row=>[String(row.id),row]));
+ for(const update of updateRows||[]){
+  const previous=rows.get(String(update.id))||{};
+  const previousInvestments=previous.investments||{};
+  const nextInvestments=update.investments||{};
+  rows.set(String(update.id),{
+   ...previous,...update,
+   group2024:update.group2024??previous.group2024??null,
+   rank2024:update.rank2024??previous.rank2024??null,
+   score:update.score??previous.score??null,
+   investments:{
+    ...previousInvestments,...nextInvestments,
+    volumeBillion:nextInvestments.volumeBillion??previousInvestments.volumeBillion??null,
+    growthPercent:nextInvestments.growthPercent??previousInvestments.growthPercent??null
+   },
+   smeCount:update.smeCount??previous.smeCount??null,
+   assessmentScore:update.assessmentScore??previous.assessmentScore??null
+  });
+ }
+ return [...rows.values()].sort((a,b)=>{
+  const ar=Number(a.rank2024),br=Number(b.rank2024);
+  if(Number.isFinite(ar)&&Number.isFinite(br))return ar-br;
+  if(Number.isFinite(ar))return -1;
+  if(Number.isFinite(br))return 1;
+  return String(a.name).localeCompare(String(b.name),'ru');
+ });
+}
 async function prepare(data,oldManifest,isFull){
  const prev=oldManifest?.datasets||{}, allOld=new Set(KEYS.flatMap(k=>(prev[k]?.shards||[]).map(s=>s.key)));
  const datasets={};let changed=0;
@@ -63,9 +91,11 @@ async function prepare(data,oldManifest,isFull){
   if(!isFull)for(const [part,items] of oldGroups)if(!replace.has(part))shards.push(...items);
   for(const part of replace){
    let rows=incoming.get(part)||[];
-   if(!isFull&&key!=='municipalities'&&oldGroups.has(part)){
+   if(!isFull&&oldGroups.has(part)){
     const oldRows=[];for(const item of oldGroups.get(part).sort((a,b)=>a.partIndex-b.partIndex))oldRows.push(...await readRows(item.key));
-    rows=mergeOfficialDataSnapshots({[key]:oldRows},{[key]:rows})[key]||rows;
+    rows=key==='municipalities'
+     ? mergeMunicipalityRows(oldRows,rows)
+     : (mergeOfficialDataSnapshots({[key]:oldRows},{[key]:rows})[key]||rows);
    }
    const next=await writePartition(key,part,rows,allOld);
    for(const item of next)if(!allOld.has(item.key))changed++;
@@ -96,7 +126,9 @@ export default async function handler(req,res){
   const lastFull=Date.parse(oldManifest?.lastFullReconciliationAt||'')||0;
   const full=!oldManifest||Date.now()-lastFull>=FULL_SYNC_MS;
   const supabase=clients();
-  const municipalities=await fetchMunicipalities(supabase.core,supabase.data,[],{strict:true});
+  const municipalities=full
+   ? await fetchMunicipalities(supabase.core,supabase.data,[],{strict:true})
+   : await fetchMunicipalities(null,supabase.data,[],{strict:true});
   const result=await fetchOfficialData(full?supabase.core:null,supabase.data,full?{}:{sinceByTable:oldManifest.cursors||{}});
   const errors=result?.cacheMeta?.errors||[];
   if(errors.length)throw new Error('Публикация отменена: '+errors.map(e=>e.key+': '+e.message).join(' · '));
