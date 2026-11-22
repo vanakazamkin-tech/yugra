@@ -67,7 +67,7 @@ jobs:
         run: node scripts/publish-static-snapshot.mjs
 
       - name: Commit snapshot version to data branch
-        if: steps.build.outputs.ready == 'true' && steps.build.outputs.changed == 'true' && steps.build.outputs.changed == 'true'
+        if: steps.build.outputs.ready == 'true' && steps.build.outputs.changed == 'true'
         run: |
           git -C data-store config user.name "github-actions[bot]"
           git -C data-store config user.email "41898282+github-actions[bot]@users.noreply.github.com"
