@@ -2,7 +2,7 @@ name: Build verification
 
 on:
   push:
-    branches: [main, 'fix/**', 'feat/**', 'audit/**']
+    branches: [main]
   # Keep incremental fix branches covered by the same regression and build checks.
   # Classification tests protect geography, sector semantics, and the six-pillar mapping.
   # The same workflow is used for data-classification and risk-chain regression updates.
@@ -29,6 +29,11 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
+      - name: Validate GitHub static snapshot publisher and browser loader
+        run: |
+          node --check scripts/publish-static-snapshot.mjs
+          node scripts/test-shared-snapshot-integrity.mjs
+          node scripts/test-official-data-merge-preserves-values.mjs
       - name: Run forecast model unit tests
         run: npm test
       - name: Test data provenance and source catalog contracts

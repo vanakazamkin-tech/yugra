@@ -641,9 +641,21 @@ function uniqueByKey(rows, getKey) {
     const key = getKey(row)
     if (!key) continue
     const previous = byKey.get(key)
+    if (!previous) {
+      byKey.set(key, row)
+      continue
+    }
+
     const previousDate = Date.parse(previous?.updated_at || previous?.retrieved_at || previous?.created_at || '') || 0
     const currentDate = Date.parse(row?.updated_at || row?.retrieved_at || row?.created_at || '') || 0
-    if (!previous || currentDate >= previousDate) byKey.set(key, row)
+    const latest = currentDate >= previousDate ? row : previous
+    const older = latest === row ? previous : row
+    const merged = { ...older }
+    for (const [field, value] of Object.entries(latest || {})) {
+      // Newer empty cells must not erase populated observations from the other source.
+      if (value !== null && value !== undefined && value !== '') merged[field] = value
+    }
+    byKey.set(key, merged)
   }
   return [...byKey.values()]
 }
@@ -745,9 +757,21 @@ function mergeRowsById(baseRows = [], updateRows = []) {
     const key = row?.id != null ? String(row.id) : JSON.stringify(row)
     if (!key) continue
     const previous = rows.get(key)
+    if (!previous) {
+      rows.set(key, row)
+      continue
+    }
+
     const previousDate = Date.parse(previous?.updated_at || previous?.retrieved_at || previous?.created_at || '') || 0
     const currentDate = Date.parse(row?.updated_at || row?.retrieved_at || row?.created_at || '') || 0
-    if (!previous || currentDate >= previousDate) rows.set(key, row)
+    const latest = currentDate >= previousDate ? row : previous
+    const older = latest === row ? previous : row
+    const merged = { ...older }
+    for (const [field, value] of Object.entries(latest || {})) {
+      // An empty refresh never erases a previously populated cell or its provenance.
+      if (value !== null && value !== undefined && value !== '') merged[field] = value
+    }
+    rows.set(key, merged)
   }
   return [...rows.values()]
 }
@@ -803,14 +827,14 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
     coreIndicators, statisticsIndicators,
     corePrograms, statisticsPrograms, coreForecastScenarios,
   ] = await Promise.all([
-    readRows(coreClient, () => coreClient.from('data_sources').select('*')
+    readRows(coreClient, () => coreClient.from('data_sources').select('id,name,category,url,description,format,coverage,update_frequency,import_status,last_checked_at,notes,created_at,updated_at,data_owner,temporal_coverage,data_type,access_restrictions,retrieved_at')
       , 'каталог источников DB1'),
-    readRows(statisticsClient, () => statisticsClient.from('data_sources').select('*')
+    readRows(statisticsClient, () => statisticsClient.from('data_sources').select('id,name,category,url,description,format,coverage,update_frequency,import_status,last_checked_at,notes,created_at,updated_at,data_owner,temporal_coverage,data_type,access_restrictions,retrieved_at')
       , 'каталог источников DB2'),
-    readRows(coreClient, () => coreClient.from('municipality_indicators').select('*')
+    readRows(coreClient, () => coreClient.from('municipality_indicators').select('id,municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,source_published_at,retrieved_at,verification_status,notes,updated_at,geographic_level,geographic_name')
       .eq('verification_status', 'verified')
       , 'показатели DB1'),
-    readRows(statisticsClient, () => statisticsClient.from('municipality_indicators').select('*')
+    readRows(statisticsClient, () => statisticsClient.from('municipality_indicators').select('id,municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,source_published_at,retrieved_at,verification_status,notes,updated_at,geographic_level,geographic_name')
       .eq('verification_status', 'verified')
       , 'показатели DB2'),
     readRows(coreClient, () => coreClient.from('municipal_program_execution').select('*')
@@ -819,7 +843,7 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
     readRows(statisticsClient, () => statisticsClient.from('municipal_program_execution').select('*')
       .eq('verification_status', 'verified')
       , 'муниципальные программы DB2'),
-    readRows(coreClient, () => coreClient.from('forecast_scenarios').select('*')
+    readRows(coreClient, () => coreClient.from('forecast_scenarios').select('id,key,title,summary,investment_growth_rate,sme_growth_rate,score_growth_rate,uncertainty_rate,display_order,updated_at,export_shock_pct,cost_pressure_pct,labor_shortage_pct')
       .eq('is_active', true), 'сценарии прогнозирования DB1'),
   ])
 
@@ -858,6 +882,11 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
   const indicators = mergeIndicatorRows(coreIndicators, statisticsIndicators)
   const programExecution = mergeProgramRows(corePrograms, statisticsPrograms)
   const operationalRecords = validateOfficialOperationalRecords({ investmentSites, programExecution, facilities })
+  const excludedVerifiedOperationalRows = {
+    investmentSites: Math.max(0, investmentSites.length - operationalRecords.investmentSites.length),
+    programExecution: Math.max(0, programExecution.length - operationalRecords.programExecution.length),
+    facilities: Math.max(0, facilities.length - operationalRecords.facilities.length),
+  }
   const salaryRating = externalRatingCatalog[0] || null
   const externalRatings = externalRatingResults.map((result) => ({
     ...(salaryRating || {}), ...result,
@@ -875,7 +904,7 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
     investmentProjects, industrialEnterprises, infrastructureObjects, landParcels,
     programExecution: operationalRecords.programExecution,
     fuelPrices, facilities: operationalRecords.facilities, externalRatings,
-    cacheMeta: { cursorCandidates, errors, incremental: Boolean(sinceByTable) },
+    cacheMeta: { cursorCandidates, errors, incremental: Boolean(sinceByTable), excludedVerifiedOperationalRows },
   }
 }
 export const DATA_CATEGORY_LABELS = {
