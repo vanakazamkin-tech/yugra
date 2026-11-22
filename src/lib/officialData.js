@@ -662,24 +662,35 @@ function mergeSourceCatalog(coreSources, statisticsSources) {
 }
 
 function mergeIndicatorRows(coreRows, statisticsRows) {
-  return uniqueByKey([...coreRows, ...statisticsRows], (row) => {
+  const byKey = new Map()
+  for (const row of [...coreRows, ...statisticsRows]) {
     const required = [row.municipality_id, row.indicator_code, row.reference_year]
     // Incomplete records are retained for inspection rather than silently dropped.
-    if (required.some((value) => value === null || value === undefined || value === '')) {
-      return 'fallback:' + JSON.stringify(row)
+    const key = required.some((value) => value === null || value === undefined || value === '')
+      ? 'fallback:' + JSON.stringify(row)
+      : JSON.stringify([
+        row.municipality_id,
+        row.indicator_code,
+        row.reference_year,
+        row.reference_period || 'annual',
+        row.geographic_level || 'municipality',
+        row.geographic_name || row.municipality_id,
+        row.unit || '',
+        row.source_id || '',
+        row.source_url || '',
+      ])
+    const previous = byKey.get(key)
+    const currentVerified = row.verification_status === 'verified'
+    const previousVerified = previous?.verification_status === 'verified'
+    const previousDate = Date.parse(previous?.updated_at || previous?.retrieved_at || previous?.created_at || '') || 0
+    const currentDate = Date.parse(row?.updated_at || row?.retrieved_at || row?.created_at || '') || 0
+    // A reviewed observation always wins over a duplicate awaiting review.
+    if (!previous || (currentVerified && !previousVerified)
+      || (currentVerified === previousVerified && currentDate >= previousDate)) {
+      byKey.set(key, row)
     }
-    return JSON.stringify([
-      row.municipality_id,
-      row.indicator_code,
-      row.reference_year,
-      row.reference_period || 'annual',
-      row.geographic_level || 'municipality',
-      row.geographic_name || row.municipality_id,
-      row.unit || '',
-      row.source_id || '',
-      row.source_url || '',
-    ])
-  })
+  }
+  return [...byKey.values()]
 }
 
 function mergeProgramRows(coreRows, statisticsRows) {
