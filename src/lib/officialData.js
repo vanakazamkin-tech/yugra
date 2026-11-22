@@ -882,6 +882,11 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
   const indicators = mergeIndicatorRows(coreIndicators, statisticsIndicators)
   const programExecution = mergeProgramRows(corePrograms, statisticsPrograms)
   const operationalRecords = validateOfficialOperationalRecords({ investmentSites, programExecution, facilities })
+  const excludedVerifiedOperationalRows = {
+    investmentSites: Math.max(0, investmentSites.length - operationalRecords.investmentSites.length),
+    programExecution: Math.max(0, programExecution.length - operationalRecords.programExecution.length),
+    facilities: Math.max(0, facilities.length - operationalRecords.facilities.length),
+  }
   const salaryRating = externalRatingCatalog[0] || null
   const externalRatings = externalRatingResults.map((result) => ({
     ...(salaryRating || {}), ...result,
@@ -899,7 +904,7 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
     investmentProjects, industrialEnterprises, infrastructureObjects, landParcels,
     programExecution: operationalRecords.programExecution,
     fuelPrices, facilities: operationalRecords.facilities, externalRatings,
-    cacheMeta: { cursorCandidates, errors, incremental: Boolean(sinceByTable) },
+    cacheMeta: { cursorCandidates, errors, incremental: Boolean(sinceByTable), excludedVerifiedOperationalRows },
   }
 }
 export const DATA_CATEGORY_LABELS = {
