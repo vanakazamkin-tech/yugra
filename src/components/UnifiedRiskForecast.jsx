@@ -43,6 +43,10 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
   const [search, setSearch] = useState('');
   const [selectedMunicipality, setSelectedMunicipality] = useState('');
   const [selectedSeriesKey, setSelectedSeriesKey] = useState('');
+  const [riskLevelFilter, setRiskLevelFilter] = useState('ALL');
+  const [pillarFilter, setPillarFilter] = useState('ALL');
+  const [signalFilter, setSignalFilter] = useState('ALL');
+  const [sortMode, setSortMode] = useState('priority');
   const [horizon, setHorizon] = useState(3);
   const [extraShock, setExtraShock] = useState(0);
   const [scenarios, setScenarios] = useState(DEFAULT_SCENARIOS);
@@ -85,10 +89,21 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
   const series = useMemo(() => buildRiskSeries(rows, riskThresholds), [rows, riskThresholds]);
   const riskModel = useMemo(() => buildRiskModel(municipalities, series), [municipalities, series]);
   const municipalityNames = useMemo(() => new Map(municipalities.map((m) => [m.id, m.name])), [municipalities]);
-  const visibleSeries = useMemo(() => series.filter((s) =>
-    (municipalityId === 'ALL' || s.municipalityId === municipalityId)
-    && (!search || (s.name + ' ' + s.code + ' ' + (municipalityNames.get(s.municipalityId) || '')).toLowerCase().includes(search.toLowerCase()))
-  ), [series, municipalityId, search, municipalityNames]);
+  const visibleSeries = useMemo(() => {
+    const needle = search.trim().toLocaleLowerCase('ru-RU');
+    return series.filter((s) => {
+      const text = (s.name + ' ' + s.code + ' ' + (municipalityNames.get(s.municipalityId) || '')).toLocaleLowerCase('ru-RU');
+      const matchesSignal = signalFilter === 'ALL'
+        || (signalFilter === 'negative' && s.adverse === true)
+        || (signalFilter === 'improving' && s.adverse === false)
+        || (signalFilter === 'context' && s.direction === 'context')
+        || (signalFilter === 'unavailable' && s.adverse === null);
+      return (municipalityId === 'ALL' || s.municipalityId === municipalityId)
+        && (pillarFilter === 'ALL' || s.pillar.key === pillarFilter)
+        && matchesSignal
+        && (!needle || text.includes(needle));
+    });
+  }, [series, municipalityId, search, municipalityNames, pillarFilter, signalFilter]);
   const municipalityAnalysis = useMemo(() => municipalities.map((m) => {
     const own = series.filter((s) => s.municipalityId === m.id);
     const assessment = assessRiskSignals(own, riskThresholds);
@@ -106,13 +121,24 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
     return priority[a.level] - priority[b.level] || b.bad.length - a.bad.length || String(a.name || a.id).localeCompare(String(b.name || b.id), 'ru-RU');
   }), [municipalities, series, riskModel, riskThresholds]);
   const riskAuditRows = useMemo(() => buildRiskAuditRows(municipalityAnalysis), [municipalityAnalysis]);
-  const filteredMunicipalities = municipalityAnalysis.filter((m) => municipalityId === 'ALL' || m.id === municipalityId);
+  const territoryMunicipalities = municipalityAnalysis.filter((m) => municipalityId === 'ALL' || m.id === municipalityId);
   const counts = {
-    critical: filteredMunicipalities.filter((m) => m.level === 'critical').length,
-    watch: filteredMunicipalities.filter((m) => m.level === 'watch').length,
-    stable: filteredMunicipalities.filter((m) => m.level === 'stable').length,
-    insufficient: filteredMunicipalities.filter((m) => m.level === 'insufficient').length,
+    critical: territoryMunicipalities.filter((m) => m.level === 'critical').length,
+    watch: territoryMunicipalities.filter((m) => m.level === 'watch').length,
+    stable: territoryMunicipalities.filter((m) => m.level === 'stable').length,
+    insufficient: territoryMunicipalities.filter((m) => m.level === 'insufficient').length,
   };
+  const needle = search.trim().toLocaleLowerCase('ru-RU');
+  const filteredMunicipalities = territoryMunicipalities
+    .filter((m) => (riskLevelFilter === 'ALL' || m.level === riskLevelFilter)
+      && (!needle || (String(m.name || '') + ' ' + m.bad.map((signal) => signal.name).join(' ')).toLocaleLowerCase('ru-RU').includes(needle)))
+    .sort((a, b) => {
+      if (sortMode === 'name') return String(a.name || a.id).localeCompare(String(b.name || b.id), 'ru-RU');
+      if (sortMode === 'signals') return b.bad.length - a.bad.length || b.sharpChangeCount - a.sharpChangeCount || String(a.name || a.id).localeCompare(String(b.name || b.id), 'ru-RU');
+      if (sortMode === 'coverage') return b.availablePillars - a.availablePillars || b.usable.length - a.usable.length || String(a.name || a.id).localeCompare(String(b.name || b.id), 'ru-RU');
+      const priority = { critical: 0, watch: 1, stable: 2, insufficient: 3 };
+      return priority[a.level] - priority[b.level] || b.bad.length - a.bad.length || String(a.name || a.id).localeCompare(String(b.name || b.id), 'ru-RU');
+    });
   const pillarSummary = PILLARS.map((p) => {
     const group = series.filter((s) => s.pillar.key === p.key);
     return { ...p, count: group.length, territories: new Set(group.map((s) => s.municipalityId)).size, deteriorating: group.filter((s) => s.adverse === true).length };
@@ -126,7 +152,8 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
       return { ...pillar, territories: territories.size, rows: items.length, missing: municipalities.filter((m) => !territories.has(m.id)).map((m) => m.name) };
     });
   }, [series, municipalities]);
-  const selected = municipalityAnalysis.find((m) => m.id === (selectedMunicipality || municipalityId)) || municipalityAnalysis[0];
+  const selectedId = selectedMunicipality || (municipalityId !== 'ALL' ? municipalityId : '');
+  const selected = municipalityAnalysis.find((m) => String(m.id) === String(selectedId)) || municipalityAnalysis[0];
   const forecastOptions = useMemo(() => series.filter((s) => parseRiskPeriod(s.latest)?.frequency === 'annual' && isEligibleAnnualForecastSeries(s)), [series]);
   const forecastSeries = forecastOptions.find((s) => s.key === selectedSeriesKey) || forecastOptions.find((s) => s.municipalityId === (municipalityId === 'ALL' ? selected?.id : municipalityId)) || forecastOptions[0] || null;
   const history = forecastSeries?.points || [];
@@ -149,6 +176,35 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
   }) : [];
   const lastYear = forecastSeries?.latest?.reference_year || '—';
   const syncLabel = officialDataSyncedAt ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(officialDataSyncedAt)) : null;
+  const verifiedObservationCount = rows.filter((row) => row.verification_status === 'verified' && row.geographic_level === 'municipality').length;
+  const sourceCoveredSeries = series.filter((item) => item.latestSourcePresent).length;
+  const sourceCoveragePercent = series.length ? Math.round(sourceCoveredSeries / series.length * 100) : 0;
+  const averagePillarCoverage = municipalityAnalysis.length
+    ? Math.round(municipalityAnalysis.reduce((sum, item) => sum + item.availablePillars, 0) / (municipalityAnalysis.length * MODEL_PILLARS.length) * 100)
+    : 0;
+  const riskCoverageSummary = MODEL_PILLARS.map((pillar) => {
+    const items = series.filter((item) => pillar.series.includes(item.pillar.key));
+    return {
+      ...pillar,
+      rows: items.length,
+      territories: new Set(items.map((item) => item.municipalityId)).size,
+      deteriorating: items.filter((item) => item.adverse === true).length,
+      comparable: items.filter((item) => item.adverse !== null).length,
+    };
+  });
+  const prioritySignals = visibleSeries
+    .filter((item) => item.adverse === true)
+    .sort((a, b) => Number(b.sharpChange) - Number(a.sharpChange)
+      || Number(b.adverseStreak || 0) - Number(a.adverseStreak || 0)
+      || Math.abs(Number(b.changePercent) || 0) - Math.abs(Number(a.changePercent) || 0))
+    .slice(0, 6);
+  const clearRiskFilters = () => {
+    setSearch('');
+    setRiskLevelFilter('ALL');
+    setPillarFilter('ALL');
+    setSignalFilter('ALL');
+    setSortMode('priority');
+  };
 
   const exportCsv = (data, name) => {
     const escape = (v) => {
@@ -176,24 +232,29 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
 
   return <section className="panel full-panel unified-system">
     <header className="unified-hero">
-      <div><span className="eyebrow">АНАЛИТИЧЕСКАЯ СИСТЕМА · ХАНТЫ-МАНСИЙСКИЙ АВТОНОМНЫЙ ОКРУГ — ЮГРА</span><h1>Модель прогнозирования социально-экономической устойчивости муниципалитетов Югры в условиях санкционного давления</h1><p>Оценка устойчивости территорий, анализ каналов внешнего санкционного воздействия, раннее выявление взаимосвязанных рисков и сценарная проверка возможных траекторий развития.</p></div>
-      <span className="concept-corner">КОНЦЕПТ МОДЕЛИ · ВЕРСИЯ 1.1</span>
+      <div><span className="eyebrow">АНАЛИТИЧЕСКАЯ СИСТЕМА · ХАНТЫ-МАНСИЙСКИЙ АВТОНОМНЫЙ ОКРУГ — ЮГРА</span><h1>Мониторинг рисков муниципалитетов Югры</h1><p>Раннее выявление негативных изменений, оценка достаточности данных, разбор уязвимых направлений и проверка взаимосвязанных цепочек рисков.</p></div>
+      <span className="concept-corner">КОНЦЕПТ АНАЛИТИКИ · ВЕРСИЯ 1.2</span>
     </header>
     <div className="unified-warning"><strong>Статус концепта.</strong> Расчёты используют подтверждённые муниципальные наблюдения и производные коэффициенты. Интегральный индекс рассчитывается отдельно по методологии направления №1; этот риск-модуль его не пересчитывает. Сценарный прогноз — отдельный контур направления №2. Рисковые сигналы основаны на наблюдаемой динамике и не являются вероятностью кризиса. Для управленческого применения необходимы экспертная калибровка и историческая валидация.</div>
     <nav className="unified-tabs" role="group" aria-label="Разделы аналитики">
-      <button type="button" className={tab === 'concept' ? 'active' : ''} aria-pressed={tab === 'concept'} onClick={() => setTab('concept')}>Концепция модели</button>
-      <button type="button" className={tab === 'overview' ? 'active' : ''} aria-pressed={tab === 'overview'} onClick={() => setTab('overview')}>Панель модели</button>
-      <button type="button" className={tab === 'municipality' ? 'active' : ''} aria-pressed={tab === 'municipality'} onClick={() => setTab('municipality')}>Разбор муниципалитета</button>
-      <button type="button" className={tab === 'forecast' ? 'active' : ''} aria-pressed={tab === 'forecast'} onClick={() => setTab('forecast')}>Сценарный прогноз</button>
-      <button type="button" className={tab === 'model' ? 'active' : ''} aria-pressed={tab === 'model'} onClick={() => setTab('model')}>Профиль рисков</button>
-      <button type="button" className={tab === 'chains' ? 'active' : ''} aria-pressed={tab === 'chains'} onClick={() => setTab('chains')}>Каналы санкционного давления и риски</button>
-      <button type="button" className={tab === 'indicators' ? 'active' : ''} aria-pressed={tab === 'indicators'} onClick={() => setTab('indicators')}>Показатели и данные</button>
+      <button type="button" className={tab === 'overview' ? 'active' : ''} aria-pressed={tab === 'overview'} onClick={() => setTab('overview')}>Обзор</button>
+      <button type="button" className={tab === 'municipality' ? 'active' : ''} aria-pressed={tab === 'municipality'} onClick={() => setTab('municipality')}>Паспорта территорий</button>
+      <button type="button" className={tab === 'chains' ? 'active' : ''} aria-pressed={tab === 'chains'} onClick={() => setTab('chains')}>Цепочки рисков</button>
+      <button type="button" className={tab === 'model' ? 'active' : ''} aria-pressed={tab === 'model'} onClick={() => setTab('model')}>Профиль модели</button>
+      <button type="button" className={tab === 'indicators' ? 'active' : ''} aria-pressed={tab === 'indicators'} onClick={() => setTab('indicators')}>Реестр данных</button>
+      <button type="button" className={tab === 'forecast' ? 'active' : ''} aria-pressed={tab === 'forecast'} onClick={() => setTab('forecast')}>Сценарии</button>
+      <button type="button" className={tab === 'concept' ? 'active' : ''} aria-pressed={tab === 'concept'} onClick={() => setTab('concept')}>Методика</button>
     </nav>
-    <div className="unified-filters">
+    <div className="unified-filters risk-filter-bar">
       <label>Территория<select aria-label="Выбрать муниципалитет для анализа рисков" value={municipalityId} onChange={(e) => { setMunicipalityId(e.target.value); setSelectedMunicipality(e.target.value === 'ALL' ? '' : e.target.value); }}><option value="ALL">Все муниципалитеты</option>{municipalities.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
-      <label className="unified-search">Поиск<input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Показатель или муниципалитет" aria-label="Поиск показателя или муниципалитета"/></label>
+      <label className="unified-search">Поиск<input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Муниципалитет, показатель или код" aria-label="Поиск показателя или муниципалитета"/></label>
+      <label>Направление<select value={pillarFilter} onChange={(e) => setPillarFilter(e.target.value)} aria-label="Фильтр по направлению риск-мониторинга"><option value="ALL">Все направления</option>{PILLARS.map((pillar) => <option key={pillar.key} value={pillar.key}>{pillar.title}</option>)}</select></label>
+      <label>Тип сигнала<select value={signalFilter} onChange={(e) => setSignalFilter(e.target.value)} aria-label="Фильтр по типу сигнала"><option value="ALL">Все сигналы</option><option value="negative">Негативная динамика</option><option value="improving">Без ухудшения</option><option value="context">Требует контекста</option><option value="unavailable">Нет сопоставимой пары</option></select></label>
+      <label>Статус территории<select value={riskLevelFilter} onChange={(e) => setRiskLevelFilter(e.target.value)} aria-label="Фильтр по статусу территории"><option value="ALL">Все статусы</option><option value="critical">Повышенное внимание</option><option value="watch">Наблюдение</option><option value="stable">Без сигналов</option><option value="insufficient">Недостаточно данных</option></select></label>
+      <label>Сортировка<select value={sortMode} onChange={(e) => setSortMode(e.target.value)} aria-label="Сортировка списка муниципалитетов"><option value="priority">По приоритету</option><option value="signals">По числу ухудшений</option><option value="coverage">По покрытию данных</option><option value="name">По названию</option></select></label>
+      <button type="button" className="outline-button risk-clear-filters" onClick={clearRiskFilters}>Сбросить фильтры</button>
     </div>
-    <p className="unified-muted" role="status" aria-live="polite" aria-atomic="true">В текущей выборке показателей: {visibleSeries.length} рядов</p>
+    <p className="unified-muted risk-result-count" role="status" aria-live="polite" aria-atomic="true">В выборке: {visibleSeries.length} временных рядов · {filteredMunicipalities.length} из {territoryMunicipalities.length} муниципалитетов</p>
 
     {tab === 'concept' && <section className="unified-section unified-concept">
       <div className="unified-section-head"><div><h2>Архитектура модели прогнозирования</h2><p>Логика системы: от внешнего санкционного шока до оценки последствий для социально-экономической устойчивости муниципалитета.</p></div><span>Концептуальная схема</span></div>
