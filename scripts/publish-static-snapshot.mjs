@@ -430,7 +430,7 @@ async function main() {
   await writeFile(historyFile, JSON.stringify({
     schemaVersion: 1,
     versions: retainedHistory,
-  }, null, 2) + '\\n');
+  }, null, 2) + '\n');
 
   // Publish the old current pointer as previous before switching current.
   if (currentPointer?.manifestPath && previousManifest) {
