@@ -1610,3 +1610,6 @@ main { min-width: 0; }
   .active-filter-summary { align-items: flex-start; }
   .main-nav .nav-item { gap: 6px; padding-inline: 10px; font-size: 11px; }
 }
+
+/* Keep the searchable source library compact and independently scrollable. */
+.data-page .source-grid { max-height: 520px; overflow-y: auto; align-content: start; padding: 2px 4px 2px 0; scrollbar-width: thin; }

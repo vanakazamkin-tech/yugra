@@ -760,7 +760,7 @@ export const InvestmentDetails = () => {
       const searchText = [safeTitle, subtitle, meta, ...(keywords || [])]
         .filter(Boolean).join(' ').toLocaleLowerCase('ru-RU');
       return {
-        id: category + '-' + String(id == null ? safeTitle : id),
+        id: category + '-' + String(id == null ? safeTitle : id) + '-' + safeTitle + '-' + String(subtitle || ''),
         category,
         title: safeTitle,
         subtitle: subtitle || '',
@@ -853,9 +853,13 @@ export const InvestmentDetails = () => {
   }, [officialIndicators, externalRatings, officialDataSources, investmentSites, investmentProjects, industrialEnterprises, programExecution, fuelPrices, facilities, infrastructureObjects, landParcels, municipalities]);
 
   const filteredDataSearchResults = useMemo(() => {
-    const query = dataSearch.trim().toLocaleLowerCase('ru-RU');
+    const query = dataSearch.trim().toLocaleLowerCase('ru-RU').replace(/ё/g, 'е');
     if (query.length < 2) return [];
-    return dataSearchIndex.filter((item) => item.searchText.includes(query));
+    const terms = query.split(/\\s+/).filter(Boolean);
+    return dataSearchIndex.filter((item) => {
+      const text = item.searchText.replace(/ё/g, 'е');
+      return terms.every((term) => text.includes(term));
+    });
   }, [dataSearchIndex, dataSearch]);
 
 
@@ -1809,11 +1813,11 @@ export const InvestmentDetails = () => {
                 <span className="data-explorer-total"><strong>{dataSearchIndex.length}</strong><small>записей в поиске</small></span>
               </div>
               <div className="data-explorer-search-row">
-                <label className="search-box data-explorer-search">
+                <div className="search-box data-explorer-search">
                   <Icon name="search"/>
                   <input value={dataSearch} onChange={(event) => setDataSearch(event.target.value)} placeholder="Например: население Сургута, школа, инвестиции, земельный участок…" aria-label="Поиск по всем данным"/>
                   {dataSearch && <button type="button" className="data-search-clear" onClick={() => setDataSearch('')} aria-label="Очистить поиск"><Icon name="close"/></button>}
-                </label>
+                </div>
                 <span className="data-search-hint">Введите минимум 2 символа</span>
               </div>
               <div className="data-category-grid" aria-label="Категории данных">
@@ -1822,12 +1826,12 @@ export const InvestmentDetails = () => {
                   <small>Официальные наблюдения, временные ряды и сравнения</small>
                   <b>{officialIndicators.length + externalRatings.length} записей <Icon name="arrow"/></b>
                 </a>
-                <a className="data-category-card" href="#investment-projects-data-title">
+                <a className="data-category-card" href="#investment-sites-heading">
                   <span className="data-category-icon"><Icon name="coins"/></span><strong>Инвестиции и экономика</strong>
                   <small>Площадки, проекты, предприятия, программы и цены</small>
                   <b>{investmentSites.length + investmentProjects.length + industrialEnterprises.length + programExecution.length + fuelPrices.length} записей <Icon name="arrow"/></b>
                 </a>
-                <a className="data-category-card" href="#infrastructure-objects-data-title">
+                <a className="data-category-card" href="#municipal-facilities-heading">
                   <span className="data-category-icon"><Icon name="people"/></span><strong>Инфраструктура и земля</strong>
                   <small>Учреждения, объекты и земельные участки</small>
                   <b>{facilities.length + infrastructureObjects.length + landParcels.length} записей <Icon name="arrow"/></b>
@@ -2281,7 +2285,7 @@ export const InvestmentDetails = () => {
 
             <section className="source-panel panel" aria-labelledby="source-panel-title">
               <div className="section-heading">
-                <div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2 id="source-panel-title">Источники для расширения аналитики</h2><p>Официальные данные и инвестиционные площадки</p></div></div>
+                <div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2 id="source-panel-title">Полный каталог источников</h2><p>Паспорта наборов, форматы, географический охват и статус загрузки</p></div></div>
                 <span className="section-tag">{filteredDataSources.length} ИЗ {officialDataSources.length} ИСТОЧНИКОВ</span>
               </div>
               <div className="data-source-toolbar">
