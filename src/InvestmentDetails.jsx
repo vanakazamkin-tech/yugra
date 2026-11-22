@@ -186,6 +186,12 @@ export const InvestmentDetails = () => {
   const [indicatorSearch, setIndicatorSearch] = useState('');
   const [indicatorMunicipalityFilter, setIndicatorMunicipalityFilter] = useState('all');
   const [indicatorYearFilter, setIndicatorYearFilter] = useState('all');
+  const [indicatorStatusFilter, setIndicatorStatusFilter] = useState('all');
+  const [indicatorPage, setIndicatorPage] = useState(0);
+  const verifiedOfficialIndicators = useMemo(
+    () => officialIndicators.filter((item) => item.verification_status === 'verified'),
+    [officialIndicators]
+  );
   const [sourceSearch, setSourceSearch] = useState('');
   const [sourceStatusFilter, setSourceStatusFilter] = useState('all');
   const [dataSearch, setDataSearch] = useState('');
@@ -358,14 +364,14 @@ export const InvestmentDetails = () => {
   const [selectedSectorYear, setSelectedSectorYear] = useState('2026');
   const [selectedSectorPeriod, setSelectedSectorPeriod] = useState('Q1');
   const sectorEmploymentMunicipalityOptions = useMemo(() => {
-    const availableIds = new Set(officialIndicators
+    const availableIds = new Set(verifiedOfficialIndicators
       .filter((item) => String(item.indicator_code || '').startsWith('employees_'))
       .map((item) => item.municipality_id));
     return municipalities
       .filter((municipality) => availableIds.has(municipality.id))
       .slice()
       .sort((a,b) => a.name.localeCompare(b.name,'ru-RU'));
-  }, [officialIndicators, municipalities]);
+  }, [verifiedOfficialIndicators, municipalities]);
 
   const [selectedSettlementPopulationId, setSelectedSettlementPopulationId] = useState('surgut');
   const [selectedOfficialComparisonCode, setSelectedOfficialComparisonCode] = useState('own_production_shipments_q1');
@@ -510,22 +516,24 @@ export const InvestmentDetails = () => {
   }, [municipalities]);
 
   const officialDataSummary = useMemo(() => {
-    const municipalIds = new Set(officialIndicators
+    const municipalIds = new Set(verifiedOfficialIndicators
       .filter((item) => (item.geographic_level || 'municipality') === 'municipality')
       .map((item) => item.municipality_id));
-    const settlements = new Set(officialIndicators
+    const settlements = new Set(verifiedOfficialIndicators
       .filter((item) => item.geographic_level === 'settlement')
       .map((item) => item.geographic_name || item.municipality_id));
-    const yearValues = officialIndicators.map((item) => Number(item.reference_year)).filter(Number.isFinite);
+    const yearValues = verifiedOfficialIndicators.map((item) => Number(item.reference_year)).filter(Number.isFinite);
     return {
       recordCount: officialIndicators.length,
+      verifiedRecordCount: verifiedOfficialIndicators.length,
+      reviewRecordCount: officialIndicators.filter((item) => item.verification_status !== 'verified').length,
       municipalityCount: municipalIds.size,
       settlementCount: settlements.size,
       latestYear: yearValues.length ? Math.max(...yearValues) : null,
       sourceCount: officialDataSources.length,
       investmentSiteCount: investmentSites.length,
     };
-  }, [officialIndicators, officialDataSources, investmentSites]);
+  }, [officialIndicators, verifiedOfficialIndicators, officialDataSources, investmentSites]);
 
   const populationByMunicipality = useMemo(() => {
     const chosen = new Map();
@@ -696,7 +704,8 @@ export const InvestmentDetails = () => {
     const sourceId = 'rosstat_hmao_municipal_population_2022_2025';
     const rowsByMunicipality = new Map();
     officialIndicators
-      .filter((item) => item.source_id === sourceId
+      .filter((item) => item.verification_status === 'verified'
+        && item.source_id === sourceId
         && Number(item.reference_year) === 2025
         && ['population_municipality', 'population_urban_municipality', 'population_rural_municipality'].includes(item.indicator_code)
         && (item.geographic_level || 'municipality') === 'municipality')
@@ -731,17 +740,26 @@ export const InvestmentDetails = () => {
   const filteredOfficialIndicators = useMemo(() => {
     const query = indicatorSearch.trim().toLocaleLowerCase('ru-RU');
     return [...officialIndicators]
+      .filter((item) => indicatorStatusFilter === 'all' || item.verification_status === indicatorStatusFilter)
       .filter((item) => indicatorMunicipalityFilter === 'all' || item.municipality_id === indicatorMunicipalityFilter)
       .filter((item) => indicatorYearFilter === 'all' || String(item.reference_year) === indicatorYearFilter)
       .filter((item) => {
-        const text = [item.geographic_name, item.indicator_name, item.municipality_id, item.unit, item.notes]
+        const text = [item.geographic_name, item.indicator_name, item.municipality_id, item.unit, item.notes, item.source_id, item.indicator_code]
           .filter(Boolean).join(' ').toLocaleLowerCase('ru-RU');
         return !query || text.includes(query);
       })
       .sort((a, b) => Number(b.reference_year) - Number(a.reference_year)
         || String(b.reference_period || '').localeCompare(String(a.reference_period || ''))
         || String(a.geographic_name || '').localeCompare(String(b.geographic_name || ''), 'ru-RU'));
-  }, [officialIndicators, indicatorSearch, indicatorMunicipalityFilter, indicatorYearFilter]);
+  }, [officialIndicators, indicatorStatusFilter, indicatorSearch, indicatorMunicipalityFilter, indicatorYearFilter]);
+  useEffect(() => { setIndicatorPage(0); }, [indicatorStatusFilter, indicatorSearch, indicatorMunicipalityFilter, indicatorYearFilter]);
+  const INDICATOR_PAGE_SIZE = 100;
+  const indicatorPageCount = Math.max(1, Math.ceil(filteredOfficialIndicators.length / INDICATOR_PAGE_SIZE));
+  const visibleOfficialIndicators = useMemo(() => {
+    const safePage = Math.min(indicatorPage, indicatorPageCount - 1);
+    const start = safePage * INDICATOR_PAGE_SIZE;
+    return filteredOfficialIndicators.slice(start, start + INDICATOR_PAGE_SIZE);
+  }, [filteredOfficialIndicators, indicatorPage, indicatorPageCount]);
 
   const filteredDataSources = useMemo(() => {
     const query = sourceSearch.trim().toLocaleLowerCase('ru-RU');
@@ -1070,7 +1088,7 @@ export const InvestmentDetails = () => {
   }, [activeModalItem, modalOfficialIndicators, modalPopulationTrend, modalInvestmentSnapshots, modalBudgetSnapshots, modalExternalRatings, investmentSites, investmentProjects, industrialEnterprises, infrastructureObjects, landParcels, facilities, programExecution]);
 
   const surgutPopulationTrend = useMemo(() => {
-    const rows = officialIndicators
+    const rows = verifiedOfficialIndicators
       .filter((item) => item.indicator_code === 'population_municipality_history' && item.municipality_id === 'surgut')
       .slice()
       .sort((a,b) => Number(a.reference_year)-Number(b.reference_year));
@@ -1083,11 +1101,11 @@ export const InvestmentDetails = () => {
       y: 174 - ((Number(item.value) - min) / Math.max(1, max - min)) * 126,
     }));
     return { rows: points, min, max, latest: points[points.length - 1] || null, first: points[0] || null };
-  }, [officialIndicators]);
+  }, [verifiedOfficialIndicators]);
 
   const settlementPopulationOptions = useMemo(() => {
     const seen = new Map();
-    officialIndicators.filter((item) => item.indicator_code === 'population_settlement' && item.geographic_level === 'settlement' && numericValue(item.value) != null)
+    verifiedOfficialIndicators.filter((item) => item.indicator_code === 'population_settlement' && item.geographic_level === 'settlement' && numericValue(item.value) != null)
       .forEach((item) => {
         if (!seen.has(item.municipality_id)) seen.set(item.municipality_id, {
           id: item.municipality_id,
@@ -1095,13 +1113,13 @@ export const InvestmentDetails = () => {
         });
       });
     return [...seen.values()].sort((a,b) => a.name.localeCompare(b.name,'ru-RU'));
-  }, [officialIndicators, municipalities]);
+  }, [verifiedOfficialIndicators, municipalities]);
 
   const effectiveSettlementPopulationId = settlementPopulationOptions.some((item) => item.id === selectedSettlementPopulationId)
     ? selectedSettlementPopulationId : settlementPopulationOptions[0]?.id || '';
 
   const settlementPopulationTrend = useMemo(() => {
-    const rows = officialIndicators.filter((item) => item.indicator_code === 'population_settlement'
+    const rows = verifiedOfficialIndicators.filter((item) => item.indicator_code === 'population_settlement'
       && item.geographic_level === 'settlement'
       && item.municipality_id === effectiveSettlementPopulationId
       && numericValue(item.value) != null).slice()
@@ -1116,7 +1134,7 @@ export const InvestmentDetails = () => {
     }));
     return { name: points[0]?.geographic_name || settlementPopulationOptions.find((item) => item.id === effectiveSettlementPopulationId)?.name || 'Город',
       rows: points, first: points[0] || null, latest: points[points.length - 1] || null };
-  }, [officialIndicators, effectiveSettlementPopulationId, settlementPopulationOptions]);
+  }, [verifiedOfficialIndicators, effectiveSettlementPopulationId, settlementPopulationOptions]);
 
   const sectorEmploymentProfile = useMemo(() => {
     const year = Number(selectedSectorYear);
@@ -1132,7 +1150,7 @@ export const InvestmentDetails = () => {
       Q3: 'average_employees_q3',
       annual: 'average_employees_annual',
     }[selectedSectorPeriod];
-    const totalRow = officialIndicators.find((item) =>
+    const totalRow = verifiedOfficialIndicators.find((item) =>
       item.municipality_id === selectedSectorMunicipalityId
       && item.indicator_code === totalCode
       && Number(item.reference_year) === year
@@ -1140,7 +1158,7 @@ export const InvestmentDetails = () => {
       && numericValue(item.value) != null
     );
     const rows = OFFICIAL_EMPLOYMENT_SECTORS.map((sector) => {
-      const item = officialIndicators.find((candidate) =>
+      const item = verifiedOfficialIndicators.find((candidate) =>
         candidate.municipality_id === selectedSectorMunicipalityId
         && candidate.indicator_code === sector.code
         && Number(candidate.reference_year) === year
@@ -1166,7 +1184,7 @@ export const InvestmentDetails = () => {
       coveragePercent: total && total > 0 ? listedTotal / total * 100 : null,
       periodLabel: {Q1:'I квартал (январь–март)',H1:'Полугодие (январь–июнь)',Q3:'9 месяцев (январь–сентябрь)',annual:'Полный год (январь–декабрь)'}[selectedSectorPeriod],
     };
-  }, [officialIndicators, selectedSectorYear, selectedSectorPeriod, selectedSectorMunicipalityId, municipalities]);
+  }, [verifiedOfficialIndicators, selectedSectorYear, selectedSectorPeriod, selectedSectorMunicipalityId, municipalities]);
 
   const sectorEmploymentComparison = useMemo(() => {
     const year = Number(selectedSectorYear);
@@ -1177,7 +1195,7 @@ export const InvestmentDetails = () => {
       Q3: 'average_employees_q3',
       annual: 'average_employees_annual',
     }[selectedSectorPeriod];
-    const sectorRows = officialIndicators.filter((item) =>
+    const sectorRows = verifiedOfficialIndicators.filter((item) =>
       String(item.indicator_code || '').startsWith('employees_')
       && Number(item.reference_year) === year
       && String(item.reference_period || 'annual') === periodKey
@@ -1186,7 +1204,7 @@ export const InvestmentDetails = () => {
     const ids = [...new Set(sectorRows.map((item)=>item.municipality_id))];
     const territories = ids.map((id) => {
       const municipality = municipalities.find((item)=>item.id===id);
-      const totalRow = officialIndicators.find((item)=>
+      const totalRow = verifiedOfficialIndicators.find((item)=>
         item.municipality_id===id
         && item.indicator_code===totalCode
         && Number(item.reference_year)===year
@@ -1224,11 +1242,11 @@ export const InvestmentDetails = () => {
       rows,
       maxShare,
     };
-  }, [officialIndicators, selectedSectorYear, selectedSectorPeriod, municipalities]);
+  }, [verifiedOfficialIndicators, selectedSectorYear, selectedSectorPeriod, municipalities]);
 
   const surgutComparableTrend = useMemo(() => {
     const config = OFFICIAL_TREND_SERIES.find((series) => series.code === selectedTrendSeries) || OFFICIAL_TREND_SERIES[0];
-    const rows = officialIndicators
+    const rows = verifiedOfficialIndicators
       .filter((item) => item.municipality_id === 'surgut' && item.indicator_code === config.code && numericValue(item.value) != null)
       .slice()
       .sort((a,b) => Number(a.reference_year)-Number(b.reference_year));
@@ -1243,7 +1261,7 @@ export const InvestmentDetails = () => {
       changePercent: index > 0 && values[index - 1] !== 0 ? (values[index] / values[index - 1] - 1) * 100 : null,
     }));
     return { ...config, rows: points, first: points[0] || null, latest: points[points.length - 1] || null };
-  }, [officialIndicators, selectedTrendSeries]);
+  }, [verifiedOfficialIndicators, selectedTrendSeries]);
 
   const officialComparisonSeriesOptions = useMemo(() => OFFICIAL_COMPARISON_SERIES.filter((series) => {
     const geographyLevel = series.geographicLevel || 'municipality';
@@ -2129,15 +2147,17 @@ export const InvestmentDetails = () => {
                 <span className={`official-status-chip official-status--${officialDataStatus}`}>{officialDataStatus === 'connected' ? 'БАЗА ПОДКЛЮЧЕНА' : officialDataStatus === 'cached' ? 'ЛОКАЛЬНЫЙ КЭШ' : officialDataStatus === 'loading' ? 'ЗАГРУЗКА' : officialDataStatus === 'error' ? 'ОШИБКА ЗАГРУЗКИ' : 'ДЕМО-РЕЖИМ'}</span>
               </div>
               <div className="official-data-kpis">
-                <article><span>Проверенные наблюдения</span><strong>{officialDataSummary.recordCount}</strong><small>значения с зафиксированными источниками</small></article>
+                <article><span>Загружено наблюдений</span><strong>{officialDataSummary.recordCount}</strong><small>полный массив из двух баз</small></article>
+                <article><span>Подтверждено</span><strong>{officialDataSummary.verifiedRecordCount}</strong><small>допускается к официальным расчётам</small></article>
+                <article><span>Требует проверки</span><strong>{officialDataSummary.reviewRecordCount}</strong><small>доступно для просмотра, статус сохранён</small></article>
                 <article><span>Муниципалитеты с муниципальными данными</span><strong>{officialDataSummary.municipalityCount} <i>/ {municipalities.length}</i></strong><small>покрытие именно уровня муниципального образования</small></article>
                 <article><span>Города и населённые пункты</span><strong>{officialDataSummary.settlementCount}</strong><small>отдельно от населения всего муниципалитета</small></article>
                 <article><span>Последний год наблюдения</span><strong>{officialDataSummary.latestYear ?? '—'}</strong><small>по подтверждённым значениям</small></article>
                 <article><span>Инвестплощадки в базе</span><strong>{officialDataSummary.investmentSiteCount}</strong><small>частичный импорт каталога Мегиона</small></article>
               </div>
-              {officialIndicators.length > 0 ? <div className="verified-preview">
+              {verifiedOfficialIndicators.length > 0 ? <div className="verified-preview">
                 <div className="verified-preview-heading"><strong>Последние проверенные значения</strong><span>Источник и год сохраняются для каждой записи</span></div>
-                <div className="verified-preview-list">{officialIndicators.slice(0, 6).map((item) => {
+                <div className="verified-preview-list">{verifiedOfficialIndicators.slice(0, 6).map((item) => {
                   const municipality = municipalities.find((m) => m.id === item.municipality_id);
                   const geographyLabel = item.geographic_level === 'settlement' ? 'населённый пункт' : item.geographic_level === 'region' ? 'регион' : 'муниципалитет';
                   return <article key={item.id}><span>{item.geographic_name || municipality?.name || item.municipality_id} · {geographyLabel}</span><strong>{item.indicator_name}</strong><b>{formatNumber(item.value, 1)} <i>{item.unit}</i></b><small>{formatReferencePeriod(item)} · <a href={item.source_url} target="_blank" rel="noreferrer">первоисточник ↗</a></small></article>;
@@ -2148,20 +2168,21 @@ export const InvestmentDetails = () => {
 
             <section className="official-indicators-table-panel panel" aria-labelledby="all-official-indicators-heading">
               <div className="section-heading">
-                <div className="heading-label"><span className="heading-icon"><Icon name="table"/></span><div><h2 id="all-official-indicators-heading">Все загруженные официальные показатели</h2><p>По всем источникам в базе, с отдельными периодами, единицами и первоисточниками</p></div></div>
+                <div className="heading-label"><span className="heading-icon"><Icon name="table"/></span><div><h2 id="all-official-indicators-heading">Полный массив муниципальных показателей</h2><p>Все загруженные наблюдения из обеих баз; исходный статус каждой записи сохранён</p></div></div>
                 <span className="section-tag">{filteredOfficialIndicators.length} ИЗ {officialIndicators.length}</span>
               </div>
               <div className="official-indicator-toolbar">
                 <label className="search-box"><Icon name="search"/><input value={indicatorSearch} onChange={(event) => setIndicatorSearch(event.target.value)} placeholder="Поиск показателя, города или единицы…" aria-label="Поиск официальных показателей"/></label>
                 <label className="select-field"><span>Муниципалитет</span><select value={indicatorMunicipalityFilter} onChange={(event) => setIndicatorMunicipalityFilter(event.target.value)}><option value="all">Все территории</option>{municipalities.slice().sort((a,b) => a.name.localeCompare(b.name,'ru-RU')).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
                 <label className="select-field"><span>Год</span><select value={indicatorYearFilter} onChange={(event) => setIndicatorYearFilter(event.target.value)}><option value="all">Все годы</option>{[...new Set(officialIndicators.map((item) => String(item.reference_year)).filter((year) => year && year !== 'undefined'))].sort((a,b) => Number(b)-Number(a)).map((year) => <option key={year} value={year}>{year}</option>)}</select></label>
+                <label className="select-field"><span>Статус</span><select value={indicatorStatusFilter} onChange={(event) => setIndicatorStatusFilter(event.target.value)}><option value="all">Все статусы</option><option value="verified">Подтверждено</option><option value="needs_review">Требует проверки</option></select></label>
                 <button type="button" className="outline-button" onClick={downloadFilteredOfficialIndicatorsCsv} disabled={filteredOfficialIndicators.length === 0}><Icon name="download"/>CSV · {filteredOfficialIndicators.length}</button>
                 <button type="button" className="outline-button" onClick={() => {setIndicatorSearch('');setIndicatorMunicipalityFilter('all');setIndicatorYearFilter('all');}}><Icon name="refresh"/>Сбросить</button>
               </div>
               <div className="official-indicator-table-wrap">
                 <table className="fuel-prices-table official-indicator-table">
-                  <thead><tr><th scope="col">Территория / уровень</th><th scope="col">Показатель</th><th scope="col">Значение</th><th scope="col">Период наблюдения</th><th scope="col">Примечание</th><th scope="col">Источник</th></tr></thead>
-                  <tbody>{filteredOfficialIndicators.map((item) => {
+                  <thead><tr><th scope="col">Территория / уровень</th><th scope="col">Показатель</th><th scope="col">Значение</th><th scope="col">Период наблюдения</th><th scope="col">Статус</th><th scope="col">Примечание</th><th scope="col">Источник</th></tr></thead>
+                  <tbody>{visibleOfficialIndicators.map((item) => {
                     const municipality = municipalities.find((m) => m.id === item.municipality_id);
                     const geography = item.geographic_level === 'settlement' ? 'Населённый пункт' : item.geographic_level === 'region' ? 'Регион' : 'Муниципальное образование';
                     return <tr key={item.id}>
@@ -2169,14 +2190,21 @@ export const InvestmentDetails = () => {
                       <td><strong>{item.indicator_name}</strong></td>
                       <td className="official-indicator-value">{formatNumber(item.value, 2)}<small>{item.unit}</small></td>
                       <td>{formatReferencePeriod(item)}</td>
+                      <td>{item.verification_status === 'verified' ? 'Подтверждено' : 'Требует проверки'}</td>
                       <td>{item.notes || '—'}</td>
                       <td><a href={item.source_url} target="_blank" rel="noreferrer">Открыть ↗</a></td>
                     </tr>;
                   })}</tbody>
                 </table>
-                {filteredOfficialIndicators.length === 0 && <div className="empty-state" role="status"><span>Показатели не найдены</span><p>Попробуйте изменить поисковый запрос или территорию.</p><button type="button" className="outline-button" onClick={() => {setIndicatorSearch('');setIndicatorMunicipalityFilter('all');setIndicatorYearFilter('all');}}>Сбросить фильтры</button></div>}
+                {filteredOfficialIndicators.length === 0 && <div className="empty-state" role="status"><span>Показатели не найдены</span><p>Попробуйте изменить поисковый запрос, территорию, год или статус.</p><button type="button" className="outline-button" onClick={() => {setIndicatorSearch('');setIndicatorMunicipalityFilter('all');setIndicatorYearFilter('all');setIndicatorStatusFilter('all');}}>Сбросить фильтры</button></div>}
+                 {filteredOfficialIndicators.length > 0 && <div className="official-indicator-pagination">
+                   <span>Показано {Math.min(indicatorPage * INDICATOR_PAGE_SIZE + 1, filteredOfficialIndicators.length)}–{Math.min((indicatorPage + 1) * INDICATOR_PAGE_SIZE, filteredOfficialIndicators.length)} из {filteredOfficialIndicators.length}</span>
+                   <button type="button" className="outline-button" disabled={indicatorPage <= 0} onClick={() => setIndicatorPage((page) => Math.max(0, page - 1))}>Назад</button>
+                   <span>Страница {Math.min(indicatorPage + 1, indicatorPageCount)} из {indicatorPageCount}</span>
+                   <button type="button" className="outline-button" disabled={indicatorPage >= indicatorPageCount - 1} onClick={() => setIndicatorPage((page) => Math.min(indicatorPageCount - 1, page + 1))}>Далее</button>
+                 </div>}
               </div>
-              <p className="source-panel-note">В таблице отображаются только записи с проверенным статусом. Годовые, квартальные и моментные показатели не объединяются в один период; примечания помогают отличать показатель муниципального образования от данных по населённому пункту.</p>
+              <p className="source-panel-note">Показаны все загруженные записи. Статус «Требует проверки» не означает подтверждение достоверности: такие значения доступны для ознакомления, но исключены из официальных рейтингов, прогнозов и расчётов. Годовые, квартальные и моментные показатели сохраняются раздельно.</p>
             </section>
 
             {investmentSites.length > 0 && <section className="investment-sites-panel panel" aria-labelledby="investment-sites-heading">

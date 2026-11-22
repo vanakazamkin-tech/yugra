@@ -12,6 +12,8 @@ const PREVIOUS = `${ROOT}/previous.json`;
 const LOCK = `${ROOT}/refresh-lock.json`;
 const HEALTH = `${ROOT}/health/latest.json`;
 const FULL_SYNC_MS = 6 * 60 * 60 * 1000;
+// Changing the snapshot data mode forces one complete rebuild of historical rows.
+const SNAPSHOT_DATA_MODE = 'all-indicators-status-preserved-v1';
 const LEASE_MS = 8 * 60 * 1000;
 const CHUNK_ROWS = 4000;
 const BASE_RETRY_BACKOFF_MS = 5 * 60 * 1000;
@@ -225,7 +227,9 @@ export default async function handler(req, res) {
         const current = await readJson(CURRENT);
         const oldManifest = current?.manifestPath ? await readJson(current.manifestPath) : null;
         const lastFull = Date.parse(oldManifest?.lastFullReconciliationAt || '') || 0;
-        const full = !oldManifest || Date.now() - lastFull >= FULL_SYNC_MS;
+        const full = !oldManifest
+          || oldManifest.dataAccessMode !== SNAPSHOT_DATA_MODE
+          || Date.now() - lastFull >= FULL_SYNC_MS;
         const supabase = clients();
 
         const municipalities = full
@@ -289,6 +293,7 @@ export default async function handler(req, res) {
             lastSuccessfulUpdateAt: syncedAt,
             lastFullReconciliationAt: full ? syncedAt : oldManifest.lastFullReconciliationAt,
             refreshType: full ? 'full' : 'incremental',
+            dataAccessMode: SNAPSHOT_DATA_MODE,
             sourceStatus,
             recordCounts: Object.fromEntries(KEYS.map((key) => [key, prepared.datasets[key].rows])),
             compressedBytes: prepared.compressedBytes,

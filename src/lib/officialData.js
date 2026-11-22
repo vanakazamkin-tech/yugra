@@ -807,11 +807,11 @@ export async function fetchOfficialData(coreClient, statisticsClient = null, opt
       , 'каталог источников DB1'),
     readRows(statisticsClient, () => statisticsClient.from('data_sources').select('*')
       , 'каталог источников DB2'),
+    // Expose all observations; preserve the source verification_status in each row.
+    // Analytical consumers still apply verified-only eligibility gates.
     readRows(coreClient, () => coreClient.from('municipality_indicators').select('*')
-      .eq('verification_status', 'verified')
       , 'показатели DB1'),
     readRows(statisticsClient, () => statisticsClient.from('municipality_indicators').select('*')
-      .eq('verification_status', 'verified')
       , 'показатели DB2'),
     readRows(coreClient, () => coreClient.from('municipal_program_execution').select('*')
       .eq('verification_status', 'verified')
