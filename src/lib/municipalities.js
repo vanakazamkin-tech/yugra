@@ -15,23 +15,46 @@ export function mapMunicipalityRow(row) {
   }
 }
 
-/**
- * Загружает справочник из DB2 и дополняет его локальными демонстрационными полями.
- * Пустые поля БД не затирают резервный концептуальный набор; подтверждённые
- * статистические показатели хранятся отдельно в municipality_indicators.
- */
-export async function fetchMunicipalities(client, fallbackMunicipalities = []) {
-  const { data, error } = await client
-    .from('municipalities')
-    .select('id,name,group_2024,rank_2024,score,investments_volume_billion,investments_growth_percent,sme_count,assessment_score')
-    .order('rank_2024', { ascending: true, nullsFirst: false })
-    .order('name', { ascending: true })
+const MUNICIPALITY_COLUMNS = 'id,name,group_2024,rank_2024,score,investments_volume_billion,investments_growth_percent,sme_count,assessment_score'
 
-  if (error) throw error
-  if (!Array.isArray(data)) throw new Error('Supabase вернул данные в неожиданном формате')
+async function readMunicipalities(client) {
+  if (!client) return { rows: [], error: null }
+  try {
+    const { data, error } = await client
+      .from('municipalities')
+      .select(MUNICIPALITY_COLUMNS)
+      .order('rank_2024', { ascending: true, nullsFirst: false })
+      .order('name', { ascending: true })
+    if (error) throw error
+    return { rows: Array.isArray(data) ? data : [], error: null }
+  } catch (error) {
+    return { rows: [], error }
+  }
+}
+
+/** Объединяет справочники обеих БД по устойчивому municipality.id. */
+export async function fetchMunicipalities(coreClient, statisticsClient, fallbackMunicipalities = []) {
+  const [coreResult, statisticsResult] = await Promise.all([
+    readMunicipalities(coreClient),
+    readMunicipalities(statisticsClient),
+  ])
+  if (coreResult.error && statisticsResult.error) {
+    throw new Error(`Не удалось прочитать справочник из обеих баз: ${coreResult.error.message}; ${statisticsResult.error.message}`)
+  }
+
+  const rowsById = new Map()
+  for (const row of [...coreResult.rows, ...statisticsResult.rows]) {
+    const key = String(row.id)
+    const previous = rowsById.get(key) || {}
+    const merged = { ...previous }
+    for (const [column, value] of Object.entries(row)) {
+      if (value !== null && value !== undefined && value !== '') merged[column] = value
+    }
+    rowsById.set(key, merged)
+  }
 
   const fallbackById = new Map(fallbackMunicipalities.map((item) => [String(item.id), item]))
-  const merged = data.map((row) => {
+  const merged = [...rowsById.values()].map((row) => {
     const mapped = mapMunicipalityRow(row)
     const fallback = fallbackById.get(String(row.id)) || {}
     return {

@@ -164,7 +164,7 @@ export const InvestmentDetails = () => {
   // Локальный JSON остаётся резервом на случай отсутствия ключа/сети/доступа к таблице.
   const [municipalities, setMunicipalities] = useState(data.municipalities);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
-  const [syncStatus, setSyncStatus] = useState(isDataSupabaseConfigured ? 'loading' : 'unconfigured');
+  const [syncStatus, setSyncStatus] = useState((isCoreSupabaseConfigured || isDataSupabaseConfigured) ? 'loading' : 'unconfigured');
   const [syncMessage, setSyncMessage] = useState('');
   const [syncAttempt, setSyncAttempt] = useState(0);
   const [officialDataSources, setOfficialDataSources] = useState(FALLBACK_DATA_SOURCES);
@@ -185,14 +185,14 @@ export const InvestmentDetails = () => {
   const [indicatorYearFilter, setIndicatorYearFilter] = useState('all');
   const [sourceSearch, setSourceSearch] = useState('');
   const [sourceStatusFilter, setSourceStatusFilter] = useState('all');
-  const [officialDataStatus, setOfficialDataStatus] = useState(isDataSupabaseConfigured ? 'loading' : 'offline');
+  const [officialDataStatus, setOfficialDataStatus] = useState((isCoreSupabaseConfigured || isDataSupabaseConfigured) ? 'loading' : 'offline');
   const [officialDataError, setOfficialDataError] = useState('');
   const [officialDataSyncedAt, setOfficialDataSyncedAt] = useState(null);
 
   useEffect(() => {
-    if (!isDataSupabaseConfigured || !dataSupabase) {
+    if ((!isCoreSupabaseConfigured || !coreSupabase) && (!isDataSupabaseConfigured || !dataSupabase)) {
       setSyncStatus('unconfigured');
-      setSyncMessage('Добавьте VITE_SUPABASE_DATA_ANON_KEY для второй базы в .env.local и в настройках сайта.');
+      setSyncMessage('Настройте публичные ключи обеих баз Supabase в .env.local и в настройках сайта.');
       return undefined;
     }
 
@@ -205,7 +205,7 @@ export const InvestmentDetails = () => {
       inFlight = true;
       if (!cancelled && !hasSyncedSuccessfully) setSyncStatus('loading');
       try {
-        const rows = await fetchMunicipalities(dataSupabase, data.municipalities);
+        const rows = await fetchMunicipalities(coreSupabase, dataSupabase, data.municipalities);
         if (cancelled) return;
         setMunicipalities(rows);
         setLastSyncedAt(new Date());
@@ -239,7 +239,7 @@ export const InvestmentDetails = () => {
   }, [syncAttempt]);
 
   useEffect(() => {
-    if (!isDataSupabaseConfigured || !dataSupabase) {
+    if ((!isCoreSupabaseConfigured || !coreSupabase) && (!isDataSupabaseConfigured || !dataSupabase)) {
       setOfficialDataStatus('offline');
       return undefined;
     }
@@ -251,7 +251,7 @@ export const InvestmentDetails = () => {
       officialRequestInFlight = true;
       setOfficialDataStatus('loading');
       try {
-        const result = await fetchOfficialData(dataSupabase, coreSupabase);
+        const result = await fetchOfficialData(coreSupabase, dataSupabase);
         if (cancelled) return;
         setOfficialDataSources(result.sources);
         setOfficialIndicators(result.indicators);

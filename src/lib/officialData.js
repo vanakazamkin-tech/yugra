@@ -613,65 +613,126 @@ async function fetchAllRows(buildQuery, pageSize = 500) {
   }
 }
 
-export async function fetchOfficialData(statisticsClient, passportClient = null) {
+function uniqueByKey(rows, getKey) {
+  const byKey = new Map()
+  for (const row of rows) {
+    const key = getKey(row)
+    if (!key || key.split('|').some((part) => part === '')) continue
+    const previous = byKey.get(key)
+    const previousDate = Date.parse(previous?.updated_at || previous?.retrieved_at || previous?.created_at || '') || 0
+    const currentDate = Date.parse(row?.updated_at || row?.retrieved_at || row?.created_at || '') || 0
+    if (!previous || currentDate >= previousDate) byKey.set(key, row)
+  }
+  return [...byKey.values()]
+}
+
+function mergeSourceCatalog(coreSources, statisticsSources) {
+  const byId = new Map()
+  for (const source of [...coreSources, ...statisticsSources]) {
+    const previous = byId.get(String(source.id)) || {}
+    const merged = { ...previous }
+    for (const [key, value] of Object.entries(source)) {
+      if (value !== null && value !== undefined && value !== '') merged[key] = value
+    }
+    byId.set(String(source.id), merged)
+  }
+  return [...byId.values()]
+}
+
+function mergeIndicatorRows(coreRows, statisticsRows) {
+  return uniqueByKey([...coreRows, ...statisticsRows], (row) => [
+    row.municipality_id, row.indicator_code, row.reference_year,
+    row.reference_period || 'annual', row.geographic_level || 'municipality',
+    row.geographic_name || row.municipality_id, row.unit, row.source_id, row.source_url,
+  ].map((value) => String(value ?? '')).join('|'))
+}
+
+function mergeProgramRows(coreRows, statisticsRows) {
+  return uniqueByKey([...coreRows, ...statisticsRows], (row) => [
+    row.municipality_id, row.source_id, row.program_code, row.report_date,
+  ].map((value) => String(value ?? '')).join('|'))
+}
+
+async function safeRows(client, queryFactory, label) {
+  if (!client) return []
+  try {
+    return await fetchAllRows(queryFactory)
+  } catch (error) {
+    console.warn(`Не удалось получить ${label}:`, error?.message || error)
+    return []
+  }
+}
+
+/**
+ * Объединяет исходную DB1 и DB2-продолжение:
+ * статистика, источники и программы читаются из обеих баз;
+ * дополнительные паспорта, объекты и внешние рейтинги — из DB1.
+ */
+export async function fetchOfficialData(coreClient, statisticsClient = null) {
   const empty = {
     sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [],
     investmentProjects: [], industrialEnterprises: [], infrastructureObjects: [],
     landParcels: [], programExecution: [], fuelPrices: [], facilities: [], externalRatings: [],
   }
-  if (!statisticsClient) return empty
+  if (!coreClient && !statisticsClient) return empty
 
-  // DB2 — основной каталог, подтверждённая статистика и муниципальные программы.
-  const [sources, indicators, programExecution] = await Promise.all([
-    fetchAllRows(() => statisticsClient.from('data_sources')
-      .select('id,name,category,url,description,format,coverage,update_frequency,import_status,last_checked_at,notes')
-      .order('category', { ascending: true }).order('name', { ascending: true }).order('id', { ascending: true })),
-    fetchAllRows(() => statisticsClient.from('municipality_indicators')
-      .select('id,municipality_id,indicator_code,indicator_name,reference_year,reference_period,value,unit,source_id,source_url,source_published_at,retrieved_at,verification_status,notes,geographic_level,geographic_name')
+  const [
+    coreSources, statisticsSources,
+    coreIndicators, statisticsIndicators,
+    corePrograms, statisticsPrograms,
+  ] = await Promise.all([
+    safeRows(coreClient, () => coreClient.from('data_sources').select('*')
+      .order('category', { ascending: true }).order('name', { ascending: true }).order('id', { ascending: true }), 'каталог источников DB1'),
+    safeRows(statisticsClient, () => statisticsClient.from('data_sources').select('*')
+      .order('category', { ascending: true }).order('name', { ascending: true }).order('id', { ascending: true }), 'каталог источников DB2'),
+    safeRows(coreClient, () => coreClient.from('municipality_indicators').select('*')
       .eq('verification_status', 'verified')
-      .order('reference_year', { ascending: false }).order('id', { ascending: true })),
-    fetchAllRows(() => statisticsClient.from('municipal_program_execution')
-      .select('id,municipality_id,source_id,program_code,program_name,report_date,approved_budget_thousand,revised_budget_thousand,executed_budget_thousand,execution_percent,source_url,source_published_at,retrieved_at,verification_status,notes,implementation_start_date,implementation_end_date,objectives,funding_directions,planned_indicators,actual_results,program_status')
+      .order('reference_year', { ascending: false }).order('id', { ascending: true }), 'показатели DB1'),
+    safeRows(statisticsClient, () => statisticsClient.from('municipality_indicators').select('*')
       .eq('verification_status', 'verified')
-      .order('report_date', { ascending: false }).order('id', { ascending: true })),
+      .order('reference_year', { ascending: false }).order('id', { ascending: true }), 'показатели DB2'),
+    safeRows(coreClient, () => coreClient.from('municipal_program_execution').select('*')
+      .eq('verification_status', 'verified')
+      .order('report_date', { ascending: false }).order('id', { ascending: true }), 'муниципальные программы DB1'),
+    safeRows(statisticsClient, () => statisticsClient.from('municipal_program_execution').select('*')
+      .eq('verification_status', 'verified')
+      .order('report_date', { ascending: false }).order('id', { ascending: true }), 'муниципальные программы DB2'),
   ])
 
-  // DB1 — дополнительные паспорта и объектные реестры. Временная недоступность
-  // DB1 не должна скрывать основной статистический слой, уже загруженный из DB2.
-  const optionalRows = (query) => passportClient
-    ? fetchAllRows(query).catch((error) => {
-        console.warn('Не удалось получить дополнительный набор из DB1:', error?.message || error)
-        return []
-      })
-    : Promise.resolve([])
-
-  const [investmentSites, investmentProjects, industrialEnterprises, infrastructureObjects,
-    landParcels, fuelPrices, facilities, externalRatingResults, externalRatingCatalog] = await Promise.all([
-    optionalRows(() => passportClient.from('investment_sites').select('*')
-      .eq('verification_status', 'verified').order('name', { ascending: true }).order('id', { ascending: true })),
-    optionalRows(() => passportClient.from('municipal_investment_projects').select('*')
-      .eq('verification_status', 'verified').order('project_name', { ascending: true }).order('id', { ascending: true })),
-    optionalRows(() => passportClient.from('municipal_industrial_enterprises').select('*')
-      .eq('verification_status', 'verified').order('enterprise_name', { ascending: true }).order('id', { ascending: true })),
-    optionalRows(() => passportClient.from('municipal_infrastructure_objects').select('*')
-      .eq('verification_status', 'verified').order('name', { ascending: true }).order('id', { ascending: true })),
-    optionalRows(() => passportClient.from('municipal_land_parcels').select('*')
-      .eq('verification_status', 'verified').order('municipality_id', { ascending: true }).order('id', { ascending: true })),
-    optionalRows(() => passportClient.from('fuel_price_observations').select('*')
+  // DB1 — паспортные реестры и рейтинги. Они не дублируются в DB2.
+  const [
+    investmentSites, investmentProjects, industrialEnterprises, infrastructureObjects,
+    landParcels, fuelPrices, facilities, externalRatingResults, externalRatingCatalog,
+  ] = await Promise.all([
+    safeRows(coreClient, () => coreClient.from('investment_sites').select('*')
+      .eq('verification_status', 'verified').order('name', { ascending: true }).order('id', { ascending: true }), 'инвестплощадки DB1'),
+    safeRows(coreClient, () => coreClient.from('municipal_investment_projects').select('*')
+      .eq('verification_status', 'verified').order('project_name', { ascending: true }).order('id', { ascending: true }), 'инвестпроекты DB1'),
+    safeRows(coreClient, () => coreClient.from('municipal_industrial_enterprises').select('*')
+      .eq('verification_status', 'verified').order('enterprise_name', { ascending: true }).order('id', { ascending: true }), 'предприятия DB1'),
+    safeRows(coreClient, () => coreClient.from('municipal_infrastructure_objects').select('*')
+      .eq('verification_status', 'verified').order('name', { ascending: true }).order('id', { ascending: true }), 'инфраструктура DB1'),
+    safeRows(coreClient, () => coreClient.from('municipal_land_parcels').select('*')
+      .eq('verification_status', 'verified').order('municipality_id', { ascending: true }).order('id', { ascending: true }), 'земельные участки DB1'),
+    safeRows(coreClient, () => coreClient.from('fuel_price_observations').select('*')
       .eq('verification_status', 'verified').order('observed_at', { ascending: false })
-      .order('source_row', { ascending: true }).order('id', { ascending: true })),
-    optionalRows(() => passportClient.from('municipal_facilities').select('*')
+      .order('source_row', { ascending: true }).order('id', { ascending: true }), 'цены на топливо DB1'),
+    safeRows(coreClient, () => coreClient.from('municipal_facilities').select('*')
       .eq('verification_status', 'verified').order('facility_category', { ascending: true })
-      .order('name_short', { ascending: true }).order('id', { ascending: true })),
-    optionalRows(() => passportClient.from('external_rating_results')
+      .order('name_short', { ascending: true }).order('id', { ascending: true }), 'учреждения DB1'),
+    safeRows(coreClient, () => coreClient.from('external_rating_results')
       .select('id,rating_id,geographic_level,geography_name,region_name,national_rank,rating_score,previous_year_rank,previous_year_score,metrics,reference_year,source_url,verification_status,notes,retrieved_at')
       .eq('rating_id', 'ria_city_salary_2026').eq('geographic_level', 'city').eq('verification_status', 'verified')
-      .order('geography_name', { ascending: true }).order('id', { ascending: true })),
-    optionalRows(() => passportClient.from('external_rating_catalog')
+      .order('geography_name', { ascending: true }).order('id', { ascending: true }), 'результаты внешнего рейтинга DB1'),
+    safeRows(coreClient, () => coreClient.from('external_rating_catalog')
       .select('rating_id,title,category,edition_year,reference_period,geographic_level,geography_scope,source_url,description,methodology_summary')
-      .eq('rating_id', 'ria_city_salary_2026').order('edition_year', { ascending: false }).order('rating_id', { ascending: true })),
+      .eq('rating_id', 'ria_city_salary_2026')
+      .order('edition_year', { ascending: false }).order('rating_id', { ascending: true }), 'каталог внешних рейтингов DB1'),
   ])
 
+  const sources = mergeSourceCatalog(coreSources, statisticsSources)
+  const indicators = mergeIndicatorRows(coreIndicators, statisticsIndicators)
+  const programExecution = mergeProgramRows(corePrograms, statisticsPrograms)
   const operationalRecords = validateOfficialOperationalRecords({ investmentSites, programExecution, facilities })
   const salaryRating = externalRatingCatalog[0] || null
   const externalRatings = externalRatingResults.map((result) => ({
@@ -686,14 +747,9 @@ export async function fetchOfficialData(statisticsClient, passportClient = null)
     sources: sources.length ? sources : FALLBACK_DATA_SOURCES,
     indicators,
     investmentSites: operationalRecords.investmentSites,
-    investmentProjects,
-    industrialEnterprises,
-    infrastructureObjects,
-    landParcels,
+    investmentProjects, industrialEnterprises, infrastructureObjects, landParcels,
     programExecution: operationalRecords.programExecution,
-    fuelPrices,
-    facilities: operationalRecords.facilities,
-    externalRatings,
+    fuelPrices, facilities: operationalRecords.facilities, externalRatings,
   }
 }
 export const DATA_CATEGORY_LABELS = {
