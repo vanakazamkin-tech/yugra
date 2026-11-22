@@ -1,12 +1,12 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import data from '../data/municipalities-detailed.json';
 import { UgraMap, UgraMapList } from './components/UgraMap';
-import { coreSupabase, dataSupabase, isCoreSupabaseConfigured, isDataSupabaseConfigured } from './lib/supabase';
-import { fetchMunicipalities } from './lib/municipalities';
+import { coreSupabase, isCoreSupabaseConfigured } from './lib/supabase';
 import { readPersistentCache, writePersistentCache } from './lib/persistentCache';
 const UnifiedRiskForecast = lazy(() => import('./components/UnifiedRiskForecast'));
 const Forecasting = lazy(() => import('./components/Forecasting'));
-import { FALLBACK_DATA_SOURCES, fetchOfficialData, mergeOfficialDataSnapshots, DATA_CATEGORY_LABELS, DATA_STATUS_LABELS } from './lib/officialData';
+import { FALLBACK_DATA_SOURCES, DATA_CATEGORY_LABELS, DATA_STATUS_LABELS } from './lib/officialData';
+import { fetchSharedSnapshot } from './lib/sharedSnapshot';
 
 const Icon = ({ name, className = '' }) => {
   const paths = {
@@ -165,7 +165,7 @@ export const InvestmentDetails = () => {
   // Локальный JSON остаётся резервом на случай отсутствия ключа/сети/доступа к таблице.
   const [municipalities, setMunicipalities] = useState(data.municipalities);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
-  const [syncStatus, setSyncStatus] = useState((isCoreSupabaseConfigured || isDataSupabaseConfigured) ? 'loading' : 'unconfigured');
+  const [syncStatus, setSyncStatus] = useState('loading');
   const [syncMessage, setSyncMessage] = useState('');
   const [syncAttempt, setSyncAttempt] = useState(0);
   const [officialDataSources, setOfficialDataSources] = useState(FALLBACK_DATA_SOURCES);
@@ -186,93 +186,34 @@ export const InvestmentDetails = () => {
   const [indicatorYearFilter, setIndicatorYearFilter] = useState('all');
   const [sourceSearch, setSourceSearch] = useState('');
   const [sourceStatusFilter, setSourceStatusFilter] = useState('all');
-  const [officialDataStatus, setOfficialDataStatus] = useState((isCoreSupabaseConfigured || isDataSupabaseConfigured) ? 'loading' : 'offline');
+  const [officialDataStatus, setOfficialDataStatus] = useState('loading');
   const [officialDataError, setOfficialDataError] = useState('');
   const [officialDataSyncedAt, setOfficialDataSyncedAt] = useState(null);
 
   useEffect(() => {
-    if ((!isCoreSupabaseConfigured || !coreSupabase) && (!isDataSupabaseConfigured || !dataSupabase)) {
-      setSyncStatus('unconfigured');
-      setSyncMessage('Настройте публичные ключи обеих баз Supabase в .env.local и в настройках сайта.');
-      return undefined;
-    }
-
     let cancelled = false;
-    let inFlight = false;
-    let hasSyncedSuccessfully = false;
-    let cacheHydrated = false;
-
-    const syncMunicipalities = async () => {
-      if (inFlight || cancelled) return;
-      inFlight = true;
-      try {
-        if (!cacheHydrated) {
-          cacheHydrated = true;
-          const cached = await readPersistentCache('municipalities-v1');
-          if (cancelled) return;
-          if (Array.isArray(cached?.value?.rows) && cached.value.rows.length) {
-            setMunicipalities(cached.value.rows);
-            const savedAt = cached.value.syncedAt || cached.savedAt;
-            if (savedAt) setLastSyncedAt(new Date(savedAt));
-            hasSyncedSuccessfully = true;
-            setSyncStatus('cached');
-          }
-        }
-
-        if (cancelled) return;
-        if (!hasSyncedSuccessfully) setSyncStatus('loading');
-        const rows = await fetchMunicipalities(coreSupabase, dataSupabase, data.municipalities);
-        if (cancelled) return;
-        setMunicipalities(rows);
-        const syncedAt = new Date();
-        setLastSyncedAt(syncedAt);
-        hasSyncedSuccessfully = true;
-        setSyncStatus('connected');
-        setSyncMessage('');
-        void writePersistentCache('municipalities-v1', { rows, syncedAt: syncedAt.toISOString() });
-      } catch (error) {
-        if (cancelled) return;
-        setSyncStatus('error');
-        setSyncMessage(error?.message || 'Не удалось загрузить данные из Supabase');
-      } finally {
-        inFlight = false;
-      }
+    const hydrateMunicipalities = async () => {
+      const cached = await readPersistentCache('municipalities-v1');
+      if (cancelled || !Array.isArray(cached?.value?.rows) || !cached.value.rows.length) return;
+      setMunicipalities(cached.value.rows);
+      const savedAt = cached.value.syncedAt || cached.savedAt;
+      if (savedAt) setLastSyncedAt(new Date(savedAt));
+      setSyncStatus('cached');
     };
-
-    const syncWhenActive = () => {
-      if (document.visibilityState === 'visible') syncMunicipalities();
-    };
-    syncMunicipalities();
-    const intervalId = window.setInterval(syncMunicipalities, 60_000);
-    document.addEventListener('visibilitychange', syncWhenActive);
-    window.addEventListener('online', syncMunicipalities);
-    return () => {
-      cancelled = true;
-      window.clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', syncWhenActive);
-      window.removeEventListener('online', syncMunicipalities);
-    };
-    // lastSyncedAt не включается намеренно: интервал должен создаваться один раз.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syncAttempt]);
+    void hydrateMunicipalities();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
-    if ((!isCoreSupabaseConfigured || !coreSupabase) && (!isDataSupabaseConfigured || !dataSupabase)) {
-      setOfficialDataStatus('offline');
-      return undefined;
-    }
-
     const emptySnapshot = {
-      sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [],
+      municipalities: [], sources: FALLBACK_DATA_SOURCES, indicators: [], investmentSites: [],
       investmentProjects: [], industrialEnterprises: [], infrastructureObjects: [],
       landParcels: [], programExecution: [], fuelPrices: [], facilities: [], externalRatings: [],
     };
-    const fullRefreshIntervalMs = 6 * 60 * 60 * 1000;
     let cancelled = false;
-    let officialRequestInFlight = false;
+    let inFlight = false;
     let snapshot = null;
-    let cursors = {};
-    let lastFullSyncAt = 0;
+    let snapshotVersion = null;
 
     const applySnapshot = (value) => {
       setOfficialDataSources(value.sources || FALLBACK_DATA_SOURCES);
@@ -286,89 +227,96 @@ export const InvestmentDetails = () => {
       setFuelPrices(value.fuelPrices || []);
       setFacilities(value.facilities || []);
       setExternalRatings(value.externalRatings || []);
+      if (Array.isArray(value.municipalities) && value.municipalities.length) setMunicipalities(value.municipalities);
     };
 
-    const loadOfficialData = async () => {
-      if (cancelled || officialRequestInFlight) return;
-      officialRequestInFlight = true;
-      if (!snapshot) setOfficialDataStatus('loading');
+    const loadSharedSnapshot = async () => {
+      if (cancelled || inFlight) return;
+      inFlight = true;
       try {
-        const needsFullRefresh = !snapshot || !Object.keys(cursors).length
-          || !lastFullSyncAt || Date.now() - lastFullSyncAt >= fullRefreshIntervalMs;
-        const result = await fetchOfficialData(coreSupabase, dataSupabase, {
-          sinceByTable: needsFullRefresh ? null : cursors,
-        });
+        const result = await fetchSharedSnapshot(snapshotVersion);
         if (cancelled) return;
-
-        const meta = result.cacheMeta || { cursorCandidates: {}, errors: [] };
-        const errors = meta.errors || [];
-        if (needsFullRefresh && !errors.length) {
-          snapshot = result;
-          cursors = { ...(meta.cursorCandidates || {}) };
-          lastFullSyncAt = Date.now();
-        } else {
-          snapshot = mergeOfficialDataSnapshots(snapshot || emptySnapshot, result);
-          cursors = { ...cursors, ...(meta.cursorCandidates || {}) };
+        if (result.unchanged) {
+          const isPrevious = result.manifest?.servedFrom === 'previous';
+          setOfficialDataStatus(isPrevious ? 'cached' : 'connected');
+          setSyncStatus(isPrevious ? 'cached' : 'connected');
+          setSyncMessage(isPrevious ? 'Используется последняя успешная версия' : '');
+          return;
         }
-
+        snapshot = result.data || emptySnapshot;
+        snapshotVersion = result.manifest?.version || null;
         applySnapshot(snapshot);
-        const syncedAt = new Date();
-        setOfficialDataSyncedAt(syncedAt);
-        if (errors.length) {
-          setOfficialDataStatus('error');
-          setOfficialDataError(errors.map((item) => `${item.key}: ${item.message}`).join(' · '));
-        } else {
-          setOfficialDataStatus('connected');
-          setOfficialDataError('');
-        }
-
-        // A failed table keeps its previous cursor, so the next poll retries that segment.
-        // A successful full refresh is the only operation that resets the reconciliation clock.
-        if (snapshot && (Object.keys(snapshot).length > 0)) {
-          void writePersistentCache('official-data-v1', {
-            version: 1,
-            data: snapshot,
-            cursors,
-            lastFullSyncAt,
-            lastRemoteSyncAt: syncedAt.toISOString(),
-          });
+        const syncedAt = result.manifest?.lastSuccessfulUpdateAt || result.manifest?.createdAt || new Date().toISOString();
+        setOfficialDataSyncedAt(new Date(syncedAt));
+        setLastSyncedAt(new Date(syncedAt));
+        const isPrevious = result.manifest?.servedFrom === 'previous';
+        setOfficialDataStatus(isPrevious ? 'cached' : 'connected');
+        setSyncStatus(isPrevious ? 'cached' : 'connected');
+        setOfficialDataError(result.manifest?.health?.status === 'error' ? result.manifest.health.error || '' : '');
+        setSyncMessage(isPrevious ? 'Используется последняя успешная версия' : '');
+        const metadata = {
+          version: snapshotVersion,
+          lastFullSyncAt: result.manifest?.lastFullReconciliationAt || null,
+          lastRemoteSyncAt: syncedAt,
+          sourceStatus: result.manifest?.sourceStatus || null,
+        };
+        void writePersistentCache('official-data-v2', { version: 2, data: snapshot, metadata });
+        if (Array.isArray(snapshot.municipalities)) {
+          void writePersistentCache('municipalities-v1', { rows: snapshot.municipalities, syncedAt });
         }
       } catch (error) {
         if (cancelled) return;
-        setOfficialDataStatus('error');
-        setOfficialDataError(error?.message || 'Не удалось загрузить каталог официальных данных');
+        const message = error?.message || 'Не удалось получить общий снимок данных';
+        setOfficialDataError(message);
+        setOfficialDataStatus(snapshot ? 'cached' : 'error');
+        setSyncStatus(snapshot ? 'cached' : 'error');
+        setSyncMessage(snapshot ? 'Используется последний доступный снимок' : message);
+        console.warn('Общий снимок Yugra18 пока недоступен:', message);
       } finally {
-        officialRequestInFlight = false;
+        inFlight = false;
       }
     };
 
     const initializeAndLoad = async () => {
-      const cached = await readPersistentCache('official-data-v1');
+      const cached = await readPersistentCache('official-data-v2');
       if (cancelled) return;
-      if (cached?.value?.version === 1 && cached.value.data) {
+      if (cached?.value?.version === 2 && cached.value.data) {
         snapshot = cached.value.data;
-        cursors = cached.value.cursors || {};
-        lastFullSyncAt = Number(cached.value.lastFullSyncAt) || 0;
+        snapshotVersion = cached.value.metadata?.version || null;
         applySnapshot(snapshot);
-        const savedSyncAt = cached.value.lastRemoteSyncAt || cached.savedAt;
-        if (savedSyncAt) setOfficialDataSyncedAt(new Date(savedSyncAt));
+        const savedAt = cached.value.metadata?.lastRemoteSyncAt || cached.savedAt;
+        if (savedAt) {
+          setOfficialDataSyncedAt(new Date(savedAt));
+          setLastSyncedAt(new Date(savedAt));
+        }
         setOfficialDataStatus('cached');
+        setSyncStatus('cached');
+      } else {
+        const legacy = await readPersistentCache('official-data-v1');
+        if (cancelled) return;
+        if (legacy?.value?.version === 1 && legacy.value.data) {
+          snapshot = { ...emptySnapshot, ...legacy.value.data };
+          applySnapshot(snapshot);
+          const savedAt = legacy.value.lastRemoteSyncAt || legacy.savedAt;
+          if (savedAt) setOfficialDataSyncedAt(new Date(savedAt));
+          setOfficialDataStatus('cached');
+        }
       }
-      await loadOfficialData();
+      await loadSharedSnapshot();
     };
 
     void initializeAndLoad();
-    const refreshOfficialDataWhenActive = () => {
-      if (document.visibilityState === 'visible') loadOfficialData();
+    const refreshWhenActive = () => {
+      if (document.visibilityState === 'visible') loadSharedSnapshot();
     };
-    const intervalId = window.setInterval(loadOfficialData, 300_000);
-    document.addEventListener('visibilitychange', refreshOfficialDataWhenActive);
-    window.addEventListener('online', loadOfficialData);
+    const intervalId = window.setInterval(loadSharedSnapshot, 300_000);
+    document.addEventListener('visibilitychange', refreshWhenActive);
+    window.addEventListener('online', loadSharedSnapshot);
     return () => {
       cancelled = true;
       window.clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', refreshOfficialDataWhenActive);
-      window.removeEventListener('online', loadOfficialData);
+      document.removeEventListener('visibilitychange', refreshWhenActive);
+      window.removeEventListener('online', loadSharedSnapshot);
     };
   }, [syncAttempt]);
 

@@ -33,13 +33,13 @@ async function readMunicipalities(client) {
 }
 
 /** Объединяет справочники обеих БД по устойчивому municipality.id. */
-export async function fetchMunicipalities(coreClient, statisticsClient, fallbackMunicipalities = []) {
+export async function fetchMunicipalities(coreClient, statisticsClient, fallbackMunicipalities = [], options = {}) {
   const [coreResult, statisticsResult] = await Promise.all([
     readMunicipalities(coreClient),
     readMunicipalities(statisticsClient),
   ])
-  if (coreResult.error && statisticsResult.error) {
-    throw new Error(`Не удалось прочитать справочник из обеих баз: ${coreResult.error.message}; ${statisticsResult.error.message}`)
+  if ((options.strict && (coreResult.error || statisticsResult.error)) || (coreResult.error && statisticsResult.error)) {
+    throw new Error(`Не удалось прочитать муниципальный справочник${options.strict ? ' из обеих баз' : ''}: ${coreResult.error?.message || 'DB1 OK'}; ${statisticsResult.error?.message || 'DB2 OK'}`)
   }
 
   const rowsById = new Map()
