@@ -757,9 +757,21 @@ function mergeRowsById(baseRows = [], updateRows = []) {
     const key = row?.id != null ? String(row.id) : JSON.stringify(row)
     if (!key) continue
     const previous = rows.get(key)
+    if (!previous) {
+      rows.set(key, row)
+      continue
+    }
+
     const previousDate = Date.parse(previous?.updated_at || previous?.retrieved_at || previous?.created_at || '') || 0
     const currentDate = Date.parse(row?.updated_at || row?.retrieved_at || row?.created_at || '') || 0
-    if (!previous || currentDate >= previousDate) rows.set(key, row)
+    const latest = currentDate >= previousDate ? row : previous
+    const older = latest === row ? previous : row
+    const merged = { ...older }
+    for (const [field, value] of Object.entries(latest || {})) {
+      // An empty refresh never erases a previously populated cell or its provenance.
+      if (value !== null && value !== undefined && value !== '') merged[field] = value
+    }
+    rows.set(key, merged)
   }
   return [...rows.values()]
 }
