@@ -116,6 +116,26 @@ function mergeMunicipalities(previousRows = [], updateRows = []) {
   });
 }
 
+function mergeSnapshotDataset(key, previousRows = [], updateRows = []) {
+  const previousById = new Map((previousRows || [])
+    .filter((row) => row?.id != null)
+    .map((row) => [String(row.id), row]));
+  const nonDestructiveUpdates = (updateRows || []).map((update) => {
+    const previous = update?.id != null ? previousById.get(String(update.id)) : null;
+    if (!previous) return update;
+    const merged = { ...previous };
+    for (const [field, value] of Object.entries(update || {})) {
+      // Empty DB2 cells never erase populated values already retained from DB1.
+      if (value !== null && value !== undefined && value !== '') merged[field] = value;
+    }
+    return merged;
+  });
+  return mergeOfficialDataSnapshots(
+    { [key]: previousRows },
+    { [key]: nonDestructiveUpdates },
+  )[key] || nonDestructiveUpdates;
+}
+
 async function writePartition(dataset, part, rows, knownKeys) {
   const shards = [];
   for (let offset = 0; offset < rows.length; offset += CHUNK_ROWS) {
@@ -204,7 +224,7 @@ async function prepareDatasets(incoming, oldManifest, full) {
         const oldRows = await readPartition(oldGroups.get(part));
         rows = key === 'municipalities'
           ? mergeMunicipalities(oldRows, rows)
-          : mergeOfficialDataSnapshots({ [key]: oldRows }, { [key]: rows })[key] || rows;
+          : mergeSnapshotDataset(key, oldRows, rows);
       }
       const created = await writePartition(key, part, rows, allOldKeys);
       for (const shard of created) {
