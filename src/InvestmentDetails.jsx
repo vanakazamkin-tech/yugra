@@ -238,10 +238,11 @@ export const InvestmentDetails = () => {
         const result = await fetchSharedSnapshot(snapshotVersion);
         if (cancelled) return;
         if (result.unchanged) {
-          const isPrevious = result.manifest?.servedFrom === 'previous';
+          const isPrevious = result.manifest?.servedFrom === 'previous' || result.manifest?.health?.status === 'error';
           setOfficialDataStatus(isPrevious ? 'cached' : 'connected');
           setSyncStatus(isPrevious ? 'cached' : 'connected');
-          setSyncMessage(isPrevious ? 'Используется последняя успешная версия' : '');
+          setOfficialDataError(result.manifest?.health?.status === 'error' ? result.manifest.health.error || '' : '');
+          setSyncMessage(isPrevious ? 'Используется последняя успешная версия; обновление будет повторено автоматически' : '');
           return;
         }
         snapshot = result.data || emptySnapshot;
@@ -250,11 +251,11 @@ export const InvestmentDetails = () => {
         const syncedAt = result.manifest?.lastSuccessfulUpdateAt || result.manifest?.createdAt || new Date().toISOString();
         setOfficialDataSyncedAt(new Date(syncedAt));
         setLastSyncedAt(new Date(syncedAt));
-        const isPrevious = result.manifest?.servedFrom === 'previous';
+        const isPrevious = result.manifest?.servedFrom === 'previous' || result.manifest?.health?.status === 'error';
         setOfficialDataStatus(isPrevious ? 'cached' : 'connected');
         setSyncStatus(isPrevious ? 'cached' : 'connected');
         setOfficialDataError(result.manifest?.health?.status === 'error' ? result.manifest.health.error || '' : '');
-        setSyncMessage(isPrevious ? 'Используется последняя успешная версия' : '');
+        setSyncMessage(isPrevious ? 'Используется последняя успешная версия; обновление будет повторено автоматически' : '');
         const metadata = {
           version: snapshotVersion,
           lastFullSyncAt: result.manifest?.lastFullReconciliationAt || null,
