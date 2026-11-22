@@ -1448,21 +1448,21 @@ export const InvestmentDetails = () => {
   };
   const exportReportCsv = () => downloadCsv(reportItems, reportPrintFields, 'yugra-analytical-report');
 
-  const renderTableRows = (items) => items.map((m, index) => {
+  const renderTableRows = (items, compact = false) => items.map((m, index) => {
     const population = populationByMunicipality.get(m.id);
     return <tr key={m.id} onMouseEnter={() => setHoveredRegionId(m.id)} onMouseLeave={() => setHoveredRegionId(null)}>
       <td className="row-number">{String(index + 1).padStart(2, '0')}</td>
       <td className="municipality-cell"><button type="button" className="municipality-link" onClick={() => setActiveModalItem(m)}>{m.name}</button></td>
       <td><span className={`group-badge ${m.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i />Группа {m.group2024}</span></td>
-      <td className="score-cell"><span className="demo-value">{formatNumber(m.score, 1)}</span><small className="cell-subnote">демо</small></td>
-      <td className="number-cell"><span className="demo-value">{numericValue(m.investments?.volumeBillion) == null ? '—' : formatNumber(m.investments.volumeBillion, 1)}</span>{numericValue(m.investments?.volumeBillion) != null && <small className="cell-subnote">млрд ₽ · демо</small>}</td>
-      <td className="number-cell"><span className="demo-value">{numericValue(m.investments?.growthPercent) == null ? '—' : `${formatNumber(m.investments.growthPercent, 1)}%`}</span><small className="cell-subnote">демо</small></td>
-      <td className="number-cell"><span className="demo-value">{formatNumber(m.smeCount)}</span><small className="cell-subnote">демо</small></td>
-      <td className="number-cell"><span className="demo-value">{numericValue(m.assessmentScore) == null ? '—' : `${formatNumber(m.assessmentScore, 2)} / 5`}</span><small className="cell-subnote">демо</small></td>
-      <td className="official-population-cell">
+      <td className="score-cell">{formatNumber(m.score, 1)}{!compact && <small className="cell-subnote">демо</small>}</td>
+      <td className="number-cell">{numericValue(m.investments?.volumeBillion) == null ? '—' : formatNumber(m.investments.volumeBillion, 1)}{!compact && numericValue(m.investments?.volumeBillion) != null && <small className="cell-subnote">млрд ₽ · демо</small>}</td>
+      {!compact && <td className="number-cell">{numericValue(m.investments?.growthPercent) == null ? '—' : `${formatNumber(m.investments.growthPercent, 1)}%`}<small className="cell-subnote">демо</small></td>}
+      <td className="number-cell">{formatNumber(m.smeCount)}{!compact && <small className="cell-subnote">демо</small>}</td>
+      {!compact && <td className="number-cell">{numericValue(m.assessmentScore) == null ? '—' : `${formatNumber(m.assessmentScore, 2)} / 5`}<small className="cell-subnote">демо</small></td>}
+      {!compact && <td className="official-population-cell">
         <strong>{formatPopulationIndicator(population)}</strong>
         {population && <small className="cell-subnote">{population.geographic_level === 'settlement' ? (population.geographic_name || 'населённый пункт') : 'муниципальное образование'} · {population.reference_year}</small>}
-      </td>
+      </td>}
       <td><button type="button" className="icon-button" aria-label={`Открыть паспорт: ${m.name}`} onClick={() => setActiveModalItem(m)}><Icon name="arrow"/></button></td>
     </tr>;
   });
@@ -1546,18 +1546,13 @@ export const InvestmentDetails = () => {
             <span className="brand-copy"><span className="brand-title">ЮГРА</span><span className="brand-subtitle">Земля традиций</span></span>
           </button>
           <nav className="main-nav" aria-label="Основная навигация">
-            <button type="button" aria-current={activeTab === 'catalog' ? 'page' : undefined} className={activeTab === 'catalog' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('catalog')}><Icon name="home"/>Главная</button>
-            <button type="button" aria-current={activeTab === 'map' ? 'page' : undefined} className={activeTab === 'map' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('map')}><Icon name="map"/>Карта</button>
-            <button type="button" aria-current={activeTab === 'rating' ? 'page' : undefined} className={activeTab === 'rating' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('rating')}><Icon name="chart"/>Рейтинг</button>
-            <button type="button" aria-current={activeTab === 'risk' ? 'page' : undefined} className={activeTab === 'risk' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('risk')}><Icon name="chart"/>Риски</button>
-            <button type="button" aria-current={activeTab === 'forecast' ? 'page' : undefined} className={activeTab === 'forecast' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('forecast')}><Icon name="chart"/>Прогнозирование</button>
+            <button type="button" aria-current={['catalog', 'about'].includes(activeTab) ? 'page' : undefined} className={['catalog', 'about'].includes(activeTab) ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('catalog')}><Icon name="home"/>Главная</button>
+            <button type="button" aria-current={activeTab === 'map' ? 'page' : undefined} className={activeTab === 'map' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('map')}><Icon name="map"/>Карта Югры</button>
+            <button type="button" aria-current={['rating', 'risk', 'data'].includes(activeTab) ? 'page' : undefined} className={['rating', 'risk', 'data'].includes(activeTab) ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('rating')}><Icon name="chart"/>Рейтинг</button>
             <button type="button" aria-current={activeTab === 'compare' ? 'page' : undefined} className={activeTab === 'compare' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('compare')}><Icon name="compare"/>Сравнение</button>
-            <button type="button" aria-current={activeTab === 'reports' ? 'page' : undefined} className={activeTab === 'reports' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('reports')}><Icon name="file"/>Отчёты</button>
-            
-            <button type="button" aria-current={activeTab === 'data' ? 'page' : undefined} className={activeTab === 'data' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('data')}><Icon name="table"/>Данные</button>
-            <button type="button" aria-current={activeTab === 'about' ? 'page' : undefined} className={activeTab === 'about' ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('about')}><Icon name="info"/>Концепция</button>
+            <button type="button" aria-current={['reports', 'forecast'].includes(activeTab) ? 'page' : undefined} className={['reports', 'forecast'].includes(activeTab) ? 'nav-item active' : 'nav-item'} aria-controls="main-content" onClick={() => navigateToTab('reports')}><Icon name="file"/>Отчёты</button>
           </nav>
-          <div className="header-motto"><span className="concept-corner">КОНЦЕПТ</span><span className="motto-mark"/>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</div>
+          <div className="header-motto"><span className="motto-mark"/>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</div>
         </header>
         <div className="ornament-divider" aria-hidden="true" />
         <div className={`sync-status sync-status--${syncStatus === 'cached' ? 'connected' : syncStatus}`} role="status" aria-live="polite">
@@ -1568,7 +1563,8 @@ export const InvestmentDetails = () => {
           {syncStatus === 'unconfigured' && <span>Демонстрационные данные · подключение к базе не настроено</span>}
           {syncStatus === 'error' && <span>{lastSyncedAt && syncTimeLabel ? `Не удалось обновить · последние данные на ${syncTimeLabel}` : 'Не удалось подключиться · показываем резервные данные'}</span>}
           {syncStatus === 'error' && syncMessage && <span className="sync-status-detail" title={syncMessage}>Подробности: {syncMessage}</span>}
-          {syncStatus === 'error' && <button type="button" className="sync-retry" onClick={() => setSyncAttempt((attempt) => attempt + 1)}><Icon name="refresh"/>Повторить</button>}
+          {syncStatus === 'error' && <button type="button" className="text-action" onClick={() => setSyncAttempt((attempt) => attempt + 1)}><Icon name="refresh"/>Повторить</button>}
+          <button type="button" className="text-action" onClick={() => navigateToTab('data')}><Icon name="table"/>Источники данных</button>
         </div>
 
         <main id="main-content" tabIndex={-1}>
@@ -1577,8 +1573,8 @@ export const InvestmentDetails = () => {
               <div className="intro-top">
                 <div className="intro-copy">
                   <div className="eyebrow"><span className="eyebrow-diamond"/> ХАНТЫ · МАНСИ · ЮГРА</div>
-                  <h1>Югра — территория <em>живого Севера</em></h1>
-                  <p>Культура Ханты и манси, сила северной природы и развитие муниципалитетов — единое пространство традиций, людей и будущего.</p>
+                  <h1>Каталог муниципальных <em>образований</em></h1>
+                  <p>Изучайте территории, сравнивайте социально-экономические показатели и собирайте собственные аналитические срезы.</p>
                 </div>
                 <div className="intro-art" aria-label="Гравюра с традиционными жителями Севера и оленями">
                   <div className="intro-art-image"><img src="/images/khanty-mansi-engraving.jpg" alt="Гравюра: жители Севера в традиционной одежде и северные олени" /></div>
@@ -1595,7 +1591,7 @@ export const InvestmentDetails = () => {
               <div className="slice-bar"><div className="slice-label"><Icon name="sliders"/> Быстрые срезы</div><div className="slice-options" role="group" aria-label="Быстрые аналитические срезы">
                 {[['all', 'Все территории'], ['top', 'Топ-5 рейтинга'], ['investment', 'Инвестиции ≥ 50 млрд ₽'], ['growth', 'Рост ≥ 103%'], ['business', 'Оценка бизнеса ≥ 4,5']].map(([value, label]) => <button type="button" key={value} className={`slice-chip ${activeSlice === value ? 'active' : ''}`} aria-pressed={activeSlice === value} onClick={() => setActiveSlice(value)}>{label}</button>)}
               </div><button type="button" className={`filter-toggle ${advancedFiltersOpen ? 'open' : ''}`} aria-expanded={advancedFiltersOpen} aria-controls="advanced-municipality-filters" onClick={() => setAdvancedFiltersOpen((open) => !open)}><Icon name="sliders"/>{advancedFiltersOpen ? 'Скрыть фильтры' : 'Расширенные фильтры'}<Icon name="chevron"/></button></div>
-              {(searchTerm.trim() || selectedGroup !== 'ALL' || activeSlice !== 'all' || Object.values(filters).some((value) => value !== '')) && <div className="active-filter-summary" role="status" aria-live="polite" aria-atomic="true"><span>Активные фильтры · найдено <strong>{filteredMunicipalities.length}</strong> из {municipalities.length}</span><button type="button" className="text-action" onClick={resetFilters}><Icon name="refresh"/>Сбросить</button></div>}
+              
               {advancedFiltersOpen && <div className="advanced-filter-grid" id="advanced-municipality-filters">
                 <label><span>Балл от</span><input type="number" value={filters.minScore} onChange={(e) => setFilter('minScore', e.target.value)} placeholder="Например, 250"/></label>
                 <label><span>Балл до</span><input type="number" value={filters.maxScore} onChange={(e) => setFilter('maxScore', e.target.value)} placeholder="Без ограничения"/></label>
@@ -1614,7 +1610,7 @@ export const InvestmentDetails = () => {
               <article className="metric-card"><span className="metric-icon"><Icon name="people"/></span><div className="metric-copy"><span className="metric-label">Субъекты МСП</span><strong>{formatNumber(totals.sme)}</strong><small>значения по {totals.smeCount} из {totals.count} территорий</small></div><span className="metric-index">04</span></article>
             </section>
 
-            <div className="dashboard-grid dashboard-grid-home">
+            <div className="dashboard-grid">
               <section className="map-panel panel">
                 <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="pin"/></span><div><h2>Карта Югры</h2><p>Нажмите на территорию для подробностей</p></div></div><span className="section-tag">ИНТЕРАКТИВНАЯ</span></div>
                 <div className="map-stage"><UgraMap municipalities={municipalities} hoveredId={hoveredRegionId} onHover={setHoveredRegionId} onSelect={setActiveModalItem}/><div className="map-watermark" aria-hidden="true"><img src="/images/khanty-prosperity-seal.svg" alt=""/></div></div>
@@ -1623,9 +1619,9 @@ export const InvestmentDetails = () => {
               </section>
 
               <section className="ranking-panel panel">
-                <div className="section-heading ranking-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Сводная таблица муниципалитетов</h2><p>Демо-показатели помечены; население — с годом и географическим уровнем</p></div></div><button type="button" className="primary-button" onClick={() => navigateToTab('rating')}>Полный рейтинг <Icon name="arrow"/></button></div>
+                <div className="section-heading ranking-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Рейтинг муниципалитетов</h2><p>С учётом текущего набора фильтров</p></div></div><button type="button" className="primary-button" onClick={() => navigateToTab('rating')}>Полный рейтинг <Icon name="arrow"/></button></div>
                 <div className="table-meta"><span>НАЙДЕНО <strong>{sortedMunicipalities.length}</strong> ИЗ {municipalities.length}</span><span className="table-sort-hint"><Icon name="sort"/> Сортировка · значения «демо» не официальная статистика</span></div>
-                <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table"><thead><tr><th scope="col" className="num-col">№</th><th scope="col" aria-sort={sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Муниципальное образование" column="name"/></th><th scope="col" aria-sort={sortConfig.key === 'group2024' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Группа" column="group2024"/></th><th scope="col" aria-sort={sortConfig.key === 'score' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Балл · демо" column="score"/></th><th scope="col" aria-sort={sortConfig.key === 'investments' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Инвестиции · демо" column="investments"/></th><th scope="col" aria-sort={sortConfig.key === 'growthPercent' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Динамика · демо" column="growthPercent"/></th><th scope="col" aria-sort={sortConfig.key === 'smeCount' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="МСП · демо" column="smeCount"/></th><th scope="col" aria-sort={sortConfig.key === 'assessmentScore' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Оценка бизнеса · демо" column="assessmentScore"/></th><th scope="col"><span className="action-heading">Население · источник</span></th><th scope="col"><span className="action-heading">Паспорт</span></th></tr></thead><tbody>{renderTableRows(sortedMunicipalities)}</tbody></table>
+                <div className="table-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table"><thead><tr><th scope="col" className="num-col">№</th><th scope="col" aria-sort={sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Муниципальное образование" column="name"/></th><th scope="col" aria-sort={sortConfig.key === 'group2024' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Группа" column="group2024"/></th><th scope="col" aria-sort={sortConfig.key === 'score' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Балл" column="score"/></th><th scope="col" aria-sort={sortConfig.key === 'investments' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Инвестиции" column="investments"/></th><th scope="col" aria-sort={sortConfig.key === 'smeCount' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="МСП" column="smeCount"/></th><th scope="col"><span className="action-heading">Паспорт</span></th></tr></thead><tbody>{renderTableRows(sortedMunicipalities, true)}</tbody></table>
                   {sortedMunicipalities.length === 0 && <div className="empty-state"><span>Ничего не найдено</span><p>Измените фильтры или сбросьте текущий срез.</p><button type="button" className="outline-button" onClick={resetFilters}>Сбросить фильтры</button></div>}
                 </div>
                 <div className="table-footer"><span>Данные муниципальных образований</span><button type="button" className="text-action" onClick={() => downloadCsv(sortedMunicipalities, DEFAULT_REPORT_FIELDS, 'yugra-current-slice')}><Icon name="download"/>Выгрузить срез CSV</button></div>
@@ -1634,46 +1630,7 @@ export const InvestmentDetails = () => {
 
 
 
-            <section className="insight-grid" aria-label="Дополнительные аналитические показатели">
-              <article className="insight-card">
-                <span className="insight-card-kicker">ИНВЕСТИЦИОННАЯ ДИНАМИКА</span>
-                <strong>{extendedInsights.avgGrowth == null ? '—' : `${formatNumber(extendedInsights.avgGrowth, 1)}%`}</strong>
-                <span>Среднее изменение инвестиций</span>
-                <small>по {extendedInsights.growthCoverage} из {municipalities.length} территорий</small>
-              </article>
-              <article className="insight-card">
-                <span className="insight-card-kicker">ТЕРРИТОРИЯ-ЛИДЕР</span>
-                <strong className="insight-card-name">{extendedInsights.topInvestment?.name || '—'}</strong>
-                <span>Наибольший указанный объём инвестиций</span>
-                <small>{extendedInsights.topInvestment ? formatBillion(extendedInsights.topInvestment.investments.volumeBillion) : 'Нет данных'} · охват {extendedInsights.investmentCoverage}/{municipalities.length}</small>
-              </article>
-              <article className="insight-card">
-                <span className="insight-card-kicker">ДЕЛОВОЙ КЛИМАТ</span>
-                <strong>{extendedInsights.avgAssessment == null ? '—' : `${formatNumber(extendedInsights.avgAssessment, 2)} / 5`}</strong>
-                <span>Средняя оценка бизнеса</span>
-                <small>по {extendedInsights.assessmentCoverage} из {municipalities.length} территорий</small>
-              </article>
-              <article className="insight-card">
-                <span className="insight-card-kicker">РОСТ ВЫШЕ 100%</span>
-                <strong>{extendedInsights.growthCoverage ? extendedInsights.growthAbove100 : '—'}</strong>
-                <span>Территорий с положительной динамикой</span>
-                <small>из {extendedInsights.growthCoverage} с доступным показателем</small>
-              </article>
-            </section>
-            <p className="data-quality-note">Все сводные карточки выше — демонстрационные расчёты из концептуального набора и не являются официальной статистикой. Новые карточки рассчитываются на основе существующего набора данных проекта; новые официальные статистические ряды пока не загружены. Проверенные значения и охват источников показаны отдельно ниже.</p>
-            <section className="official-coverage-teaser panel" aria-labelledby="home-official-coverage-title">
-              <div className="official-coverage-copy">
-                <span className="eyebrow"><span className="eyebrow-diamond"/> ФАКТИЧЕСКИЙ СЛОЙ ДАННЫХ</span>
-                <h2 id="home-official-coverage-title">Отдельно от демонстрационных показателей</h2>
-                <p>Официальные значения содержат первоисточник, период, единицу измерения и уровень территории. Их покрытие пока неоднородно — недостающие значения не заменяются демо-числами.</p>
-              </div>
-              <div className="official-coverage-metrics">
-                <article><span>Проверенных наблюдений</span><strong>{officialDataSummary.recordCount}</strong><small>в Supabase</small></article>
-                <article><span>Муниципалитетов с данными своего уровня</span><strong>{officialDataSummary.municipalityCount} / {municipalities.length}</strong><small>городские поселения отдельно</small></article>
-                <article><span>Источников в каталоге</span><strong>{officialDataSources.length}</strong><small>включая источники, ожидающие импорта</small></article>
-              </div>
-              <div className="official-coverage-footer"><span className={`official-coverage-status official-coverage-status--${officialDataStatus === 'cached' ? 'connected' : officialDataStatus}`}><i/>{officialDataStatus === 'connected' ? 'Официальный слой подключён' : officialDataStatus === 'cached' ? 'Локальный снимок · проверяем обновления' : officialDataStatus === 'loading' ? 'Загрузка официального слоя' : officialDataStatus === 'error' ? 'Ошибка чтения официального слоя' : 'Демонстрационный режим'}</span><button type="button" className="primary-button" onClick={() => navigateToTab('data')}>Открыть центр данных <Icon name="arrow"/></button></div>
-            </section>
+            
           </>}
 
           {activeTab === 'data' && <section className="data-page">
@@ -2075,7 +2032,7 @@ export const InvestmentDetails = () => {
           </section>}
 
           {activeTab === 'rating' && <section className="panel full-panel ranking-page">
-            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Рейтинг муниципалитетов</h2><p>Полный рейтинг с поиском, срезами и сортировкой</p></div></div><div className="toolbar-actions"><button type="button" className="outline-button" onClick={() => downloadCsv(sortedMunicipalities, DEFAULT_REPORT_FIELDS, 'yugra-rating')}><Icon name="download"/>CSV</button><button type="button" className="primary-button" onClick={() => { setReportScope('filtered'); navigateToTab('reports'); }}><Icon name="file"/>Собрать отчёт</button></div></div>
+            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Рейтинг муниципалитетов</h2><p>Полный рейтинг с поиском, срезами и сортировкой</p></div></div><div className="toolbar-actions"><button type="button" className="outline-button" onClick={() => navigateToTab('risk')}><Icon name="chart"/>Мониторинг рисков</button><button type="button" className="outline-button" onClick={() => navigateToTab('data')}><Icon name="table"/>Источники</button><button type="button" className="outline-button" onClick={() => downloadCsv(sortedMunicipalities, DEFAULT_REPORT_FIELDS, 'yugra-rating')}><Icon name="download"/>CSV</button><button type="button" className="primary-button" onClick={() => { setReportScope('filtered'); navigateToTab('reports'); }}><Icon name="file"/>Собрать отчёт</button></div></div>
             <div className="rating-filters"><label className="search-box"><Icon name="search"/><input aria-label="Поиск в рейтинге" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Найти муниципалитет…"/></label><div className="filter-row" role="group" aria-label="Фильтр рейтинга по группе муниципалитета">{[['ALL', 'Все группы'], ['A', 'Группа A'], ['B', 'Группа B']].map(([value, label]) => <button type="button" key={value} className={`filter-pill ${selectedGroup === value ? 'selected' : ''}`} aria-pressed={selectedGroup === value} onClick={() => setSelectedGroup(value)}>{label}</button>)}</div><button type="button" className="text-action" onClick={resetFilters}><Icon name="refresh"/>Сбросить фильтры</button></div>
             <div className="table-meta"><span role="status" aria-live="polite" aria-atomic="true">В ТАБЛИЦЕ <strong>{sortedMunicipalities.length}</strong> МУНИЦИПАЛИТЕТОВ</span><span className="table-sort-hint">Нажмите на заголовок, чтобы изменить порядок</span></div>
             <div className="table-scroll compare-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table compare-table"><thead><tr><th scope="col" className="num-col">№</th><th scope="col" aria-sort={sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Муниципальное образование" column="name"/></th><th scope="col" aria-sort={sortConfig.key === 'group2024' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Группа" column="group2024"/></th><th scope="col" aria-sort={sortConfig.key === 'score' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Балл" column="score"/></th><th scope="col" aria-sort={sortConfig.key === 'investments' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Инвестиции, млрд ₽" column="investments"/></th><th scope="col" aria-sort={sortConfig.key === 'smeCount' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="МСП, ед." column="smeCount"/></th><th scope="col" aria-sort={sortConfig.key === 'assessmentScore' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Оценка бизнеса" column="assessmentScore"/></th><th scope="col">Паспорт</th></tr></thead><tbody>{sortedMunicipalities.map((m, i) => <tr key={m.id} onMouseEnter={() => setHoveredRegionId(m.id)} onMouseLeave={() => setHoveredRegionId(null)}><td className="row-number">{String(i + 1).padStart(2, '0')}</td><td><button type="button" className="municipality-link" onClick={() => setActiveModalItem(m)}>{m.name}</button></td><td><span className={`group-badge ${m.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i/>{`Группа ${m.group2024}`}</span></td><td className="score-cell">{formatNumber(m.score, 1)}</td><td className="number-cell">{formatNumber(m.investments.volumeBillion, 1)}</td><td className="number-cell">{formatNumber(m.smeCount)}</td><td>{formatNumber(m.assessmentScore, 2)} / 5</td><td><button type="button" className="icon-button" onClick={() => setActiveModalItem(m)} aria-label={`Открыть паспорт: ${m.name}`}><Icon name="arrow"/></button></td></tr>)}</tbody></table></div>
@@ -2161,7 +2118,7 @@ export const InvestmentDetails = () => {
           </section>}
 
           {activeTab === 'reports' && <section className="panel full-panel reports-page">
-            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2>Конструктор аналитических отчётов</h2><p>Настройте выборку, показатели и состав документа до экспорта</p></div></div><div className="toolbar-actions"><button type="button" className="outline-button" onClick={loadReportTemplate}><Icon name="refresh"/>Загрузить шаблон</button><button type="button" className="outline-button" onClick={saveReportTemplate}><Icon name="save"/>{reportTemplateSaved ? 'Сохранено на устройстве' : 'Сохранить шаблон на устройстве'}</button></div></div>
+            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="file"/></span><div><h2>Конструктор аналитических отчётов</h2><p>Настройте выборку, показатели и состав документа до экспорта</p></div></div><div className="toolbar-actions"><button type="button" className="outline-button" onClick={() => navigateToTab('forecast')}><Icon name="chart"/>Прогнозирование</button><button type="button" className="outline-button" onClick={loadReportTemplate}><Icon name="refresh"/>Загрузить шаблон</button><button type="button" className="outline-button" onClick={saveReportTemplate}><Icon name="save"/>{reportTemplateSaved ? 'Сохранено на устройстве' : 'Сохранить шаблон на устройстве'}</button></div></div>
             <div className="report-workspace">
               <aside className="report-config">
                 <div className="config-section"><div className="config-section-heading"><span className="config-step">01</span><div><strong>Параметры документа</strong><small>Название и источник данных</small></div></div>
@@ -2216,36 +2173,34 @@ export const InvestmentDetails = () => {
             </div>
           </section>}
           {activeTab === 'about' && <section className="about-page">
-            <section className="concept-showcase panel">
-              <div className="concept-showcase-copy">
-                <span className="eyebrow"><span className="eyebrow-diamond"/> ЦИФРОВАЯ ЮГРА · ПРОДУКТОВАЯ КОНЦЕПЦИЯ</span>
-                <h1>От разрозненных показателей — <em>к целостному взгляду на развитие Югры.</em></h1>
-                <p className="concept-lead">Единое цифровое пространство для изучения муниципалитетов, сопоставления территорий и обсуждения возможных сценариев социально-экономического развития.</p>
-                <div className="concept-hero-actions"><button type="button" className="primary-button" onClick={() => navigateToTab('catalog')}>Открыть платформу <Icon name="arrow"/></button><button type="button" className="outline-button" onClick={() => navigateToTab('risk')}>Посмотреть прогноз <Icon name="chart"/></button></div>
-                <div className="concept-hero-meta"><span>КОНЦЕПТ ПРОДУКТА</span><span>ХАНТЫ · МАНСИ · ЮГРА</span><span>22 МУНИЦИПАЛИТЕТА</span></div>
+            <section className="about-section panel">
+              <div className="section-heading">
+                <div className="heading-label"><span className="heading-icon"><Icon name="info"/></span><div><h2>Концепция аналитической платформы Югры</h2><p>Единое цифровое пространство для изучения муниципалитетов, сопоставления территорий и обсуждения сценариев социально-экономического развития</p></div></div>
+                <span className="section-tag">КОНЦЕПТ ПРОДУКТА</span>
               </div>
-              <div className="concept-visual">
-                <div className="concept-visual-top"><span>YUGRA / ANALYTICS</span><span>2026</span></div>
-                <div className="concept-orbit concept-orbit-one"></div><div className="concept-orbit concept-orbit-two"></div>
-                <div className="concept-visual-core"><img src="/images/khanty-prosperity-seal.svg" alt="Орнаментальный знак Югры"/><strong>ЮГРА</strong><small>ЕДИНАЯ СРЕДА АНАЛИЗА</small></div>
-                <div className="concept-float-card concept-float-top"><span>ТЕРРИТОРИИ</span><strong>22</strong><small>муниципалитета округа</small></div>
-                <div className="concept-float-card concept-float-bottom"><span>СЦЕНАРИИ</span><strong>1—3 <i>года</i></strong><small>варианты развития</small></div>
-                <div className="concept-visual-caption">ЛЮДИ · ЗЕМЛЯ · БУДУЩЕЕ</div>
+              <div className="about-methodology">
+                <h3>От разрозненных показателей — к целостному взгляду на развитие Югры</h3>
+                <p>Платформа объединяет обзор муниципалитетов, сравнение показателей, мониторинг рисков, сценарное прогнозирование и подготовку аналитических материалов. Её задача — помочь увидеть различия между территориями и проверить возможные варианты решений.</p>
+                <p><strong>Ханты · Манси · Югра</strong> — культурный и территориальный контекст проекта. Платформа остаётся концептом: демонстрационные оценки и сценарные предположения не выдаются за официальную статистику или подтверждённый прогноз.</p>
               </div>
-              <div className="concept-showcase-bottom"><div><strong>01</strong><span>Единая картина<br/>по территориям</span></div><div><strong>02</strong><span>Сравнение<br/>и аналитика</span></div><div><strong>03</strong><span>Сценарное<br/>планирование</span></div><div><strong>04</strong><span>Поддержка<br/>решений</span></div></div>
+              <div className="about-capability-grid">
+                <article><span>01 / ОБЗОР</span><strong>Территории на карте</strong><p>Муниципальная карта, паспорта территорий и переход от округа к отдельному муниципалитету.</p><button type="button" className="outline-button" onClick={() => navigateToTab('map')}>Открыть карту <Icon name="arrow"/></button></article>
+                <article><span>02 / АНАЛИЗ</span><strong>Сравнение потенциала</strong><p>Сопоставление выбранных муниципалитетов и доступных показателей за сопоставимые периоды.</p><button type="button" className="outline-button" onClick={() => navigateToTab('compare')}>Сравнить территории <Icon name="arrow"/></button></article>
+                <article><span>03 / МОНИТОРИНГ</span><strong>Риски и сигналы</strong><p>Индикаторы внимания, контроль качества и прозрачные основания для проверки гипотез.</p><button type="button" className="outline-button" onClick={() => navigateToTab('risk')}>Открыть мониторинг <Icon name="arrow"/></button></article>
+                <article><span>04 / ПРОГНОЗ</span><strong>Сценарии на 1–3 года</strong><p>Базовый, сдержанный, ускоренный и стресс-сценарии с настраиваемыми предположениями.</p><button type="button" className="outline-button" onClick={() => navigateToTab('forecast')}>Открыть прогнозирование <Icon name="arrow"/></button></article>
+                <article><span>05 / РЕЗУЛЬТАТ</span><strong>Аналитические отчёты</strong><p>Выбор территорий и показателей, сводка, таблицы и экспорт результатов.</p><button type="button" className="outline-button" onClick={() => navigateToTab('reports')}>Собрать отчёт <Icon name="arrow"/></button></article>
+                <article><span>06 / ИСТОЧНИКИ</span><strong>Проверенные данные</strong><p>Каталог источников, статус импорта, качество и территориальный охват наблюдений.</p><button type="button" className="outline-button" onClick={() => navigateToTab('data')}>Открыть центр данных <Icon name="arrow"/></button></article>
+              </div>
+              <div className="about-methodology">
+                <h3>Логика работы</h3>
+                <ol>
+                  <li>Собрать показатели и контекст территории.</li>
+                  <li>Сопоставить муниципалитеты, единицы измерения и периоды.</li>
+                  <li>Смоделировать возможные сценарии на основе явных предположений.</li>
+                  <li>Подготовить материалы для обсуждения вариантов действий.</li>
+                </ol>
+              </div>
             </section>
-            <section className="concept-modules">
-              <div className="concept-section-heading"><div><span className="eyebrow"><span className="eyebrow-diamond"/> КАК УСТРОЕНА ПЛАТФОРМА</span><h2>Четыре инструмента — один рабочий контур</h2><p>От обзора территории до аргументированного сценария действий.</p></div><span className="concept-section-index">ПРОДУКТОВАЯ АРХИТЕКТУРА / 2026</span></div>
-              <div className="concept-module-grid">
-                <button type="button" className="concept-module concept-module-map" onClick={() => navigateToTab('map')}><span className="concept-module-number">01 / ОБЗОР</span><span className="concept-module-icon"><Icon name="map"/></span><strong>Территории на карте</strong><p>Муниципальная карта, паспорта территорий и быстрый переход от округа к отдельному муниципалитету.</p><span className="concept-module-link">Исследовать карту <Icon name="arrow"/></span></button>
-                <button type="button" className="concept-module concept-module-compare" onClick={() => navigateToTab('compare')}><span className="concept-module-number">02 / АНАЛИЗ</span><span className="concept-module-icon"><Icon name="compare"/></span><strong>Сравнение потенциала</strong><p>Сопоставление выбранных муниципалитетов, динамики показателей и различий между территориями.</p><span className="concept-module-link">Сравнить территории <Icon name="arrow"/></span></button>
-                <button type="button" className="concept-module concept-module-risk" onClick={() => navigateToTab('risk')}><span className="concept-module-number">03 / СЦЕНАРИИ</span><span className="concept-module-icon"><Icon name="chart"/></span><strong>Риски и прогноз</strong><p>Сигналы внимания, сценарии на 1–3 года и настройка предположений для проверки гипотез.</p><span className="concept-module-link">Открыть сценарии <Icon name="arrow"/></span></button>
-                <button type="button" className="concept-module concept-module-report" onClick={() => navigateToTab('reports')}><span className="concept-module-number">04 / РЕЗУЛЬТАТ</span><span className="concept-module-icon"><Icon name="file"/></span><strong>Аналитические материалы</strong><p>Конструктор отчётов, выбор показателей и подготовка материалов для обсуждения решений.</p><span className="concept-module-link">Собрать отчёт <Icon name="arrow"/></span></button>
-              </div>
-            </section>
-            <section className="concept-flow panel"><div className="concept-flow-heading"><span className="eyebrow"><span className="eyebrow-diamond"/> ЛОГИКА РАБОТЫ</span><h2>Путь от вопроса к решению</h2></div><div className="concept-flow-steps"><div><span>01</span><strong>Собрать</strong><small>Показатели и контекст территории</small></div><i>→</i><div><span>02</span><strong>Сопоставить</strong><small>Муниципалитеты и периоды</small></div><i>→</i><div><span>03</span><strong>Смоделировать</strong><small>Возможные сценарии развития</small></div><i>→</i><div><span>04</span><strong>Обсудить</strong><small>Выводы и варианты действий</small></div></div></section>
-            <section className="concept-principles"><div><span className="eyebrow"><span className="eyebrow-diamond"/> ПРИНЦИПЫ КОНЦЕПТА</span><h2>Не просто красивые графики.<br/><em>Понятная логика анализа.</em></h2></div><div className="concept-principle-list"><article><strong>Прозрачность</strong><p>У каждого показателя предполагаются источник, период, единица измерения и территория.</p></article><article><strong>Сопоставимость</strong><p>Сравнение учитывает различия муниципалитетов, периоды наблюдений и доступность данных.</p></article><article><strong>Сценарность</strong><p>Прогнозный блок помогает обсуждать последствия предположений, а не выдаёт будущее за факт.</p></article></div></section>
-            <section className="concept-disclaimer panel"><span className="concept-disclaimer-mark"><Icon name="info"/></span><div><strong>Это концепт будущей аналитической платформы</strong><p>Текущая версия показывает структуру продукта и логику его инструментов. Часть чисел и оценок носит демонстрационный характер; сценарии являются исследовательскими предположениями, а не подтверждённым прогнозом.</p></div><span className="concept-disclaimer-stamp">CONCEPT<br/>EDITION 2026</span></section>
             <section className="about-section panel">
               <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Что умеет прототип</h2><p>Функции, которые готовятся к работе с проверенной статистикой</p></div></div></div>
               <div className="about-capability-grid">
@@ -2284,7 +2239,7 @@ export const InvestmentDetails = () => {
           </section>}
         </main>
 
-        <footer className="site-footer"><div className="footer-brand"><span className="footer-emblem"><img src="/images/khanty-prosperity-seal.svg" alt=""/></span><span><strong>ЮГРА</strong><small>Земля традиций</small></span></div><p>Ханты · Манси · Северная культура</p><div className="footer-right"><span>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</span><span className="footer-ornament" aria-hidden="true"/></div></footer>
+        <footer className="site-footer"><div className="footer-brand"><span className="footer-emblem"><img src="/images/khanty-prosperity-seal.svg" alt=""/></span><span><strong>ЮГРА</strong><small>Земля традиций</small></span></div><p>Ханты · Манси · Северная культура</p><div className="footer-right"><button type="button" className="text-action" onClick={() => navigateToTab('about')}>О концепции</button><span>ЛЮДИ · ЗЕМЛЯ · ПРИРОДА</span><span className="footer-ornament" aria-hidden="true"/></div></footer>
       </div>
 
       {activeModalItem && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setActiveModalItem(null); }}><section ref={municipalityDialogRef} className="municipality-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-intro" tabIndex={-1}>
