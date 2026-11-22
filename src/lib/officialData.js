@@ -683,7 +683,8 @@ async function safeRows(client, queryFactory, label, sinceByTable = null, errors
       const value = Date.parse(row?.[cursorColumn] || row?.updated_at || row?.created_at || '')
       return Number.isFinite(value) && value > max ? value : max
     }, 0)
-    if (latest) cursorCandidates[label] = new Date(latest).toISOString()
+    const previousCursor = Number.isFinite(Date.parse(cursor || '')) ? Date.parse(cursor) : 0
+    if (latest) cursorCandidates[label] = new Date(Math.max(previousCursor, latest)).toISOString()
     else if (!cursor) cursorCandidates[label] = new Date().toISOString()
     return rows
   } catch (error) {
