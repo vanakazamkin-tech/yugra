@@ -407,7 +407,7 @@ const ComparisonWorkspace = ({
                       return (
                         <div className="cw-bar-row" key={item.id}>
                           <div className="cw-bar-label"><span className={'cw-bar-index cw-bar-index-' + (index + 1)}>{String(index + 1).padStart(2, '0')}</span><strong>{item.name}</strong></div>
-                          <div className="cw-bar-track"><span className={'cw-bar-fill cw-bar-fill-' + (index + 1)} style={{ width: width + '%' }}/></div>
+                          <div className="cw-bar-track"><span className={'cw-bar-fill cw-bar-fill-' + (index + 1) + (value != null && value < 0 ? ' cw-bar-negative' : '')} style={{ width: width + '%' }}/></div>
                           <strong className="cw-bar-value">{mode === 'official' ? (value == null ? '—' : formatNumber(value, 2)) : selectedDemoMetric.format(value)}</strong>
                         </div>
                       );
