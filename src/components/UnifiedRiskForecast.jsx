@@ -98,7 +98,7 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
         || (signalFilter === 'improving' && s.adverse === false)
         || (signalFilter === 'context' && s.direction === 'context')
         || (signalFilter === 'unavailable' && s.adverse === null);
-      return (municipalityId === 'ALL' || s.municipalityId === municipalityId)
+      return (municipalityId === 'ALL' || String(s.municipalityId) === String(municipalityId))
         && (pillarFilter === 'ALL' || s.pillar.key === pillarFilter)
         && matchesSignal
         && (!needle || text.includes(needle));
@@ -121,7 +121,7 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
     return priority[a.level] - priority[b.level] || b.bad.length - a.bad.length || String(a.name || a.id).localeCompare(String(b.name || b.id), 'ru-RU');
   }), [municipalities, series, riskModel, riskThresholds]);
   const riskAuditRows = useMemo(() => buildRiskAuditRows(municipalityAnalysis), [municipalityAnalysis]);
-  const territoryMunicipalities = municipalityAnalysis.filter((m) => municipalityId === 'ALL' || m.id === municipalityId);
+  const territoryMunicipalities = municipalityAnalysis.filter((m) => municipalityId === 'ALL' || String(m.id) === String(municipalityId));
   const counts = {
     critical: territoryMunicipalities.filter((m) => m.level === 'critical').length,
     watch: territoryMunicipalities.filter((m) => m.level === 'watch').length,
@@ -188,6 +188,8 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
     .slice(0, 6);
   const clearRiskFilters = () => {
     setSearch('');
+    setMunicipalityId('ALL');
+    setSelectedMunicipality('');
     setRiskLevelFilter('ALL');
     setPillarFilter('ALL');
     setSignalFilter('ALL');
@@ -326,8 +328,8 @@ export default function UnifiedRiskForecast({ municipalities = [], forecastScena
       <section className="unified-section risk-coverage-section">
         <div className="unified-section-head"><div><h2>Покрытие шести направлений</h2><p>Показывает наличие временных рядов по территориям. Наличие данных само по себе не является положительной оценкой.</p></div><span>{MODEL_PILLARS.length} направлений модели</span></div>
         <div className="risk-coverage-grid">{riskCoverageSummary.map((pillar) => <article className="risk-coverage-card" key={pillar.key}>
-          <div><strong>{pillar.title}</strong><b>{pillar.territories}/{municipalities.length}</b></div>
-          <div className="unified-track"><i style={{width: (municipalities.length ? pillar.territories / municipalities.length * 100 : 0) + '%'}}/></div>
+          <div><strong>{pillar.title}</strong><b>{pillar.territories}/{territoryMunicipalities.length}</b></div>
+          <div className="unified-track"><i style={{width: (territoryMunicipalities.length ? pillar.territories / territoryMunicipalities.length * 100 : 0) + '%'}}/></div>
           <small>{pillar.rows} рядов · {pillar.comparable} сопоставимых · {pillar.deteriorating} негативных</small>
         </article>)}</div>
       </section>
