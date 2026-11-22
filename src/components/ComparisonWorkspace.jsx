@@ -49,8 +49,8 @@ function classifyIndicator(item) {
 }
 
 function periodLabel(item) {
-  const period = String(item.reference_period || 'annual');
-  const year = item.reference_year || '';
+  const period = String(item.period || item.reference_period || 'annual');
+  const year = item.year || item.reference_year || '';
   if (period === 'annual') return String(year) + ' · год';
   const match = period.match(/^\d{4}-(Q[1-4]|H[12])$/);
   if (match) {
@@ -130,17 +130,18 @@ const ComparisonWorkspace = ({
     officialIndicators.forEach((item) => {
       const value = toNumber(item.value);
       const year = Number(item.reference_year);
-      const geographicLevel = item.geographic_level || 'municipality';
+      const geographicLevel = String(item.geographic_level || '').trim();
       const code = String(item.indicator_code || '').trim();
+      const unit = String(item.unit || '').trim();
       if (item.verification_status !== 'verified'
         || geographicLevel !== 'municipality'
         || !selectedIds.has(item.municipality_id)
         || !code
         || !Number.isInteger(year) || year < 1900 || year > new Date().getFullYear() + 1
         || value == null
+        || !unit
       ) return;
       const period = String(item.reference_period || 'annual');
-      const unit = String(item.unit || '').trim();
       const key = [code, year, period, unit, geographicLevel].join('|');
       if (!groups.has(key)) {
         groups.set(key, {
