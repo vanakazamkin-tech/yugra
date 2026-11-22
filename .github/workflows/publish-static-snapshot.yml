@@ -74,7 +74,27 @@ jobs:
           git -C data-store add -A snapshots
           if ! git -C data-store diff --cached --quiet; then
             git -C data-store commit -m "data: publish Yugra18 snapshot"
-            git -C data-store push origin HEAD:data
+
+            # Keep a short native Git history while preserving a compact version
+            # ledger and the current+previous complete snapshots in the branch tree.
+            git -C data-store fetch --deepen=25 origin data
+            commit_count="$(git -C data-store rev-list --count HEAD)"
+            if [ "$commit_count" -ge 25 ]; then
+              retention_dir="$RUNNER_TEMP/yugra18-retained-snapshot"
+              mkdir -p "$retention_dir"
+              cp -a data-store/snapshots "$retention_dir/snapshots"
+
+              git -C data-store checkout --orphan data-checkpoint
+              git -C data-store rm -rf . || true
+              git -C data-store clean -fdx
+              mkdir -p data-store/snapshots
+              cp -a "$retention_dir/snapshots/." data-store/snapshots/
+              git -C data-store add -A
+              git -C data-store commit -m "data: compact Yugra18 snapshot history"
+              git -C data-store push --force origin HEAD:data
+            else
+              git -C data-store push origin HEAD:data
+            fi
           fi
 
       - name: Configure GitHub Pages
