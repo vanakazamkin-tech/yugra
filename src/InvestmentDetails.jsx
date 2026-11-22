@@ -6,6 +6,7 @@ const UnifiedRiskForecast = lazy(() => import('./components/UnifiedRiskForecast'
 const Forecasting = lazy(() => import('./components/Forecasting'));
 import { FALLBACK_DATA_SOURCES, DATA_CATEGORY_LABELS, DATA_STATUS_LABELS } from './lib/officialData';
 import { fetchSharedSnapshot } from './lib/sharedSnapshot';
+import RatingWorkspace from './components/RatingWorkspace';
 
 const Icon = ({ name, className = '' }) => {
   const paths = {
@@ -2307,12 +2308,22 @@ export const InvestmentDetails = () => {
 
           </section>}
 
-          {activeTab === 'rating' && <section className="panel full-panel ranking-page">
-            <div className="section-heading"><div className="heading-label"><span className="heading-icon"><Icon name="chart"/></span><div><h2>Рейтинг муниципалитетов</h2><p>Полный рейтинг с поиском, срезами и сортировкой</p></div></div><div className="toolbar-actions"><button type="button" className="outline-button" onClick={() => navigateToTab('risk')}><Icon name="chart"/>Мониторинг рисков</button><button type="button" className="outline-button" onClick={() => navigateToTab('data')}><Icon name="table"/>Источники</button><button type="button" className="outline-button" onClick={() => downloadCsv(sortedMunicipalities, DEFAULT_REPORT_FIELDS, 'yugra-rating')}><Icon name="download"/>CSV</button><button type="button" className="primary-button" onClick={() => { setReportScope('filtered'); navigateToTab('reports'); }}><Icon name="file"/>Собрать отчёт</button></div></div>
-            <div className="rating-filters"><label className="search-box"><Icon name="search"/><input aria-label="Поиск в рейтинге" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Найти муниципалитет…"/></label><div className="filter-row" role="group" aria-label="Фильтр рейтинга по группе муниципалитета">{[['ALL', 'Все группы'], ['A', 'Группа A'], ['B', 'Группа B']].map(([value, label]) => <button type="button" key={value} className={`filter-pill ${selectedGroup === value ? 'selected' : ''}`} aria-pressed={selectedGroup === value} onClick={() => setSelectedGroup(value)}>{label}</button>)}</div><button type="button" className="text-action" onClick={resetFilters}><Icon name="refresh"/>Сбросить фильтры</button></div>
-            <div className="table-meta"><span role="status" aria-live="polite" aria-atomic="true">В ТАБЛИЦЕ <strong>{sortedMunicipalities.length}</strong> МУНИЦИПАЛИТЕТОВ</span><span className="table-sort-hint">Нажмите на заголовок, чтобы изменить порядок</span></div>
-            <div className="table-scroll compare-scroll" role="region" tabIndex={0} aria-label="Таблица данных. Используйте горизонтальную прокрутку для просмотра всех столбцов."><table className="ranking-table compare-table"><thead><tr><th scope="col" className="num-col">№</th><th scope="col" aria-sort={sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Муниципальное образование" column="name"/></th><th scope="col" aria-sort={sortConfig.key === 'group2024' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Группа" column="group2024"/></th><th scope="col" aria-sort={sortConfig.key === 'score' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Балл" column="score"/></th><th scope="col" aria-sort={sortConfig.key === 'investments' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Инвестиции, млрд ₽" column="investments"/></th><th scope="col" aria-sort={sortConfig.key === 'smeCount' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="МСП, ед." column="smeCount"/></th><th scope="col" aria-sort={sortConfig.key === 'assessmentScore' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}><SortButton label="Оценка бизнеса" column="assessmentScore"/></th><th scope="col">Паспорт</th></tr></thead><tbody>{sortedMunicipalities.map((m, i) => <tr key={m.id} onMouseEnter={() => setHoveredRegionId(m.id)} onMouseLeave={() => setHoveredRegionId(null)}><td className="row-number">{String(i + 1).padStart(2, '0')}</td><td><button type="button" className="municipality-link" onClick={() => setActiveModalItem(m)}>{m.name}</button></td><td><span className={`group-badge ${m.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i/>{`Группа ${m.group2024}`}</span></td><td className="score-cell">{formatNumber(m.score, 1)}</td><td className="number-cell">{formatNumber(m.investments.volumeBillion, 1)}</td><td className="number-cell">{formatNumber(m.smeCount)}</td><td>{formatNumber(m.assessmentScore, 2)} / 5</td><td><button type="button" className="icon-button" onClick={() => setActiveModalItem(m)} aria-label={`Открыть паспорт: ${m.name}`}><Icon name="arrow"/></button></td></tr>)}</tbody></table></div>
-          </section>}
+          {activeTab === 'rating' && <RatingWorkspace
+            municipalities={municipalities}
+            officialIndicators={officialIndicators}
+            investmentSites={investmentSites}
+            investmentProjects={investmentProjects}
+            industrialEnterprises={industrialEnterprises}
+            infrastructureObjects={infrastructureObjects}
+            landParcels={landParcels}
+            programExecution={programExecution}
+            facilities={facilities}
+            externalRatings={externalRatings}
+            onOpenMunicipality={setActiveModalItem}
+            onCreateReport={(ids) => { setReportScope('selected'); setReportSelectedIds(ids); navigateToTab('reports'); }}
+            onCompare={(ids) => { setSelectedCompareIds(ids); navigateToTab('compare'); }}
+            onOpenData={() => navigateToTab('data')}
+          />}
 
           {activeTab === 'risk' && <Suspense fallback={<section className="panel full-panel" role="status"><p>Загружаем систему мониторинга рисков…</p></section>}><UnifiedRiskForecast municipalities={municipalities} forecastScenarios={forecastScenarios} officialIndicators={officialIndicators} programExecution={programExecution} officialDataStatus={officialDataStatus} officialDataSyncedAt={officialDataSyncedAt} investmentSites={investmentSites} fuelPrices={fuelPrices} facilities={facilities} /></Suspense>}
 
@@ -2522,6 +2533,17 @@ export const InvestmentDetails = () => {
         <div className="modal-ornament" aria-hidden="true"/><div className="modal-topline"><span className="eyebrow"><span className="eyebrow-diamond"/> ПАСПОРТ ТЕРРИТОРИИ</span><button type="button" className="close-button" onClick={() => setActiveModalItem(null)} aria-label="Закрыть"><Icon name="close"/></button></div>
         <h2 id="modal-title" tabIndex={-1}>{activeModalItem.name}</h2><p className="modal-intro" id="modal-intro">Демонстрационные показатели проекта приведены отдельно от проверенной официальной статистики.</p>
         <div className="modal-group-line"><span className={`group-badge ${activeModalItem.group2024 === 'A' ? 'group-a' : 'group-b'}`}><i/>Группа {activeModalItem.group2024}</span><span>Рейтинг № {activeModalItem.rank2024}</span></div>
+        <nav className="modal-passport-nav" aria-label="Разделы паспорта территории">
+          <a href="#modal-coverage-heading">Наличие данных</a>
+          <a href="#modal-official-heading">Официальные показатели</a>
+          <a href="#modal-sites-heading">Инвестплощадки</a>
+          <a href="#modal-facilities-heading">Образование</a>
+          <a href="#modal-projects-heading">Проекты</a>
+          <a href="#modal-enterprises-heading">Предприятия</a>
+          <a href="#modal-infrastructure-heading">Инфраструктура</a>
+          <a href="#modal-land-heading">Земельные участки</a>
+          <a href="#modal-programs-heading">Программы</a>
+        </nav>
         <div className="modal-demo-label"><Icon name="info"/> ДЕМО-НАБОР · ЗНАЧЕНИЯ НЕ ПРОВЕРЕНЫ КАК ОФИЦИАЛЬНАЯ СТАТИСТИКА</div>
         <section className="modal-coverage" aria-labelledby="modal-coverage-heading">
           <div className="modal-coverage-heading"><h3 id="modal-coverage-heading">Наличие данных по территории</h3><span role="status" aria-live="polite">{modalDataCoverage.filter((item) => item.count > 0).length} из {modalDataCoverage.length} разделов с записями</span></div>
